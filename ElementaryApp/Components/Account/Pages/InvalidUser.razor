@@ -1,0 +1,13 @@
+@page "/Account/InvalidUser"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Invalid user</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" Color="Color.Error" GutterBottom="true">Invalid user</MudText>
+        <StatusMessage />
+        <MudText>The requested user could not be loaded.</MudText>
+    </MudPaper>
+</MudContainer>

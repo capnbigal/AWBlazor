@@ -1,0 +1,160 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateBillOfMaterialsRequest> CreateValidator
+@inject MudFormValidator<UpdateBillOfMaterialsRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create BOM row" : $"Edit BOM row #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@createModel.ProductAssemblyId" ValueChanged="@((int? v) => createModel = createModel with { ProductAssemblyId = v })" Label="Assembly id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.ComponentId" ValueChanged="@((int v) => createModel = createModel with { ComponentId = v })" Label="Component id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="short" Value="@createModel.BomLevel" ValueChanged="@((short v) => createModel = createModel with { BomLevel = v })" Label="BOM level" Variant="Variant.Outlined" Min="0" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal" Value="@createModel.PerAssemblyQty" ValueChanged="@((decimal v) => createModel = createModel with { PerAssemblyQty = v })" Label="Qty/assembly" Variant="Variant.Outlined" Required="true" Step="0.01M" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.UnitMeasureCode" ValueChanged="@((string? v) => createModel = createModel with { UnitMeasureCode = v })" Label="Unit measure code" Variant="Variant.Outlined" Required="true" MaxLength="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Date="@createModel.StartDate" DateChanged="@((DateTime? v) => createModel = createModel with { StartDate = v ?? DateTime.UtcNow.Date })" Label="Start" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudDatePicker Date="@createModel.EndDate" DateChanged="@((DateTime? v) => createModel = createModel with { EndDate = v })" Label="End" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.ProductAssemblyId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductAssemblyId = v })" Label="Assembly id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.ComponentId" ValueChanged="@((int? v) => updateModel = updateModel with { ComponentId = v })" Label="Component id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="short?" Value="@updateModel.BomLevel" ValueChanged="@((short? v) => updateModel = updateModel with { BomLevel = v })" Label="BOM level" Variant="Variant.Outlined" Clearable="true" Min="0" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal?" Value="@updateModel.PerAssemblyQty" ValueChanged="@((decimal? v) => updateModel = updateModel with { PerAssemblyQty = v })" Label="Qty/assembly" Variant="Variant.Outlined" Clearable="true" Step="0.01M" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.UnitMeasureCode" ValueChanged="@((string? v) => updateModel = updateModel with { UnitMeasureCode = v })" Label="Unit measure code" Variant="Variant.Outlined" MaxLength="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Date="@updateModel.StartDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { StartDate = v })" Label="Start" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudDatePicker Date="@updateModel.EndDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { EndDate = v })" Label="End" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public BillOfMaterialsDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateBillOfMaterialsRequest createModel = new() { StartDate = DateTime.UtcNow.Date };
+    private UpdateBillOfMaterialsRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateBillOfMaterialsRequest
+            {
+                ProductAssemblyId = Model.ProductAssemblyId,
+                ComponentId = Model.ComponentId,
+                StartDate = Model.StartDate,
+                EndDate = Model.EndDate,
+                UnitMeasureCode = Model.UnitMeasureCode,
+                BomLevel = Model.BomLevel,
+                PerAssemblyQty = Model.PerAssemblyQty,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                db.BillOfMaterials.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.BillOfMaterialsAuditLogs.Add(BillOfMaterialsAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.BillOfMaterials.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = BillOfMaterialsAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.BillOfMaterialsAuditLogs.Add(BillOfMaterialsAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

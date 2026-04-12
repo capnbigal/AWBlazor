@@ -1,0 +1,38 @@
+@page "/Account/Manage/PersonalData"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@inject IdentityUserAccessor UserAccessor
+
+<PageTitle>Personal data</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Personal data</MudText>
+
+        <ManageNavMenu />
+
+        <MudText Class="mb-3">
+            Your account contains personal data that you have provided. This page lets you
+            download or delete that data.
+        </MudText>
+
+        <MudAlert Severity="Severity.Warning" Class="my-3">
+            Deleting your account will permanently remove your data. The action cannot be undone.
+        </MudAlert>
+
+        <MudStack Spacing="2">
+            @* The download endpoint is mapped in IdentityComponentsEndpointRouteBuilderExtensions.cs *@
+            <form action="Account/Manage/DownloadPersonalData" method="post">
+                <AntiforgeryToken />
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary">
+                    Download
+                </MudButton>
+            </form>
+
+            <MudButton Href="Account/Manage/DeletePersonalData" Variant="Variant.Outlined" Color="Color.Error">
+                Delete account
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>

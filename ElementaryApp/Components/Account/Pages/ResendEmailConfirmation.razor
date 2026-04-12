@@ -1,0 +1,82 @@
+@page "/Account/ResendEmailConfirmation"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject NavigationManager NavigationManager
+
+<PageTitle>Resend confirmation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Resend email confirmation</MudText>
+        <StatusMessage Message="@message" />
+
+        <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmitAsync" FormName="resend-confirmation">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="form-validation-summary" role="alert" />
+
+            <div class="form-field">
+                <label for="resend-email" class="form-label">Email</label>
+                <InputText id="resend-email"
+                           @bind-Value="Input.Email"
+                           type="email"
+                           autocomplete="username"
+                           class="form-control" />
+                <ValidationMessage For="@(() => Input.Email)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mt-2">
+                Resend
+            </MudButton>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? message;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task OnValidSubmitAsync()
+    {
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if (user is null)
+        {
+            message = "Verification email sent. Please check your email.";
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+
+        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+        message = "Verification email sent. Please check your email.";
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+    }
+}

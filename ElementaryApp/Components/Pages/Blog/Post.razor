@@ -1,0 +1,59 @@
+@page "/blog/{slug}"
+@using ElementaryApp.Services
+@inject MarkdownBlogService Blog
+@inject NavigationManager Nav
+
+@if (post is null)
+{
+    <PageTitle>Not found</PageTitle>
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+        <MudAlert Severity="Severity.Warning">Post not found.</MudAlert>
+        <MudButton Href="blog" Class="mt-3">Back to blog</MudButton>
+    </MudContainer>
+}
+else
+{
+    <PageTitle>@post.Title</PageTitle>
+
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+        <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Href="blog" Class="mb-3">Back to blog</MudButton>
+
+        @if (!string.IsNullOrEmpty(post.Image))
+        {
+            <img src="@post.Image" alt="@post.Title" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;" />
+        }
+
+        <MudText Typo="Typo.h3" Class="mt-3">@post.Title</MudText>
+        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+            @post.Date.ToString("yyyy-MM-dd")
+            @if (!string.IsNullOrEmpty(post.Author)) { <text> &middot; @post.Author</text> }
+        </MudText>
+
+        @if (post.Tags.Count > 0)
+        {
+            <MudStack Row="true" Spacing="1" Class="my-2">
+                @foreach (var t in post.Tags)
+                {
+                    <MudChip T="string" Size="Size.Small" Href="@($"blog/tag/{t}")">@t</MudChip>
+                }
+            </MudStack>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <article class="prose">
+            @post.HtmlBody
+        </article>
+    </MudContainer>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+
+    private BlogPost? post;
+
+    protected override void OnParametersSet()
+    {
+        post = Blog.FindBySlug(Slug);
+    }
+}

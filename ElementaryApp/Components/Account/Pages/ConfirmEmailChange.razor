@@ -1,0 +1,65 @@
+@page "/Account/ConfirmEmailChange"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Confirm email change</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Confirm email change</MudText>
+        <StatusMessage Message="@statusMessage" />
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? statusMessage;
+
+    [SupplyParameterFromQuery] private string? UserId { get; set; }
+    [SupplyParameterFromQuery] private string? Email { get; set; }
+    [SupplyParameterFromQuery] private string? Code { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserId is null || Email is null || Code is null)
+        {
+            RedirectManager.RedirectToWithStatus("Account/Login", "Error: invalid email change confirmation link.", HttpContext);
+            return;
+        }
+
+        var user = await UserManager.FindByIdAsync(UserId);
+        if (user is null)
+        {
+            statusMessage = $"Unable to find user with ID {UserId}.";
+            return;
+        }
+
+        var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await UserManager.ChangeEmailAsync(user, Email, code);
+        if (!result.Succeeded)
+        {
+            statusMessage = "Error changing email.";
+            return;
+        }
+
+        // The username is also the email so we update it as well.
+        var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
+        if (!setUserNameResult.Succeeded)
+        {
+            statusMessage = "Error changing user name.";
+            return;
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        statusMessage = "Thank you for confirming your email change.";
+    }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+}

@@ -1,0 +1,15 @@
+@page "/Account/Logout"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+<form action="Account/Logout" method="post">
+    <AntiforgeryToken />
+    <input type="hidden" name="ReturnUrl" value="" />
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+        <MudPaper Class="pa-6" Elevation="2">
+            <MudText Typo="Typo.h5" GutterBottom="true">Sign out</MudText>
+            <MudText Class="mb-3">Click the button to sign out of your account.</MudText>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Sign out</MudButton>
+        </MudPaper>
+    </MudContainer>
+</form>

@@ -1,0 +1,118 @@
+@page "/Account/Manage"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Profile</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">My profile</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage />
+
+        <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmitAsync" FormName="profile">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="form-validation-summary" role="alert" />
+
+            <div class="form-field">
+                <label class="form-label">User name</label>
+                <input type="text" value="@username" disabled class="form-control" />
+            </div>
+
+            <div class="form-field">
+                <label for="profile-firstname" class="form-label">First name</label>
+                <InputText id="profile-firstname" @bind-Value="Input.FirstName" class="form-control" />
+                <ValidationMessage For="@(() => Input.FirstName)" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="profile-lastname" class="form-label">Last name</label>
+                <InputText id="profile-lastname" @bind-Value="Input.LastName" class="form-control" />
+                <ValidationMessage For="@(() => Input.LastName)" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="profile-displayname" class="form-label">Display name</label>
+                <InputText id="profile-displayname" @bind-Value="Input.DisplayName" class="form-control" />
+                <ValidationMessage For="@(() => Input.DisplayName)" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="profile-phone" class="form-label">Phone</label>
+                <InputText id="profile-phone" @bind-Value="Input.PhoneNumber" type="tel" class="form-control" />
+                <ValidationMessage For="@(() => Input.PhoneNumber)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
+                Save
+            </MudButton>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private ApplicationUser user = default!;
+    private string? username;
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override void OnInitialized() => Input ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        username = await UserManager.GetUserNameAsync(user);
+        Input.FirstName ??= user.FirstName;
+        Input.LastName ??= user.LastName;
+        Input.DisplayName ??= user.DisplayName;
+        Input.PhoneNumber ??= await UserManager.GetPhoneNumberAsync(user);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        user.FirstName = Input.FirstName;
+        user.LastName = Input.LastName;
+        user.DisplayName = Input.DisplayName;
+
+        var setPhone = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+        if (!setPhone.Succeeded)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: failed to set phone number.", HttpContext);
+            return;
+        }
+
+        var update = await UserManager.UpdateAsync(user);
+        if (!update.Succeeded)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: failed to update profile.", HttpContext);
+            return;
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus("Profile updated.", HttpContext);
+    }
+
+    private sealed class InputModel
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? DisplayName { get; set; }
+
+        [Phone]
+        [Display(Name = "Phone number")]
+        public string? PhoneNumber { get; set; }
+    }
+}

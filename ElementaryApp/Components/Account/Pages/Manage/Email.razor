@@ -1,0 +1,104 @@
+@page "/Account/Manage/Email"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject IdentityUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Email</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Manage email</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage Message="@message" />
+
+        <MudText Class="my-3">
+            Current email: <strong>@email</strong>
+            @if (isEmailConfirmed)
+            {
+                <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ml-2">Confirmed</MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="ml-2">Not confirmed</MudChip>
+            }
+        </MudText>
+
+        <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmitAsync" FormName="change-email">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="form-validation-summary" role="alert" />
+
+            <div class="form-field">
+                <label for="email-new" class="form-label">New email</label>
+                <InputText id="email-new" @bind-Value="Input.NewEmail" type="email" autocomplete="email" class="form-control" />
+                <ValidationMessage For="@(() => Input.NewEmail)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
+                Send confirmation link
+            </MudButton>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private string? email;
+    private bool isEmailConfirmed;
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override void OnInitialized() => Input ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        email = await UserManager.GetEmailAsync(user);
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+        Input.NewEmail ??= email;
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.NewEmail is null || Input.NewEmail == email)
+        {
+            message = "Your email is unchanged.";
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
+
+        await EmailSender.SendConfirmationLinkAsync(user, Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+        message = "Confirmation link to change email sent.";
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "New email")]
+        public string? NewEmail { get; set; }
+    }
+}

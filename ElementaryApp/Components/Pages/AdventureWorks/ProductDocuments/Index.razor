@@ -1,0 +1,102 @@
+@page "/aw/product-documents"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Product ↔ document</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product ↔ document</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductDocument · composite PK (ProductID, DocumentNode hierarchyid)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-documents/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="ProductDocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
+            <PropertyColumn Property="x => x.DocumentNode" Title="Document node" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductDocumentDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductDocumentDto> grid = null!;
+    private int? filterProductId;
+
+    private async Task<GridData<ProductDocumentDto>> LoadServerDataAsync(GridState<ProductDocumentDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ProductDocuments.AsNoTracking();
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.DocumentNode)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize)
+            .Select(x => new ProductDocumentDto(x.ProductId, x.DocumentNode.ToString()!, x.ModifiedDate))
+            .ToListAsync(ct);
+        return new GridData<ProductDocumentDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductDocumentDialog>("Link a product to a document", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductDocumentDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete link?", $"Permanently delete link ({row.ProductId}, {row.DocumentNode})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var node = HierarchyId.Parse(row.DocumentNode);
+        var entity = await db.ProductDocuments.FirstOrDefaultAsync(t =>
+            t.ProductId == row.ProductId && t.DocumentNode == node);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductDocumentAuditLogs.Add(ProductDocumentAuditService.RecordDelete(entity, changedBy));
+        db.ProductDocuments.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Link deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductDocumentDto row)
+        => Navigation.NavigateTo($"aw/product-documents/history?productId={row.ProductId}&documentNode={Uri.EscapeDataString(row.DocumentNode)}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

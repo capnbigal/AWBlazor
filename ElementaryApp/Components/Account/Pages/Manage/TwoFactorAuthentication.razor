@@ -1,0 +1,133 @@
+@page "/Account/Manage/TwoFactorAuthentication"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using Microsoft.AspNetCore.Http.Features
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Two-factor authentication</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Two-factor authentication (2FA)</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage />
+
+        @if (canTrack)
+        {
+            @if (is2faEnabled)
+            {
+                @if (recoveryCodesLeft == 0)
+                {
+                    <MudAlert Severity="Severity.Error" Class="my-3">
+                        You have no recovery codes left. You must
+                        <MudLink Href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</MudLink>
+                        before you can log in with one.
+                    </MudAlert>
+                }
+                else if (recoveryCodesLeft == 1)
+                {
+                    <MudAlert Severity="Severity.Error" Class="my-3">
+                        You have 1 recovery code left.
+                        <MudLink Href="Account/Manage/GenerateRecoveryCodes">Generate new codes</MudLink>.
+                    </MudAlert>
+                }
+                else if (recoveryCodesLeft <= 3)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="my-3">
+                        You have @recoveryCodesLeft recovery codes left.
+                        <MudLink Href="Account/Manage/GenerateRecoveryCodes">Generate new codes</MudLink>.
+                    </MudAlert>
+                }
+
+                @if (isMachineRemembered)
+                {
+                    <EditForm Model="forgetInput" method="post" OnValidSubmit="OnForgetBrowserAsync" FormName="forget-browser">
+                        <AntiforgeryToken />
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" Class="my-2">
+                            Forget this browser
+                        </MudButton>
+                    </EditForm>
+                }
+
+                <MudStack Row="true" Spacing="2" Class="mt-3" Wrap="Wrap.Wrap">
+                    <MudButton Href="Account/Manage/Disable2fa" Variant="Variant.Filled" Color="Color.Error">
+                        Disable 2FA
+                    </MudButton>
+                    <MudButton Href="Account/Manage/GenerateRecoveryCodes" Variant="Variant.Outlined" Color="Color.Primary">
+                        Reset recovery codes
+                    </MudButton>
+                </MudStack>
+            }
+            else
+            {
+                <MudText Class="my-3">Two-factor authentication is not enabled.</MudText>
+                <MudButton Href="Account/Manage/EnableAuthenticator" Variant="Variant.Filled" Color="Color.Primary">
+                    Set up authenticator app
+                </MudButton>
+            }
+
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.subtitle2">Authenticator app</MudText>
+            <MudStack Row="true" Spacing="2" Class="mt-2" Wrap="Wrap.Wrap">
+                @if (!hasAuthenticator)
+                {
+                    <MudButton Href="Account/Manage/EnableAuthenticator" Variant="Variant.Outlined">Add authenticator app</MudButton>
+                }
+                else
+                {
+                    <MudButton Href="Account/Manage/EnableAuthenticator" Variant="Variant.Outlined">Set up authenticator app</MudButton>
+                    <MudButton Href="Account/Manage/ResetAuthenticator" Variant="Variant.Outlined" Color="Color.Warning">Reset authenticator app</MudButton>
+                }
+            </MudStack>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Error" Class="my-3">
+                Privacy and cookie policy have not been accepted. You must accept the policy
+                before two-factor authentication can be used.
+            </MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    // Dummy form model for the "Forget browser" button — no fields needed.
+    [SupplyParameterFromForm]
+    private object forgetInput { get; set; } = new();
+
+    private bool canTrack;
+    private bool is2faEnabled;
+    private bool hasAuthenticator;
+    private bool isMachineRemembered;
+    private int recoveryCodesLeft;
+
+    protected override void OnInitialized() => forgetInput ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        canTrack = HttpContext.Features.Get<ITrackingConsentFeature>()?.CanTrack ?? true;
+        is2faEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
+        hasAuthenticator = await UserManager.GetAuthenticatorKeyAsync(user) is not null;
+        isMachineRemembered = await SignInManager.IsTwoFactorClientRememberedAsync(user);
+        recoveryCodesLeft = await UserManager.CountRecoveryCodesAsync(user);
+    }
+
+    private async Task OnForgetBrowserAsync()
+    {
+        await SignInManager.ForgetTwoFactorClientAsync();
+        RedirectManager.RedirectToCurrentPageWithStatus(
+            "The current browser has been forgotten. When you log in again you will be prompted for your 2FA code.",
+            HttpContext);
+    }
+}

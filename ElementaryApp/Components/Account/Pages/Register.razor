@@ -1,0 +1,140 @@
+@page "/Account/Register"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Register</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Create a new account</MudText>
+
+        <StatusMessage Message="@Message" />
+
+        @* Built-in <InputText> auto-emits the HTML name attribute that the SSR form binder needs. *@
+        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="form-validation-summary" role="alert" />
+
+            <div class="form-field">
+                <label for="register-email" class="form-label">Email</label>
+                <InputText id="register-email"
+                           @bind-Value="Input.Email"
+                           type="email"
+                           autocomplete="username"
+                           class="form-control" />
+                <ValidationMessage For="@(() => Input.Email)" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="register-password" class="form-label">Password</label>
+                <InputText id="register-password"
+                           @bind-Value="Input.Password"
+                           type="password"
+                           autocomplete="new-password"
+                           class="form-control" />
+                <ValidationMessage For="@(() => Input.Password)" class="form-error" />
+            </div>
+
+            <div class="form-field">
+                <label for="register-confirm" class="form-label">Confirm password</label>
+                <InputText id="register-confirm"
+                           @bind-Value="Input.ConfirmPassword"
+                           type="password"
+                           autocomplete="new-password"
+                           class="form-control" />
+                <ValidationMessage For="@(() => Input.ConfirmPassword)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mt-2">
+                Register
+            </MudButton>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private IEnumerable<IdentityError>? identityErrors;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    // The static-SSR form binder can null out Input on GET; defensively re-initialize.
+    protected override void OnInitialized() => Input ??= new();
+
+    private string? Message =>
+        identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(e => e.Description))}";
+
+    public async Task RegisterUser(EditContext editContext)
+    {
+        var user = Activator.CreateInstance<ApplicationUser>();
+
+        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        var emailStore = (IUserEmailStore<ApplicationUser>)UserStore;
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        if (!result.Succeeded)
+        {
+            identityErrors = result.Errors;
+            return;
+        }
+
+        Logger.LogInformation("User created a new account with password.");
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
+
+        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        if (UserManager.Options.SignIn.RequireConfirmedAccount)
+        {
+            RedirectManager.RedirectTo("Account/Login", new() { ["ReturnUrl"] = ReturnUrl });
+            return;
+        }
+
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        [Compare(nameof(Password), ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

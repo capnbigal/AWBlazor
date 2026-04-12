@@ -1,0 +1,110 @@
+@page "/aw/illustrations"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Illustrations</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Illustrations</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Illustration · Diagram XML column not exposed</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/illustrations/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New illustration</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Color="Color.Secondary">
+        Illustration is just an integer surrogate key plus a Diagram XML column. Creating one
+        allocates the next id; the Diagram column stays NULL on insert from this app.
+    </MudText>
+
+    <MudDataGrid T="IllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="IllustrationDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<IllustrationDto> grid = null!;
+
+    private async Task<GridData<IllustrationDto>> LoadServerDataAsync(GridState<IllustrationDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Illustrations.AsNoTracking();
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.Id).Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<IllustrationDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Create illustration?",
+            "This allocates a new Illustration row with a fresh id. The Diagram XML column stays NULL.",
+            yesText: "Create", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = new CreateIllustrationRequest().ToEntity();
+        db.Illustrations.Add(entity);
+        await db.SaveChangesAsync();
+        var changedBy = await GetCurrentUserNameAsync();
+        db.IllustrationAuditLogs.Add(IllustrationAuditService.RecordCreate(entity, changedBy));
+        await db.SaveChangesAsync();
+        Snackbar.Add($"Illustration #{entity.Id} created.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private async Task DeleteAsync(IllustrationDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete illustration?", $"Permanently delete illustration #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Illustrations.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Illustration no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.IllustrationAuditLogs.Add(IllustrationAuditService.RecordDelete(entity, changedBy));
+        db.Illustrations.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Illustration deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(IllustrationDto row) => Navigation.NavigateTo($"aw/illustrations/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

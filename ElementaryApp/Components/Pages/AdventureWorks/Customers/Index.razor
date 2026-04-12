@@ -1,0 +1,129 @@
+@page "/aw/customers"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Customers</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Customers</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.Customer</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/customers/history">
+            View history
+        </MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">
+                New customer
+            </MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" @bind-Value="filterTerritoryId" Label="Territory id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.AccountNumber" Title="Account #" />
+            <PropertyColumn Property="x => x.PersonId" Title="Person id" />
+            <PropertyColumn Property="x => x.StoreId" Title="Store id" />
+            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="CustomerDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<CustomerDto> grid = null!;
+    private int? filterTerritoryId;
+
+    private async Task<GridData<CustomerDto>> LoadServerDataAsync(GridState<CustomerDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Customers.AsNoTracking();
+        if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CustomerDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(CustomerDto.AccountNumber) => sort.Descending ? query.OrderByDescending(x => x.AccountNumber) : query.OrderBy(x => x.AccountNumber),
+            nameof(CustomerDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
+            nameof(CustomerDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+            _                                 => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<CustomerDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<CustomerDialog>("New customer", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Customer created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(CustomerDto row)
+    {
+        var parameters = new DialogParameters<CustomerDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<CustomerDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Customer updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(CustomerDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete customer?", $"Permanently delete customer #{row.Id} ({row.AccountNumber})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Customers.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Customer no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.CustomerAuditLogs.Add(CustomerAuditService.RecordDelete(entity, changedBy));
+        db.Customers.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Customer deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(CustomerDto row) => Navigation.NavigateTo($"aw/customers/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

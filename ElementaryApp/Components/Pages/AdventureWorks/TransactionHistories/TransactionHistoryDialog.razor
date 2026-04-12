@@ -1,0 +1,184 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateTransactionHistoryRequest> CreateValidator
+@inject MudFormValidator<UpdateTransactionHistoryRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create transaction" : $"Edit transaction #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.ReferenceOrderId" ValueChanged="@((int v) => createModel = createModel with { ReferenceOrderId = v })" Label="Reference order id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.ReferenceOrderLineId" ValueChanged="@((int v) => createModel = createModel with { ReferenceOrderLineId = v })" Label="Ref order line id" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Date="@createModel.TransactionDate" DateChanged="@((DateTime? v) => createModel = createModel with { TransactionDate = v ?? DateTime.UtcNow.Date })" Label="Transaction date" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="string" Value="@createModel.TransactionType" ValueChanged="@((string v) => createModel = createModel with { TransactionType = v })" Label="Type" Variant="Variant.Outlined" Required="true">
+                            <MudSelectItem T="string" Value="@("W")">W (Work order)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("S")">S (Sales order)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("P")">P (Purchase order)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="int" Value="@createModel.Quantity" ValueChanged="@((int v) => createModel = createModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="decimal" Value="@createModel.ActualCost" ValueChanged="@((decimal v) => createModel = createModel with { ActualCost = v })" Label="Actual cost" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.ProductId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.ReferenceOrderId" ValueChanged="@((int? v) => updateModel = updateModel with { ReferenceOrderId = v })" Label="Reference order id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.ReferenceOrderLineId" ValueChanged="@((int? v) => updateModel = updateModel with { ReferenceOrderLineId = v })" Label="Ref order line id" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Date="@updateModel.TransactionDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { TransactionDate = v })" Label="Transaction date" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="string?" Value="@updateModel.TransactionType" ValueChanged="@((string? v) => updateModel = updateModel with { TransactionType = v })" Label="Type" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="string?" Value="@("W")">W (Work order)</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("S")">S (Sales order)</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("P")">P (Purchase order)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="int?" Value="@updateModel.Quantity" ValueChanged="@((int? v) => updateModel = updateModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="decimal?" Value="@updateModel.ActualCost" ValueChanged="@((decimal? v) => updateModel = updateModel with { ActualCost = v })" Label="Actual cost" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public TransactionHistoryDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateTransactionHistoryRequest createModel = new() { TransactionDate = DateTime.UtcNow.Date };
+    private UpdateTransactionHistoryRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateTransactionHistoryRequest
+            {
+                ProductId = Model.ProductId,
+                ReferenceOrderId = Model.ReferenceOrderId,
+                ReferenceOrderLineId = Model.ReferenceOrderLineId,
+                TransactionDate = Model.TransactionDate,
+                TransactionType = Model.TransactionType,
+                Quantity = Model.Quantity,
+                ActualCost = Model.ActualCost,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate FK: ProductID must exist in Production.Product.
+                if (!await db.Products.AnyAsync(p => p.Id == createModel.ProductId))
+                {
+                    Snackbar.Add($"Product #{createModel.ProductId} does not exist. Check the Product id and try again.", Severity.Error);
+                    return;
+                }
+
+                var entity = createModel.ToEntity();
+                db.TransactionHistories.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"Foreign key violation: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.TransactionHistoryAuditLogs.Add(TransactionHistoryAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate FK if ProductID is being changed.
+                if (updateModel.ProductId.HasValue && !await db.Products.AnyAsync(p => p.Id == updateModel.ProductId.Value))
+                {
+                    Snackbar.Add($"Product #{updateModel.ProductId.Value} does not exist. Check the Product id and try again.", Severity.Error);
+                    return;
+                }
+
+                var entity = await db.TransactionHistories.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = TransactionHistoryAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                try
+                {
+                    db.TransactionHistoryAuditLogs.Add(TransactionHistoryAuditService.RecordUpdate(before, entity, changedBy));
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"Foreign key violation: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

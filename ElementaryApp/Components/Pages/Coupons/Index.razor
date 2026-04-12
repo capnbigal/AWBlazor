@@ -1,0 +1,135 @@
+@page "/coupons"
+@attribute [Authorize]
+@using ElementaryApp.Components.Pages.Coupons
+@using ElementaryApp.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Coupons</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Coupons</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">
+                New coupon
+            </MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="CouponDto"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.Description" Title="Description" />
+            <PropertyColumn Property="x => x.Discount" Title="Discount %" />
+            <PropertyColumn Property="x => x.ExpiryDate" Title="Expires" Format="yyyy-MM-dd" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="CouponDto" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<CouponDto> grid = null!;
+
+    private async Task<GridData<CouponDto>> LoadServerDataAsync(GridState<CouponDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Coupons.AsNoTracking();
+        var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CouponDto.Id)          => sort.Descending ? query.OrderByDescending(c => c.Id)          : query.OrderBy(c => c.Id),
+            nameof(CouponDto.Description) => sort.Descending ? query.OrderByDescending(c => c.Description) : query.OrderBy(c => c.Description),
+            nameof(CouponDto.Discount)    => sort.Descending ? query.OrderByDescending(c => c.Discount)    : query.OrderBy(c => c.Discount),
+            nameof(CouponDto.ExpiryDate)  => sort.Descending ? query.OrderByDescending(c => c.ExpiryDate)  : query.OrderBy(c => c.ExpiryDate),
+            _                             => query.OrderBy(c => c.Id),
+        };
+
+        var rows = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .Select(c => c.ToDto())
+            .ToListAsync(ct);
+
+        return new GridData<CouponDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<CouponDialog>("Create coupon", new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Coupon created.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task OpenEditAsync(CouponDto coupon)
+    {
+        var parameters = new DialogParameters<CouponDialog> { { x => x.Coupon, coupon } };
+        var dialog = await DialogService.ShowAsync<CouponDialog>("Edit coupon", parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Coupon updated.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task DeleteAsync(CouponDto coupon)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete coupon?",
+            $"Permanently delete coupon {coupon.Id}? Bookings that reference it will keep the orphaned id (the FK is SetNull).",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Coupons.FirstOrDefaultAsync(c => c.Id == coupon.Id);
+        if (entity is null)
+        {
+            Snackbar.Add("Coupon no longer exists.", Severity.Warning);
+            await grid.ReloadServerData();
+            return;
+        }
+        db.Coupons.Remove(entity);
+        await db.SaveChangesAsync();
+
+        Snackbar.Add("Coupon deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+}

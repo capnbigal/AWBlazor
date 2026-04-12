@@ -1,0 +1,18 @@
+@* Shared component that displays a list of recovery codes after they've been generated.
+   Used by EnableAuthenticator and GenerateRecoveryCodes. *@
+
+@if (Codes is { Length: > 0 })
+{
+    <MudAlert Severity="Severity.Warning" Class="my-3">
+        <MudText Typo="Typo.subtitle1"><strong>Put these codes in a safe place.</strong></MudText>
+        <MudText Typo="Typo.body2">
+            If you lose your device and don't have these recovery codes you will lose access to your account.
+        </MudText>
+    </MudAlert>
+
+    <pre style="padding:12px;background:#1e1e1e;color:#dcdcdc;border-radius:4px;font-family:monospace;line-height:1.6;">@string.Join("\n", Codes)</pre>
+}
+
+@code {
+    [Parameter] public string[]? Codes { get; set; }
+}

@@ -1,0 +1,110 @@
+@page "/aw/product-product-photos"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Product ↔ photo</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product ↔ photo</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductProductPhoto · composite PK (ProductID, ProductPhotoID)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-product-photos/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="ProductProductPhotoDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
+            <PropertyColumn Property="x => x.ProductPhotoId" Title="Photo id" />
+            <PropertyColumn Property="x => x.Primary" Title="Primary?" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductProductPhotoDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductProductPhotoDto> grid = null!;
+    private int? filterProductId;
+
+    private async Task<GridData<ProductProductPhotoDto>> LoadServerDataAsync(GridState<ProductProductPhotoDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ProductProductPhotos.AsNoTracking();
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.ProductPhotoId)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<ProductProductPhotoDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductProductPhotoDialog>("Link a photo to a product", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductProductPhotoDto row)
+    {
+        var parameters = new DialogParameters<ProductProductPhotoDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductProductPhotoDialog>($"Edit ({row.ProductId}, {row.ProductPhotoId})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductProductPhotoDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete link?", $"Permanently delete link ({row.ProductId}, {row.ProductPhotoId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductProductPhotos.FirstOrDefaultAsync(t =>
+            t.ProductId == row.ProductId && t.ProductPhotoId == row.ProductPhotoId);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductProductPhotoAuditLogs.Add(ProductProductPhotoAuditService.RecordDelete(entity, changedBy));
+        db.ProductProductPhotos.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Link deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductProductPhotoDto row)
+        => Navigation.NavigateTo($"aw/product-product-photos/history?productId={row.ProductId}&productPhotoId={row.ProductPhotoId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

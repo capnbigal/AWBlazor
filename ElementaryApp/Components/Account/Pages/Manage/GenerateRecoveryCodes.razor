@@ -1,0 +1,74 @@
+@page "/Account/Manage/GenerateRecoveryCodes"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<GenerateRecoveryCodes> Logger
+
+<PageTitle>Generate recovery codes</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Generate recovery codes</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage Message="@message" />
+
+        <ShowRecoveryCodes Codes="@recoveryCodes" />
+
+        @if (recoveryCodes is null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-3">
+                <MudText Typo="Typo.body2">
+                    Generating new recovery codes will invalidate all of your previous recovery
+                    codes. Make sure to save the new ones.
+                </MudText>
+            </MudAlert>
+
+            <EditForm Model="dummy" method="post" OnValidSubmit="OnSubmitAsync" FormName="generate-recovery-codes">
+                <AntiforgeryToken />
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error">
+                    Generate new recovery codes
+                </MudButton>
+            </EditForm>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private object dummy { get; set; } = new();
+
+    private string[]? recoveryCodes;
+    private string? message;
+
+    protected override void OnInitialized() => dummy ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        if (!await UserManager.GetTwoFactorEnabledAsync(user))
+        {
+            throw new InvalidOperationException("Cannot generate recovery codes: 2FA is not enabled.");
+        }
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        var codes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+        recoveryCodes = codes?.ToArray();
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        Logger.LogInformation("User with ID {UserId} has generated new 2FA recovery codes.", userId);
+
+        message = "You have generated new recovery codes.";
+    }
+}

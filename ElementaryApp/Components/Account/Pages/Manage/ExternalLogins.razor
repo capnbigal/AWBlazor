@@ -1,0 +1,123 @@
+@page "/Account/Manage/ExternalLogins"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>External logins</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">External logins</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage Message="@statusMessage" />
+
+        @if (currentLogins is null)
+        {
+            <MudText>Loading…</MudText>
+        }
+        else if (currentLogins.Count == 0 && otherLogins.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="my-3">
+                No external login providers are configured for this application. To enable
+                Google / Microsoft / GitHub / etc. login, register an authentication scheme
+                via <code>services.AddAuthentication().AddGoogle(...)</code> in <code>Program.cs</code>.
+            </MudAlert>
+        }
+        else
+        {
+            @if (currentLogins.Count > 0)
+            {
+                <MudText Typo="Typo.subtitle1" Class="mt-3">Registered logins</MudText>
+                <MudList T="UserLoginInfo" Dense="true">
+                    @foreach (var login in currentLogins)
+                    {
+                        <MudListItem>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudText>@login.ProviderDisplayName</MudText>
+                                @if (showRemoveButton)
+                                {
+                                    <EditForm Model="RemoveInput" method="post" OnValidSubmit="OnRemoveLoginAsync" FormName="@($"remove-{login.LoginProvider}")">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="RemoveInput.LoginProvider" value="@login.LoginProvider" />
+                                        <input type="hidden" name="RemoveInput.ProviderKey" value="@login.ProviderKey" />
+                                        <MudButton ButtonType="ButtonType.Submit" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">
+                                            Remove
+                                        </MudButton>
+                                    </EditForm>
+                                }
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            @if (otherLogins.Count > 0)
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.subtitle1">Add another service to log in</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Linking external accounts is implemented in the standard ASP.NET Core
+                    scaffold but the form-handler endpoint is not currently wired up — it was
+                    intentionally removed during the ServiceStack→Blazor migration. Re-enable
+                    by restoring <code>MapPost("/LinkExternalLogin", ...)</code> in
+                    <code>IdentityComponentsEndpointRouteBuilderExtensions.cs</code> if needed.
+                </MudText>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private RemoveLoginInput RemoveInput { get; set; } = new();
+
+    private ApplicationUser user = default!;
+    private IList<UserLoginInfo>? currentLogins;
+    private IList<AuthenticationScheme> otherLogins = [];
+    private bool showRemoveButton;
+    private string? statusMessage;
+
+    protected override void OnInitialized() => RemoveInput ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        currentLogins = await UserManager.GetLoginsAsync(user);
+
+        var schemes = await SignInManager.GetExternalAuthenticationSchemesAsync();
+        otherLogins = schemes.Where(s => currentLogins.All(c => c.LoginProvider != s.Name)).ToList();
+
+        var hasPassword = await UserManager.HasPasswordAsync(user);
+        showRemoveButton = hasPassword || currentLogins.Count > 1;
+    }
+
+    private async Task OnRemoveLoginAsync()
+    {
+        var result = await UserManager.RemoveLoginAsync(user, RemoveInput.LoginProvider, RemoveInput.ProviderKey);
+        if (!result.Succeeded)
+        {
+            statusMessage = "Error: removing the external login failed.";
+            return;
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus("The external login was removed.", HttpContext);
+    }
+
+    private sealed class RemoveLoginInput
+    {
+        public string LoginProvider { get; set; } = "";
+        public string ProviderKey { get; set; } = "";
+    }
+}

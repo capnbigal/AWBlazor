@@ -1,0 +1,164 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateEmployeeRequest> CreateValidator
+@inject MudFormValidator<UpdateEmployeeRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create employee" : $"Edit employee #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.NationalIDNumber" ValueChanged="@((string? v) => createModel = createModel with { NationalIDNumber = v })" Label="National ID #" Variant="Variant.Outlined" Required="true" MaxLength="15" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.LoginID" ValueChanged="@((string? v) => createModel = createModel with { LoginID = v })" Label="Login ID" Variant="Variant.Outlined" Required="true" MaxLength="256" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@createModel.JobTitle" ValueChanged="@((string? v) => createModel = createModel with { JobTitle = v })" Label="Job title" Variant="Variant.Outlined" Required="true" MaxLength="50" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@createModel.BirthDate" DateChanged="@((DateTime? v) => createModel = createModel with { BirthDate = v ?? DateTime.UtcNow.Date })" Label="Birth date" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@createModel.HireDate" DateChanged="@((DateTime? v) => createModel = createModel with { HireDate = v ?? DateTime.UtcNow.Date })" Label="Hire date" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string?" Value="@createModel.MaritalStatus" ValueChanged="@((string? v) => createModel = createModel with { MaritalStatus = v })" Label="Marital status" Variant="Variant.Outlined">
+                            <MudSelectItem T="string?" Value="@("S")">S - Single</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("M")">M - Married</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string?" Value="@createModel.Gender" ValueChanged="@((string? v) => createModel = createModel with { Gender = v })" Label="Gender" Variant="Variant.Outlined">
+                            <MudSelectItem T="string?" Value="@("F")">F - Female</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("M")">M - Male</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="3"><MudCheckBox T="bool" Value="@createModel.SalariedFlag" ValueChanged="@((bool v) => createModel = createModel with { SalariedFlag = v })" Label="Salaried" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudCheckBox T="bool" Value="@createModel.CurrentFlag" ValueChanged="@((bool v) => createModel = createModel with { CurrentFlag = v })" Label="Current" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudNumericField T="short" Value="@createModel.VacationHours" ValueChanged="@((short v) => createModel = createModel with { VacationHours = v })" Label="Vacation hrs" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudNumericField T="short" Value="@createModel.SickLeaveHours" ValueChanged="@((short v) => createModel = createModel with { SickLeaveHours = v })" Label="Sick hrs" Variant="Variant.Outlined" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.NationalIDNumber" ValueChanged="@((string? v) => updateModel = updateModel with { NationalIDNumber = v })" Label="National ID #" Variant="Variant.Outlined" MaxLength="15" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.LoginID" ValueChanged="@((string? v) => updateModel = updateModel with { LoginID = v })" Label="Login ID" Variant="Variant.Outlined" MaxLength="256" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@updateModel.JobTitle" ValueChanged="@((string? v) => updateModel = updateModel with { JobTitle = v })" Label="Job title" Variant="Variant.Outlined" MaxLength="50" /></MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string?" Value="@updateModel.MaritalStatus" ValueChanged="@((string? v) => updateModel = updateModel with { MaritalStatus = v })" Label="Marital status" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="string?" Value="@("S")">S - Single</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("M")">M - Married</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string?" Value="@updateModel.Gender" ValueChanged="@((string? v) => updateModel = updateModel with { Gender = v })" Label="Gender" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="string?" Value="@("F")">F - Female</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("M")">M - Male</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="3"><MudCheckBox T="bool?" Value="@updateModel.SalariedFlag" ValueChanged="@((bool? v) => updateModel = updateModel with { SalariedFlag = v })" Label="Salaried" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudCheckBox T="bool?" Value="@updateModel.CurrentFlag" ValueChanged="@((bool? v) => updateModel = updateModel with { CurrentFlag = v })" Label="Current" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudNumericField T="short?" Value="@updateModel.VacationHours" ValueChanged="@((short? v) => updateModel = updateModel with { VacationHours = v })" Label="Vacation hrs" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="3"><MudNumericField T="short?" Value="@updateModel.SickLeaveHours" ValueChanged="@((short? v) => updateModel = updateModel with { SickLeaveHours = v })" Label="Sick hrs" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public EmployeeDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateEmployeeRequest createModel = new() { SalariedFlag = true, CurrentFlag = true, BirthDate = new DateTime(1990, 1, 1), HireDate = DateTime.UtcNow.Date };
+    private UpdateEmployeeRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+            updateModel = new UpdateEmployeeRequest
+            {
+                NationalIDNumber = Model.NationalIDNumber,
+                LoginID = Model.LoginID,
+                JobTitle = Model.JobTitle,
+                MaritalStatus = Model.MaritalStatus,
+                Gender = Model.Gender,
+                SalariedFlag = Model.SalariedFlag,
+                CurrentFlag = Model.CurrentFlag,
+                VacationHours = Model.VacationHours,
+                SickLeaveHours = Model.SickLeaveHours,
+            };
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                if (await db.Employees.AnyAsync(x => x.Id == createModel.Id))
+                {
+                    Snackbar.Add($"Employee #{createModel.Id} already exists.", Severity.Error);
+                    return;
+                }
+                var entity = createModel.ToEntity();
+                db.Employees.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.EmployeeAuditLogs.Add(EmployeeAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.Employees.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = EmployeeAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.EmployeeAuditLogs.Add(EmployeeAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

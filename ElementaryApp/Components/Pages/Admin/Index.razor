@@ -1,0 +1,194 @@
+@page "/admin"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject HealthCheckService HealthCheckService
+
+<PageTitle>Admin dashboard</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Admin dashboard</MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.subtitle2">Bookings</MudText>
+                    <MudText Typo="Typo.h3">@bookingCount</MudText>
+                    <MudLink Href="bookings">View all</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.subtitle2">Coupons</MudText>
+                    <MudText Typo="Typo.h3">@couponCount</MudText>
+                    <MudLink Href="coupons">View all</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.subtitle2">Tool slot configs</MudText>
+                    <MudText Typo="Typo.h3">@toolSlotCount</MudText>
+                    <MudLink Href="tool-slots">View all</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.subtitle2">Users</MudText>
+                    <MudText Typo="Typo.h3">@userCount</MudText>
+                    <MudLink Href="admin/users">View all</MudLink>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.subtitle1">Soft-deleted bookings</MudText>
+            <MudText Typo="Typo.h5">@deletedBookingCount</MudText>
+            <MudText Typo="Typo.caption">Toggle "Show deleted" on the Bookings page to inspect them.</MudText>
+        </MudPaper>
+
+        <MudText Typo="Typo.h5" Class="mt-4">System health</MudText>
+        @if (healthError is not null)
+        {
+            <MudAlert Severity="Severity.Error">Failed to load health checks: @healthError</MudAlert>
+        }
+        else if (healthEntries is null)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var entry in healthEntries)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Class="pa-4" Elevation="2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@HealthIcon(entry.Status)" Color="@HealthColor(entry.Status)" />
+                                <MudText Typo="Typo.subtitle1">@entry.Name</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Color="@HealthColor(entry.Status)" Variant="Variant.Filled">
+                                @entry.Status
+                            </MudChip>
+                            <MudText Typo="Typo.caption">@entry.Duration.TotalMilliseconds.ToString("N0") ms</MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+            @if (healthTotalDuration is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mt-1">Total: @healthTotalDuration.Value.TotalMilliseconds.ToString("N0") ms</MudText>
+            }
+        }
+
+        <MudText Typo="Typo.h5" Class="mt-4">Operator tools</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Api" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">API docs (Swagger)</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Interactive OpenAPI / Swagger UI for every <code>/api/*</code> endpoint.
+                        Outside Development this page is gated behind the Admin role.
+                    </MudText>
+                    <MudLink Href="swagger">Open Swagger UI →</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">Hangfire dashboard</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Background job queue, recurring jobs, retries. Admin-only via
+                        <code>HangfireDashboardAuthFilter</code>.
+                    </MudText>
+                    <MudLink Href="hangfire">Open Hangfire →</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">Request log</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Serilog-persisted request history from <code>dbo.RequestLogs</code>.
+                    </MudText>
+                    <MudLink Href="admin/request-log">Open request log →</MudLink>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private int bookingCount;
+    private int deletedBookingCount;
+    private int couponCount;
+    private int toolSlotCount;
+    private int userCount;
+
+    private List<HealthEntry>? healthEntries;
+    private TimeSpan? healthTotalDuration;
+    private string? healthError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        bookingCount        = await db.Bookings.CountAsync(b => b.DeletedDate == null);
+        deletedBookingCount = await db.Bookings.CountAsync(b => b.DeletedDate != null);
+        couponCount         = await db.Coupons.CountAsync();
+        toolSlotCount       = await db.ToolSlotConfigurations.CountAsync();
+        userCount           = await db.Users.CountAsync();
+        loading = false;
+
+        try
+        {
+            var report = await HealthCheckService.CheckHealthAsync();
+            healthEntries = report.Entries.Select(e => new HealthEntry
+            {
+                Name = e.Key,
+                Status = e.Value.Status,
+                Duration = e.Value.Duration,
+            }).ToList();
+            healthTotalDuration = report.TotalDuration;
+        }
+        catch (Exception ex)
+        {
+            healthError = ex.Message;
+        }
+    }
+
+    private sealed class HealthEntry
+    {
+        public string Name { get; init; } = "";
+        public HealthStatus Status { get; init; }
+        public TimeSpan Duration { get; init; }
+    }
+
+    private static Color HealthColor(HealthStatus status) => status switch
+    {
+        HealthStatus.Healthy => Color.Success,
+        HealthStatus.Degraded => Color.Warning,
+        HealthStatus.Unhealthy => Color.Error,
+        _ => Color.Default,
+    };
+
+    private static string HealthIcon(HealthStatus status) => status switch
+    {
+        HealthStatus.Healthy => Icons.Material.Filled.CheckCircle,
+        HealthStatus.Degraded => Icons.Material.Filled.Warning,
+        HealthStatus.Unhealthy => Icons.Material.Filled.Error,
+        _ => Icons.Material.Filled.HelpOutline,
+    };
+}

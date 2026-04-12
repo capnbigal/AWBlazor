@@ -1,0 +1,390 @@
+@page "/reports"
+@attribute [Authorize]
+@using Microsoft.Data.SqlClient
+@using System.Data
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Database explorer</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Database explorer</MudText>
+        <MudSpacer />
+        @if (!loading)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="RefreshAsync" Disabled="@loading">Refresh counts</MudButton>
+        }
+    </MudStack>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Loading row counts across @entities.Count tables...</MudText>
+    }
+    else
+    {
+        @* ── KPI cards ────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="border-top: 4px solid var(--mud-palette-primary);">
+                    <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h3" Class="mt-2">@entities.Count</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Tables</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="border-top: 4px solid var(--mud-palette-info);">
+                    <MudIcon Icon="@Icons.Material.Filled.DataUsage" Color="Color.Info" Size="Size.Large" />
+                    <MudText Typo="Typo.h3" Class="mt-2">@totalRows.ToString("N0")</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total rows</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="border-top: 4px solid var(--mud-palette-success);">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Class="mt-2">@largestTable</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Largest — @largestTableCount.ToString("N0") rows</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="border-top: 4px solid var(--mud-palette-warning);">
+                    <MudIcon Icon="@Icons.Material.Filled.Schema" Color="Color.Warning" Size="Size.Large" />
+                    <MudText Typo="Typo.h3" Class="mt-2">@schemaGroups.Count</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Schemas</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Schema distribution chart ────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Rows by schema</MudText>
+                    @foreach (var g in schemaGroups.Where(g => g.TotalRows > 0))
+                    {
+                        var pct = totalRows > 0 ? (double)g.TotalRows / totalRows * 100 : 0;
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                            <MudText Typo="Typo.body2" Style="min-width: 120px;">@g.Schema</MudText>
+                            <MudProgressLinear Value="@pct" Color="@SchemaColor(g.Schema)" Rounded="true" Size="Size.Large" Style="flex: 1;" />
+                            <MudText Typo="Typo.caption" Style="min-width: 100px; text-align: right;">@g.TotalRows.ToString("N0") (@pct.ToString("N1")%)</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Tables per schema</MudText>
+                    @foreach (var g in schemaGroups)
+                    {
+                        var pct = entities.Count > 0 ? (double)g.Count / entities.Count * 100 : 0;
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                            <MudText Typo="Typo.body2" Style="min-width: 120px;">@g.Schema</MudText>
+                            <MudProgressLinear Value="@pct" Color="@SchemaColor(g.Schema)" Rounded="true" Size="Size.Large" Style="flex: 1;" />
+                            <MudText Typo="Typo.caption" Style="min-width: 80px; text-align: right;">@g.Count tables</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Top 10 largest tables ────────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Top 10 largest tables</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Schema</th>
+                        <th>Table</th>
+                        <th style="text-align: right;">Row count</th>
+                        <th style="text-align: right;">% of total</th>
+                        <th>Distribution</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var rank = 0; }
+                    @foreach (var e in top10)
+                    {
+                        rank++;
+                        var pct = totalRows > 0 ? (double)e.RowCount!.Value / totalRows * 100 : 0;
+                        var maxPct = top10Max > 0 ? (double)e.RowCount.Value / top10Max * 100 : 0;
+                        <tr>
+                            <td><MudText Typo="Typo.body2" Color="Color.Secondary">@rank</MudText></td>
+                            <td><MudChip T="string" Size="Size.Small" Color="@SchemaColor(e.Schema)" Variant="Variant.Filled">@e.Schema</MudChip></td>
+                            <td><strong>@e.DisplayName</strong></td>
+                            <td style="text-align: right;">@e.RowCount.Value.ToString("N0")</td>
+                            <td style="text-align: right;">@pct.ToString("N1")%</td>
+                            <td style="min-width: 200px;">
+                                <MudProgressLinear Value="@maxPct" Color="@SchemaColor(e.Schema)" Rounded="true" Size="Size.Small" />
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(e.BrowseUrl))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Color="Color.Primary"
+                                                   Href="@e.BrowseUrl" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+
+        @* ── Schema drill-down panels ─────────────────────────────────────── *@
+        <MudText Typo="Typo.h5" Class="mt-2">All tables by schema</MudText>
+        <MudExpansionPanels MultiExpansion="true">
+            @foreach (var group in schemaGroups)
+            {
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudChip T="string" Color="@SchemaColor(group.Schema)" Variant="Variant.Filled" Size="Size.Small">@group.Schema</MudChip>
+                            <MudText Typo="Typo.body1"><strong>@group.Count</strong> tables</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@group.TotalRows.ToString("N0") rows total</MudText>
+                        </MudStack>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudTable Items="@group.Entities" Dense="true" Hover="true" Striped="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Table</MudTh>
+                                <MudTh Style="text-align:right">Row count</MudTh>
+                                <MudTh Style="min-width: 150px;">Distribution</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                @{
+                                    var rowPct = group.TotalRows > 0 && context.RowCount.HasValue
+                                        ? (double)context.RowCount.Value / group.TotalRows * 100 : 0;
+                                }
+                                <MudTd DataLabel="Table">@context.DisplayName</MudTd>
+                                <MudTd DataLabel="Row count" Style="text-align:right">
+                                    @if (context.RowCount.HasValue)
+                                    {
+                                        <strong>@context.RowCount.Value.ToString("N0")</strong>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Warning">N/A</MudText>
+                                    }
+                                </MudTd>
+                                <MudTd DataLabel="Distribution">
+                                    <MudProgressLinear Value="@rowPct" Color="@SchemaColor(context.Schema)" Rounded="true" Size="Size.Small" />
+                                </MudTd>
+                                <MudTd DataLabel="Actions">
+                                    <MudStack Row="true" Spacing="1">
+                                        @if (!string.IsNullOrEmpty(context.BrowseUrl))
+                                        {
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                                       StartIcon="@Icons.Material.Filled.Visibility"
+                                                       Href="@context.BrowseUrl">Browse</MudButton>
+                                        }
+                                        <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary"
+                                                       StartIcon="@Icons.Material.Filled.Download"
+                                                       Href="@($"api/export/{context.Schema}/{context.TableName}")"
+                                                       Target="_blank">CSV</MudButton>
+                                        </AuthorizeView>
+                                    </MudStack>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private long totalRows;
+    private string largestTable = "";
+    private long largestTableCount;
+    private List<EntityInfo> top10 = [];
+    private long top10Max;
+    private List<SchemaGroup> schemaGroups = [];
+
+    // ── Entity registry ──────────────────────────────────────────────────────
+    private static readonly List<EntityInfo> entities =
+    [
+        // dbo
+        new("dbo", "Bookings",               "Bookings",               "bookings"),
+        new("dbo", "Coupons",                 "Coupons",                "coupons"),
+        new("dbo", "ApiKeys",                 "API keys",               null),
+        new("dbo", "ToolSlotConfigurations",  "Tool slot configs",      "tool-slots"),
+        new("dbo", "RequestLogs",             "Request logs",           "admin/request-log"),
+
+        // Person
+        new("Person", "AddressType",             "Address types",              "aw/address-types"),
+        new("Person", "Address",                 "Addresses",                  "aw/addresses"),
+        new("Person", "BusinessEntity",          "Business entities",          "aw/business-entities"),
+        new("Person", "BusinessEntityAddress",   "Business entity addresses",  "aw/business-entity-addresses"),
+        new("Person", "BusinessEntityContact",   "Business entity contacts",   "aw/business-entity-contacts"),
+        new("Person", "ContactType",             "Contact types",              "aw/contact-types"),
+        new("Person", "CountryRegion",           "Country regions",            "aw/country-regions"),
+        new("Person", "EmailAddress",            "Email addresses",            "aw/email-addresses"),
+        new("Person", "Person",                  "Persons",                    "aw/persons"),
+        new("Person", "PersonPhone",             "Person phones",              "aw/person-phones"),
+        new("Person", "PhoneNumberType",         "Phone number types",         "aw/phone-number-types"),
+        new("Person", "StateProvince",           "State provinces",            "aw/state-provinces"),
+
+        // Production
+        new("Production", "BillOfMaterials",                          "Bill of materials",              "aw/bill-of-materials"),
+        new("Production", "Culture",                                  "Cultures",                       "aw/cultures"),
+        new("Production", "Document",                                 "Documents",                      "aw/documents"),
+        new("Production", "Illustration",                             "Illustrations",                  "aw/illustrations"),
+        new("Production", "Location",                                 "Locations",                      "aw/locations"),
+        new("Production", "Product",                                  "Products",                       "aw/products"),
+        new("Production", "ProductCategory",                          "Product categories",             "aw/product-categories"),
+        new("Production", "ProductCostHistory",                       "Product cost history",           "aw/product-cost-histories"),
+        new("Production", "ProductDescription",                       "Product descriptions",           "aw/product-descriptions"),
+        new("Production", "ProductDocument",                          "Product documents",              "aw/product-documents"),
+        new("Production", "ProductInventory",                         "Product inventory",              "aw/product-inventories"),
+        new("Production", "ProductListPriceHistory",                  "List price history",             "aw/product-list-price-histories"),
+        new("Production", "ProductModel",                             "Product models",                 "aw/product-models"),
+        new("Production", "ProductModelIllustration",                 "Model illustrations",            "aw/product-model-illustrations"),
+        new("Production", "ProductModelProductDescriptionCulture",    "Model desc cultures",            "aw/product-model-product-description-cultures"),
+        new("Production", "ProductPhoto",                             "Product photos",                 "aw/product-photos"),
+        new("Production", "ProductProductPhoto",                      "Product photos (junction)",      "aw/product-product-photos"),
+        new("Production", "ProductReview",                            "Product reviews",                "aw/product-reviews"),
+        new("Production", "ProductSubcategory",                       "Product subcategories",          "aw/product-subcategories"),
+        new("Production", "ScrapReason",                              "Scrap reasons",                  "aw/scrap-reasons"),
+        new("Production", "TransactionHistory",                       "Transaction history",            "aw/transaction-histories"),
+        new("Production", "TransactionHistoryArchive",                "Transaction archive",            "aw/transaction-history-archives"),
+        new("Production", "UnitMeasure",                              "Units of measure",               "aw/unit-measures"),
+        new("Production", "WorkOrder",                                "Work orders",                    "aw/work-orders"),
+        new("Production", "WorkOrderRouting",                         "Work order routings",            "aw/work-order-routings"),
+
+        // Sales
+        new("Sales", "CountryRegionCurrency",           "Country currencies",       "aw/country-region-currencies"),
+        new("Sales", "CreditCard",                      "Credit cards",             "aw/credit-cards"),
+        new("Sales", "Currency",                        "Currencies",               "aw/currencies"),
+        new("Sales", "CurrencyRate",                    "Currency rates",           "aw/currency-rates"),
+        new("Sales", "Customer",                        "Customers",                "aw/customers"),
+        new("Sales", "PersonCreditCard",                "Person credit cards",      "aw/person-credit-cards"),
+        new("Sales", "SalesOrderDetail",                "Sales order details",      "aw/sales-order-details"),
+        new("Sales", "SalesOrderHeader",                "Sales orders",             "aw/sales-order-headers"),
+        new("Sales", "SalesOrderHeaderSalesReason",     "Order reasons",            "aw/sales-order-header-sales-reasons"),
+        new("Sales", "SalesPerson",                     "Sales persons",            "aw/sales-persons"),
+        new("Sales", "SalesPersonQuotaHistory",         "Quota history",            "aw/sales-person-quota-histories"),
+        new("Sales", "SalesReason",                     "Sales reasons",            "aw/sales-reasons"),
+        new("Sales", "SalesTaxRate",                    "Sales tax rates",          "aw/sales-tax-rates"),
+        new("Sales", "SalesTerritory",                  "Sales territories",        "aw/sales-territories"),
+        new("Sales", "SalesTerritoryHistory",           "Territory history",        "aw/sales-territory-histories"),
+        new("Sales", "ShoppingCartItem",                "Shopping cart items",       "aw/shopping-cart-items"),
+        new("Sales", "SpecialOffer",                    "Special offers",           "aw/special-offers"),
+        new("Sales", "SpecialOfferProduct",             "Offer products",           "aw/special-offer-products"),
+        new("Sales", "Store",                           "Stores",                   "aw/stores"),
+
+        // Purchasing
+        new("Purchasing", "ProductVendor",         "Product vendors",         "aw/product-vendors"),
+        new("Purchasing", "PurchaseOrderDetail",   "PO details",              "aw/purchase-order-details"),
+        new("Purchasing", "PurchaseOrderHeader",   "Purchase orders",         "aw/purchase-order-headers"),
+        new("Purchasing", "ShipMethod",            "Ship methods",            "aw/ship-methods"),
+        new("Purchasing", "Vendor",                "Vendors",                 "aw/vendors"),
+
+        // HumanResources
+        new("HumanResources", "Department",                  "Departments",          "aw/departments"),
+        new("HumanResources", "Employee",                    "Employees",            "aw/employees"),
+        new("HumanResources", "EmployeeDepartmentHistory",   "Dept history",         "aw/employee-department-histories"),
+        new("HumanResources", "EmployeePayHistory",          "Pay history",          "aw/employee-pay-histories"),
+        new("HumanResources", "JobCandidate",                "Job candidates",       "aw/job-candidates"),
+        new("HumanResources", "Shift",                       "Shifts",               "aw/shifts"),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRowCountsAsync();
+        loading = false;
+    }
+
+    private async Task RefreshAsync()
+    {
+        loading = true;
+        StateHasChanged();
+        await LoadRowCountsAsync();
+        loading = false;
+    }
+
+    private async Task LoadRowCountsAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var conn = (SqlConnection)db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open)
+            await conn.OpenAsync();
+
+        var unions = string.Join("\nUNION ALL\n", entities.Select(e =>
+            $"SELECT '{e.Schema}' AS [S], '{e.TableName}' AS [T], " +
+            $"CASE WHEN OBJECT_ID(N'[{e.Schema}].[{e.TableName}]', 'U') IS NOT NULL " +
+            $"THEN (SELECT COUNT_BIG(*) FROM [{e.Schema}].[{e.TableName}]) ELSE NULL END AS [C]"));
+
+        await using var cmd = new SqlCommand(unions, conn);
+        cmd.CommandTimeout = 120;
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        var counts = new Dictionary<string, long?>(StringComparer.OrdinalIgnoreCase);
+        while (await reader.ReadAsync())
+        {
+            var key = $"{reader.GetString(0)}.{reader.GetString(1)}";
+            counts[key] = reader.IsDBNull(2) ? null : reader.GetInt64(2);
+        }
+
+        foreach (var e in entities)
+            e.RowCount = counts.GetValueOrDefault($"{e.Schema}.{e.TableName}");
+
+        totalRows = entities.Where(e => e.RowCount.HasValue).Sum(e => e.RowCount!.Value);
+
+        var largest = entities.Where(e => e.RowCount.HasValue).MaxBy(e => e.RowCount!.Value);
+        if (largest is not null)
+        {
+            largestTable = largest.DisplayName;
+            largestTableCount = largest.RowCount!.Value;
+        }
+
+        top10 = entities.Where(e => e.RowCount is > 0).OrderByDescending(e => e.RowCount!.Value).Take(10).ToList();
+        top10Max = top10.FirstOrDefault()?.RowCount ?? 1;
+
+        schemaGroups = entities
+            .GroupBy(e => e.Schema)
+            .Select(g => new SchemaGroup
+            {
+                Schema = g.Key,
+                Count = g.Count(),
+                TotalRows = g.Where(e => e.RowCount.HasValue).Sum(e => e.RowCount!.Value),
+                Entities = g.OrderByDescending(e => e.RowCount ?? 0).ToList(),
+            })
+            .OrderByDescending(g => g.TotalRows)
+            .ToList();
+    }
+
+    private static Color SchemaColor(string schema) => schema switch
+    {
+        "Production"     => Color.Primary,
+        "Sales"          => Color.Success,
+        "Person"         => Color.Info,
+        "Purchasing"     => Color.Warning,
+        "HumanResources" => Color.Secondary,
+        "dbo"            => Color.Dark,
+        _                => Color.Default,
+    };
+
+    private class EntityInfo(string schema, string tableName, string displayName, string? browseUrl)
+    {
+        public string Schema { get; } = schema;
+        public string TableName { get; } = tableName;
+        public string DisplayName { get; } = displayName;
+        public string? BrowseUrl { get; } = browseUrl;
+        public long? RowCount { get; set; }
+    }
+
+    private class SchemaGroup
+    {
+        public string Schema { get; init; } = "";
+        public int Count { get; init; }
+        public long TotalRows { get; init; }
+        public List<EntityInfo> Entities { get; init; } = [];
+    }
+}

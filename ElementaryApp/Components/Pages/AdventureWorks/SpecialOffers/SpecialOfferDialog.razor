@@ -1,0 +1,177 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateSpecialOfferRequest> CreateValidator
+@inject MudFormValidator<UpdateSpecialOfferRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create special offer" : $"Edit special offer #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                @RenderCreateFields()
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                @RenderUpdateFields()
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SpecialOfferDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateSpecialOfferRequest createModel = new() { StartDate = DateTime.UtcNow.Date, EndDate = DateTime.UtcNow.Date.AddDays(30) };
+    private UpdateSpecialOfferRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateSpecialOfferRequest
+            {
+                Description = Model.Description,
+                DiscountPct = Model.DiscountPct,
+                OfferType = Model.OfferType,
+                Category = Model.Category,
+                StartDate = Model.StartDate,
+                EndDate = Model.EndDate,
+                MinQty = Model.MinQty,
+                MaxQty = Model.MaxQty,
+            };
+        }
+    }
+
+    private RenderFragment RenderCreateFields() => __builder =>
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudTextField Value="@createModel.Description" ValueChanged="@((string? v) => createModel = createModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Required="true" MaxLength="255" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="decimal" Value="@createModel.DiscountPct" ValueChanged="@((decimal v) => createModel = createModel with { DiscountPct = v })" Label="Discount (0.0–1.0)" Variant="Variant.Outlined" Format="F4" Min="0m" Max="1m" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Value="@createModel.OfferType" ValueChanged="@((string? v) => createModel = createModel with { OfferType = v })" Label="Type" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Value="@createModel.Category" ValueChanged="@((string? v) => createModel = createModel with { Category = v })" Label="Category" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int" Value="@createModel.MinQty" ValueChanged="@((int v) => createModel = createModel with { MinQty = v })" Label="Min qty" Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="Start date" Date="@createModel.StartDate" DateChanged="@((DateTime? d) => createModel = createModel with { StartDate = d ?? DateTime.UtcNow.Date })" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="End date" Date="@createModel.EndDate" DateChanged="@((DateTime? d) => createModel = createModel with { EndDate = d ?? DateTime.UtcNow.Date })" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" Value="@createModel.MaxQty" ValueChanged="@((int? v) => createModel = createModel with { MaxQty = v })" Label="Max qty (optional)" Variant="Variant.Outlined" Clearable="true" Min="0" />
+            </MudItem>
+        </MudGrid>
+    };
+
+    private RenderFragment RenderUpdateFields() => __builder =>
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudTextField Value="@updateModel.Description" ValueChanged="@((string? v) => updateModel = updateModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Required="true" MaxLength="255" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="decimal?" Value="@updateModel.DiscountPct" ValueChanged="@((decimal? v) => updateModel = updateModel with { DiscountPct = v })" Label="Discount (0.0–1.0)" Variant="Variant.Outlined" Format="F4" Min="0m" Max="1m" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Value="@updateModel.OfferType" ValueChanged="@((string? v) => updateModel = updateModel with { OfferType = v })" Label="Type" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Value="@updateModel.Category" ValueChanged="@((string? v) => updateModel = updateModel with { Category = v })" Label="Category" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" Value="@updateModel.MinQty" ValueChanged="@((int? v) => updateModel = updateModel with { MinQty = v })" Label="Min qty" Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="Start date" Date="@updateModel.StartDate" DateChanged="@((DateTime? d) => updateModel = updateModel with { StartDate = d })" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="End date" Date="@updateModel.EndDate" DateChanged="@((DateTime? d) => updateModel = updateModel with { EndDate = d })" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="int?" Value="@updateModel.MaxQty" ValueChanged="@((int? v) => updateModel = updateModel with { MaxQty = v })" Label="Max qty (optional)" Variant="Variant.Outlined" Clearable="true" Min="0" />
+            </MudItem>
+        </MudGrid>
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                db.SpecialOffers.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.SpecialOfferAuditLogs.Add(SpecialOfferAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.SpecialOffers.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = SpecialOfferAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.SpecialOfferAuditLogs.Add(SpecialOfferAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

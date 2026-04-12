@@ -1,0 +1,183 @@
+@page "/Account/Manage/EnableAuthenticator"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityUserAccessor UserAccessor
+@inject UrlEncoder UrlEncoder
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<EnableAuthenticator> Logger
+
+<PageTitle>Enable authenticator</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">Configure authenticator app</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage Message="@message" />
+
+        <ShowRecoveryCodes Codes="@recoveryCodes" />
+
+        @if (recoveryCodes is null)
+        {
+            <ol class="enable-authenticator-steps">
+                <li>
+                    <MudText>
+                        Download a two-factor authenticator app such as
+                        <MudLink Href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" Target="_blank">Microsoft Authenticator</MudLink>,
+                        <MudLink Href="https://support.google.com/accounts/answer/1066447" Target="_blank">Google Authenticator</MudLink>,
+                        or 1Password / Bitwarden.
+                    </MudText>
+                </li>
+                <li>
+                    <MudText>
+                        Add a new account using either the otpauth URI below (mobile devices can
+                        usually open it directly) or by entering the manual setup key:
+                    </MudText>
+                    <MudPaper Class="pa-3 my-2" Outlined="true">
+                        <MudText Typo="Typo.body2"><strong>Manual setup key:</strong></MudText>
+                        <pre style="font-family:monospace;font-size:1rem;margin:4px 0 8px 0;">@sharedKey</pre>
+                        <MudText Typo="Typo.body2"><strong>otpauth URI:</strong></MudText>
+                        <MudLink Href="@authenticatorUri" Style="word-break:break-all;font-family:monospace;font-size:0.85rem;">@authenticatorUri</MudLink>
+                    </MudPaper>
+                </li>
+                <li>
+                    <MudText Class="mb-2">
+                        Once you have scanned the QR code or entered the key above, your
+                        authenticator app will provide a 6-digit code. Enter it here:
+                    </MudText>
+
+                    <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmitAsync" FormName="enable-authenticator">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="form-validation-summary" role="alert" />
+
+                        <div class="form-field">
+                            <label for="enable-code" class="form-label">Verification code</label>
+                            <InputText id="enable-code"
+                                       @bind-Value="Input.Code"
+                                       autocomplete="one-time-code"
+                                       inputmode="numeric"
+                                       class="form-control"
+                                       placeholder="123456" />
+                            <ValidationMessage For="@(() => Input.Code)" class="form-error" />
+                        </div>
+
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
+                            Verify
+                        </MudButton>
+                    </EditForm>
+                </li>
+            </ol>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private string? sharedKey;
+    private string? authenticatorUri;
+    private string[]? recoveryCodes;
+    private string? message;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        await LoadSharedKeyAndQrCodeUriAsync(user);
+    }
+
+    private async Task LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
+    {
+        var unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
+        if (string.IsNullOrEmpty(unformattedKey))
+        {
+            await UserManager.ResetAuthenticatorKeyAsync(user);
+            unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
+        }
+
+        sharedKey = FormatKey(unformattedKey!);
+        var email = await UserManager.GetEmailAsync(user) ?? "user";
+        authenticatorUri = string.Format(
+            CultureInfo.InvariantCulture,
+            AuthenticatorUriFormat,
+            UrlEncoder.Encode("ElementaryApp"),
+            UrlEncoder.Encode(email),
+            unformattedKey);
+    }
+
+    private static string FormatKey(string unformattedKey)
+    {
+        var result = new StringBuilder();
+        var currentPosition = 0;
+        while (currentPosition + 4 < unformattedKey.Length)
+        {
+            result.Append(unformattedKey.AsSpan(currentPosition, 4)).Append(' ');
+            currentPosition += 4;
+        }
+        if (currentPosition < unformattedKey.Length)
+        {
+            result.Append(unformattedKey.AsSpan(currentPosition));
+        }
+        return result.ToString().ToLowerInvariant();
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+
+        var verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
+        var is2faTokenValid = await UserManager.VerifyTwoFactorTokenAsync(
+            user, UserManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
+
+        if (!is2faTokenValid)
+        {
+            message = "Error: verification code is invalid.";
+            await LoadSharedKeyAndQrCodeUriAsync(user);
+            return;
+        }
+
+        await UserManager.SetTwoFactorEnabledAsync(user, true);
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        Logger.LogInformation("User with ID {UserId} has enabled 2FA via an authenticator app.", userId);
+
+        message = "Your authenticator app has been verified and 2FA is now enabled.";
+
+        if (await UserManager.CountRecoveryCodesAsync(user) == 0)
+        {
+            var codes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+            recoveryCodes = codes?.ToArray();
+        }
+        else
+        {
+            RedirectManager.RedirectToWithStatus(
+                "Account/Manage/TwoFactorAuthentication",
+                "Your authenticator app has been verified.",
+                HttpContext);
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Text)]
+        [Display(Name = "Verification Code")]
+        public string Code { get; set; } = "";
+    }
+}

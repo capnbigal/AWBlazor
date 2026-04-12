@@ -1,0 +1,121 @@
+@page "/aw/sales-persons"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Sales persons</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Sales persons</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesPerson</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-persons/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New sales person</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterTerritoryId" Label="Territory id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id" />
+            <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0" />
+            <PropertyColumn Property="x => x.Bonus" Title="Bonus" Format="C0" />
+            <PropertyColumn Property="x => x.CommissionPct" Title="Commission %" Format="P2" />
+            <PropertyColumn Property="x => x.SalesYtd" Title="YTD" Format="C0" />
+            <PropertyColumn Property="x => x.SalesLastYear" Title="Last year" Format="C0" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="SalesPersonDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<SalesPersonDto> grid = null!;
+    private int? filterTerritoryId;
+
+    private async Task<GridData<SalesPersonDto>> LoadServerDataAsync(GridState<SalesPersonDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SalesPersons.AsNoTracking();
+        if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesPersonDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(SalesPersonDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
+            nameof(SalesPersonDto.SalesYtd)      => sort.Descending ? query.OrderByDescending(x => x.SalesYtd)      : query.OrderBy(x => x.SalesYtd),
+            nameof(SalesPersonDto.SalesLastYear) => sort.Descending ? query.OrderByDescending(x => x.SalesLastYear) : query.OrderBy(x => x.SalesLastYear),
+            _                                    => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<SalesPersonDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<SalesPersonDialog>("New sales person", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales person created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(SalesPersonDto row)
+    {
+        var parameters = new DialogParameters<SalesPersonDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<SalesPersonDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales person updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(SalesPersonDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete sales person?", $"Permanently delete sales person #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.SalesPersons.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Sales person no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.SalesPersonAuditLogs.Add(SalesPersonAuditService.RecordDelete(entity, changedBy));
+        db.SalesPersons.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Sales person deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(SalesPersonDto row) => Navigation.NavigateTo($"aw/sales-persons/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

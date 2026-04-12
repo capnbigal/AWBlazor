@@ -1,0 +1,47 @@
+@page "/"
+
+<PageTitle>Elementary App</PageTitle>
+
+<MudStack Spacing="4">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h3" GutterBottom="true">Welcome to Elementary App</MudText>
+        <MudText Typo="Typo.body1">
+            This site has been migrated from ServiceStack + Vue to a pure Blazor Server stack
+            running on .NET 10, EF Core and MudBlazor. The remaining features (bookings CRUD,
+            tool-slot configurations, blog content, background jobs, request logging,
+            API keys and AI chat) will come back online in the upcoming phases of the migration.
+        </MudText>
+    </MudPaper>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Stack</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.Check">.NET 10</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Check">Blazor Server (Interactive)</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Check">MudBlazor 9</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Check">EF Core 10 + SQLite</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Check">ASP.NET Core Identity</MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Coming back next</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Bookings &amp; Coupons CRUD</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Tool Slot Configurations</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Hangfire SMTP jobs</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Serilog SQLite request log</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">API key auth</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Anthropic-backed AI chat</MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudStack>

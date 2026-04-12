@@ -1,0 +1,71 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using ElementaryApp.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+
+<PageTitle>Users</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">Users</MudText>
+
+    <MudDataGrid T="UserRow"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.UserName" Title="User name" />
+            <PropertyColumn Property="x => x.Email" Title="Email" />
+            <PropertyColumn Property="x => x.DisplayName" Title="Display name" />
+            <PropertyColumn Property="x => x.RolesText" Title="Roles" />
+            <PropertyColumn Property="x => x.EmailConfirmed" Title="Confirmed" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="UserRow" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    public sealed record UserRow(
+        string Id,
+        string? UserName,
+        string? Email,
+        string? DisplayName,
+        bool EmailConfirmed,
+        string RolesText);
+
+    private MudDataGrid<UserRow> grid = null!;
+
+    private async Task<GridData<UserRow>> LoadServerDataAsync(GridState<UserRow> state, CancellationToken ct)
+    {
+        var query = UserManager.Users.AsNoTracking();
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        var ordered = sort?.SortBy switch
+        {
+            nameof(UserRow.UserName)    => sort.Descending ? query.OrderByDescending(u => u.UserName)    : query.OrderBy(u => u.UserName),
+            nameof(UserRow.Email)       => sort.Descending ? query.OrderByDescending(u => u.Email)       : query.OrderBy(u => u.Email),
+            nameof(UserRow.DisplayName) => sort.Descending ? query.OrderByDescending(u => u.DisplayName) : query.OrderBy(u => u.DisplayName),
+            _                           => query.OrderBy(u => u.UserName),
+        };
+
+        var total = await ordered.CountAsync(ct);
+        var users = await ordered
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
+
+        var rows = new List<UserRow>(users.Count);
+        foreach (var u in users)
+        {
+            var roles = await UserManager.GetRolesAsync(u);
+            rows.Add(new UserRow(u.Id, u.UserName, u.Email, u.DisplayName, u.EmailConfirmed, string.Join(", ", roles)));
+        }
+
+        return new GridData<UserRow> { Items = rows, TotalItems = total };
+    }
+}

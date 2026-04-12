@@ -1,0 +1,49 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider @rendermode="InteractiveServer" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">Elementary App</MudText>
+        <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudText Class="mr-3">@context.User.Identity?.Name</MudText>
+                <form action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Inherit">
+                        Sign out
+                    </MudButton>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="Account/Login" Variant="Variant.Text" Color="Color.Inherit">Sign in</MudButton>
+                <MudButton Href="Account/Register" Variant="Variant.Text" Color="Color.Inherit">Register</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}

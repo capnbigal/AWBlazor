@@ -1,0 +1,190 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateSalesOrderHeaderRequest> CreateValidator
+@inject MudFormValidator<UpdateSalesOrderHeaderRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create sales order" : $"Edit order #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.OrderDate" DateChanged="@((DateTime? v) => createModel = createModel with { OrderDate = v ?? DateTime.UtcNow.Date })" Label="Order date" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.DueDate" DateChanged="@((DateTime? v) => createModel = createModel with { DueDate = v ?? DateTime.UtcNow.Date })" Label="Due date" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.ShipDate" DateChanged="@((DateTime? v) => createModel = createModel with { ShipDate = v })" Label="Ship date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudSelect T="byte" Value="@createModel.Status" ValueChanged="@((byte v) => createModel = createModel with { Status = v })" Label="Status" Variant="Variant.Outlined">
+                            <MudSelectItem T="byte" Value="1">1 — In process</MudSelectItem>
+                            <MudSelectItem T="byte" Value="2">2 — Approved</MudSelectItem>
+                            <MudSelectItem T="byte" Value="3">3 — Backordered</MudSelectItem>
+                            <MudSelectItem T="byte" Value="4">4 — Rejected</MudSelectItem>
+                            <MudSelectItem T="byte" Value="5">5 — Shipped</MudSelectItem>
+                            <MudSelectItem T="byte" Value="6">6 — Cancelled</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" sm="3"><MudSwitch T="bool" Value="@createModel.OnlineOrderFlag" ValueChanged="@((bool v) => createModel = createModel with { OnlineOrderFlag = v })" Label="Online order" Color="Color.Primary" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.CustomerId" ValueChanged="@((int v) => createModel = createModel with { CustomerId = v })" Label="Customer id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.SalesPersonId" ValueChanged="@((int? v) => createModel = createModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.TerritoryId" ValueChanged="@((int? v) => createModel = createModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.BillToAddressId" ValueChanged="@((int v) => createModel = createModel with { BillToAddressId = v })" Label="Bill-to address id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.ShipToAddressId" ValueChanged="@((int v) => createModel = createModel with { ShipToAddressId = v })" Label="Ship-to address id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.ShipMethodId" ValueChanged="@((int v) => createModel = createModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.CreditCardId" ValueChanged="@((int? v) => createModel = createModel with { CreditCardId = v })" Label="Credit card id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.CurrencyRateId" ValueChanged="@((int? v) => createModel = createModel with { CurrencyRateId = v })" Label="Currency rate id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.SubTotal" ValueChanged="@((decimal v) => createModel = createModel with { SubTotal = v })" Label="Subtotal" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.TaxAmt" ValueChanged="@((decimal v) => createModel = createModel with { TaxAmt = v })" Label="Tax" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.Freight" ValueChanged="@((decimal v) => createModel = createModel with { Freight = v })" Label="Freight" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@createModel.Comment" ValueChanged="@((string? v) => createModel = createModel with { Comment = v })" Label="Comment" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@updateModel.DueDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { DueDate = v })" Label="Due date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@updateModel.ShipDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { ShipDate = v })" Label="Ship date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudSelect T="byte?" Value="@updateModel.Status" ValueChanged="@((byte? v) => updateModel = updateModel with { Status = v })" Label="Status" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="byte?" Value="@((byte)1)">1 — In process</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="@((byte)2)">2 — Approved</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="@((byte)3)">3 — Backordered</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="@((byte)4)">4 — Rejected</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="@((byte)5)">5 — Shipped</MudSelectItem>
+                            <MudSelectItem T="byte?" Value="@((byte)6)">6 — Cancelled</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@updateModel.SalesPersonId" ValueChanged="@((int? v) => updateModel = updateModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@updateModel.ShipMethodId" ValueChanged="@((int? v) => updateModel = updateModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.SubTotal" ValueChanged="@((decimal? v) => updateModel = updateModel with { SubTotal = v })" Label="Subtotal" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.TaxAmt" ValueChanged="@((decimal? v) => updateModel = updateModel with { TaxAmt = v })" Label="Tax" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.Freight" ValueChanged="@((decimal? v) => updateModel = updateModel with { Freight = v })" Label="Freight" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@updateModel.Comment" ValueChanged="@((string? v) => updateModel = updateModel with { Comment = v })" Label="Comment" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SalesOrderHeaderDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateSalesOrderHeaderRequest createModel = new() { OrderDate = DateTime.UtcNow.Date, DueDate = DateTime.UtcNow.Date.AddDays(14), Status = 1 };
+    private UpdateSalesOrderHeaderRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateSalesOrderHeaderRequest
+            {
+                DueDate = Model.DueDate,
+                ShipDate = Model.ShipDate,
+                Status = Model.Status,
+                SalesPersonId = Model.SalesPersonId,
+                ShipMethodId = Model.ShipMethodId,
+                SubTotal = Model.SubTotal,
+                TaxAmt = Model.TaxAmt,
+                Freight = Model.Freight,
+                Comment = Model.Comment,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate required FKs
+                if (!await db.Customers.AnyAsync(x => x.Id == createModel.CustomerId))
+                { Snackbar.Add($"Customer #{createModel.CustomerId} does not exist.", Severity.Error); return; }
+                if (!await db.Addresses.AnyAsync(x => x.Id == createModel.BillToAddressId))
+                { Snackbar.Add($"Address #{createModel.BillToAddressId} does not exist.", Severity.Error); return; }
+                if (!await db.Addresses.AnyAsync(x => x.Id == createModel.ShipToAddressId))
+                { Snackbar.Add($"Address #{createModel.ShipToAddressId} does not exist.", Severity.Error); return; }
+                if (!await db.ShipMethods.AnyAsync(x => x.Id == createModel.ShipMethodId))
+                { Snackbar.Add($"Ship method #{createModel.ShipMethodId} does not exist.", Severity.Error); return; }
+                // Validate optional FKs
+                if (createModel.SalesPersonId.HasValue && !await db.SalesPersons.AnyAsync(x => x.Id == createModel.SalesPersonId.Value))
+                { Snackbar.Add($"Sales person #{createModel.SalesPersonId.Value} does not exist.", Severity.Error); return; }
+                if (createModel.TerritoryId.HasValue && !await db.SalesTerritories.AnyAsync(x => x.Id == createModel.TerritoryId.Value))
+                { Snackbar.Add($"Territory #{createModel.TerritoryId.Value} does not exist.", Severity.Error); return; }
+                if (createModel.CreditCardId.HasValue && !await db.CreditCards.AnyAsync(x => x.Id == createModel.CreditCardId.Value))
+                { Snackbar.Add($"Credit card #{createModel.CreditCardId.Value} does not exist.", Severity.Error); return; }
+                if (createModel.CurrencyRateId.HasValue && !await db.CurrencyRates.AnyAsync(x => x.Id == createModel.CurrencyRateId.Value))
+                { Snackbar.Add($"Currency rate #{createModel.CurrencyRateId.Value} does not exist.", Severity.Error); return; }
+
+                var entity = createModel.ToEntity();
+                db.SalesOrderHeaders.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                var reloaded = await db.SalesOrderHeaders.AsNoTracking().FirstAsync(x => x.Id == entity.Id);
+                db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordCreate(reloaded, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.SalesOrderHeaders.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = SalesOrderHeaderAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                // Validate optional FKs on update
+                if (updateModel.SalesPersonId.HasValue && !await db.SalesPersons.AnyAsync(x => x.Id == updateModel.SalesPersonId.Value))
+                { Snackbar.Add($"Sales person #{updateModel.SalesPersonId.Value} does not exist.", Severity.Error); return; }
+                if (updateModel.ShipMethodId.HasValue && !await db.ShipMethods.AnyAsync(x => x.Id == updateModel.ShipMethodId.Value))
+                { Snackbar.Add($"Ship method #{updateModel.ShipMethodId.Value} does not exist.", Severity.Error); return; }
+                db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

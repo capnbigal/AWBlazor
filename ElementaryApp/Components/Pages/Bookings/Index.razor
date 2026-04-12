@@ -1,0 +1,156 @@
+@page "/bookings"
+@attribute [Authorize]
+@using ElementaryApp.Components.Pages.Bookings
+@using ElementaryApp.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Bookings</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Bookings</MudText>
+        <MudSpacer />
+        <MudSwitch T="bool" @bind-Value="includeDeleted" Color="Color.Warning" Label="Show deleted" />
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">
+                New booking
+            </MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="BookingDto"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid"
+                 Dense="true"
+                 Hover="true"
+                 Bordered="false"
+                 Striped="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.RoomType" Title="Room type" />
+            <PropertyColumn Property="x => x.RoomNumber" Title="Room #" />
+            <PropertyColumn Property="x => x.BookingStartDate" Title="Start" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.BookingEndDate" Title="End" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.Cost" Title="Cost" Format="C2" />
+            <PropertyColumn Property="x => x.CouponId" Title="Coupon" />
+            <PropertyColumn Property="x => x.CreatedBy" Title="Created by" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="BookingDto" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<BookingDto> grid = null!;
+    private bool includeDeleted;
+
+    private async Task<GridData<BookingDto>> LoadServerDataAsync(GridState<BookingDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+
+        var query = db.Bookings.AsNoTracking();
+        if (!includeDeleted)
+            query = query.Where(b => b.DeletedDate == null);
+
+        var total = await query.CountAsync(ct);
+
+        // Single-column sort, fallback to CreatedDate desc.
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(BookingDto.Id)               => sort.Descending ? query.OrderByDescending(b => b.Id)               : query.OrderBy(b => b.Id),
+            nameof(BookingDto.Name)             => sort.Descending ? query.OrderByDescending(b => b.Name)             : query.OrderBy(b => b.Name),
+            nameof(BookingDto.RoomType)         => sort.Descending ? query.OrderByDescending(b => b.RoomType)         : query.OrderBy(b => b.RoomType),
+            nameof(BookingDto.RoomNumber)       => sort.Descending ? query.OrderByDescending(b => b.RoomNumber)       : query.OrderBy(b => b.RoomNumber),
+            nameof(BookingDto.BookingStartDate) => sort.Descending ? query.OrderByDescending(b => b.BookingStartDate) : query.OrderBy(b => b.BookingStartDate),
+            nameof(BookingDto.Cost)             => sort.Descending ? query.OrderByDescending(b => b.Cost)             : query.OrderBy(b => b.Cost),
+            _                                   => query.OrderByDescending(b => b.CreatedDate),
+        };
+
+        var rows = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .Select(b => b.ToDto())
+            .ToListAsync(ct);
+
+        return new GridData<BookingDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<BookingDialog>("Create booking", new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseButton = true,
+        });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            Snackbar.Add("Booking created.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task OpenEditAsync(BookingDto booking)
+    {
+        var parameters = new DialogParameters<BookingDialog> { { x => x.Booking, booking } };
+        var dialog = await DialogService.ShowAsync<BookingDialog>("Edit booking", parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseButton = true,
+        });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            Snackbar.Add("Booking updated.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task DeleteAsync(BookingDto booking)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete booking?",
+            $"Soft-delete booking #{booking.Id} ({booking.Name})? It will be hidden from the default view but kept in the database.",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id);
+        if (entity is null)
+        {
+            Snackbar.Add("Booking no longer exists.", Severity.Warning);
+            await grid.ReloadServerData();
+            return;
+        }
+        entity.DeletedDate = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        Snackbar.Add("Booking deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+}

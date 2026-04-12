@@ -1,0 +1,12 @@
+@page "/Account/AccessDenied"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Access denied</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" Color="Color.Error" GutterBottom="true">Access denied</MudText>
+        <MudText>You do not have permission to view this resource.</MudText>
+    </MudPaper>
+</MudContainer>

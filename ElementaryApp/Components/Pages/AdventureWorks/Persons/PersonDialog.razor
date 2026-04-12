@@ -1,0 +1,189 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreatePersonRequest> CreateValidator
+@inject MudFormValidator<UpdatePersonRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create person" : $"Edit person #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" Value="@createModel.PersonType" ValueChanged="@((string? v) => createModel = createModel with { PersonType = v })" Label="Person type" Variant="Variant.Outlined" Required="true">
+                            <MudSelectItem Value="@("SC")">SC — Store contact</MudSelectItem>
+                            <MudSelectItem Value="@("IN")">IN — Individual</MudSelectItem>
+                            <MudSelectItem Value="@("SP")">SP — Sales person</MudSelectItem>
+                            <MudSelectItem Value="@("EM")">EM — Employee</MudSelectItem>
+                            <MudSelectItem Value="@("VC")">VC — Vendor contact</MudSelectItem>
+                            <MudSelectItem Value="@("GC")">GC — General contact</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@createModel.Title" ValueChanged="@((string? v) => createModel = createModel with { Title = v })" Label="Title" Variant="Variant.Outlined" MaxLength="8" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@createModel.FirstName" ValueChanged="@((string? v) => createModel = createModel with { FirstName = v })" Label="First name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@createModel.MiddleName" ValueChanged="@((string? v) => createModel = createModel with { MiddleName = v })" Label="Middle name" Variant="Variant.Outlined" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.LastName" ValueChanged="@((string? v) => createModel = createModel with { LastName = v })" Label="Last name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.Suffix" ValueChanged="@((string? v) => createModel = createModel with { Suffix = v })" Label="Suffix" Variant="Variant.Outlined" MaxLength="10" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.EmailPromotion" ValueChanged="@((int v) => createModel = createModel with { EmailPromotion = v })" Label="Email promotion (0=none, 1=AW only, 2=AW+partners)" Variant="Variant.Outlined" Min="0" Max="2" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch T="bool" Value="@createModel.NameStyle" ValueChanged="@((bool v) => createModel = createModel with { NameStyle = v })" Label="Eastern name style" Color="Color.Primary" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string?" Value="@updateModel.PersonType" ValueChanged="@((string? v) => updateModel = updateModel with { PersonType = v })" Label="Person type" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="string?" Value="@("SC")">SC — Store contact</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("IN")">IN — Individual</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("SP")">SP — Sales person</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("EM")">EM — Employee</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("VC")">VC — Vendor contact</MudSelectItem>
+                            <MudSelectItem T="string?" Value="@("GC")">GC — General contact</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.Title" ValueChanged="@((string? v) => updateModel = updateModel with { Title = v })" Label="Title" Variant="Variant.Outlined" MaxLength="8" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@updateModel.FirstName" ValueChanged="@((string? v) => updateModel = updateModel with { FirstName = v })" Label="First name" Variant="Variant.Outlined" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@updateModel.MiddleName" ValueChanged="@((string? v) => updateModel = updateModel with { MiddleName = v })" Label="Middle name" Variant="Variant.Outlined" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@updateModel.LastName" ValueChanged="@((string? v) => updateModel = updateModel with { LastName = v })" Label="Last name" Variant="Variant.Outlined" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.Suffix" ValueChanged="@((string? v) => updateModel = updateModel with { Suffix = v })" Label="Suffix" Variant="Variant.Outlined" MaxLength="10" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.EmailPromotion" ValueChanged="@((int? v) => updateModel = updateModel with { EmailPromotion = v })" Label="Email promotion" Variant="Variant.Outlined" Clearable="true" Min="0" Max="2" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSwitch T="bool" Value="@(updateModel.NameStyle ?? false)" ValueChanged="@((bool v) => updateModel = updateModel with { NameStyle = v })" Label="Eastern name style" Color="Color.Primary" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public PersonDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreatePersonRequest createModel = new() { PersonType = "GC" };
+    private UpdatePersonRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdatePersonRequest
+            {
+                PersonType = Model.PersonType,
+                NameStyle = Model.NameStyle,
+                Title = Model.Title,
+                FirstName = Model.FirstName,
+                MiddleName = Model.MiddleName,
+                LastName = Model.LastName,
+                Suffix = Model.Suffix,
+                EmailPromotion = Model.EmailPromotion,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                if (await db.Persons.AnyAsync(x => x.Id == createModel.Id))
+                {
+                    Snackbar.Add($"Person #{createModel.Id} already exists.", Severity.Error);
+                    return;
+                }
+                var entity = createModel.ToEntity();
+                db.Persons.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.PersonAuditLogs.Add(PersonAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.Persons.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = PersonAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.PersonAuditLogs.Add(PersonAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

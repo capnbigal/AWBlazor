@@ -1,0 +1,122 @@
+@page "/aw/employee-department-histories"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Employee department history</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Employee department history</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">HumanResources.EmployeeDepartmentHistory · 4-column composite PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/employee-department-histories/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New assignment</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterBusinessEntityId" Label="Employee id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudNumericField T="short?" @bind-Value="filterDepartmentId" Label="Department id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee" />
+            <PropertyColumn Property="x => x.DepartmentId" Title="Dept" />
+            <PropertyColumn Property="x => x.ShiftId" Title="Shift" />
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="EmployeeDepartmentHistoryDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<EmployeeDepartmentHistoryDto> grid = null!;
+    private int? filterBusinessEntityId;
+    private short? filterDepartmentId;
+
+    private async Task<GridData<EmployeeDepartmentHistoryDto>> LoadServerDataAsync(GridState<EmployeeDepartmentHistoryDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.EmployeeDepartmentHistories.AsNoTracking();
+        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        if (filterDepartmentId.HasValue) query = query.Where(x => x.DepartmentId == filterDepartmentId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query
+            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.DepartmentId)
+            .ThenBy(x => x.ShiftId).ThenByDescending(x => x.StartDate)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<EmployeeDepartmentHistoryDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<EmployeeDepartmentHistoryDialog>("New assignment", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Assignment created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(EmployeeDepartmentHistoryDto row)
+    {
+        var parameters = new DialogParameters<EmployeeDepartmentHistoryDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<EmployeeDepartmentHistoryDialog>($"Edit assignment ({row.BusinessEntityId}/{row.DepartmentId}/{row.ShiftId}/{row.StartDate:yyyy-MM-dd})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Assignment updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(EmployeeDepartmentHistoryDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete assignment?", $"Permanently delete assignment ({row.BusinessEntityId}/{row.DepartmentId}/{row.ShiftId}/{row.StartDate:yyyy-MM-dd})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.EmployeeDepartmentHistories
+            .FirstOrDefaultAsync(t => t.BusinessEntityId == row.BusinessEntityId
+                && t.DepartmentId == row.DepartmentId
+                && t.ShiftId == row.ShiftId
+                && t.StartDate == row.StartDate);
+        if (entity is null) { Snackbar.Add("Assignment no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.EmployeeDepartmentHistoryAuditLogs.Add(EmployeeDepartmentHistoryAuditService.RecordDelete(entity, changedBy));
+        db.EmployeeDepartmentHistories.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Assignment deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(EmployeeDepartmentHistoryDto row)
+        => Navigation.NavigateTo($"aw/employee-department-histories/history?businessEntityId={row.BusinessEntityId}&departmentId={row.DepartmentId}&shiftId={row.ShiftId}&startDate={row.StartDate:yyyy-MM-dd}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

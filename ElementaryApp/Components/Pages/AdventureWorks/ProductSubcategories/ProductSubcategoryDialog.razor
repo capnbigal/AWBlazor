@@ -1,0 +1,127 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductSubcategoryRequest> CreateValidator
+@inject MudFormValidator<UpdateProductSubcategoryRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create subcategory" : $"Edit subcategory #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="int" Value="@createModel.ProductCategoryId" ValueChanged="@((int v) => createModel = createModel with { ProductCategoryId = v })" Label="Category id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        <MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="int?" Value="@updateModel.ProductCategoryId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductCategoryId = v })" Label="Category id" Variant="Variant.Outlined" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        <MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProductSubcategoryDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateProductSubcategoryRequest createModel = new();
+    private UpdateProductSubcategoryRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+            updateModel = new UpdateProductSubcategoryRequest { Name = Model.Name, ProductCategoryId = Model.ProductCategoryId };
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate required FK
+                if (!await db.ProductCategories.AnyAsync(x => x.Id == createModel.ProductCategoryId))
+                { Snackbar.Add($"Product category #{createModel.ProductCategoryId} does not exist.", Severity.Error); return; }
+
+                var entity = createModel.ToEntity();
+                db.ProductSubcategories.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.ProductSubcategoryAuditLogs.Add(ProductSubcategoryAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.ProductSubcategories.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = ProductSubcategoryAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                // Validate optional FK on update
+                if (updateModel.ProductCategoryId.HasValue && !await db.ProductCategories.AnyAsync(x => x.Id == updateModel.ProductCategoryId.Value))
+                { Snackbar.Add($"Product category #{updateModel.ProductCategoryId.Value} does not exist.", Severity.Error); return; }
+                db.ProductSubcategoryAuditLogs.Add(ProductSubcategoryAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

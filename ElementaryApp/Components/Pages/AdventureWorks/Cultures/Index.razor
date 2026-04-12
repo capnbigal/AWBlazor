@@ -1,0 +1,121 @@
+@page "/aw/cultures"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Cultures</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Cultures</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Culture</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/cultures/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New culture</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="CultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.CultureId" Title="Culture ID" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="CultureDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<CultureDto> grid = null!;
+    private string? filterName;
+
+    private async Task<GridData<CultureDto>> LoadServerDataAsync(GridState<CultureDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Cultures.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterName))
+        {
+            var needle = filterName.Trim();
+            query = query.Where(x => x.Name.Contains(needle));
+        }
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CultureDto.CultureId)    => sort.Descending ? query.OrderByDescending(x => x.CultureId)    : query.OrderBy(x => x.CultureId),
+            nameof(CultureDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+            nameof(CultureDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _                               => query.OrderBy(x => x.CultureId),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<CultureDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<CultureDialog>("New culture", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Culture created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(CultureDto row)
+    {
+        var parameters = new DialogParameters<CultureDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<CultureDialog>($"Edit {row.CultureId}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Culture updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(CultureDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete culture?", $"Permanently delete culture {row.CultureId} ({row.Name})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Cultures.FirstOrDefaultAsync(t => t.CultureId == row.CultureId);
+        if (entity is null) { Snackbar.Add("Culture no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.CultureAuditLogs.Add(CultureAuditService.RecordDelete(entity, changedBy));
+        db.Cultures.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Culture deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(CultureDto row) => Navigation.NavigateTo($"aw/cultures/history/{row.CultureId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

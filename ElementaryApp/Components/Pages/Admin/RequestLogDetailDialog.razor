@@ -1,0 +1,98 @@
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Request Log Detail
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Time" Variant="Variant.Outlined">@Row.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss.fff")</MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Level" Variant="Variant.Outlined">
+                        <MudChip T="string" Color="@GetLevelColor(Row.Level)" Size="Size.Small">@(Row.Level ?? "—")</MudChip>
+                    </MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Method" Variant="Variant.Outlined">@(Row.RequestMethod ?? "—")</MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Path" Variant="Variant.Outlined">@(Row.RequestPath ?? "—")</MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="User" Variant="Variant.Outlined">@(Row.UserName ?? "—")</MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Remote IP" Variant="Variant.Outlined">@(Row.RemoteIp ?? "—")</MudField>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudField Label="Machine" Variant="Variant.Outlined">@(Row.MachineName ?? "—")</MudField>
+                </MudItem>
+            </MudGrid>
+
+            <MudText Typo="Typo.subtitle2">Message</MudText>
+            <MudPaper Outlined="true" Class="pa-3" Style="max-height:300px; overflow-y:auto;">
+                <pre style="white-space:pre-wrap; word-break:break-word; margin:0;">@(Row.Message ?? "—")</pre>
+            </MudPaper>
+
+            @if (!string.IsNullOrWhiteSpace(Row.Exception))
+            {
+                <MudText Typo="Typo.subtitle2" Color="Color.Error">Exception</MudText>
+                <MudPaper Outlined="true" Class="pa-3" Style="max-height:300px; overflow-y:auto;">
+                    <pre style="white-space:pre-wrap; word-break:break-word; margin:0; color:var(--mud-palette-error);">@Row.Exception</pre>
+                </MudPaper>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Row.LogEvent))
+            {
+                <MudText Typo="Typo.subtitle2">Log Event JSON</MudText>
+                <MudPaper Outlined="true" Class="pa-3" Style="max-height:300px; overflow-y:auto;">
+                    <pre style="white-space:pre-wrap; word-break:break-word; margin:0;">@Row.LogEvent</pre>
+                </MudPaper>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Variant="Variant.Text">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public RequestLogRow Row { get; set; } = default!;
+
+    private void Close() => MudDialog.Close();
+
+    /// <summary>
+    /// Shared record used by both the grid page and this detail dialog.
+    /// </summary>
+    public sealed record RequestLogRow(
+        DateTime TimeStamp,
+        string? Level,
+        string? Message,
+        string? Exception,
+        string? RequestMethod,
+        string? RequestPath,
+        string? UserName,
+        string? RemoteIp,
+        string? MachineName,
+        string? LogEvent);
+
+    private static Color GetLevelColor(string? level) => level switch
+    {
+        "Fatal" => Color.Dark,
+        "Error" => Color.Error,
+        "Warning" => Color.Warning,
+        "Information" => Color.Info,
+        "Debug" => Color.Default,
+        "Verbose" => Color.Default,
+        _ => Color.Default,
+    };
+}

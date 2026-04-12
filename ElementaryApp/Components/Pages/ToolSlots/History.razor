@@ -1,0 +1,166 @@
+@page "/tool-slots/history"
+@page "/tool-slots/history/{SlotId:int}"
+@attribute [Authorize]
+@using ElementaryApp.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Tool slot history@(SlotId is null ? "" : $" — #{SlotId}")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       Size="Size.Medium"
+                       OnClick="@(() => Navigation.NavigateTo("tool-slots"))" />
+        <MudText Typo="Typo.h4">
+            @(SlotId is null ? "Tool slot history" : $"History for tool slot #{SlotId}")
+        </MudText>
+        <MudSpacer />
+        @if (SlotId is not null)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.List"
+                       Href="tool-slots/history">
+                All history
+            </MudButton>
+        }
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Color="Color.Secondary">
+        Every create, update, and delete of a tool slot configuration is recorded here. Each row is
+        a snapshot of the row at the time of the change — even deleted rows can be reviewed.
+    </MudText>
+
+    @if (SlotId is null)
+    {
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="3">
+                    <MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" />
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                        <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudNumericField T="int?" @bind-Value="filterToolSlotId" Label="Tool slot id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+                </MudItem>
+                <MudItem xs="12" sm="3" Class="d-flex align-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.FilterAlt" OnClick="ApplyFilter" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="ClearFilter" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+
+    <MudDataGrid T="ToolSlotAuditLogDto"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.ToolSlotConfigurationId" Title="Slot #" />
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="@ActionColor(context.Item.Action)"
+                             Variant="Variant.Filled">
+                        @context.Item.Action
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
+            <PropertyColumn Property="x => x.Family" Title="Family" />
+            <PropertyColumn Property="x => x.MtCode" Title="MT code" />
+            <PropertyColumn Property="x => x.Destination" Title="Destination" />
+            <PropertyColumn Property="x => x.IsActive" Title="Active" />
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="ToolSlotAuditLogDto" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter] public int? SlotId { get; set; }
+
+    private MudDataGrid<ToolSlotAuditLogDto> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+    private int? filterToolSlotId;
+
+    private async Task<GridData<ToolSlotAuditLogDto>> LoadServerDataAsync(GridState<ToolSlotAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ToolSlotAuditLogs.AsNoTracking();
+
+        // Route-param filter takes precedence over the UI filter.
+        var scopedSlotId = SlotId ?? filterToolSlotId;
+        if (scopedSlotId.HasValue)
+        {
+            query = query.Where(a => a.ToolSlotConfigurationId == scopedSlotId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterAction))
+        {
+            query = query.Where(a => a.Action == filterAction);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var needle = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
+        }
+
+        var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ToolSlotAuditLogDto.ChangedDate)              => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)              : query.OrderBy(a => a.ChangedDate),
+            nameof(ToolSlotAuditLogDto.ToolSlotConfigurationId)  => sort.Descending ? query.OrderByDescending(a => a.ToolSlotConfigurationId)  : query.OrderBy(a => a.ToolSlotConfigurationId),
+            nameof(ToolSlotAuditLogDto.ChangedBy)                => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)                : query.OrderBy(a => a.ChangedBy),
+            nameof(ToolSlotAuditLogDto.Family)                   => sort.Descending ? query.OrderByDescending(a => a.Family)                   : query.OrderBy(a => a.Family),
+            nameof(ToolSlotAuditLogDto.MtCode)                   => sort.Descending ? query.OrderByDescending(a => a.MtCode)                   : query.OrderBy(a => a.MtCode),
+            nameof(ToolSlotAuditLogDto.Destination)              => sort.Descending ? query.OrderByDescending(a => a.Destination)              : query.OrderBy(a => a.Destination),
+            nameof(ToolSlotAuditLogDto.IsActive)                 => sort.Descending ? query.OrderByDescending(a => a.IsActive)                 : query.OrderBy(a => a.IsActive),
+            _                                                    => query.OrderByDescending(a => a.ChangedDate),
+        };
+
+        var rows = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .Select(a => a.ToDto())
+            .ToListAsync(ct);
+
+        return new GridData<ToolSlotAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task ClearFilter()
+    {
+        filterChangedBy = null;
+        filterAction = null;
+        filterToolSlotId = null;
+        await grid.ReloadServerData();
+    }
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success,
+        "Updated" => Color.Info,
+        "Deleted" => Color.Error,
+        _         => Color.Default,
+    };
+}

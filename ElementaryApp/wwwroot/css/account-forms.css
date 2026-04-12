@@ -1,0 +1,62 @@
+/* Shared styling for the static-SSR Identity forms.
+   These pages use Blazor's built-in <InputText>/<InputCheckbox> rather than MudBlazor inputs
+   because MudBlazor 9.x components don't emit the HTML "name" attribute that Blazor's
+   static-SSR form binder needs to populate [SupplyParameterFromForm] properties.
+   We hand-style the inputs with MudBlazor's CSS variables so they look reasonably consistent
+   with the rest of the app. */
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.form-control {
+    padding: 10px 12px;
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: 4px;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    font: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--mud-palette-primary);
+    box-shadow: 0 0 0 1px var(--mud-palette-primary);
+}
+
+.form-control.invalid {
+    border-color: var(--mud-palette-error);
+}
+
+.form-error {
+    color: var(--mud-palette-error);
+    font-size: 0.75rem;
+}
+
+.form-check-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.form-validation-summary {
+    color: var(--mud-palette-error);
+    margin-bottom: 12px;
+}
+
+.form-validation-summary ul {
+    margin: 0;
+    padding-left: 20px;
+}

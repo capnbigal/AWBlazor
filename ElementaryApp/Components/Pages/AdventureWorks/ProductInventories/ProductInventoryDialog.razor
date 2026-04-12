@@ -1,0 +1,145 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@using ElementaryApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductInventoryRequest> CreateValidator
+@inject MudFormValidator<UpdateProductInventoryRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create inventory row" : $"Edit inventory ({Model!.ProductId}, {Model.LocationId})")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="short" Value="@createModel.LocationId" ValueChanged="@((short v) => createModel = createModel with { LocationId = v })" Label="Location id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@createModel.Shelf" ValueChanged="@((string? v) => createModel = createModel with { Shelf = v })" Label="Shelf" Variant="Variant.Outlined" Required="true" MaxLength="10" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="byte" Value="@createModel.Bin" ValueChanged="@((byte v) => createModel = createModel with { Bin = v })" Label="Bin (0–100)" Variant="Variant.Outlined" Min="0" Max="100" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="short" Value="@createModel.Quantity" ValueChanged="@((short v) => createModel = createModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" Min="0" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4">
+                        <MudTextField Value="@updateModel.Shelf" ValueChanged="@((string? v) => updateModel = updateModel with { Shelf = v })" Label="Shelf" Variant="Variant.Outlined" MaxLength="10" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="byte?" Value="@updateModel.Bin" ValueChanged="@((byte? v) => updateModel = updateModel with { Bin = v })" Label="Bin (0–100)" Variant="Variant.Outlined" Clearable="true" Min="0" Max="100" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="short?" Value="@updateModel.Quantity" ValueChanged="@((short? v) => updateModel = updateModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" Clearable="true" Min="0" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProductInventoryDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateProductInventoryRequest createModel = new();
+    private UpdateProductInventoryRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateProductInventoryRequest
+            {
+                Shelf = Model.Shelf,
+                Bin = Model.Bin,
+                Quantity = Model.Quantity,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                if (await db.ProductInventories.AnyAsync(x =>
+                        x.ProductId == createModel.ProductId && x.LocationId == createModel.LocationId))
+                {
+                    Snackbar.Add("Inventory row for that product + location already exists.", Severity.Error);
+                    return;
+                }
+                var entity = createModel.ToEntity();
+                db.ProductInventories.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.ProductInventoryAuditLogs.Add(ProductInventoryAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.ProductInventories.FirstOrDefaultAsync(t =>
+                    t.ProductId == Model!.ProductId && t.LocationId == Model.LocationId);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = ProductInventoryAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.ProductInventoryAuditLogs.Add(ProductInventoryAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

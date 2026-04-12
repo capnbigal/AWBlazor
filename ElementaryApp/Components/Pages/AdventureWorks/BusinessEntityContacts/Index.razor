@@ -1,0 +1,103 @@
+@page "/aw/business-entity-contacts"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Business entity contacts</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Business entity ↔ contact</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Person.BusinessEntityContact · 3-column composite PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/business-entity-contacts/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterBusinessEntityId" Label="Business entity id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id" />
+            <PropertyColumn Property="x => x.PersonId" Title="Person id" />
+            <PropertyColumn Property="x => x.ContactTypeId" Title="Contact type id" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="BusinessEntityContactDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<BusinessEntityContactDto> grid = null!;
+    private int? filterBusinessEntityId;
+
+    private async Task<GridData<BusinessEntityContactDto>> LoadServerDataAsync(GridState<BusinessEntityContactDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.BusinessEntityContacts.AsNoTracking();
+        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query
+            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.ContactTypeId).ThenBy(x => x.PersonId)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<BusinessEntityContactDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<BusinessEntityContactDialog>("Link a business entity to a contact", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(BusinessEntityContactDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete link?", $"Permanently delete link ({row.BusinessEntityId}, {row.PersonId}, {row.ContactTypeId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.BusinessEntityContacts.FirstOrDefaultAsync(t =>
+            t.BusinessEntityId == row.BusinessEntityId
+            && t.PersonId == row.PersonId
+            && t.ContactTypeId == row.ContactTypeId);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.BusinessEntityContactAuditLogs.Add(BusinessEntityContactAuditService.RecordDelete(entity, changedBy));
+        db.BusinessEntityContacts.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Link deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(BusinessEntityContactDto row)
+        => Navigation.NavigateTo($"aw/business-entity-contacts/history?businessEntityId={row.BusinessEntityId}&personId={row.PersonId}&contactTypeId={row.ContactTypeId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -1,0 +1,114 @@
+@page "/aw/work-order-routings"
+@attribute [Authorize]
+@using ElementaryApp.Data.Entities.AdventureWorks
+@using ElementaryApp.Models.AdventureWorks
+@using ElementaryApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Work order routings</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Work order routings</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.WorkOrderRouting · 3-col PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/work-order-routings/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New routing</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.WorkOrderId" Title="Work order" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.OperationSequence" Title="Op seq" />
+            <PropertyColumn Property="x => x.LocationId" Title="Location" />
+            <PropertyColumn Property="x => x.ScheduledStartDate" Title="Sched start" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ScheduledEndDate" Title="Sched end" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.PlannedCost" Title="Planned cost" Format="C2" />
+            <PropertyColumn Property="x => x.ActualCost" Title="Actual cost" Format="C2" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="WorkOrderRoutingDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<WorkOrderRoutingDto> grid = null!;
+    private int? filterWorkOrderId;
+
+    private async Task<GridData<WorkOrderRoutingDto>> LoadServerDataAsync(GridState<WorkOrderRoutingDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.WorkOrderRoutings.AsNoTracking();
+        if (filterWorkOrderId.HasValue) query = query.Where(x => x.WorkOrderId == filterWorkOrderId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.WorkOrderId).ThenBy(x => x.ProductId).ThenBy(x => x.OperationSequence)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<WorkOrderRoutingDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<WorkOrderRoutingDialog>("New routing", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Routing created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(WorkOrderRoutingDto row)
+    {
+        var parameters = new DialogParameters<WorkOrderRoutingDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<WorkOrderRoutingDialog>($"Edit routing ({row.WorkOrderId}, {row.ProductId}, {row.OperationSequence})", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Routing updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(WorkOrderRoutingDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete routing?", $"Permanently delete routing ({row.WorkOrderId}, {row.ProductId}, {row.OperationSequence})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.WorkOrderRoutings
+            .FirstOrDefaultAsync(t => t.WorkOrderId == row.WorkOrderId && t.ProductId == row.ProductId && t.OperationSequence == row.OperationSequence);
+        if (entity is null) { Snackbar.Add("Routing no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.WorkOrderRoutingAuditLogs.Add(WorkOrderRoutingAuditService.RecordDelete(entity, changedBy));
+        db.WorkOrderRoutings.Remove(entity);
+        await db.SaveChangesAsync();
+        Snackbar.Add("Routing deleted.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(WorkOrderRoutingDto row)
+        => Navigation.NavigateTo($"aw/work-order-routings/history?workOrderId={row.WorkOrderId}&productId={row.ProductId}&operationSequence={row.OperationSequence}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
