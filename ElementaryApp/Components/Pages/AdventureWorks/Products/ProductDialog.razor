@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create product" : $"Edit product #{Model!.Id}")</MudText></TitleContent>
@@ -46,13 +47,13 @@
                         <MudTextField Value="@createModel.Size" ValueChanged="@((string? v) => createModel = createModel with { Size = v })" Label="Size" Variant="Variant.Outlined" MaxLength="5" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudTextField Value="@createModel.SizeUnitMeasureCode" ValueChanged="@((string? v) => createModel = createModel with { SizeUnitMeasureCode = v })" Label="Size UoM" Variant="Variant.Outlined" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(createModel.SizeUnitMeasureCode ?? "")" ValueChanged="@((string v) => createModel = createModel with { SizeUnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Size unit" Items="_unitMeasures" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudNumericField T="decimal?" Value="@createModel.Weight" ValueChanged="@((decimal? v) => createModel = createModel with { Weight = v })" Label="Weight" Variant="Variant.Outlined" Clearable="true" Step="0.01M" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudTextField Value="@createModel.WeightUnitMeasureCode" ValueChanged="@((string? v) => createModel = createModel with { WeightUnitMeasureCode = v })" Label="Weight UoM" Variant="Variant.Outlined" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(createModel.WeightUnitMeasureCode ?? "")" ValueChanged="@((string v) => createModel = createModel with { WeightUnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Weight unit" Items="_unitMeasures" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudNumericField T="int" Value="@createModel.DaysToManufacture" ValueChanged="@((int v) => createModel = createModel with { DaysToManufacture = v })" Label="Days to mfr" Variant="Variant.Outlined" Min="0" />
@@ -80,10 +81,10 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudNumericField T="int?" Value="@createModel.ProductSubcategoryId" ValueChanged="@((int? v) => createModel = createModel with { ProductSubcategoryId = v })" Label="Subcategory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(createModel.ProductSubcategoryId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { ProductSubcategoryId = v == 0 ? null : v })" Label="Subcategory" Items="_subcategories" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudNumericField T="int?" Value="@createModel.ProductModelId" ValueChanged="@((int? v) => createModel = createModel with { ProductModelId = v })" Label="Model id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(createModel.ProductModelId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { ProductModelId = v == 0 ? null : v })" Label="Product model" Items="_models" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudDatePicker Date="@createModel.SellStartDate" DateChanged="@((DateTime? v) => createModel = createModel with { SellStartDate = v ?? DateTime.UtcNow.Date })" Label="Sell start" Variant="Variant.Outlined" />
@@ -132,13 +133,13 @@
                         <MudTextField Value="@updateModel.Size" ValueChanged="@((string? v) => updateModel = updateModel with { Size = v })" Label="Size" Variant="Variant.Outlined" MaxLength="5" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudTextField Value="@updateModel.SizeUnitMeasureCode" ValueChanged="@((string? v) => updateModel = updateModel with { SizeUnitMeasureCode = v })" Label="Size UoM" Variant="Variant.Outlined" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(updateModel.SizeUnitMeasureCode ?? "")" ValueChanged="@((string v) => updateModel = updateModel with { SizeUnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Size unit" Items="_unitMeasures" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudNumericField T="decimal?" Value="@updateModel.Weight" ValueChanged="@((decimal? v) => updateModel = updateModel with { Weight = v })" Label="Weight" Variant="Variant.Outlined" Clearable="true" Step="0.01M" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudTextField Value="@updateModel.WeightUnitMeasureCode" ValueChanged="@((string? v) => updateModel = updateModel with { WeightUnitMeasureCode = v })" Label="Weight UoM" Variant="Variant.Outlined" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(updateModel.WeightUnitMeasureCode ?? "")" ValueChanged="@((string v) => updateModel = updateModel with { WeightUnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Weight unit" Items="_unitMeasures" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@updateModel.ProductLine" ValueChanged="@((string? v) => updateModel = updateModel with { ProductLine = v })" Label="Product line" Variant="Variant.Outlined" Clearable="true">
@@ -163,10 +164,10 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudNumericField T="int?" Value="@updateModel.ProductSubcategoryId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductSubcategoryId = v })" Label="Subcategory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.ProductSubcategoryId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductSubcategoryId = v == 0 ? null : v })" Label="Subcategory" Items="_subcategories" Clearable="true" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
-                        <MudNumericField T="int?" Value="@updateModel.ProductModelId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductModelId = v })" Label="Model id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.ProductModelId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductModelId = v == 0 ? null : v })" Label="Product model" Items="_models" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudDatePicker Date="@updateModel.SellStartDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { SellStartDate = v })" Label="Sell start" Variant="Variant.Outlined" Clearable="true" />
@@ -196,9 +197,16 @@
     private CreateProductRequest createModel = new() { SellStartDate = DateTime.UtcNow.Date, SafetyStockLevel = 1, ReorderPoint = 1 };
     private UpdateProductRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _subcategories = [];
+    private List<LookupItem<int>> _models = [];
+    private List<LookupItem<string>> _unitMeasures = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _subcategories = await Lookup.GetProductSubcategoriesAsync();
+        _models = await Lookup.GetProductModelsAsync();
+        _unitMeasures = await Lookup.GetUnitMeasuresAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateProductRequest

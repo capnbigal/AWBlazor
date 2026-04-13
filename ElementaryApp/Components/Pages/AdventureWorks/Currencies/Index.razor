@@ -106,8 +106,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.CurrencyAuditLogs.Add(CurrencyAuditService.RecordDelete(entity, changedBy));
         db.Currencies.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Currency deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Currency deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductSubcategoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create subcategory" : $"Edit subcategory #{Model!.Id}")</MudText></TitleContent>
@@ -16,7 +17,7 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="int" Value="@createModel.ProductCategoryId" ValueChanged="@((int v) => createModel = createModel with { ProductCategoryId = v })" Label="Category id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="int" Value="@createModel.ProductCategoryId" ValueChanged="@((int v) => createModel = createModel with { ProductCategoryId = v })" Label="Category" Items="_productCategories" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="8">
                         <MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
@@ -29,7 +30,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="int?" Value="@updateModel.ProductCategoryId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductCategoryId = v })" Label="Category id" Variant="Variant.Outlined" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.ProductCategoryId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductCategoryId = v == 0 ? null : v })" Label="Category" Items="_productCategories" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="8">
                         <MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
@@ -53,9 +54,12 @@
     private CreateProductSubcategoryRequest createModel = new();
     private UpdateProductSubcategoryRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _productCategories = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _productCategories = await Lookup.GetProductCategoriesAsync();
+
         if (Model is not null)
             updateModel = new UpdateProductSubcategoryRequest { Name = Model.Name, ProductCategoryId = Model.ProductCategoryId };
     }

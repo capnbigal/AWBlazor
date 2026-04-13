@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateCustomerRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create customer" : $"Edit customer #{Model!.Id}")</MudText></TitleContent>
@@ -16,13 +17,13 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@createModel.PersonId" ValueChanged="@((int? v) => createModel = createModel with { PersonId = v })" Label="Person id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(createModel.PersonId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { PersonId = v == 0 ? null : v })" SearchFunc="SearchPersonsAsync" Label="Person" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@createModel.StoreId" ValueChanged="@((int? v) => createModel = createModel with { StoreId = v })" Label="Store id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(createModel.StoreId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { StoreId = v == 0 ? null : v })" SearchFunc="SearchStoresAsync" Label="Store" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudNumericField T="int?" Value="@createModel.TerritoryId" ValueChanged="@((int? v) => createModel = createModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(createModel.TerritoryId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Items="_territories" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12">
                         <MudText Typo="Typo.caption" Color="Color.Secondary">A customer must be either a <strong>person</strong> or a <strong>store</strong>, not both.</MudText>
@@ -35,13 +36,13 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.PersonId" ValueChanged="@((int? v) => updateModel = updateModel with { PersonId = v })" Label="Person id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.PersonId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { PersonId = v == 0 ? null : v })" SearchFunc="SearchPersonsAsync" Label="Person" InitialDisplayText="@_personDisplay" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.StoreId" ValueChanged="@((int? v) => updateModel = updateModel with { StoreId = v })" Label="Store id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.StoreId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { StoreId = v == 0 ? null : v })" SearchFunc="SearchStoresAsync" Label="Store" InitialDisplayText="@_storeDisplay" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudNumericField T="int?" Value="@updateModel.TerritoryId" ValueChanged="@((int? v) => updateModel = updateModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.TerritoryId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Items="_territories" Clearable="true" />
                     </MudItem>
                 </MudGrid>
             </MudForm>
@@ -62,9 +63,14 @@
     private CreateCustomerRequest createModel = new();
     private UpdateCustomerRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _territories = [];
+    private string? _personDisplay;
+    private string? _storeDisplay;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateCustomerRequest
@@ -73,8 +79,15 @@
                 StoreId = Model.StoreId,
                 TerritoryId = Model.TerritoryId,
             };
+            if (Model.PersonId.HasValue)
+                _personDisplay = await Lookup.GetPersonNameAsync(Model.PersonId.Value);
+            if (Model.StoreId.HasValue)
+                _storeDisplay = await Lookup.GetStoreNameAsync(Model.StoreId.Value);
         }
     }
+
+    private Task<IEnumerable<LookupItem<int>>> SearchPersonsAsync(string query) => Lookup.SearchPersonsAsync(query);
+    private Task<IEnumerable<LookupItem<int>>> SearchStoresAsync(string query) => Lookup.SearchStoresAsync(query);
 
     private void Cancel() => MudDialog.Cancel();
 

@@ -32,6 +32,10 @@
                                  Value="@openWorkOrders.ToString("N0")" Label="Open work orders" />
                     </MudItem>
                     <MudItem xs="6" sm="3">
+                        <KpiCard Icon="@Icons.Material.Filled.AccountTree" Color="Color.Secondary"
+                                 Value="@activeProcesses.ToString("N0")" Label="Active processes" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
                         <KpiCard Icon="@Icons.Material.Filled.People" Color="Color.Info"
                                  Value="@userCount.ToString("N0")" Label="Users" />
                     </MudItem>
@@ -202,6 +206,7 @@
     private int salesOrderCount;
     private int activeForecasts;
     private int openWorkOrders;
+    private int activeProcesses;
     private int userCount;
 
     protected override async Task OnInitializedAsync()
@@ -212,6 +217,7 @@
             salesOrderCount = await db.SalesOrderHeaders.CountAsync();
             activeForecasts = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == Data.Entities.Forecasting.ForecastStatus.Active);
             openWorkOrders = await db.WorkOrders.CountAsync(w => w.EndDate == null);
+            activeProcesses = await db.Processes.CountAsync(p => p.DeletedDate == null && p.Status == Data.Entities.ProcessManagement.ProcessStatus.Active);
             userCount = await db.Users.CountAsync();
             loaded = true;
         }

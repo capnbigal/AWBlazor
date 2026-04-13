@@ -1,0 +1,207 @@
+@page "/admin/permissions"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using System.Security.Claims
+@using ElementaryApp.Data.Entities
+@using Microsoft.AspNetCore.Identity
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IPermissionService PermissionService
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Area permissions</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Area permissions</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">
+        Configure per-user permission levels for each data area. Role defaults: Admin=Admin, Manager=Write, Employee=Read.
+        Explicit grants elevate above role defaults but never restrict.
+    </MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        @* ── Area summary cards ───────────────────────────────────────────── *@
+        <MudGrid>
+            @foreach (var area in areas)
+            {
+                var stats = areaStats.GetValueOrDefault(area);
+                <MudItem xs="6" sm="4" md="3">
+                    <MudPaper Class="pa-3" Elevation="1">
+                        <MudText Typo="Typo.subtitle2">@area</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @(stats?.ExplicitGrants ?? 0) explicit grant(s)
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+
+        @* ── User permission matrix ──────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">User permissions</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="overflow-x:auto">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Roles</th>
+                        @foreach (var area in areas)
+                        {
+                            <th style="min-width:130px;text-align:center">@area</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td><strong>@(user.DisplayName ?? user.Email)</strong></td>
+                            <td><MudText Typo="Typo.caption">@user.RolesText</MudText></td>
+                            @foreach (var area in areas)
+                            {
+                                var key = (user.Id, area);
+                                var effective = effectivePermissions.GetValueOrDefault(key, PermissionLevel.None);
+                                var hasExplicit = explicitGrants.ContainsKey(key);
+                                <td style="text-align:center">
+                                    <MudSelect T="PermissionLevel" Value="@effective" Dense="true" Margin="Margin.Dense"
+                                               Variant="Variant.Outlined"
+                                               Style="@($"max-width:120px;{(hasExplicit ? "font-weight:bold" : "")}")"
+                                               ValueChanged="@(v => SetPermissionAsync(user.Id, area, v))">
+                                        @foreach (var level in Enum.GetValues<PermissionLevel>())
+                                        {
+                                            <MudSelectItem T="PermissionLevel" Value="@level">@level</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private PermissionArea[] areas = Enum.GetValues<PermissionArea>();
+    private List<UserRow> users = [];
+    private Dictionary<(string UserId, PermissionArea Area), PermissionLevel> effectivePermissions = new();
+    private Dictionary<(string UserId, PermissionArea Area), PermissionLevel> explicitGrants = new();
+    private Dictionary<PermissionArea, AreaStat> areaStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        loading = false;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        // Load all users with roles
+        var allUsers = UserManager.Users.OrderBy(u => u.Email).ToList();
+        users = [];
+        foreach (var u in allUsers)
+        {
+            var roles = await UserManager.GetRolesAsync(u);
+            users.Add(new UserRow
+            {
+                Id = u.Id,
+                Email = u.Email ?? "",
+                DisplayName = u.DisplayName ?? u.Email ?? u.Id,
+                RolesText = string.Join(", ", roles),
+            });
+        }
+
+        // Load all explicit grants
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var grants = await db.UserAreaPermissions.AsNoTracking().ToListAsync();
+        explicitGrants = grants.ToDictionary(g => (g.UserId, g.Area), g => g.PermissionLevel);
+
+        // Compute effective permissions for all users x areas
+        effectivePermissions = new();
+        foreach (var user in users)
+        {
+            var allPerms = await PermissionService.GetAllPermissionsAsync(user.Id);
+            foreach (var (area, level) in allPerms)
+                effectivePermissions[(user.Id, area)] = level;
+        }
+
+        // Compute area stats
+        areaStats = areas.ToDictionary(a => a, a => new AreaStat
+        {
+            ExplicitGrants = grants.Count(g => g.Area == a),
+        });
+    }
+
+    private async Task SetPermissionAsync(string userId, PermissionArea area, PermissionLevel level)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        // Determine the user's role floor
+        var user = users.First(u => u.Id == userId);
+        var roleFloor = user.RolesText switch
+        {
+            _ when user.RolesText.Contains("Admin") => PermissionLevel.Admin,
+            _ when user.RolesText.Contains("Manager") => PermissionLevel.Write,
+            _ when user.RolesText.Contains("Employee") => PermissionLevel.Read,
+            _ => PermissionLevel.None,
+        };
+
+        var existing = await db.UserAreaPermissions
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.Area == area);
+
+        if (level <= roleFloor)
+        {
+            // Setting at or below role default — remove explicit grant
+            if (existing is not null)
+            {
+                db.UserAreaPermissions.Remove(existing);
+                await db.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            // Setting above role default — upsert explicit grant
+            if (existing is not null)
+            {
+                existing.PermissionLevel = level;
+            }
+            else
+            {
+                db.UserAreaPermissions.Add(new UserAreaPermission
+                {
+                    UserId = userId,
+                    Area = area,
+                    PermissionLevel = level,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        PermissionService.InvalidateCache(userId);
+        effectivePermissions[(userId, area)] = (PermissionLevel)Math.Max((int)roleFloor, (int)level);
+
+        if (explicitGrants.ContainsKey((userId, area)) && level <= roleFloor)
+            explicitGrants.Remove((userId, area));
+        else if (level > roleFloor)
+            explicitGrants[(userId, area)] = level;
+
+        Snackbar.Add($"Permission updated: {user.DisplayName} → {area} = {level}", Severity.Success);
+    }
+
+    private sealed class UserRow
+    {
+        public string Id { get; init; } = "";
+        public string Email { get; init; } = "";
+        public string DisplayName { get; init; } = "";
+        public string RolesText { get; init; } = "";
+    }
+
+    private sealed class AreaStat
+    {
+        public int ExplicitGrants { get; init; }
+    }
+}

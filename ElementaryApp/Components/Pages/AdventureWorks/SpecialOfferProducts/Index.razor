@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 
 <PageTitle>Special offer ↔ product</PageTitle>
 
@@ -24,8 +25,8 @@
 
     <MudPaper Class="pa-3" Elevation="1">
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterSpecialOfferId" Label="Special offer id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkSelect TValue="int" Value="@(filterSpecialOfferId ?? 0)" ValueChanged="@(v => { filterSpecialOfferId = v == 0 ? null : v; })" Label="Special offer" Items="_specialOffers" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
         </MudGrid>
     </MudPaper>
 
@@ -53,6 +54,12 @@
     private MudDataGrid<SpecialOfferProductDto> grid = null!;
     private int? filterSpecialOfferId;
     private int? filterProductId;
+    private List<LookupItem<int>> _specialOffers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _specialOffers = await Lookup.GetSpecialOffersAsync();
+    }
 
     private async Task<GridData<SpecialOfferProductDto>> LoadServerDataAsync(GridState<SpecialOfferProductDto> state, CancellationToken ct)
     {
@@ -87,8 +94,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.SpecialOfferProductAuditLogs.Add(SpecialOfferProductAuditService.RecordDelete(entity, changedBy));
         db.SpecialOfferProducts.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Link deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Link deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

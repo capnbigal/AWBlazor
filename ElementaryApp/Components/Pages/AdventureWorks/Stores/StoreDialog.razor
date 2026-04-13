@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateStoreRequest> CreateValidator
 @inject MudFormValidator<UpdateStoreRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -15,9 +16,9 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" Label="Business entity (person)" Required="true" /></MudItem>
                     <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" /></MudItem>
-                    <MudItem xs="12"><MudNumericField T="int?" Value="@createModel.SalesPersonId" ValueChanged="@((int? v) => createModel = createModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="12"><FkAutocomplete TValue="int" Value="@(createModel.SalesPersonId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { SalesPersonId = v == 0 ? null : v })" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Label="Sales person" Clearable="true" /></MudItem>
                 </MudGrid>
             </MudForm>
         }
@@ -26,7 +27,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" MaxLength="50" /></MudItem>
-                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.SalesPersonId" ValueChanged="@((int? v) => updateModel = updateModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(updateModel.SalesPersonId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { SalesPersonId = v == 0 ? null : v })" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Label="Sales person" Clearable="true" InitialDisplayText="@_salesPersonDisplay" /></MudItem>
                 </MudGrid>
             </MudForm>
         }
@@ -46,10 +47,16 @@
     private CreateStoreRequest createModel = new();
     private UpdateStoreRequest updateModel = new();
     private bool saving;
+    private string? _salesPersonDisplay;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (Model is not null) updateModel = new UpdateStoreRequest { Name = Model.Name, SalesPersonId = Model.SalesPersonId };
+        if (Model is not null)
+        {
+            updateModel = new UpdateStoreRequest { Name = Model.Name, SalesPersonId = Model.SalesPersonId };
+            if (Model.SalesPersonId.HasValue)
+                _salesPersonDisplay = await Lookup.GetSalesPersonDisplayAsync(Model.SalesPersonId.Value);
+        }
     }
 
     private void Cancel() => MudDialog.Cancel();

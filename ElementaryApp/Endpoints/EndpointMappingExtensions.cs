@@ -9,6 +9,7 @@ public static class EndpointMappingExtensions
         app.MapHelloEndpoints();
         app.MapAdminEndpoints();
         app.MapForecastEndpoints();
+        app.MapProcessEndpoints();
         app.MapToolSlotConfigurationEndpoints();
         app.MapUserEndpoints();
 

@@ -98,8 +98,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.WorkOrderRoutingAuditLogs.Add(WorkOrderRoutingAuditService.RecordDelete(entity, changedBy));
         db.WorkOrderRoutings.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Routing deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Routing deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

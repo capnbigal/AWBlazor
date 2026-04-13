@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSpecialOfferProductRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">Link a special offer to a product</MudText></TitleContent>
@@ -13,10 +14,10 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.SpecialOfferId" ValueChanged="@((int v) => createModel = createModel with { SpecialOfferId = v })" Label="Special offer id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkSelect TValue="int" Value="@createModel.SpecialOfferId" ValueChanged="@((int v) => createModel = createModel with { SpecialOfferId = v })" Label="Special offer" Items="_specialOffers" Required="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -33,6 +34,12 @@
     private MudForm form = null!;
     private CreateSpecialOfferProductRequest createModel = new();
     private bool saving;
+    private List<LookupItem<int>> _specialOffers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _specialOffers = await Lookup.GetSpecialOffersAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

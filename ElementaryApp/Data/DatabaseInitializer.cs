@@ -10,8 +10,7 @@ using Microsoft.EntityFrameworkCore.Migrations.Operations;
 namespace ElementaryApp.Data;
 
 /// <summary>
-/// Applies pending EF Core migrations on startup and seeds initial roles, users, and reference data.
-/// Replaces the previous OrmLite Migrator + Configure.Db.Migrations.
+/// Applies pending EF Core migrations on startup and seeds initial roles and users.
 /// </summary>
 public static class DatabaseInitializer
 {

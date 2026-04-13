@@ -1,0 +1,258 @@
+@using ElementaryApp.Data.Entities.ProcessManagement
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (process is not null)
+{
+    <MudStack Spacing="4" Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Steps</MudText>
+                @if (steps.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Est. duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var step in steps)
+                            {
+                                <tr>
+                                    <td>@step.SequenceNumber</td>
+                                    <td><strong>@step.Name</strong></td>
+                                    <td>@(step.Description ?? "—")</td>
+                                    <td>@(step.EstimatedDurationMinutes.HasValue ? $"{step.EstimatedDurationMinutes} min" : "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">No steps defined.</MudText>
+                }
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Recent executions</MudText>
+                @if (recentExecutions.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Assigned user</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var exec in recentExecutions)
+                            {
+                                <tr>
+                                    <td>@exec.ExecutionDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@(exec.AssignedUserId ?? "—")</td>
+                                    <td>
+                                        <MudChip T="string" Color="@ExecutionStatusColor(exec.Status)" Size="Size.Small">
+                                            @exec.Status
+                                        </MudChip>
+                                    </td>
+                                    <td>@exec.CompletedStepCount / @exec.TotalStepCount steps</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">No executions yet.</MudText>
+                }
+            </MudItem>
+        </MudGrid>
+
+        @if (currentExecution is not null && currentStepExecutions.Count > 0 && currentExecution.Status is ProcessExecutionStatus.Pending or ProcessExecutionStatus.InProgress)
+        {
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Current execution — step progress</MudText>
+            <MudSimpleTable Dense="true" Hover="false" Elevation="0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Step</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var se in currentStepExecutions)
+                    {
+                        <tr>
+                            <td>@se.SequenceNumber</td>
+                            <td>@se.StepName</td>
+                            <td>
+                                <MudChip T="string" Color="@StepStatusColor(se.Status)" Size="Size.Small">@se.Status</MudChip>
+                            </td>
+                            <td>
+                                @if (se.Id == currentPendingStepId)
+                                {
+                                    <MudStack Row="true" Spacing="1">
+                                        <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                                                   OnClick="@(() => CompleteStepAsync(se.Id, ProcessStepExecutionStatus.Completed))">
+                                            Complete
+                                        </MudButton>
+                                        <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                                                   OnClick="@(() => CompleteStepAsync(se.Id, ProcessStepExecutionStatus.Skipped))">
+                                            Skip
+                                        </MudButton>
+                                    </MudStack>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int ProcessId { get; set; }
+
+    private bool loading = true;
+    private Process? process;
+    private List<ProcessStep> steps = [];
+    private List<ProcessExecutionDto> recentExecutions = [];
+    private ProcessExecutionDto? currentExecution;
+    private List<ProcessStepExecutionDto> currentStepExecutions = [];
+    private int? currentPendingStepId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        process = await db.Processes.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == ProcessId);
+
+        if (process is not null)
+        {
+            steps = await db.ProcessSteps.AsNoTracking()
+                .Where(s => s.ProcessId == ProcessId)
+                .OrderBy(s => s.SequenceNumber)
+                .ToListAsync();
+
+            var rawExecutions = await db.ProcessExecutions.AsNoTracking()
+                .Include(e => e.StepExecutions).ThenInclude(se => se.ProcessStep)
+                .Where(e => e.ProcessId == ProcessId)
+                .OrderByDescending(e => e.ExecutionDate)
+                .Take(5)
+                .ToListAsync();
+
+            recentExecutions = rawExecutions.Select(e => e.ToDto()).ToList();
+
+            LoadCurrentExecution(rawExecutions);
+        }
+
+        loading = false;
+    }
+
+    private void LoadCurrentExecution(List<ProcessExecution> rawExecutions)
+    {
+        var latestRaw = rawExecutions.FirstOrDefault();
+        if (latestRaw is null) return;
+
+        currentExecution = latestRaw.ToDto();
+        currentStepExecutions = latestRaw.StepExecutions
+            .OrderBy(se => se.ProcessStep.SequenceNumber)
+            .Select(se => se.ToDto())
+            .ToList();
+        currentPendingStepId = currentStepExecutions
+            .FirstOrDefault(se => se.Status == ProcessStepExecutionStatus.Pending)?.Id;
+    }
+
+    private async Task CompleteStepAsync(int stepExecutionId, ProcessStepExecutionStatus newStatus)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var stepExec = await db.ProcessStepExecutions
+                .Include(se => se.ProcessExecution).ThenInclude(pe => pe.StepExecutions)
+                .FirstOrDefaultAsync(se => se.Id == stepExecutionId);
+
+            if (stepExec is null)
+            {
+                Snackbar.Add("Step execution not found.", Severity.Warning);
+                return;
+            }
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.Identity?.IsAuthenticated == true ? authState.User.Identity.Name : null;
+
+            stepExec.Status = newStatus;
+            stepExec.CompletedByUserId = userId;
+            stepExec.CompletedDate = DateTime.UtcNow;
+
+            // If this was the last pending step, complete the parent execution
+            var allSteps = stepExec.ProcessExecution.StepExecutions;
+            var allDone = allSteps.All(s => s.Id == stepExecutionId
+                || s.Status is ProcessStepExecutionStatus.Completed or ProcessStepExecutionStatus.Skipped);
+
+            if (allDone)
+            {
+                stepExec.ProcessExecution.Status = ProcessExecutionStatus.Completed;
+                stepExec.ProcessExecution.CompletedDate = DateTime.UtcNow;
+            }
+            else if (stepExec.ProcessExecution.Status == ProcessExecutionStatus.Pending)
+            {
+                stepExec.ProcessExecution.Status = ProcessExecutionStatus.InProgress;
+            }
+
+            await db.SaveChangesAsync();
+
+            Snackbar.Add($"Step {(newStatus == ProcessStepExecutionStatus.Completed ? "completed" : "skipped")}.", Severity.Success);
+
+            // Reload the expanded row data
+            var rawExecutions = await db.ProcessExecutions.AsNoTracking()
+                .Include(e => e.StepExecutions).ThenInclude(se => se.ProcessStep)
+                .Where(e => e.ProcessId == ProcessId)
+                .OrderByDescending(e => e.ExecutionDate)
+                .Take(5)
+                .ToListAsync();
+
+            recentExecutions = rawExecutions.Select(e => e.ToDto()).ToList();
+            LoadCurrentExecution(rawExecutions);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static Color ExecutionStatusColor(ProcessExecutionStatus status) => status switch
+    {
+        ProcessExecutionStatus.Completed  => Color.Success,
+        ProcessExecutionStatus.InProgress => Color.Warning,
+        ProcessExecutionStatus.Overdue    => Color.Error,
+        ProcessExecutionStatus.Pending    => Color.Info,
+        ProcessExecutionStatus.Cancelled  => Color.Default,
+        _                                 => Color.Default,
+    };
+
+    private static Color StepStatusColor(ProcessStepExecutionStatus status) => status switch
+    {
+        ProcessStepExecutionStatus.Completed  => Color.Success,
+        ProcessStepExecutionStatus.InProgress => Color.Warning,
+        ProcessStepExecutionStatus.Skipped    => Color.Default,
+        ProcessStepExecutionStatus.Pending    => Color.Info,
+        _                                     => Color.Default,
+    };
+}

@@ -5,6 +5,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreatePersonPhoneRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -13,10 +14,10 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Person id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Person" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.PhoneNumberTypeId" ValueChanged="@((int v) => createModel = createModel with { PhoneNumberTypeId = v })" Label="Phone number type id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkSelect TValue="int" Value="@createModel.PhoneNumberTypeId" ValueChanged="@((int v) => createModel = createModel with { PhoneNumberTypeId = v })" Label="Phone number type" Required="true" Items="_phoneNumberTypes" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField Value="@createModel.PhoneNumber" ValueChanged="@((string? v) => createModel = createModel with { PhoneNumber = v })" Label="Phone number" Variant="Variant.Outlined" Required="true" MaxLength="25" />
@@ -39,6 +40,12 @@
     private MudForm form = null!;
     private CreatePersonPhoneRequest createModel = new();
     private bool saving;
+    private List<LookupItem<int>> _phoneNumberTypes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _phoneNumberTypes = await Lookup.GetPhoneNumberTypesAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

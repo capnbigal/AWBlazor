@@ -5,6 +5,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreatePersonCreditCardRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -13,10 +14,10 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Person" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.CreditCardId" ValueChanged="@((int v) => createModel = createModel with { CreditCardId = v })" Label="Credit card id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.CreditCardId" ValueChanged="@((int v) => createModel = createModel with { CreditCardId = v })" Label="Credit card" Required="true" SearchFunc="@(q => Lookup.SearchCreditCardsAsync(q))" />
                 </MudItem>
             </MudGrid>
         </MudForm>

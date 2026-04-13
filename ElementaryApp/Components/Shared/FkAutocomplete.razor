@@ -1,0 +1,60 @@
+@* Type-to-search for large-table FK fields. Displays entity names, binds the ID value. *@
+@typeparam TValue
+
+<MudAutocomplete T="LookupItem<TValue>" Value="@_selected"
+                 ValueChanged="OnItemSelected"
+                 SearchFunc="SearchAsync"
+                 ToStringFunc="@(item => item?.DisplayText ?? "")"
+                 Label="@Label" Variant="Variant.Outlined"
+                 Required="@Required" Clearable="@Clearable"
+                 Dense="true" Margin="Margin.Dense"
+                 Immediate="true" ResetValueOnEmptyText="true"
+                 DebounceInterval="300">
+    <ItemTemplate>
+        <MudText Typo="Typo.body2">@context.DisplayText</MudText>
+    </ItemTemplate>
+</MudAutocomplete>
+
+@code {
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Clearable { get; set; }
+    /// <summary>Async search function called on each keystroke.</summary>
+    [Parameter] public Func<string, Task<IEnumerable<LookupItem<TValue>>>>? SearchFunc { get; set; }
+    /// <summary>Initial display text for edit mode (when Value is set but we need the name).</summary>
+    [Parameter] public string? InitialDisplayText { get; set; }
+    /// <summary>Fired after selection for filter panels to trigger grid reload.</summary>
+    [Parameter] public EventCallback OnSelectionChanged { get; set; }
+
+    private LookupItem<TValue>? _selected;
+    private bool _initialized;
+
+    protected override void OnParametersSet()
+    {
+        if (!_initialized && Value is not null && !EqualityComparer<TValue>.Default.Equals(Value, default) && InitialDisplayText is not null)
+        {
+            _selected = new LookupItem<TValue>(Value, InitialDisplayText);
+            _initialized = true;
+        }
+    }
+
+    private async Task<IEnumerable<LookupItem<TValue>>> SearchAsync(string? query, CancellationToken ct)
+    {
+        if (SearchFunc is null) return [];
+        return await SearchFunc(query ?? "");
+    }
+
+    private async Task OnItemSelected(LookupItem<TValue>? item)
+    {
+        _selected = item;
+        if (item is not null)
+            await ValueChanged.InvokeAsync(item.Id);
+        else
+            await ValueChanged.InvokeAsync(default!);
+
+        if (OnSelectionChanged.HasDelegate)
+            await OnSelectionChanged.InvokeAsync();
+    }
+}

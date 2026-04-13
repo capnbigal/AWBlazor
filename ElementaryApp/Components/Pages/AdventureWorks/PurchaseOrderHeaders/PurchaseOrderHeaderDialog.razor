@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdatePurchaseOrderHeaderRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create PO" : $"Edit PO #{Model!.Id}")</MudText></TitleContent>
@@ -15,9 +16,9 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.EmployeeId" ValueChanged="@((int v) => createModel = createModel with { EmployeeId = v })" Label="Employee id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.VendorId" ValueChanged="@((int v) => createModel = createModel with { VendorId = v })" Label="Vendor id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.ShipMethodId" ValueChanged="@((int v) => createModel = createModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkAutocomplete TValue="int" Value="@createModel.EmployeeId" ValueChanged="@((int v) => createModel = createModel with { EmployeeId = v })" Label="Employee" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkAutocomplete TValue="int" Value="@createModel.VendorId" ValueChanged="@((int v) => createModel = createModel with { VendorId = v })" Label="Vendor" SearchFunc="@(q => Lookup.SearchVendorsAsync(q))" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkSelect TValue="int" Value="@createModel.ShipMethodId" ValueChanged="@((int v) => createModel = createModel with { ShipMethodId = v })" Label="Ship method" Items="_shipMethods" Required="true" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="byte" Value="@createModel.Status" ValueChanged="@((byte v) => createModel = createModel with { Status = v })" Label="Status (1-4)" Variant="Variant.Outlined" Min="1" Max="4" /></MudItem>
                     <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.OrderDate" DateChanged="@((DateTime? v) => createModel = createModel with { OrderDate = v ?? DateTime.UtcNow.Date })" Label="Order date" Variant="Variant.Outlined" /></MudItem>
                     <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.ShipDate" DateChanged="@((DateTime? v) => createModel = createModel with { ShipDate = v })" Label="Ship date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
@@ -32,8 +33,8 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4"><MudNumericField T="byte?" Value="@updateModel.Status" ValueChanged="@((byte? v) => updateModel = updateModel with { Status = v })" Label="Status (1-4)" Variant="Variant.Outlined" Clearable="true" Min="1" Max="4" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.VendorId" ValueChanged="@((int? v) => updateModel = updateModel with { VendorId = v })" Label="Vendor id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.ShipMethodId" ValueChanged="@((int? v) => updateModel = updateModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkAutocomplete TValue="int" Value="@(updateModel.VendorId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { VendorId = v == 0 ? null : v })" Label="Vendor" SearchFunc="@(q => Lookup.SearchVendorsAsync(q))" Clearable="true" InitialDisplayText="@_editVendorDisplay" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkSelect TValue="int" Value="@(updateModel.ShipMethodId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ShipMethodId = v == 0 ? null : v })" Label="Ship method" Items="_shipMethods" Clearable="true" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="decimal?" Value="@updateModel.SubTotal" ValueChanged="@((decimal? v) => updateModel = updateModel with { SubTotal = v })" Label="Subtotal" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="decimal?" Value="@updateModel.TaxAmt" ValueChanged="@((decimal? v) => updateModel = updateModel with { TaxAmt = v })" Label="Tax" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="decimal?" Value="@updateModel.Freight" ValueChanged="@((decimal? v) => updateModel = updateModel with { Freight = v })" Label="Freight" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
@@ -58,9 +59,17 @@
     private UpdatePurchaseOrderHeaderRequest updateModel = new();
     private bool saving;
 
-    protected override void OnInitialized()
+    private List<LookupItem<int>> _shipMethods = [];
+
+    // Edit-mode initial display text for autocomplete fields
+    private string? _editVendorDisplay;
+
+    protected override async Task OnInitializedAsync()
     {
+        _shipMethods = await Lookup.GetShipMethodsAsync();
+
         if (Model is not null)
+        {
             updateModel = new UpdatePurchaseOrderHeaderRequest
             {
                 Status = Model.Status,
@@ -72,6 +81,11 @@
                 Freight = Model.Freight,
                 ShipDate = Model.ShipDate,
             };
+
+            // Resolve display text for autocomplete fields in edit mode
+            if (Model.VendorId > 0)
+                _editVendorDisplay = await Lookup.GetVendorNameAsync(Model.VendorId);
+        }
     }
 
     private void Cancel() => MudDialog.Cancel();

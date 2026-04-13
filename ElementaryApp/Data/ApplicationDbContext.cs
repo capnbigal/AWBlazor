@@ -1,8 +1,10 @@
 using ElementaryApp.Data.Entities;
 using ElementaryApp.Data.Entities.AdventureWorks;
 using ElementaryApp.Data.Entities.Forecasting;
+using ElementaryApp.Data.Entities.ProcessManagement;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Process = ElementaryApp.Data.Entities.ProcessManagement.Process;
 
 namespace ElementaryApp.Data;
 
@@ -16,6 +18,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     // User guide read tracking
     public DbSet<ArticleRead> ArticleReads => Set<ArticleRead>();
+
+    // Area-based permissions
+    public DbSet<UserAreaPermission> UserAreaPermissions => Set<UserAreaPermission>();
+
+    // Process Management
+    public DbSet<Process> Processes => Set<Process>();
+    public DbSet<ProcessStep> ProcessSteps => Set<ProcessStep>();
+    public DbSet<ProcessExecution> ProcessExecutions => Set<ProcessExecution>();
+    public DbSet<ProcessStepExecution> ProcessStepExecutions => Set<ProcessStepExecution>();
 
     public DbSet<ToolSlotConfiguration> ToolSlotConfigurations => Set<ToolSlotConfiguration>();
     public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
@@ -234,6 +245,65 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- User area permissions ---
+        builder.Entity<UserAreaPermission>(b =>
+        {
+            b.HasIndex(x => new { x.UserId, x.Area }).IsUnique();
+            b.HasIndex(x => x.Area);
+            b.HasOne(x => x.User)
+                .WithMany(u => u.AreaPermissions)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Area).HasConversion<int>();
+            b.Property(x => x.PermissionLevel).HasConversion<int>();
+        });
+
+        // --- Process Management entities ---
+        builder.Entity<Process>(b =>
+        {
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.DepartmentId);
+            b.HasIndex(x => x.DeletedDate);
+            b.HasIndex(x => x.IsRecurring);
+            b.HasIndex(x => x.NextRunDate);
+            b.HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.DefaultProcessor).WithMany().HasForeignKey(x => x.DefaultProcessorUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Status).HasConversion<int>();
+        });
+
+        builder.Entity<ProcessStep>(b =>
+        {
+            b.HasOne(x => x.Process).WithMany(p => p.Steps).HasForeignKey(x => x.ProcessId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.ProcessId, x.SequenceNumber }).IsUnique();
+        });
+
+        builder.Entity<ProcessExecution>(b =>
+        {
+            b.HasOne(x => x.Process).WithMany(p => p.Executions).HasForeignKey(x => x.ProcessId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.AssignedUser).WithMany().HasForeignKey(x => x.AssignedUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasIndex(x => x.ProcessId);
+            b.HasIndex(x => x.ExecutionDate);
+            b.HasIndex(x => x.Status);
+            b.Property(x => x.Status).HasConversion<int>();
+        });
+
+        builder.Entity<ProcessStepExecution>(b =>
+        {
+            b.HasOne(x => x.ProcessExecution).WithMany(e => e.StepExecutions)
+                .HasForeignKey(x => x.ProcessExecutionId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.ProcessStep).WithMany().HasForeignKey(x => x.ProcessStepId)
+                .OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(x => x.CompletedByUser).WithMany().HasForeignKey(x => x.CompletedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasIndex(x => new { x.ProcessExecutionId, x.ProcessStepId }).IsUnique();
+            b.Property(x => x.Status).HasConversion<int>();
         });
 
         // ToolSlotConfigurations is a pre-existing table in AdventureWorks2022 that is managed

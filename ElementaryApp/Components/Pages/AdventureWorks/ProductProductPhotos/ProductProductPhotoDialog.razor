@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductProductPhotoRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Link a photo to a product" : $"Edit link ({Model!.ProductId}, {Model.ProductPhotoId})")</MudText></TitleContent>
@@ -16,7 +17,7 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="int" Value="@createModel.ProductPhotoId" ValueChanged="@((int v) => createModel = createModel with { ProductPhotoId = v })" Label="Photo id" Variant="Variant.Outlined" Required="true" Min="1" />

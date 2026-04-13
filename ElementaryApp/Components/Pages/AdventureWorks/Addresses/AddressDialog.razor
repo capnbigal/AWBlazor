@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateAddressRequest> CreateValidator
 @inject MudFormValidator<UpdateAddressRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -25,7 +26,7 @@
                         <MudTextField Value="@createModel.City" ValueChanged="@((string? v) => createModel = createModel with { City = v })" Label="City" Variant="Variant.Outlined" Required="true" MaxLength="30" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.StateProvinceId" ValueChanged="@((int v) => createModel = createModel with { StateProvinceId = v })" Label="State / province id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="int" Value="@createModel.StateProvinceId" ValueChanged="@((int v) => createModel = createModel with { StateProvinceId = v })" Label="State / province" Required="true" Items="stateProvinceItems" />
                     </MudItem>
                     <MudItem xs="12">
                         <MudTextField Value="@createModel.PostalCode" ValueChanged="@((string? v) => createModel = createModel with { PostalCode = v })" Label="Postal code" Variant="Variant.Outlined" Required="true" MaxLength="15" />
@@ -47,7 +48,7 @@
                         <MudTextField Value="@updateModel.City" ValueChanged="@((string? v) => updateModel = updateModel with { City = v })" Label="City" Variant="Variant.Outlined" MaxLength="30" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.StateProvinceId" ValueChanged="@((int? v) => updateModel = updateModel with { StateProvinceId = v })" Label="State / province id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.StateProvinceId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { StateProvinceId = v == 0 ? null : v })" Label="State / province" Clearable="true" Items="stateProvinceItems" />
                     </MudItem>
                     <MudItem xs="12">
                         <MudTextField Value="@updateModel.PostalCode" ValueChanged="@((string? v) => updateModel = updateModel with { PostalCode = v })" Label="Postal code" Variant="Variant.Outlined" MaxLength="15" />
@@ -71,9 +72,12 @@
     private CreateAddressRequest createModel = new();
     private UpdateAddressRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> stateProvinceItems = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        stateProvinceItems = await Lookup.GetStateProvincesAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateAddressRequest

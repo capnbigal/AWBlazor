@@ -1,0 +1,200 @@
+@using ElementaryApp.Data.Entities.ProcessManagement
+@using ElementaryApp.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsNew ? "Create process" : $"Edit process: {Model?.Name}")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <FkSelect TValue="short" Value="@formModel.DepartmentId" ValueChanged="@((short v) => formModel.DepartmentId = v)"
+                              Label="Department" Items="_departments" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <FkAutocomplete TValue="string" Value="@(formModel.DefaultProcessorUserId ?? "")"
+                                    ValueChanged="@((string v) => formModel.DefaultProcessorUserId = string.IsNullOrEmpty(v) ? null : v)"
+                                    SearchFunc="SearchUsersAsync" Label="Default processor"
+                                    InitialDisplayText="@_userDisplay" Clearable="true" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSwitch T="bool" @bind-Value="formModel.IsRecurring" Label="Recurring" Color="Color.Primary" />
+                </MudItem>
+                @if (formModel.IsRecurring)
+                {
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="string" @bind-Value="formModel.CronSchedule" Label="Schedule" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("0 0 * * *")">Daily</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("0 0 * * 1")">Weekly (Monday)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("0 0 1 * *")">Monthly</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("0 0 1 1,4,7,10 *")">Quarterly</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("0 0 1 1 *")">Yearly</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="ProcessStatus" @bind-Value="formModel.Status" Label="Status" Variant="Variant.Outlined">
+                        @foreach (var s in Enum.GetValues<ProcessStatus>())
+                        {
+                            <MudSelectItem T="ProcessStatus" Value="@s">@s</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">
+            @(saving ? "Saving..." : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProcessDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+
+    private MudForm form = null!;
+    private FormModel formModel = new();
+    private List<LookupItem<short>> _departments = [];
+    private string? _userDisplay;
+    private bool saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _departments = await Lookup.GetDepartmentsAsync();
+
+        if (Model is not null)
+        {
+            formModel = new FormModel
+            {
+                Name = Model.Name,
+                Description = Model.Description,
+                DepartmentId = Model.DepartmentId,
+                DefaultProcessorUserId = Model.DefaultProcessorUserId,
+                IsRecurring = Model.IsRecurring,
+                CronSchedule = Model.CronSchedule,
+                Status = Model.Status,
+            };
+
+            if (!string.IsNullOrEmpty(Model.DefaultProcessorUserId))
+            {
+                _userDisplay = await GetUserDisplayAsync(Model.DefaultProcessorUserId);
+            }
+        }
+    }
+
+    private async Task<IEnumerable<LookupItem<string>>> SearchUsersAsync(string query)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var q = db.Users.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(query))
+            q = q.Where(u => u.UserName!.Contains(query) || u.Email!.Contains(query)
+                        || (u.DisplayName != null && u.DisplayName.Contains(query)));
+        return await q.OrderBy(u => u.UserName).Take(25)
+            .Select(u => new LookupItem<string>(u.Id, u.DisplayName ?? u.UserName ?? u.Email ?? u.Id))
+            .ToListAsync();
+    }
+
+    private async Task<string?> GetUserDisplayAsync(string userId)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        return await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.DisplayName ?? u.UserName ?? u.Email ?? u.Id)
+            .FirstOrDefaultAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                var entity = new Process
+                {
+                    Name = formModel.Name,
+                    Description = formModel.Description,
+                    DepartmentId = formModel.DepartmentId,
+                    DefaultProcessorUserId = formModel.DefaultProcessorUserId,
+                    IsRecurring = formModel.IsRecurring,
+                    CronSchedule = formModel.IsRecurring ? formModel.CronSchedule : null,
+                    Status = formModel.Status,
+                };
+
+                if (entity.IsRecurring && !string.IsNullOrWhiteSpace(entity.CronSchedule))
+                {
+                    var cron = Cronos.CronExpression.Parse(entity.CronSchedule);
+                    entity.NextRunDate = cron.GetNextOccurrence(DateTime.UtcNow);
+                }
+
+                db.Processes.Add(entity);
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                var entity = await db.Processes.FirstOrDefaultAsync(p => p.Id == Model!.Id);
+                if (entity is null)
+                {
+                    MudDialog.Close(DialogResult.Cancel());
+                    return;
+                }
+
+                entity.Name = formModel.Name;
+                entity.Description = formModel.Description;
+                entity.DepartmentId = formModel.DepartmentId;
+                entity.DefaultProcessorUserId = formModel.DefaultProcessorUserId;
+                entity.IsRecurring = formModel.IsRecurring;
+                entity.CronSchedule = formModel.IsRecurring ? formModel.CronSchedule : null;
+                entity.Status = formModel.Status;
+
+                if (entity.IsRecurring && !string.IsNullOrWhiteSpace(entity.CronSchedule))
+                {
+                    var cron = Cronos.CronExpression.Parse(entity.CronSchedule);
+                    entity.NextRunDate = cron.GetNextOccurrence(DateTime.UtcNow);
+                }
+                else
+                {
+                    entity.NextRunDate = null;
+                }
+
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public short DepartmentId { get; set; }
+        public string? DefaultProcessorUserId { get; set; }
+        public bool IsRecurring { get; set; }
+        public string? CronSchedule { get; set; }
+        public ProcessStatus Status { get; set; } = ProcessStatus.Active;
+    }
+}

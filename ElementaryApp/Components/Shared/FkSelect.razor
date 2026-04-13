@@ -1,0 +1,29 @@
+@* Dropdown for small-table FK fields. Displays entity names, binds the ID value. *@
+@typeparam TValue
+
+<MudSelect T="TValue" Value="@Value" ValueChanged="@HandleValueChanged"
+           Label="@Label" Variant="Variant.Outlined"
+           Required="@Required" Clearable="@Clearable"
+           Dense="true" Margin="Margin.Dense">
+    @foreach (var item in Items)
+    {
+        <MudSelectItem T="TValue" Value="@item.Id">@item.DisplayText</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Clearable { get; set; }
+    [Parameter] public List<LookupItem<TValue>> Items { get; set; } = [];
+    [Parameter] public EventCallback OnSelectionChanged { get; set; }
+
+    private async Task HandleValueChanged(TValue value)
+    {
+        await ValueChanged.InvokeAsync(value);
+        if (OnSelectionChanged.HasDelegate)
+            await OnSelectionChanged.InvokeAsync();
+    }
+}

@@ -1,0 +1,46 @@
+@* Wraps page content with an area permission check. Shows access denied if user lacks required level. *@
+@inject IPermissionService Permissions
+@inject AuthenticationStateProvider AuthStateProvider
+
+@if (_checked && _hasAccess)
+{
+    @ChildContent
+}
+else if (_checked)
+{
+    <MudAlert Severity="Severity.Warning" Class="my-4">
+        You do not have sufficient permissions to access this area.
+    </MudAlert>
+}
+else
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+
+@code {
+    [Parameter] public PermissionArea Area { get; set; }
+    [Parameter] public PermissionLevel Required { get; set; } = PermissionLevel.Read;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The user's effective permission level on this area (available to child components).</summary>
+    public PermissionLevel EffectiveLevel { get; private set; }
+    public bool CanWrite => EffectiveLevel >= PermissionLevel.Write;
+    public bool CanAdmin => EffectiveLevel >= PermissionLevel.Admin;
+
+    private bool _checked;
+    private bool _hasAccess;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is not null)
+        {
+            EffectiveLevel = await Permissions.GetEffectivePermissionAsync(userId, Area);
+            _hasAccess = EffectiveLevel >= Required;
+        }
+
+        _checked = true;
+    }
+}

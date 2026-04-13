@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductInventoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create inventory row" : $"Edit inventory ({Model!.ProductId}, {Model.LocationId})")</MudText></TitleContent>
@@ -16,10 +17,10 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="short" Value="@createModel.LocationId" ValueChanged="@((short v) => createModel = createModel with { LocationId = v })" Label="Location id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="short" Value="@createModel.LocationId" ValueChanged="@((short v) => createModel = createModel with { LocationId = v })" Label="Location" Items="_locations" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudTextField Value="@createModel.Shelf" ValueChanged="@((string? v) => createModel = createModel with { Shelf = v })" Label="Shelf" Variant="Variant.Outlined" Required="true" MaxLength="10" />
@@ -65,9 +66,12 @@
     private CreateProductInventoryRequest createModel = new();
     private UpdateProductInventoryRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<short>> _locations = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _locations = await Lookup.GetLocationsAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateProductInventoryRequest

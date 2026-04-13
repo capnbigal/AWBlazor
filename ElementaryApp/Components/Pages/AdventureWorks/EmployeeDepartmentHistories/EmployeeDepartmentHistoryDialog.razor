@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateEmployeeDepartmentHistoryRequest> CreateValidator
 @inject MudFormValidator<UpdateEmployeeDepartmentHistoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,13 +17,13 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Employee id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Employee" Required="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="short" Value="@createModel.DepartmentId" ValueChanged="@((short v) => createModel = createModel with { DepartmentId = v })" Label="Department id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="short" Value="@createModel.DepartmentId" ValueChanged="@((short v) => createModel = createModel with { DepartmentId = v })" Label="Department" Required="true" Items="_departments" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="byte" Value="@createModel.ShiftId" ValueChanged="@((byte v) => createModel = createModel with { ShiftId = v })" Label="Shift id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="byte" Value="@createModel.ShiftId" ValueChanged="@((byte v) => createModel = createModel with { ShiftId = v })" Label="Shift" Required="true" Items="_shifts" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@createModel.StartDate" DateChanged="@((DateTime? v) => createModel = createModel with { StartDate = v ?? DateTime.UtcNow.Date })" Label="Start date" Variant="Variant.Outlined" />
@@ -59,9 +60,14 @@
     private CreateEmployeeDepartmentHistoryRequest createModel = new() { StartDate = DateTime.UtcNow.Date };
     private UpdateEmployeeDepartmentHistoryRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<short>> _departments = [];
+    private List<LookupItem<byte>> _shifts = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _departments = await Lookup.GetDepartmentsAsync();
+        _shifts = await Lookup.GetShiftsAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateEmployeeDepartmentHistoryRequest { EndDate = Model.EndDate };

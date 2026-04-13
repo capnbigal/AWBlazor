@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateSalesOrderHeaderRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create sales order" : $"Edit order #{Model!.Id}")</MudText></TitleContent>
@@ -29,14 +30,14 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3"><MudSwitch T="bool" Value="@createModel.OnlineOrderFlag" ValueChanged="@((bool v) => createModel = createModel with { OnlineOrderFlag = v })" Label="Online order" Color="Color.Primary" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.CustomerId" ValueChanged="@((int v) => createModel = createModel with { CustomerId = v })" Label="Customer id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.SalesPersonId" ValueChanged="@((int? v) => createModel = createModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.TerritoryId" ValueChanged="@((int? v) => createModel = createModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.BillToAddressId" ValueChanged="@((int v) => createModel = createModel with { BillToAddressId = v })" Label="Bill-to address id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.ShipToAddressId" ValueChanged="@((int v) => createModel = createModel with { ShipToAddressId = v })" Label="Ship-to address id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.ShipMethodId" ValueChanged="@((int v) => createModel = createModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.CreditCardId" ValueChanged="@((int? v) => createModel = createModel with { CreditCardId = v })" Label="Credit card id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@createModel.CurrencyRateId" ValueChanged="@((int? v) => createModel = createModel with { CurrencyRateId = v })" Label="Currency rate id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@createModel.CustomerId" ValueChanged="@((int v) => createModel = createModel with { CustomerId = v })" Label="Customer" SearchFunc="@(q => Lookup.SearchCustomersAsync(q))" Required="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@(createModel.SalesPersonId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { SalesPersonId = v == 0 ? null : v })" Label="Sales person" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Clearable="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkSelect TValue="int" Value="@(createModel.TerritoryId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Items="_territories" Clearable="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@createModel.BillToAddressId" ValueChanged="@((int v) => createModel = createModel with { BillToAddressId = v })" Label="Bill-to address" SearchFunc="@(q => Lookup.SearchAddressesAsync(q))" Required="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@createModel.ShipToAddressId" ValueChanged="@((int v) => createModel = createModel with { ShipToAddressId = v })" Label="Ship-to address" SearchFunc="@(q => Lookup.SearchAddressesAsync(q))" Required="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkSelect TValue="int" Value="@createModel.ShipMethodId" ValueChanged="@((int v) => createModel = createModel with { ShipMethodId = v })" Label="Ship method" Items="_shipMethods" Required="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@(createModel.CreditCardId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { CreditCardId = v == 0 ? null : v })" Label="Credit card" SearchFunc="@(q => Lookup.SearchCreditCardsAsync(q))" Clearable="true" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@(createModel.CurrencyRateId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { CurrencyRateId = v == 0 ? null : v })" Label="Currency rate" SearchFunc="@(q => Lookup.SearchCurrencyRatesAsync(q))" Clearable="true" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.SubTotal" ValueChanged="@((decimal v) => createModel = createModel with { SubTotal = v })" Label="Subtotal" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.TaxAmt" ValueChanged="@((decimal v) => createModel = createModel with { TaxAmt = v })" Label="Tax" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.Freight" ValueChanged="@((decimal v) => createModel = createModel with { Freight = v })" Label="Freight" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
@@ -60,8 +61,8 @@
                             <MudSelectItem T="byte?" Value="@((byte)6)">6 — Cancelled</MudSelectItem>
                         </MudSelect>
                     </MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@updateModel.SalesPersonId" ValueChanged="@((int? v) => updateModel = updateModel with { SalesPersonId = v })" Label="Sales person id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int?" Value="@updateModel.ShipMethodId" ValueChanged="@((int? v) => updateModel = updateModel with { ShipMethodId = v })" Label="Ship method id" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkAutocomplete TValue="int" Value="@(updateModel.SalesPersonId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { SalesPersonId = v == 0 ? null : v })" Label="Sales person" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Clearable="true" InitialDisplayText="@_editSalesPersonDisplay" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkSelect TValue="int" Value="@(updateModel.ShipMethodId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ShipMethodId = v == 0 ? null : v })" Label="Ship method" Items="_shipMethods" Clearable="true" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.SubTotal" ValueChanged="@((decimal? v) => updateModel = updateModel with { SubTotal = v })" Label="Subtotal" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.TaxAmt" ValueChanged="@((decimal? v) => updateModel = updateModel with { TaxAmt = v })" Label="Tax" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal?" Value="@updateModel.Freight" ValueChanged="@((decimal? v) => updateModel = updateModel with { Freight = v })" Label="Freight" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
@@ -86,8 +87,17 @@
     private UpdateSalesOrderHeaderRequest updateModel = new();
     private bool saving;
 
-    protected override void OnInitialized()
+    private List<LookupItem<int>> _territories = [];
+    private List<LookupItem<int>> _shipMethods = [];
+
+    // Edit-mode initial display text for autocomplete fields
+    private string? _editSalesPersonDisplay;
+
+    protected override async Task OnInitializedAsync()
     {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+        _shipMethods = await Lookup.GetShipMethodsAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateSalesOrderHeaderRequest
@@ -102,6 +112,10 @@
                 Freight = Model.Freight,
                 Comment = Model.Comment,
             };
+
+            // Resolve display text for autocomplete fields in edit mode
+            if (Model.SalesPersonId.HasValue)
+                _editSalesPersonDisplay = await Lookup.GetSalesPersonDisplayAsync(Model.SalesPersonId.Value);
         }
     }
 

@@ -15,7 +15,8 @@ public static class ExportEndpoints
     private static readonly HashSet<string> AllowedTables = new(StringComparer.OrdinalIgnoreCase)
     {
         // dbo
-        "dbo.Bookings", "dbo.Coupons", "dbo.ApiKeys", "dbo.ToolSlotConfigurations", "dbo.RequestLogs",
+        "dbo.ForecastDefinitions", "dbo.ForecastDataPoints", "dbo.ForecastHistoricalSnapshots",
+        "dbo.ArticleReads", "dbo.ApiKeys", "dbo.ToolSlotConfigurations", "dbo.RequestLogs",
 
         // Person
         "Person.AddressType", "Person.Address", "Person.BusinessEntity", "Person.BusinessEntityAddress",

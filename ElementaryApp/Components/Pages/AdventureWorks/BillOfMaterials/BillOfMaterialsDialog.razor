@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateBillOfMaterialsRequest> CreateValidator
 @inject MudFormValidator<UpdateBillOfMaterialsRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,10 +17,10 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@createModel.ProductAssemblyId" ValueChanged="@((int? v) => createModel = createModel with { ProductAssemblyId = v })" Label="Assembly id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(createModel.ProductAssemblyId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { ProductAssemblyId = v == 0 ? null : v })" Label="Assembly product" Clearable="true" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.ComponentId" ValueChanged="@((int v) => createModel = createModel with { ComponentId = v })" Label="Component id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ComponentId" ValueChanged="@((int v) => createModel = createModel with { ComponentId = v })" Label="Component product" Required="true" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="short" Value="@createModel.BomLevel" ValueChanged="@((short v) => createModel = createModel with { BomLevel = v })" Label="BOM level" Variant="Variant.Outlined" Min="0" />
@@ -28,7 +29,7 @@
                         <MudNumericField T="decimal" Value="@createModel.PerAssemblyQty" ValueChanged="@((decimal v) => createModel = createModel with { PerAssemblyQty = v })" Label="Qty/assembly" Variant="Variant.Outlined" Required="true" Step="0.01M" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField Value="@createModel.UnitMeasureCode" ValueChanged="@((string? v) => createModel = createModel with { UnitMeasureCode = v })" Label="Unit measure code" Variant="Variant.Outlined" Required="true" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(createModel.UnitMeasureCode ?? "")" ValueChanged="@((string v) => createModel = createModel with { UnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Unit measure" Required="true" Items="_unitMeasures" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@createModel.StartDate" DateChanged="@((DateTime? v) => createModel = createModel with { StartDate = v ?? DateTime.UtcNow.Date })" Label="Start" Variant="Variant.Outlined" />
@@ -44,10 +45,10 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.ProductAssemblyId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductAssemblyId = v })" Label="Assembly id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.ProductAssemblyId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductAssemblyId = v == 0 ? null : v })" Label="Assembly product" Clearable="true" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" InitialDisplayText="@_editAssemblyDisplay" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.ComponentId" ValueChanged="@((int? v) => updateModel = updateModel with { ComponentId = v })" Label="Component id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.ComponentId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ComponentId = v == 0 ? null : v })" Label="Component product" Clearable="true" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" InitialDisplayText="@_editComponentDisplay" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="short?" Value="@updateModel.BomLevel" ValueChanged="@((short? v) => updateModel = updateModel with { BomLevel = v })" Label="BOM level" Variant="Variant.Outlined" Clearable="true" Min="0" />
@@ -56,7 +57,7 @@
                         <MudNumericField T="decimal?" Value="@updateModel.PerAssemblyQty" ValueChanged="@((decimal? v) => updateModel = updateModel with { PerAssemblyQty = v })" Label="Qty/assembly" Variant="Variant.Outlined" Clearable="true" Step="0.01M" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField Value="@updateModel.UnitMeasureCode" ValueChanged="@((string? v) => updateModel = updateModel with { UnitMeasureCode = v })" Label="Unit measure code" Variant="Variant.Outlined" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@(updateModel.UnitMeasureCode ?? "")" ValueChanged="@((string v) => updateModel = updateModel with { UnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Unit measure" Clearable="true" Items="_unitMeasures" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@updateModel.StartDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { StartDate = v })" Label="Start" Variant="Variant.Outlined" Clearable="true" />
@@ -83,9 +84,14 @@
     private CreateBillOfMaterialsRequest createModel = new() { StartDate = DateTime.UtcNow.Date };
     private UpdateBillOfMaterialsRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<string>> _unitMeasures = [];
+    private string? _editAssemblyDisplay;
+    private string? _editComponentDisplay;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _unitMeasures = await Lookup.GetUnitMeasuresAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateBillOfMaterialsRequest
@@ -98,6 +104,10 @@
                 BomLevel = Model.BomLevel,
                 PerAssemblyQty = Model.PerAssemblyQty,
             };
+            if (Model.ProductAssemblyId.HasValue)
+                _editAssemblyDisplay = await Lookup.GetProductNameAsync(Model.ProductAssemblyId.Value);
+            if (Model.ComponentId != 0)
+                _editComponentDisplay = await Lookup.GetProductNameAsync(Model.ComponentId);
         }
     }
 

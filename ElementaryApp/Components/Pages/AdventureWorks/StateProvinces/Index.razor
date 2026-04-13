@@ -120,8 +120,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.StateProvinceAuditLogs.Add(StateProvinceAuditService.RecordDelete(entity, changedBy));
         db.StateProvinces.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("State / province deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("State / province deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

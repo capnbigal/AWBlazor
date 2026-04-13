@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```pwsh
 dotnet restore ElementaryApp.slnx
 dotnet build   ElementaryApp.slnx
-dotnet test    ElementaryApp.slnx                        # all 18 tests
+dotnet test    ElementaryApp.slnx                        # all 213 tests
 dotnet test    ElementaryApp.slnx --filter "FullyQualifiedName~Login_Form_Post"   # single test by name pattern
 dotnet run     --project ElementaryApp                   # https://localhost:5001
 ```
@@ -91,7 +91,7 @@ This is the BL0008 analyzer warning's actual fix. Apply to every `[SupplyParamet
 2. **`MigrateAsync`** — apply genuinely-pending migrations.
 3. **`EnsureMissingTablesAsync`** — uses `IMigrationsModelDiffer` + `IMigrationsSqlGenerator` to create any tables defined in the model that don't yet exist. Handles the partial-state case where step 1 stamped a migration but only some of its tables actually existed.
 4. **`PatchMissingColumnsAsync`** — walks every entity in the **design-time** model (via `db.GetService<IDesignTimeModel>().Model`, **not** `db.Model` — the runtime model strips migration metadata) and `ALTER TABLE ADD`s any **nullable** columns the model expects but the live table is missing. NOT NULL columns are logged as errors and require manual SQL.
-5. **`SeedAsync`** — creates Identity roles + 4 seed users + 10 booking coupons + 3 sample bookings.
+5. **`SeedAsync`** — creates Identity roles + 4 seed users. Forecast definitions are created by users through the UI.
 
 All five steps run in both production (`AdventureWorks2022`) and dev/test (`AdventureWorks2022_dev`) — they only differ in which database on `ELITE` the connection string points at. Non-SQL-Server providers are rejected up front with `InvalidOperationException`.
 
@@ -187,4 +187,4 @@ Ten entity pages have `<HierarchyColumn>` + `<ChildRowContent>` with self-contai
 - **No SQLite — at all.** Neither the app nor the test project references `Microsoft.EntityFrameworkCore.Sqlite` / `Microsoft.Data.Sqlite`. Tests run against real SQL Server (`ELITE / AdventureWorks2022_dev`). Never reintroduce SQLite.
 - **No external auth providers** (Google/Microsoft/GitHub) wired up — see Phase 9 in `docs/phase-plan.md` to add.
 - **No 2FA QR code rendering** — only the manual setup key + `otpauth://` URI. See Phase 9b.
-- **No Anthropic AI chat** — explicitly skipped during Phase 4. See Phase 11 to reintroduce.
+

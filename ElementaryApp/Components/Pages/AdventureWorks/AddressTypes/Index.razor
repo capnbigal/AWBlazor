@@ -138,8 +138,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordDelete(entity, changedBy));
         db.AddressTypes.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Address type deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Address type deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

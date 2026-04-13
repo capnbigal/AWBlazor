@@ -5,6 +5,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateBusinessEntityContactRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -13,13 +14,13 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="4">
-                    <MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Business entity" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudNumericField T="int" Value="@createModel.PersonId" ValueChanged="@((int v) => createModel = createModel with { PersonId = v })" Label="Person id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.PersonId" ValueChanged="@((int v) => createModel = createModel with { PersonId = v })" Label="Person" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudNumericField T="int" Value="@createModel.ContactTypeId" ValueChanged="@((int v) => createModel = createModel with { ContactTypeId = v })" Label="Contact type id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkSelect TValue="int" Value="@createModel.ContactTypeId" ValueChanged="@((int v) => createModel = createModel with { ContactTypeId = v })" Label="Contact type" Required="true" Items="_contactTypes" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -36,6 +37,12 @@
     private MudForm form = null!;
     private CreateBusinessEntityContactRequest createModel = new();
     private bool saving;
+    private List<LookupItem<int>> _contactTypes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _contactTypes = await Lookup.GetContactTypesAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
