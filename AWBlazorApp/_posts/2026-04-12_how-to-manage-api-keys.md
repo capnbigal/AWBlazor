@@ -3,10 +3,10 @@ title: Managing API Keys
 summary: How to create, use, and revoke API keys for REST API authentication.
 tags: [api-keys, admin]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
-API keys let you authenticate against Elementary App's REST API from scripts, external tools, or other applications without needing a browser session. This guide covers the full lifecycle of creating, using, and revoking keys.
+API keys let you authenticate against AWBlazor's REST API from scripts, external tools, or other applications without needing a browser session. This guide covers the full lifecycle of creating, using, and revoking keys.
 
 ## Creating a Key
 

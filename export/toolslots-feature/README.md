@@ -61,12 +61,12 @@ YourApp/
 ### 2. Update namespaces
 
 Find/replace in all copied files:
-- `ElementaryApp.Data.Entities` → `YourApp.Data.Entities`
-- `ElementaryApp.Data` → `YourApp.Data`
-- `ElementaryApp.Models` → `YourApp.Models`
-- `ElementaryApp.Validators` → `YourApp.Validators`
-- `ElementaryApp.Endpoints` → `YourApp.Endpoints`
-- `ElementaryApp.Services` → `YourApp.Services`
+- `AWBlazorApp.Data.Entities` → `YourApp.Data.Entities`
+- `AWBlazorApp.Data` → `YourApp.Data`
+- `AWBlazorApp.Models` → `YourApp.Models`
+- `AWBlazorApp.Validators` → `YourApp.Validators`
+- `AWBlazorApp.Endpoints` → `YourApp.Endpoints`
+- `AWBlazorApp.Services` → `YourApp.Services`
 
 ### 3. Register in your DbContext
 

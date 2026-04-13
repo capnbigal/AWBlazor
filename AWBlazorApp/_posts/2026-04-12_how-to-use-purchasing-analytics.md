@@ -3,7 +3,7 @@ title: Using the Purchasing Analytics Dashboard
 summary: How to analyze purchase order spend, vendor concentration, and lead times.
 tags: [analytics, purchasing]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
 The Purchasing Analytics Dashboard aggregates data from `Purchasing.PurchaseOrderHeader`, `Purchasing.PurchaseOrderDetail`, `Purchasing.Vendor`, and `Purchasing.ShipMethod` to give you a clear picture of procurement operations. It answers questions about where money is being spent, which vendors dominate the supply chain, and how reliably materials arrive on schedule.
@@ -26,4 +26,4 @@ The date range controls at the top of the page scope all metrics to a specific w
 
 ## CSV Export
 
-All tables and charts on the Purchasing Dashboard support CSV export. Click the export icon to download the currently filtered dataset. The export includes vendor names, order dates, amounts, lead times, and any other columns visible in the current view. This data can be imported into procurement planning tools, shared with the finance team for budget reconciliation, or used as input for PurchaseOrderSpend forecasts within Elementary App's forecasting module.
+All tables and charts on the Purchasing Dashboard support CSV export. Click the export icon to download the currently filtered dataset. The export includes vendor names, order dates, amounts, lead times, and any other columns visible in the current view. This data can be imported into procurement planning tools, shared with the finance team for budget reconciliation, or used as input for PurchaseOrderSpend forecasts within AWBlazor's forecasting module.

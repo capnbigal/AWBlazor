@@ -1,12 +1,12 @@
 ---
 title: About Tool Slot Configurations
-summary: How Elementary App integrates with the externally managed ToolSlotConfigurations table.
+summary: How AWBlazor integrates with the externally managed ToolSlotConfigurations table.
 tags: [tool-slots]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
-Tool Slot Configurations represent machine tooling setups used in manufacturing operations. In Elementary App, the `ToolSlotConfiguration` entity maps to the `dbo.ToolSlotConfigurations` table in SQL Server, but unlike every other table in the application, this table is not created or modified by EF Core migrations. It is externally managed by a DBA, and the application treats it as a read/write data source with a fixed schema.
+Tool Slot Configurations represent machine tooling setups used in manufacturing operations. In AWBlazor, the `ToolSlotConfiguration` entity maps to the `dbo.ToolSlotConfigurations` table in SQL Server, but unlike every other table in the application, this table is not created or modified by EF Core migrations. It is externally managed by a DBA, and the application treats it as a read/write data source with a fixed schema.
 
 ## External Table Management
 

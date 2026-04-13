@@ -3,7 +3,7 @@ title: Using the Forecast Analytics Dashboard
 summary: How to interpret accuracy metrics, compare methods, and track evaluation results.
 tags: [analytics, forecasting]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
 The Forecast Analytics Dashboard brings together all your active forecasts in one place, showing how well each one predicts actual outcomes and helping you choose the best method for each data source. It is accessible from the Analytics section in the navigation drawer and updates as new evaluation runs complete.

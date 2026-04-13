@@ -1,9 +1,9 @@
-using ElementaryApp.Data.Entities;
+using AWBlazorApp.Data.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace ElementaryApp.Data;
+namespace AWBlazorApp.Data;
 
 /// <summary>
 /// Populates audit fields (CreatedBy/CreatedDate/ModifiedBy/ModifiedDate/DeletedDate)

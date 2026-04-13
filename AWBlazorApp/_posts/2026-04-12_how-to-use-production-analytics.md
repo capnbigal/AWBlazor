@@ -3,7 +3,7 @@ title: Using the Production Analytics Dashboard
 summary: How to monitor work order volume, scrap rates, throughput, and product lifecycle metrics.
 tags: [analytics, production]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
 The Production Analytics Dashboard gives you visibility into Adventure Works' manufacturing operations. It draws data from `Production.WorkOrder`, `Production.ScrapReason`, `Production.Product`, and related tables to present operational KPIs, trend charts, and drill-down views focused on shop floor performance.
@@ -26,4 +26,4 @@ This section visualizes the current state of the product catalog based on lifecy
 
 ## Filtering and Drill-Through
 
-Like all analytics dashboards in Elementary App, the Production Dashboard supports period selection via date range controls and filtering by product category. Clicking on a data point in any chart filters the other views to the same context — for example, clicking a specific month in the work order volume chart updates the scrap rate and throughput views to show only that month's data. The drill-through capability lets you navigate from an aggregated metric directly to the underlying reference data rows in the Production reference data pages.
+Like all analytics dashboards in AWBlazor, the Production Dashboard supports period selection via date range controls and filtering by product category. Clicking on a data point in any chart filters the other views to the same context — for example, clicking a specific month in the work order volume chart updates the scrap rate and throughput views to show only that month's data. The drill-through capability lets you navigate from an aggregated metric directly to the underlying reference data rows in the Production reference data pages.

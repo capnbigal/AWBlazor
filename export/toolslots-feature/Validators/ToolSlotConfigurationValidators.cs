@@ -1,7 +1,7 @@
-using ElementaryApp.Models;
+using AWBlazorApp.Models;
 using FluentValidation;
 
-namespace ElementaryApp.Validators;
+namespace AWBlazorApp.Validators;
 
 public sealed class CreateToolSlotConfigurationValidator : AbstractValidator<CreateToolSlotConfigurationRequest>
 {

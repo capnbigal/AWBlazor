@@ -3,10 +3,10 @@ title: About Forecasts
 summary: An overview of the forecasting system, its data sources, methods, and evaluation lifecycle.
 tags: [forecasting]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
-The forecasting module in Elementary App lets you build time-series predictions against real AdventureWorks data. A forecast is a named entity that combines a data source, a statistical method, and a set of parameters to project future values over a configurable horizon. Forecasts are stored in the database alongside their computed results, so you can compare predictions against actual outcomes over time.
+The forecasting module in AWBlazor lets you build time-series predictions against real AdventureWorks data. A forecast is a named entity that combines a data source, a statistical method, and a set of parameters to project future values over a configurable horizon. Forecasts are stored in the database alongside their computed results, so you can compare predictions against actual outcomes over time.
 
 ## Data Sources
 

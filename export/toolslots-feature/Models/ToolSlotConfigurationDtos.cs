@@ -1,6 +1,6 @@
-using ElementaryApp.Data.Entities;
+using AWBlazorApp.Data.Entities;
 
-namespace ElementaryApp.Models;
+namespace AWBlazorApp.Models;
 
 public sealed record ToolSlotConfigurationDto(
     int Id,

@@ -1,4 +1,4 @@
-namespace ElementaryApp.Data;
+namespace AWBlazorApp.Data;
 
 public static class AppRoles
 {

@@ -3,7 +3,7 @@ title: About Sales Orders
 summary: Understanding the SalesOrderHeader and SalesOrderDetail structure in AdventureWorks.
 tags: [sales, reference-data]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
 Sales orders are the central transactional records in the AdventureWorks Sales schema. Every customer purchase is represented by a `Sales.SalesOrderHeader` row linked to one or more `Sales.SalesOrderDetail` rows. Together, these tables capture the full lifecycle of an order from initial placement through shipment and payment, and they serve as the primary data source for the Sales Analytics Dashboard and SalesRevenue forecasts.

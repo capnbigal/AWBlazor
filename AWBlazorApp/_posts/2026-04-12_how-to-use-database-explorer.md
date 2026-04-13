@@ -3,10 +3,10 @@ title: Using the Database Explorer
 summary: How to explore table sizes, schema distribution, and per-schema details in the Database Explorer.
 tags: [database-explorer]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
-The Database Explorer provides a structural overview of the AdventureWorks2022 database directly within Elementary App. Accessible from the Reports section in the navigation drawer, it shows table counts, row counts, and size information organized by schema. This is useful for understanding the shape of the data you are working with, identifying large tables that may need indexing attention, and getting a quick inventory of what exists in the database.
+The Database Explorer provides a structural overview of the AdventureWorks2022 database directly within AWBlazor. Accessible from the Reports section in the navigation drawer, it shows table counts, row counts, and size information organized by schema. This is useful for understanding the shape of the data you are working with, identifying large tables that may need indexing attention, and getting a quick inventory of what exists in the database.
 
 ## Schema Distribution
 

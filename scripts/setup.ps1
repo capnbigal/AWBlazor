@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
-# ElementaryApp — Local development setup script
+# AWBlazorApp — Local development setup script
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== ElementaryApp Setup ===" -ForegroundColor Cyan
+Write-Host "=== AWBlazorApp Setup ===" -ForegroundColor Cyan
 
 # Check .NET SDK
 $dotnetVersion = dotnet --version 2>$null
@@ -26,16 +26,16 @@ try {
 
 # Restore packages
 Write-Host "`nRestoring NuGet packages..." -ForegroundColor Yellow
-dotnet restore ElementaryApp.slnx
+dotnet restore AWBlazorApp.slnx
 
 # Build
 Write-Host "`nBuilding solution..." -ForegroundColor Yellow
-dotnet build ElementaryApp.slnx --no-restore
+dotnet build AWBlazorApp.slnx --no-restore
 
 # Run tests
 Write-Host "`nRunning tests..." -ForegroundColor Yellow
-dotnet test ElementaryApp.slnx --no-build
+dotnet test AWBlazorApp.slnx --no-build
 
 Write-Host "`n=== Setup Complete ===" -ForegroundColor Cyan
-Write-Host "Run 'dotnet run --project ElementaryApp' to start the app." -ForegroundColor Green
+Write-Host "Run 'dotnet run --project AWBlazorApp' to start the app." -ForegroundColor Green
 Write-Host "Open https://localhost:5001/" -ForegroundColor Green

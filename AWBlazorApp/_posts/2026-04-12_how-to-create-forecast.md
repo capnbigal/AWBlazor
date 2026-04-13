@@ -3,10 +3,10 @@ title: How to Create a Forecast
 summary: Step-by-step instructions for creating and computing a time-series forecast.
 tags: [forecasting]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
-Creating a forecast in Elementary App involves selecting a data source, choosing a statistical method, configuring parameters, and running the computation. This guide walks through each step from start to finish.
+Creating a forecast in AWBlazor involves selecting a data source, choosing a statistical method, configuring parameters, and running the computation. This guide walks through each step from start to finish.
 
 ## Step 1: Navigate to the Forecasts Page
 

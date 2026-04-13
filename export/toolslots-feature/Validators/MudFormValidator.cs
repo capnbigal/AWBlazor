@@ -1,7 +1,7 @@
 using FluentValidation;
 using FluentValidation.Internal;
 
-namespace ElementaryApp.Validators;
+namespace AWBlazorApp.Validators;
 
 /// <summary>
 /// Adapter that lets a <see cref="MudBlazor.MudForm"/> reuse a FluentValidation

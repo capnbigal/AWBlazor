@@ -1,8 +1,8 @@
 using System.Text;
-using ElementaryApp.Data;
-using ElementaryApp.Data.Entities;
+using AWBlazorApp.Data;
+using AWBlazorApp.Data.Entities;
 
-namespace ElementaryApp.Services;
+namespace AWBlazorApp.Services;
 
 /// <summary>
 /// Builds <see cref="ToolSlotAuditLog"/> rows for create/update/delete operations against

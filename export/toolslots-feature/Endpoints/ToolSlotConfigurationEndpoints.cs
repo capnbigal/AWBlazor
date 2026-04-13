@@ -1,13 +1,13 @@
 using System.Security.Claims;
-using ElementaryApp.Data;
-using ElementaryApp.Models;
-using ElementaryApp.Services;
+using AWBlazorApp.Data;
+using AWBlazorApp.Models;
+using AWBlazorApp.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace ElementaryApp.Endpoints;
+namespace AWBlazorApp.Endpoints;
 
 public static class ToolSlotConfigurationEndpoints
 {

@@ -1,12 +1,12 @@
 ---
 title: About AdventureWorks Reference Data
-summary: An overview of the AdventureWorks2022 schemas and how Elementary App exposes them.
+summary: An overview of the AdventureWorks2022 schemas and how AWBlazor exposes them.
 tags: [reference-data]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
-AdventureWorks2022 is Microsoft's sample database for SQL Server, modeling a fictional bicycle manufacturer called Adventure Works Cycles. It covers the full spectrum of business operations — sales, production, purchasing, human resources, and person/contact management — spread across six schemas with over 70 tables. Elementary App maps these tables to EF Core entities and exposes them through more than 90 reference data pages with full CRUD capabilities, sortable/filterable MudDataGrid tables, and expandable row drill-throughs.
+AdventureWorks2022 is Microsoft's sample database for SQL Server, modeling a fictional bicycle manufacturer called Adventure Works Cycles. It covers the full spectrum of business operations — sales, production, purchasing, human resources, and person/contact management — spread across six schemas with over 70 tables. AWBlazor maps these tables to EF Core entities and exposes them through more than 90 reference data pages with full CRUD capabilities, sortable/filterable MudDataGrid tables, and expandable row drill-throughs.
 
 ## The Six Schemas
 

@@ -1,12 +1,12 @@
 ---
-title: Getting Started with Elementary App
-summary: A quick orientation to Elementary App's features, navigation, and seed accounts.
+title: Getting Started with AWBlazor
+summary: A quick orientation to AWBlazor's features, navigation, and seed accounts.
 tags: [getting-started]
 category: getting-started
-author: Elementary App
+author: AWBlazor
 ---
 
-Elementary App is a .NET 10 Blazor Server application built on top of the AdventureWorks2022 SQL Server database. It provides interactive analytics dashboards, forecasting tools, reference data management for over 90 AdventureWorks entities, and administrative utilities — all wrapped in a MudBlazor 9 UI with dark mode support. Whether you are exploring sales trends, managing production work orders, or building time-series forecasts, Elementary App gives you a single place to work with your data.
+AWBlazor is a .NET 10 Blazor Server application built on top of the AdventureWorks2022 SQL Server database. It provides interactive analytics dashboards, forecasting tools, reference data management for over 90 AdventureWorks entities, and administrative utilities — all wrapped in a MudBlazor 9 UI with dark mode support. Whether you are exploring sales trends, managing production work orders, or building time-series forecasts, AWBlazor gives you a single place to work with your data.
 
 ## Navigating the App
 
@@ -22,7 +22,7 @@ When the application starts for the first time, the DatabaseInitializer seeds fo
 
 ## Technical Requirements
 
-Elementary App requires a SQL Server instance hosting the AdventureWorks2022 database. The application connects via the connection string configured in `appsettings.json` (production) or `appsettings.Development.json` (development). The server named SHOOSHEE hosts both the production and dev databases. No additional infrastructure is needed — there is no NPM toolchain, no separate front-end build step, and no external service dependencies beyond SQL Server. Simply run `dotnet run --project AWBlazorApp` and navigate to https://localhost:5001.
+AWBlazor requires a SQL Server instance hosting the AdventureWorks2022 database. The application connects via the connection string configured in `appsettings.json` (production) or `appsettings.Development.json` (development). The server named SHOOSHEE hosts both the production and dev databases. No additional infrastructure is needed — there is no NPM toolchain, no separate front-end build step, and no external service dependencies beyond SQL Server. Simply run `dotnet run --project AWBlazorApp` and navigate to https://localhost:5001.
 
 ## What to Explore First
 

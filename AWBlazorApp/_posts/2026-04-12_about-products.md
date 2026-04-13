@@ -3,10 +3,10 @@ title: About Products
 summary: Understanding the Product entity, its lifecycle, and its relationships in AdventureWorks.
 tags: [production, reference-data]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
-The `Production.Product` table is one of the most interconnected entities in AdventureWorks2022. Every item that Adventure Works Cycles manufactures or resells is represented here, from finished bicycles to individual components like chains, pedals, and handlebars. Elementary App exposes the full product catalog through the Reference Data section, with sortable grids, expandable drill-throughs, and cross-entity navigation links to related production, sales, and inventory records.
+The `Production.Product` table is one of the most interconnected entities in AdventureWorks2022. Every item that Adventure Works Cycles manufactures or resells is represented here, from finished bicycles to individual components like chains, pedals, and handlebars. AWBlazor exposes the full product catalog through the Reference Data section, with sortable grids, expandable drill-throughs, and cross-entity navigation links to related production, sales, and inventory records.
 
 ## Product Lifecycle
 

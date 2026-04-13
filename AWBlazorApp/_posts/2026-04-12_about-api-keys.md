@@ -3,14 +3,14 @@ title: About API Keys
 summary: How API key authentication works, from generation to role inheritance.
 tags: [api-keys]
 category: entity-guide
-author: Elementary App
+author: AWBlazor
 ---
 
-API keys provide a way for external tools, scripts, and integrations to authenticate against Elementary App's REST API endpoints without using browser-based cookie authentication. Each key is tied to a specific user account and inherits that user's roles, so an API key created by an Admin user carries Admin privileges, while one created by an Employee user is limited to Employee-level access.
+API keys provide a way for external tools, scripts, and integrations to authenticate against AWBlazor's REST API endpoints without using browser-based cookie authentication. Each key is tied to a specific user account and inherits that user's roles, so an API key created by an Admin user carries Admin privileges, while one created by an Employee user is limited to Employee-level access.
 
 ## Key Format and Storage
 
-Every API key is prefixed with `ek_` followed by a cryptographically random string. This prefix makes it easy to identify Elementary App keys in configuration files, environment variables, or secret managers — if you see a string starting with `ek_`, you know it belongs to this application. When a key is generated, the raw value is displayed exactly once for the user to copy. The application stores a SHA-256 hash of the key in the `ApiKeys` table rather than the plaintext value. This means that if the database is compromised, the actual key values cannot be recovered from the stored hashes.
+Every API key is prefixed with `ek_` followed by a cryptographically random string. This prefix makes it easy to identify AWBlazor keys in configuration files, environment variables, or secret managers — if you see a string starting with `ek_`, you know it belongs to this application. When a key is generated, the raw value is displayed exactly once for the user to copy. The application stores a SHA-256 hash of the key in the `ApiKeys` table rather than the plaintext value. This means that if the database is compromised, the actual key values cannot be recovered from the stored hashes.
 
 ## Authentication Flow
 
@@ -18,7 +18,7 @@ When an external client sends a request to any `/api/*` endpoint, it includes th
 
 ## The ApiOrCookie Policy
 
-Elementary App defines an `ApiOrCookie` authorization policy in `Program.cs` that accepts either ASP.NET Core Identity cookies or the API key authentication scheme. All `/api/*` minimal API endpoints use this policy. This dual-scheme approach means the same endpoints are accessible from both the interactive Blazor UI (which uses cookies) and external HTTP clients (which use API keys). You do not need separate endpoint definitions for internal and external consumers.
+AWBlazor defines an `ApiOrCookie` authorization policy in `Program.cs` that accepts either ASP.NET Core Identity cookies or the API key authentication scheme. All `/api/*` minimal API endpoints use this policy. This dual-scheme approach means the same endpoints are accessible from both the interactive Blazor UI (which uses cookies) and external HTTP clients (which use API keys). You do not need separate endpoint definitions for internal and external consumers.
 
 ## Role Inheritance
 

@@ -3,7 +3,7 @@ title: Using the Sales Analytics Dashboard
 summary: How to read and interact with the Sales Analytics Dashboard's KPIs, charts, and exports.
 tags: [analytics, sales]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
 The Sales Analytics Dashboard provides a consolidated view of Adventure Works' sales performance. It pulls data from `Sales.SalesOrderHeader`, `Sales.SalesOrderDetail`, `Sales.SalesTerritory`, and `Sales.SalesPersonQuotaHistory` to present KPIs, trend charts, and breakdowns that help you understand revenue patterns and team performance.

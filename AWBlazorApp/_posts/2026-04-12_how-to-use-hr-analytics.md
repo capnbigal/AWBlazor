@@ -3,7 +3,7 @@ title: Using the HR Analytics Dashboard
 summary: How to explore headcount, tenure, compensation, and department growth metrics.
 tags: [analytics, hr]
 category: how-to
-author: Elementary App
+author: AWBlazor
 ---
 
 The HR Analytics Dashboard provides workforce insights derived from the `HumanResources.Employee`, `HumanResources.Department`, `HumanResources.EmployeeDepartmentHistory`, and `HumanResources.EmployeePayHistory` tables in AdventureWorks2022. It helps managers and HR professionals understand staffing levels, compensation trends, and organizational growth over time.
