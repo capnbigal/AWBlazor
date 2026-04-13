@@ -1,0 +1,140 @@
+@page "/aw/addresses"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Addresses</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Addresses</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Person.Address</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/addresses/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New address</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterCity" Label="City contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterPostalCode" Label="Postal code starts with" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="AddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.AddressLine1" Title="Line 1" />
+            <PropertyColumn Property="x => x.AddressLine2" Title="Line 2" />
+            <PropertyColumn Property="x => x.City" Title="City" />
+            <PropertyColumn Property="x => x.StateProvinceId" Title="State id" />
+            <PropertyColumn Property="x => x.PostalCode" Title="Postal" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="AddressDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<AddressDto> grid = null!;
+    private string? filterCity;
+    private string? filterPostalCode;
+
+    private async Task<GridData<AddressDto>> LoadServerDataAsync(GridState<AddressDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Addresses.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterCity))
+        {
+            var c = filterCity.Trim();
+            query = query.Where(x => x.City.Contains(c));
+        }
+        if (!string.IsNullOrWhiteSpace(filterPostalCode))
+        {
+            var p = filterPostalCode.Trim();
+            query = query.Where(x => x.PostalCode.StartsWith(p));
+        }
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(AddressDto.Id)              => sort.Descending ? query.OrderByDescending(x => x.Id)              : query.OrderBy(x => x.Id),
+            nameof(AddressDto.City)            => sort.Descending ? query.OrderByDescending(x => x.City)            : query.OrderBy(x => x.City),
+            nameof(AddressDto.PostalCode)      => sort.Descending ? query.OrderByDescending(x => x.PostalCode)      : query.OrderBy(x => x.PostalCode),
+            nameof(AddressDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(x => x.StateProvinceId) : query.OrderBy(x => x.StateProvinceId),
+            _                                  => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<AddressDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<AddressDialog>("New address", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Address created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(AddressDto row)
+    {
+        var parameters = new DialogParameters<AddressDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<AddressDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Address updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(AddressDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete address?", $"Permanently delete address #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Addresses.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Address no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.AddressAuditLogs.Add(AddressAuditService.RecordDelete(entity, changedBy));
+        db.Addresses.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Address deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(AddressDto row) => Navigation.NavigateTo($"aw/addresses/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

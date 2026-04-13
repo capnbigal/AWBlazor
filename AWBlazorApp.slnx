@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AWBlazorApp/AWBlazorApp.csproj" />
+  <Project Path="AWBlazorApp.Tests/AWBlazorApp.Tests.csproj" />
+</Solution>

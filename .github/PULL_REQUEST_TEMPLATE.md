@@ -23,7 +23,7 @@ Closes #(issue number)
 
 ## Testing
 
-- [ ] All existing tests pass (`dotnet test ElementaryApp.slnx`)
+- [ ] All existing tests pass (`dotnet test AWBlazorApp.slnx`)
 - [ ] New tests added for new functionality
 - [ ] Form POST tests added for any new Identity/SSR form pages
 - [ ] Tested manually against SQL Server (ELITE/AdventureWorks2022_dev)

@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues and their solutions for ElementaryApp.
+Common issues and their solutions for AWBlazorApp.
 
 ---
 

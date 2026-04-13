@@ -1,0 +1,139 @@
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateCreditCardRequest> CreateValidator
+@inject MudFormValidator<UpdateCreditCardRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create credit card" : $"Edit credit card #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.CardType" ValueChanged="@((string? v) => createModel = createModel with { CardType = v })" Label="Card type" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.CardNumber" ValueChanged="@((string? v) => createModel = createModel with { CardNumber = v })" Label="Card number" Variant="Variant.Outlined" Required="true" MaxLength="25" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudNumericField T="byte" Value="@createModel.ExpMonth" ValueChanged="@((byte v) => createModel = createModel with { ExpMonth = v })" Label="Exp month" Variant="Variant.Outlined" Required="true" Min="1" Max="12" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudNumericField T="short" Value="@createModel.ExpYear" ValueChanged="@((short v) => createModel = createModel with { ExpYear = v })" Label="Exp year" Variant="Variant.Outlined" Required="true" Min="2000" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.CardType" ValueChanged="@((string? v) => updateModel = updateModel with { CardType = v })" Label="Card type" Variant="Variant.Outlined" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.CardNumber" ValueChanged="@((string? v) => updateModel = updateModel with { CardNumber = v })" Label="Card number" Variant="Variant.Outlined" MaxLength="25" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudNumericField T="byte?" Value="@updateModel.ExpMonth" ValueChanged="@((byte? v) => updateModel = updateModel with { ExpMonth = v })" Label="Exp month" Variant="Variant.Outlined" Clearable="true" Min="1" Max="12" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudNumericField T="short?" Value="@updateModel.ExpYear" ValueChanged="@((short? v) => updateModel = updateModel with { ExpYear = v })" Label="Exp year" Variant="Variant.Outlined" Clearable="true" Min="2000" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CreditCardDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateCreditCardRequest createModel = new();
+    private UpdateCreditCardRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateCreditCardRequest
+            {
+                CardType = Model.CardType,
+                CardNumber = Model.CardNumber,
+                ExpMonth = Model.ExpMonth,
+                ExpYear = Model.ExpYear,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                db.CreditCards.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.CreditCardAuditLogs.Add(CreditCardAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.CreditCards.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = CreditCardAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.CreditCardAuditLogs.Add(CreditCardAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

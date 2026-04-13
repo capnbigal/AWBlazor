@@ -1,0 +1,52 @@
+using System.Text;
+using AWBlazorApp.Data.Entities.AdventureWorks;
+
+namespace AWBlazorApp.Services.AdventureWorksAudit;
+
+public static class CustomerAuditService
+{
+    public const string ActionCreated = "Created";
+    public const string ActionUpdated = "Updated";
+    public const string ActionDeleted = "Deleted";
+
+    public static Snapshot CaptureSnapshot(Customer e) => new(e);
+
+    public static CustomerAuditLog RecordCreate(Customer e, string? by)
+        => BuildLog(e, ActionCreated, by, "Created");
+
+    public static CustomerAuditLog RecordUpdate(Snapshot before, Customer after, string? by)
+        => BuildLog(after, ActionUpdated, by, BuildDiffSummary(before, after));
+
+    public static CustomerAuditLog RecordDelete(Customer e, string? by)
+        => BuildLog(e, ActionDeleted, by, "Deleted");
+
+    private static CustomerAuditLog BuildLog(Customer e, string action, string? by, string? summary)
+        => new()
+        {
+            CustomerId = e.Id,
+            Action = action,
+            ChangedBy = by,
+            ChangedDate = DateTime.UtcNow,
+            ChangeSummary = AuditDiffHelpers.Truncate(summary, 2048),
+            PersonId = e.PersonId,
+            StoreId = e.StoreId,
+            TerritoryId = e.TerritoryId,
+            AccountNumber = e.AccountNumber,
+            RowGuid = e.RowGuid,
+            SourceModifiedDate = e.ModifiedDate,
+        };
+
+    private static string BuildDiffSummary(Snapshot before, Customer after)
+    {
+        var sb = new StringBuilder();
+        AuditDiffHelpers.AppendIfChanged(sb, "PersonId", before.PersonId, after.PersonId);
+        AuditDiffHelpers.AppendIfChanged(sb, "StoreId", before.StoreId, after.StoreId);
+        AuditDiffHelpers.AppendIfChanged(sb, "TerritoryId", before.TerritoryId, after.TerritoryId);
+        return sb.Length == 0 ? "No changes" : sb.ToString();
+    }
+
+    public readonly record struct Snapshot(int? PersonId, int? StoreId, int? TerritoryId)
+    {
+        public Snapshot(Customer e) : this(e.PersonId, e.StoreId, e.TerritoryId) { }
+    }
+}

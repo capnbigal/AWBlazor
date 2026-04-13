@@ -1,0 +1,127 @@
+@page "/aw/bill-of-materials"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Bill of materials</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Bill of materials</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.BillOfMaterials</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/bill-of-materials/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New BOM row</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterComponentId" Label="Component id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="BillOfMaterialsDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.ProductAssemblyId" Title="Assembly id" />
+            <PropertyColumn Property="x => x.ComponentId" Title="Component id" />
+            <PropertyColumn Property="x => x.BomLevel" Title="Level" />
+            <PropertyColumn Property="x => x.PerAssemblyQty" Title="Qty/asm" />
+            <PropertyColumn Property="x => x.UnitMeasureCode" Title="UoM" />
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="BillOfMaterialsDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<BillOfMaterialsDto> grid = null!;
+    private int? filterComponentId;
+
+    private async Task<GridData<BillOfMaterialsDto>> LoadServerDataAsync(GridState<BillOfMaterialsDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.BillOfMaterials.AsNoTracking();
+        if (filterComponentId.HasValue) query = query.Where(x => x.ComponentId == filterComponentId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(BillOfMaterialsDto.Id)          => sort.Descending ? query.OrderByDescending(x => x.Id)          : query.OrderBy(x => x.Id),
+            nameof(BillOfMaterialsDto.ComponentId) => sort.Descending ? query.OrderByDescending(x => x.ComponentId) : query.OrderBy(x => x.ComponentId),
+            nameof(BillOfMaterialsDto.BomLevel)    => sort.Descending ? query.OrderByDescending(x => x.BomLevel)    : query.OrderBy(x => x.BomLevel),
+            _                                      => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<BillOfMaterialsDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<BillOfMaterialsDialog>("New BOM row", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("BOM row created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(BillOfMaterialsDto row)
+    {
+        var parameters = new DialogParameters<BillOfMaterialsDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<BillOfMaterialsDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("BOM row updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(BillOfMaterialsDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete BOM row?", $"Permanently delete BOM row #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.BillOfMaterials.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Row no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.BillOfMaterialsAuditLogs.Add(BillOfMaterialsAuditService.RecordDelete(entity, changedBy));
+        db.BillOfMaterials.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("BOM row deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(BillOfMaterialsDto row) => Navigation.NavigateTo($"aw/bill-of-materials/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

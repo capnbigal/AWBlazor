@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" @(IsDarkMode ? "data-mud-theme=\"dark\"" : "")>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
+
+    <script>
+      (function() {
+        var m = document.cookie.match(/(?:^|;\s*)darkMode=([^;]*)/);
+        if (m && m[1] === 'true') document.documentElement.setAttribute('data-mud-theme', 'dark');
+      })();
+    </script>
+    <style>
+      html[data-mud-theme="dark"] { background-color: #1e1e1e; }
+      html[data-mud-theme="dark"] body { background-color: #1e1e1e; color: #fff; }
+    </style>
+
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+    <link rel="stylesheet" href="css/account-forms.css" />
+    <link rel="stylesheet" href="AWBlazorApp.styles.css" />
+
+    <HeadOutlet @rendermode="@PageRenderMode" />
+</head>
+<body>
+    <CascadingValue Name="InitialDarkMode" Value="@IsDarkMode">
+        <Routes @rendermode="@PageRenderMode" />
+    </CascadingValue>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    // Per the .NET 8/9/10 Blazor Web App pattern: render every page with InteractiveServer EXCEPT
+    // pages that opt out via [ExcludeFromInteractiveRouting]. Identity scaffold pages need to be
+    // static SSR so they have access to HttpContext (for SignInManager / cookie writes / form
+    // POSTs). Without this, those pages enter an infinite redirect loop because:
+    //   1. Page renders statically with HttpContext available.
+    //   2. Blazor immediately upgrades to interactive via SignalR.
+    //   3. In the interactive render, HttpContext is null.
+    //   4. AccountLayout sees null HttpContext and calls NavigationManager.Refresh().
+    //   5. Goto 1 — infinite loop.
+    // See: https://learn.microsoft.com/aspnet/core/blazor/security/server/
+    private IComponentRenderMode? PageRenderMode
+        => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    public bool IsDarkMode => HttpContext.Request.Cookies["darkMode"] == "true";
+}

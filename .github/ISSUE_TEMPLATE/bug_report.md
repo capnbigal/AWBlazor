@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug to help us improve ElementaryApp
+about: Report a bug to help us improve AWBlazorApp
 title: "[Bug] "
 labels: bug
 assignees: ''

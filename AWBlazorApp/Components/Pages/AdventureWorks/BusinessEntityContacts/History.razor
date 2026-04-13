@@ -1,0 +1,77 @@
+@page "/aw/business-entity-contacts/history"
+@attribute [Authorize]
+@using AWBlazorApp.Models.AdventureWorks
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Business entity contact audit</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/business-entity-contacts"))" />
+        <MudText Typo="Typo.h4">Business entity contact audit</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="BusinessEntityId" Label="Business entity id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="PersonId" Label="Person id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="ContactTypeId" Label="Contact type id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="BusinessEntityContactAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity" />
+            <PropertyColumn Property="x => x.PersonId" Title="Person" />
+            <PropertyColumn Property="x => x.ContactTypeId" Title="Type" />
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="BusinessEntityContactAuditLogDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [SupplyParameterFromQuery] public int? BusinessEntityId { get; set; }
+    [SupplyParameterFromQuery] public int? PersonId { get; set; }
+    [SupplyParameterFromQuery] public int? ContactTypeId { get; set; }
+
+    private MudDataGrid<BusinessEntityContactAuditLogDto> grid = null!;
+    private string? filterAction;
+
+    private async Task<GridData<BusinessEntityContactAuditLogDto>> LoadServerDataAsync(GridState<BusinessEntityContactAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.BusinessEntityContactAuditLogs.AsNoTracking();
+
+        if (BusinessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == BusinessEntityId.Value);
+        if (PersonId.HasValue) query = query.Where(a => a.PersonId == PersonId.Value);
+        if (ContactTypeId.HasValue) query = query.Where(a => a.ContactTypeId == ContactTypeId.Value);
+        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<BusinessEntityContactAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
+    };
+}

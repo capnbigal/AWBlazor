@@ -1,4 +1,4 @@
-# Contributing to ElementaryApp
+# Contributing to AWBlazorApp
 
 ## Prerequisites
 
@@ -12,10 +12,10 @@
 ```pwsh
 git clone https://github.com/capnbigal/AWBlazor.git
 cd AWBlazor
-dotnet restore ElementaryApp.slnx
-dotnet build ElementaryApp.slnx
-dotnet test ElementaryApp.slnx
-dotnet run --project ElementaryApp
+dotnet restore AWBlazorApp.slnx
+dotnet build AWBlazorApp.slnx
+dotnet test AWBlazorApp.slnx
+dotnet run --project AWBlazorApp
 ```
 
 Open https://localhost:5001/
@@ -69,8 +69,8 @@ Use descriptive commit messages. Include Co-Authored-By for AI-assisted commits.
 Tests run against real SQL Server (ELITE/AdventureWorks2022_dev). Hangfire and Serilog SQL sink are disabled in tests via in-memory config overrides.
 
 ```pwsh
-dotnet test ElementaryApp.slnx
-dotnet test ElementaryApp.slnx --filter "FullyQualifiedName~Login_Form_Post"
+dotnet test AWBlazorApp.slnx
+dotnet test AWBlazorApp.slnx --filter "FullyQualifiedName~Login_Form_Post"
 ```
 
 ## Key architectural patterns

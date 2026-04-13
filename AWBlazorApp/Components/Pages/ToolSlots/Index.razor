@@ -1,0 +1,210 @@
+@page "/tool-slots"
+@attribute [Authorize]
+@using AWBlazorApp.Components.Pages.ToolSlots
+@using AWBlazorApp.Models
+@using AWBlazorApp.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Tool Slot Configurations</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Tool slot configurations</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary"
+                   Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.History"
+                   Href="tool-slots/history">
+            View history
+        </MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">
+                New configuration
+            </MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3">
+                <MudTextField @bind-Value="filterFamily" Label="Family" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudTextField @bind-Value="filterMtCode" Label="Machine type code" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudTextField @bind-Value="filterDestination" Label="Destination" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+            </MudItem>
+            <MudItem xs="12" sm="3" Class="d-flex align-center">
+                <MudCheckBox T="bool?" @bind-Value="filterActive" Label="Active only" TriState="true" />
+                <MudIconButton Icon="@Icons.Material.Filled.FilterAlt" OnClick="ApplyFilter" />
+                <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="ClearFilter" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="ToolSlotConfigurationDto"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.Family" Title="Family" />
+            <PropertyColumn Property="x => x.MtCode" Title="MT code" />
+            <PropertyColumn Property="x => x.Destination" Title="Destination" />
+            <PropertyColumn Property="x => x.IsActive" Title="Active" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History"
+                                           Size="Size.Small"
+                                           OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="ToolSlotConfigurationDto" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ToolSlotConfigurationDto> grid = null!;
+    private string? filterFamily;
+    private string? filterMtCode;
+    private string? filterDestination;
+    private bool? filterActive;
+
+    private async Task<GridData<ToolSlotConfigurationDto>> LoadServerDataAsync(GridState<ToolSlotConfigurationDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ToolSlotConfigurations.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(filterFamily))      query = query.Where(t => t.Family == filterFamily);
+        if (!string.IsNullOrWhiteSpace(filterMtCode))      query = query.Where(t => t.MtCode == filterMtCode);
+        if (!string.IsNullOrWhiteSpace(filterDestination)) query = query.Where(t => t.Destination == filterDestination);
+        if (filterActive.HasValue)                          query = query.Where(t => t.IsActive == filterActive.Value);
+
+        var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ToolSlotConfigurationDto.Id)          => sort.Descending ? query.OrderByDescending(t => t.Id)          : query.OrderBy(t => t.Id),
+            nameof(ToolSlotConfigurationDto.Family)      => sort.Descending ? query.OrderByDescending(t => t.Family)      : query.OrderBy(t => t.Family),
+            nameof(ToolSlotConfigurationDto.MtCode)      => sort.Descending ? query.OrderByDescending(t => t.MtCode)      : query.OrderBy(t => t.MtCode),
+            nameof(ToolSlotConfigurationDto.Destination) => sort.Descending ? query.OrderByDescending(t => t.Destination) : query.OrderBy(t => t.Destination),
+            nameof(ToolSlotConfigurationDto.IsActive)    => sort.Descending ? query.OrderByDescending(t => t.IsActive)    : query.OrderBy(t => t.IsActive),
+            _                                            => query.OrderBy(t => t.Id),
+        };
+
+        var rows = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .Select(t => t.ToDto())
+            .ToListAsync(ct);
+
+        return new GridData<ToolSlotConfigurationDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task ClearFilter()
+    {
+        filterFamily = null;
+        filterMtCode = null;
+        filterDestination = null;
+        filterActive = null;
+        await grid.ReloadServerData();
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ToolSlotDialog>("Create configuration", new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Tool slot configuration created.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task OpenEditAsync(ToolSlotConfigurationDto slot)
+    {
+        var parameters = new DialogParameters<ToolSlotDialog> { { x => x.Slot, slot } };
+        var dialog = await DialogService.ShowAsync<ToolSlotDialog>("Edit configuration", parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Tool slot configuration updated.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task DeleteAsync(ToolSlotConfigurationDto slot)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete configuration?",
+            $"Permanently delete tool slot configuration #{slot.Id}?",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ToolSlotConfigurations.FirstOrDefaultAsync(t => t.Id == slot.Id);
+        if (entity is null)
+        {
+            Snackbar.Add("Configuration no longer exists.", Severity.Warning);
+            await grid.ReloadServerData();
+            return;
+        }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        // Write the audit row first (same SaveChanges as the delete so they commit atomically).
+        db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordDelete(entity, changedBy));
+        db.ToolSlotConfigurations.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Configuration deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ToolSlotConfigurationDto slot)
+        => Navigation.NavigateTo($"tool-slots/history/{slot.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

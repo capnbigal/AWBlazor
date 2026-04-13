@@ -1,0 +1,225 @@
+@page "/Account/Manage/ApiKeys"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Cryptography
+@using AWBlazorApp.Data.Entities
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>API keys</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h5" GutterBottom="true">API keys</MudText>
+
+        <ManageNavMenu />
+
+        <StatusMessage />
+
+        @if (!string.IsNullOrEmpty(newlyGeneratedKey))
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                <MudText Typo="Typo.body2">
+                    <strong>New key generated.</strong> Copy it now — it will not be shown again.
+                </MudText>
+                <pre style="margin-top:8px;padding:8px;background:#1e1e1e;color:#dcdcdc;border-radius:4px;word-break:break-all;white-space:pre-wrap;">@newlyGeneratedKey</pre>
+            </MudAlert>
+        }
+
+        @if (expiringKeys.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">
+                <MudText Typo="Typo.body2">
+                    <strong>Keys expiring soon:</strong>
+                    @foreach (var ek in expiringKeys)
+                    {
+                        <br /><span>@ek.Name &mdash; expires @ek.ExpiresDate!.Value.ToString("yyyy-MM-dd")</span>
+                    }
+                </MudText>
+            </MudAlert>
+        }
+
+        <MudText Class="mb-4" Typo="Typo.body2" Color="Color.Secondary">
+            Use API keys to authenticate REST clients with the <code>X-Api-Key</code> header. Keys
+            inherit your role assignments. Treat them as secrets.
+        </MudText>
+
+        <EditForm Model="GenerateInput" method="post" OnValidSubmit="OnGenerateAsync" FormName="generate-key">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="form-validation-summary" role="alert" />
+
+            <div class="form-field">
+                <label for="apikey-name" class="form-label">Friendly name (e.g. CI pipeline)</label>
+                <InputText id="apikey-name"
+                           @bind-Value="GenerateInput.Name"
+                           class="form-control"
+                           placeholder="My API key" />
+                <ValidationMessage For="@(() => GenerateInput.Name)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" Class="mt-2">
+                Generate
+            </MudButton>
+        </EditForm>
+
+        <MudDivider Class="my-4" />
+
+        @if (keys.Count == 0)
+        {
+            <MudText Color="Color.Secondary">No API keys yet.</MudText>
+        }
+        else
+        {
+            <table class="api-keys-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="text-align:left;border-bottom:1px solid #ccc;">
+                        <th style="padding:8px;">Name</th>
+                        <th style="padding:8px;">Created</th>
+                        <th style="padding:8px;">Last used</th>
+                        <th style="padding:8px;">Status</th>
+                        <th style="padding:8px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var key in keys)
+                    {
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:8px;">@key.Name</td>
+                            <td style="padding:8px;">@key.CreatedDate.ToString("yyyy-MM-dd")</td>
+                            <td style="padding:8px;">@(key.LastUsedDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                            <td style="padding:8px;">
+                                @if (key.RevokedDate is not null)
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Revoked</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Active</MudChip>
+                                }
+                            </td>
+                            <td style="padding:8px;">
+                                @if (key.RevokedDate is null)
+                                {
+                                    <EditForm Model="RevokeInput" method="post" OnValidSubmit="OnRevokeAsync" FormName="@($"revoke-{key.Id}")">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="RevokeInput.Id" value="@key.Id" />
+                                        <MudButton ButtonType="ButtonType.Submit" Color="Color.Error" Variant="Variant.Outlined" Size="Size.Small">
+                                            Revoke
+                                        </MudButton>
+                                    </EditForm>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "generate-key")]
+    private GenerateInputModel GenerateInput { get; set; } = new();
+
+    [SupplyParameterFromForm]
+    private RevokeInputModel RevokeInput { get; set; } = new();
+
+    [SupplyParameterFromQuery(Name = "new")]
+    private string? newlyGeneratedKey { get; set; }
+
+    private List<ApiKey> keys = [];
+    private List<ApiKey> expiringKeys = [];
+
+    // The static-SSR form binder can null out form-bound properties on GET; restore them.
+    protected override void OnInitialized()
+    {
+        GenerateInput ??= new();
+        RevokeInput ??= new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        await using var db = await DbFactory.CreateDbContextAsync();
+        keys = await db.ApiKeys
+            .Where(k => k.UserId == user.Id)
+            .OrderByDescending(k => k.CreatedDate)
+            .ToListAsync();
+
+        var thirtyDaysFromNow = DateTime.UtcNow.AddDays(30);
+        expiringKeys = keys
+            .Where(k => k.RevokedDate is null
+                        && k.ExpiresDate is not null
+                        && k.ExpiresDate <= thirtyDaysFromNow
+                        && k.ExpiresDate > DateTime.UtcNow)
+            .ToList();
+    }
+
+    private async Task OnGenerateAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        var rawKey = GenerateKey();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.ApiKeys.Add(new ApiKey
+        {
+            Name = string.IsNullOrWhiteSpace(GenerateInput.Name)
+                ? $"key-{DateTime.UtcNow:yyyyMMdd-HHmmss}"
+                : GenerateInput.Name,
+            Key = rawKey,
+            UserId = user.Id,
+            CreatedDate = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+
+        // Pass the new key back via a query param so the user sees it once. The page reads
+        // the param into newlyGeneratedKey via [SupplyParameterFromQuery].
+        RedirectManager.RedirectTo("Account/Manage/ApiKeys", new() { ["new"] = rawKey });
+    }
+
+    private async Task OnRevokeAsync()
+    {
+        if (RevokeInput.Id <= 0) return;
+
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ApiKeys.FirstOrDefaultAsync(k => k.Id == RevokeInput.Id && k.UserId == user.Id);
+        if (entity is null)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: key no longer exists.", HttpContext);
+            return;
+        }
+        entity.RevokedDate = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        RedirectManager.RedirectToCurrentPageWithStatus($"Key '{entity.Name}' revoked.", HttpContext);
+    }
+
+    private static string GenerateKey()
+    {
+        // 32 random bytes -> 43-char URL-safe base64.
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return "ek_" + Convert.ToBase64String(bytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .TrimEnd('=');
+    }
+
+    private sealed class GenerateInputModel
+    {
+        [Required]
+        [StringLength(128, MinimumLength = 1)]
+        public string Name { get; set; } = "";
+    }
+
+    private sealed class RevokeInputModel
+    {
+        public int Id { get; set; }
+    }
+}

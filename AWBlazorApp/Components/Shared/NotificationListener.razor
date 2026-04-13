@@ -1,0 +1,29 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@implements IAsyncDisposable
+
+@code {
+    private HubConnection? _hub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri(AWBlazorApp.Hubs.NotificationHub.HubUrl))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<string>("Notify", message =>
+        {
+            InvokeAsync(() => Snackbar.Add(message, MudBlazor.Severity.Info));
+        });
+
+        try { await _hub.StartAsync(); } catch { /* Hub may not be available in SSR */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null)
+            await _hub.DisposeAsync();
+    }
+}

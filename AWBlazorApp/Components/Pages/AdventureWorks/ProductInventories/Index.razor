@@ -1,0 +1,131 @@
+@page "/aw/product-inventories"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Product inventories</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product inventories</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductInventory · composite PK (ProductID, LocationID)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-inventories/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New inventory row</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkSelect TValue="short" Value="@(filterLocationId ?? 0)" ValueChanged="@(v => { filterLocationId = v == 0 ? null : v; })" Label="Location" Items="_locations" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
+            <PropertyColumn Property="x => x.LocationId" Title="Location id" />
+            <PropertyColumn Property="x => x.Shelf" Title="Shelf" />
+            <PropertyColumn Property="x => x.Bin" Title="Bin" />
+            <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductInventoryDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductInventoryDto> grid = null!;
+    private int? filterProductId;
+    private short? filterLocationId;
+    private List<LookupItem<short>> _locations = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _locations = await Lookup.GetLocationsAsync();
+    }
+
+    private async Task<GridData<ProductInventoryDto>> LoadServerDataAsync(GridState<ProductInventoryDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ProductInventories.AsNoTracking();
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+        if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.LocationId)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<ProductInventoryDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductInventoryDialog>("New inventory row", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Inventory row created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductInventoryDto row)
+    {
+        var parameters = new DialogParameters<ProductInventoryDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductInventoryDialog>($"Edit ({row.ProductId}, {row.LocationId})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Inventory row updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductInventoryDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete inventory row?", $"Permanently delete ({row.ProductId}, {row.LocationId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductInventories.FirstOrDefaultAsync(t =>
+            t.ProductId == row.ProductId && t.LocationId == row.LocationId);
+        if (entity is null) { Snackbar.Add("Row no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductInventoryAuditLogs.Add(ProductInventoryAuditService.RecordDelete(entity, changedBy));
+        db.ProductInventories.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Inventory row deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductInventoryDto row)
+        => Navigation.NavigateTo($"aw/product-inventories/history?productId={row.ProductId}&locationId={row.LocationId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

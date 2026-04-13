@@ -1,0 +1,79 @@
+@page "/admin/guide-stats"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using AWBlazorApp.Services
+@inject UserGuideService Guide
+
+<PageTitle>Guide statistics</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">User Guide read statistics</MudText>
+
+    @if (stats is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        @* ── KPI cards ────────────────────────────────────────────────────── *@
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="4">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2">
+                    <MudText Typo="Typo.h3" Color="Color.Primary">@stats.Count</MudText>
+                    <MudText Typo="Typo.body2">Total articles</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2">
+                    <MudText Typo="Typo.h3" Color="Color.Primary">@TotalReads</MudText>
+                    <MudText Typo="Typo.body2">Total reads</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2">
+                    <MudText Typo="Typo.h3" Color="Color.Primary">@AvgReads.ToString("0.0")</MudText>
+                    <MudText Typo="Typo.body2">Avg reads per article</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Stats table ──────────────────────────────────────────────────── *@
+        <MudSimpleTable Dense="true" Hover="true" Striped="true" Elevation="2">
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th>Category</th>
+                    <th style="text-align:right">Read count</th>
+                    <th style="text-align:right">% of users</th>
+                    <th style="min-width:150px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in stats)
+                {
+                    var pct = row.TotalUsers > 0 ? (double)row.ReadCount / row.TotalUsers * 100 : 0;
+                    <tr>
+                        <td>@row.Title</td>
+                        <td>@row.Category</td>
+                        <td style="text-align:right">@row.ReadCount</td>
+                        <td style="text-align:right">@pct.ToString("0.0")%</td>
+                        <td>
+                            <MudProgressLinear Value="@pct" Color="Color.Primary" Rounded="true" Size="Size.Small" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+</MudStack>
+
+@code {
+    private List<ArticleReadStats>? stats;
+
+    private int TotalReads => stats?.Sum(s => s.ReadCount) ?? 0;
+    private double AvgReads => stats is { Count: > 0 } ? (double)TotalReads / stats.Count : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        stats = await Guide.GetReadStatsAsync();
+    }
+}

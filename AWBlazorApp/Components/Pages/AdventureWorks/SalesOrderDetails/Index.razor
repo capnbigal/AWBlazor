@@ -1,0 +1,124 @@
+@page "/aw/sales-order-details"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Sales order details</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Sales order details</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesOrderDetail · composite PK (SalesOrderID, SalesOrderDetailID)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-order-details/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New detail</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterSalesOrderId ?? 0)" ValueChanged="@(v => { filterSalesOrderId = v == 0 ? null : v; })" Label="Sales order" SearchFunc="@(q => Lookup.SearchSalesOrdersAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="SalesOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.SalesOrderId" Title="Order id" />
+            <PropertyColumn Property="x => x.SalesOrderDetailId" Title="Detail id" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.OrderQty" Title="Qty" />
+            <PropertyColumn Property="x => x.UnitPrice" Title="Unit price" Format="C2" />
+            <PropertyColumn Property="x => x.LineTotal" Title="Line total" Format="C2" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="SalesOrderDetailDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<SalesOrderDetailDto> grid = null!;
+    private int? filterSalesOrderId;
+    private int? filterProductId;
+
+    private async Task<GridData<SalesOrderDetailDto>> LoadServerDataAsync(GridState<SalesOrderDetailDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SalesOrderDetails.AsNoTracking();
+        if (filterSalesOrderId.HasValue) query = query.Where(x => x.SalesOrderId == filterSalesOrderId.Value);
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.SalesOrderId).ThenBy(x => x.SalesOrderDetailId)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<SalesOrderDetailDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<SalesOrderDetailDialog>("New order detail", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Detail created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(SalesOrderDetailDto row)
+    {
+        var parameters = new DialogParameters<SalesOrderDetailDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<SalesOrderDetailDialog>($"Edit detail ({row.SalesOrderId}, {row.SalesOrderDetailId})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Detail updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(SalesOrderDetailDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete detail?", $"Permanently delete detail ({row.SalesOrderId}, {row.SalesOrderDetailId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.SalesOrderDetails.FirstOrDefaultAsync(t => t.SalesOrderId == row.SalesOrderId && t.SalesOrderDetailId == row.SalesOrderDetailId);
+        if (entity is null) { Snackbar.Add("Detail no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.SalesOrderDetailAuditLogs.Add(SalesOrderDetailAuditService.RecordDelete(entity, changedBy));
+        db.SalesOrderDetails.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Detail deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(SalesOrderDetailDto row) => Navigation.NavigateTo($"aw/sales-order-details/history?salesOrderId={row.SalesOrderId}&salesOrderDetailId={row.SalesOrderDetailId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

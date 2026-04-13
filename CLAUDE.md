@@ -5,22 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build, test, run
 
 ```pwsh
-dotnet restore ElementaryApp.slnx
-dotnet build   ElementaryApp.slnx
-dotnet test    ElementaryApp.slnx                        # all 213 tests
-dotnet test    ElementaryApp.slnx --filter "FullyQualifiedName~Login_Form_Post"   # single test by name pattern
-dotnet run     --project ElementaryApp                   # https://localhost:5001
+dotnet restore AWBlazorApp.slnx
+dotnet build   AWBlazorApp.slnx
+dotnet test    AWBlazorApp.slnx                        # all 213 tests
+dotnet test    AWBlazorApp.slnx --filter "FullyQualifiedName~Login_Form_Post"   # single test by name pattern
+dotnet run     --project AWBlazorApp                   # https://localhost:5001
 ```
 
 EF Core migrations:
 
 ```pwsh
-cd ElementaryApp
+cd AWBlazorApp
 dotnet ef migrations add <Name>
 dotnet ef migrations script --idempotent --output ../schema.sql   # generate idempotent SQL
 ```
 
-The solution is `ElementaryApp.slnx` (XML solution file). Two projects: `ElementaryApp` (web) and `ElementaryApp.Tests` (NUnit).
+The solution is `AWBlazorApp.slnx` (XML solution file). Two projects: `AWBlazorApp` (web) and `AWBlazorApp.Tests` (NUnit).
 
 ## Stack at a glance
 
@@ -127,7 +127,7 @@ Users manage their own keys at `/Account/Manage/ApiKeys`. Keys are stored plain-
 
 ## Test infrastructure
 
-`ElementaryApp.Tests/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`ELITE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `ELITE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
+`AWBlazorApp.Tests/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`ELITE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `ELITE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
 
 The test fixture only overrides two feature flags via in-memory configuration:
 
@@ -150,7 +150,7 @@ Nothing else about the host is rewritten — EF, Identity, the minimal-API endpo
 
 ## Project memory
 
-There are several memory notes in `~/.claude/projects/C--Users-capnb-source-repos-ElementaryApp/memory/`:
+There are several memory notes in `~/.claude/projects/C--Users-capnb-source-repos-AWBlazorApp/memory/`:
 
 - `project_migration_status.md` — locked-in technology decisions, the 5-phase migration history, what NOT to reintroduce
 - `project_database_target.md` — SQL Server ELITE / AdventureWorks2022 specifics, ToolSlotConfigurations external management

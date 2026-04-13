@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature or enhancement for ElementaryApp
+about: Suggest a new feature or enhancement for AWBlazorApp
 title: "[Feature] "
 labels: enhancement
 assignees: ''

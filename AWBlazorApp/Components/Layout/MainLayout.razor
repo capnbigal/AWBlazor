@@ -1,0 +1,80 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<MudThemeProvider @rendermode="InteractiveServer" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<NotificationListener />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">AWBlazor</MudText>
+        <MudSpacer />
+        <GlobalSearch />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="ToggleDarkMode" />
+        <AuthorizeView>
+            <Authorized>
+                @{
+                    var userName = context.User.Identity?.Name ?? "";
+                    var initials = string.Join("", userName.Split('@')[0]
+                        .Split(new[] { '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Take(2)
+                        .Select(p => char.ToUpper(p[0])));
+                    if (initials.Length == 0) initials = "?";
+                }
+                <MudAvatar Color="Color.Secondary" Size="Size.Small" Class="mr-2">@initials</MudAvatar>
+                <MudText Class="mr-3" Typo="Typo.body2">@userName</MudText>
+                <form action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Inherit">
+                        Sign out
+                    </MudButton>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="Account/Login" Variant="Variant.Text" Color="Color.Inherit">Sign in</MudButton>
+                <MudButton Href="Account/Register" Variant="Variant.Text" Color="Color.Inherit">Register</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [CascadingParameter(Name = "InitialDarkMode")]
+    private bool InitialDarkMode { get; set; }
+
+    private bool _isDarkMode;
+    private bool _drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        _isDarkMode = InitialDarkMode;
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private async Task ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+        await JS.InvokeVoidAsync("setDarkModeCookie", _isDarkMode);
+    }
+}

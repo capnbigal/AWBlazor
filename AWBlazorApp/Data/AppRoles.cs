@@ -1,0 +1,10 @@
+namespace AWBlazorApp.Data;
+
+public static class AppRoles
+{
+    public const string Admin = nameof(Admin);
+    public const string Manager = nameof(Manager);
+    public const string Employee = nameof(Employee);
+
+    public static readonly string[] All = [Admin, Manager, Employee];
+}

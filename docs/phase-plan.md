@@ -1,4 +1,4 @@
-# ElementaryApp — Migration phase plan
+# AWBlazorApp — Migration phase plan
 
 ## Status
 
@@ -41,16 +41,16 @@ push. If you're not using either, the cleanest answer is to delete them.
 - [ ] **Decide: keep, rewrite, or delete** the deployment infrastructure
   - `.kamal/secrets` references `SERVICESTACK_LICENSE`, `KAMAL_REGISTRY_USERNAME`, `KAMAL_REGISTRY_PASSWORD`, `APPSETTINGS_JSON_BASE64`
   - `.github/workflows/build.yml` runs `dotnet restore/build/test` against the (no longer existing) ServiceModel/ServiceInterface project structure
-  - `.github/workflows/build-container.yml` builds a Docker image and references a Node `ElementaryApp.Client` project that no longer exists
+  - `.github/workflows/build-container.yml` builds a Docker image and references a Node `AWBlazorApp.Client` project that no longer exists
   - `.github/workflows/release.yml` (haven't read it yet, probably similar)
 - [ ] If keeping Kamal:
   - Drop `SERVICESTACK_LICENSE` from `.kamal/secrets`
   - Add `ConnectionStrings__DefaultConnection` and `Smtp__*` env vars to whatever `.kamal/deploy.yml` uses
   - Update Dockerfile if there is one (the Phase 1 csproj had a `<PublishProfile>DefaultContainer</PublishProfile>` reference that I removed; the .NET 10 SDK has built-in container publishing via `dotnet publish /t:PublishContainer`)
 - [ ] If keeping GitHub Actions:
-  - Update `build.yml` to target `ElementaryApp.slnx` (not the old per-project paths) and remove the Node setup steps
+  - Update `build.yml` to target `AWBlazorApp.slnx` (not the old per-project paths) and remove the Node setup steps
   - Update or remove `build-container.yml` based on whether you still want container artifacts
-  - Add a step that runs the tests (`dotnet test ElementaryApp.slnx`)
+  - Add a step that runs the tests (`dotnet test AWBlazorApp.slnx`)
   - Consider replacing `actions/checkout@v3` with `@v4`, `actions/setup-dotnet@v3` with `@v4`, etc. — they're all stale
 - [ ] **Initialize git** (the repo is currently NOT under version control)
   - `git init`

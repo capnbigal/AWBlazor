@@ -1,0 +1,165 @@
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using AWBlazorApp.Models.AdventureWorks
+@using AWBlazorApp.Services.AdventureWorksAudit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateCustomerRequest> CreateValidator
+@inject MudFormValidator<UpdateCustomerRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create customer" : $"Edit customer #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@(createModel.PersonId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { PersonId = v == 0 ? null : v })" SearchFunc="SearchPersonsAsync" Label="Person" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@(createModel.StoreId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { StoreId = v == 0 ? null : v })" SearchFunc="SearchStoresAsync" Label="Store" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <FkSelect TValue="int" Value="@(createModel.TerritoryId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Items="_territories" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">A customer must be either a <strong>person</strong> or a <strong>store</strong>, not both.</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@(updateModel.PersonId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { PersonId = v == 0 ? null : v })" SearchFunc="SearchPersonsAsync" Label="Person" InitialDisplayText="@_personDisplay" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@(updateModel.StoreId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { StoreId = v == 0 ? null : v })" SearchFunc="SearchStoresAsync" Label="Store" InitialDisplayText="@_storeDisplay" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <FkSelect TValue="int" Value="@(updateModel.TerritoryId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Items="_territories" Clearable="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CustomerDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateCustomerRequest createModel = new();
+    private UpdateCustomerRequest updateModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _territories = [];
+    private string? _personDisplay;
+    private string? _storeDisplay;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+
+        if (Model is not null)
+        {
+            updateModel = new UpdateCustomerRequest
+            {
+                PersonId = Model.PersonId,
+                StoreId = Model.StoreId,
+                TerritoryId = Model.TerritoryId,
+            };
+            if (Model.PersonId.HasValue)
+                _personDisplay = await Lookup.GetPersonNameAsync(Model.PersonId.Value);
+            if (Model.StoreId.HasValue)
+                _storeDisplay = await Lookup.GetStoreNameAsync(Model.StoreId.Value);
+        }
+    }
+
+    private Task<IEnumerable<LookupItem<int>>> SearchPersonsAsync(string query) => Lookup.SearchPersonsAsync(query);
+    private Task<IEnumerable<LookupItem<int>>> SearchStoresAsync(string query) => Lookup.SearchStoresAsync(query);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate optional FKs
+                if (createModel.PersonId.HasValue && !await db.Persons.AnyAsync(x => x.Id == createModel.PersonId.Value))
+                { Snackbar.Add($"Person #{createModel.PersonId.Value} does not exist.", Severity.Error); return; }
+                if (createModel.StoreId.HasValue && !await db.Stores.AnyAsync(x => x.Id == createModel.StoreId.Value))
+                { Snackbar.Add($"Store #{createModel.StoreId.Value} does not exist.", Severity.Error); return; }
+                if (createModel.TerritoryId.HasValue && !await db.SalesTerritories.AnyAsync(x => x.Id == createModel.TerritoryId.Value))
+                { Snackbar.Add($"Territory #{createModel.TerritoryId.Value} does not exist.", Severity.Error); return; }
+
+                var entity = createModel.ToEntity();
+                db.Customers.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                var reloaded = await db.Customers.AsNoTracking().FirstAsync(x => x.Id == entity.Id);
+                db.CustomerAuditLogs.Add(CustomerAuditService.RecordCreate(reloaded, changedBy));
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.Customers.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = CustomerAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                // Validate optional FKs on update
+                if (updateModel.PersonId.HasValue && !await db.Persons.AnyAsync(x => x.Id == updateModel.PersonId.Value))
+                { Snackbar.Add($"Person #{updateModel.PersonId.Value} does not exist.", Severity.Error); return; }
+                if (updateModel.StoreId.HasValue && !await db.Stores.AnyAsync(x => x.Id == updateModel.StoreId.Value))
+                { Snackbar.Add($"Store #{updateModel.StoreId.Value} does not exist.", Severity.Error); return; }
+                if (updateModel.TerritoryId.HasValue && !await db.SalesTerritories.AnyAsync(x => x.Id == updateModel.TerritoryId.Value))
+                { Snackbar.Add($"Territory #{updateModel.TerritoryId.Value} does not exist.", Severity.Error); return; }
+                db.CustomerAuditLogs.Add(CustomerAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -1,0 +1,109 @@
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Customer info</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Territory: @if (territoryName is not null) { <MudLink Href="aw/sales-territories" Color="Color.Primary">@territoryName</MudLink> } else { <strong>—</strong> }</MudText>
+                    <MudText Typo="Typo.body2">Person ID: <strong>@(customer?.PersonId?.ToString() ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Store ID: <strong>@(customer?.StoreId?.ToString() ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Order summary</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Total orders: <strong>@orderCount.ToString("N0")</strong></MudText>
+                    <MudText Typo="Typo.body2">Total revenue: <strong>@totalRevenue.ToString("C2")</strong></MudText>
+                    <MudText Typo="Typo.body2">Avg order value: <strong>@(orderCount > 0 ? (totalRevenue / orderCount).ToString("C2") : "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Date range</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">First order: <strong>@(firstOrder?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Last order: <strong>@(lastOrder?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        @if (recentOrders.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">Recent orders (last 10)</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead><tr><th>Order #</th><th>Date</th><th>Status</th><th style="text-align:right">Total due</th></tr></thead>
+                <tbody>
+                    @foreach (var o in recentOrders)
+                    {
+                        <tr>
+                            <td><MudLink Href="aw/sales-order-headers" Color="Color.Primary">@o.SalesOrderNumber</MudLink></td>
+                            <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
+                            <td>@o.Status</td>
+                            <td style="text-align:right">@o.TotalDue.ToString("C2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int CustomerId { get; set; }
+
+    private bool loading = true;
+    private Customer? customer;
+    private string? territoryName;
+    private int orderCount;
+    private decimal totalRevenue;
+    private DateTime? firstOrder;
+    private DateTime? lastOrder;
+    private List<OrderRow> recentOrders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == CustomerId);
+
+        if (customer?.TerritoryId.HasValue == true)
+        {
+            var territory = await db.SalesTerritories.AsNoTracking().FirstOrDefaultAsync(t => t.Id == customer.TerritoryId.Value);
+            territoryName = territory?.Name;
+        }
+
+        var orders = await db.SalesOrderHeaders.AsNoTracking()
+            .Where(o => o.CustomerId == CustomerId)
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync();
+
+        orderCount = orders.Count;
+        totalRevenue = orders.Sum(o => o.TotalDue);
+        firstOrder = orders.Count > 0 ? orders.Min(o => o.OrderDate) : null;
+        lastOrder = orders.Count > 0 ? orders.Max(o => o.OrderDate) : null;
+
+        recentOrders = orders.Take(10).Select(o => new OrderRow
+        {
+            SalesOrderNumber = o.SalesOrderNumber,
+            OrderDate = o.OrderDate,
+            Status = o.Status,
+            TotalDue = o.TotalDue,
+        }).ToList();
+
+        loading = false;
+    }
+
+    private sealed class OrderRow
+    {
+        public string SalesOrderNumber { get; init; } = "";
+        public DateTime OrderDate { get; init; }
+        public byte Status { get; init; }
+        public decimal TotalDue { get; init; }
+    }
+}

@@ -17,10 +17,10 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore ElementaryApp.slnx
+        run: dotnet restore AWBlazorApp.slnx
 
       - name: Build
-        run: dotnet build ElementaryApp.slnx --no-restore
+        run: dotnet build AWBlazorApp.slnx --no-restore
 
       - name: Test
-        run: dotnet test ElementaryApp.slnx --no-build --verbosity normal
+        run: dotnet test AWBlazorApp.slnx --no-build --verbosity normal

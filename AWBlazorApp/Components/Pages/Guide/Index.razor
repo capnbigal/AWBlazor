@@ -1,0 +1,144 @@
+@page "/guide"
+@page "/guide/tag/{Tag}"
+@page "/guide/category/{Category}"
+@attribute [Authorize]
+@using AWBlazorApp.Services
+@inject UserGuideService Guide
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>User Guide</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4">User Guide</MudText>
+
+    @* ── Progress bar ─────────────────────────────────────────────────── *@
+    @if (totalCount > 0)
+    {
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.body2" Class="mb-2">
+                You've read @readCount of @totalCount articles (@ProgressPercent.ToString("0")%)
+            </MudText>
+            <MudProgressLinear Value="@ProgressPercent" Color="Color.Primary" Rounded="true" Size="Size.Medium" />
+        </MudPaper>
+    }
+
+    @* ── Category filter chips ────────────────────────────────────────── *@
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+        <MudChip T="string"
+                 Color="@(Category is null && Tag is null ? Color.Primary : Color.Default)"
+                 Variant="@(Category is null && Tag is null ? Variant.Filled : Variant.Outlined)"
+                 Href="/guide">
+            All
+        </MudChip>
+        @foreach (var cat in Guide.AllCategories)
+        {
+            <MudChip T="string"
+                     Color="@(string.Equals(Category, cat, StringComparison.OrdinalIgnoreCase) ? Color.Primary : Color.Default)"
+                     Variant="@(string.Equals(Category, cat, StringComparison.OrdinalIgnoreCase) ? Variant.Filled : Variant.Outlined)"
+                     Href="@($"/guide/category/{cat}")">
+                @cat
+            </MudChip>
+        }
+    </MudStack>
+
+    @* ── Tag filter indicator ─────────────────────────────────────────── *@
+    @if (!string.IsNullOrEmpty(Tag))
+    {
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.body2">Filtering by tag:</MudText>
+            <MudChip T="string" Color="Color.Info" Variant="Variant.Filled" Size="Size.Small">@Tag</MudChip>
+            <MudButton Variant="Variant.Text" Size="Size.Small" Href="/guide" StartIcon="@Icons.Material.Filled.Close">
+                Clear
+            </MudButton>
+        </MudStack>
+    }
+
+    @* ── Article cards ────────────────────────────────────────────────── *@
+    @if (articles is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (articles.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No articles found.</MudAlert>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var dto in articles)
+            {
+                var a = dto.Article;
+                <MudItem xs="12" sm="6" md="4">
+                    <MudBadge Content="@("New")" Color="Color.Error" Overlap="true" Visible="@(!dto.IsRead)">
+                        <MudCard Elevation="2" Class="d-flex flex-column" Style="height:100%">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudLink Href="@($"/guide/{a.Slug}")" Typo="Typo.h6" Color="Color.Inherit">
+                                        @a.Title
+                                    </MudLink>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIcon Icon="@(dto.IsRead ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.FiberNew)"
+                                             Color="@(dto.IsRead ? Color.Success : Color.Error)"
+                                             Size="Size.Small" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent Class="flex-grow-1">
+                                @if (!string.IsNullOrEmpty(a.Summary))
+                                {
+                                    <MudText Typo="Typo.body2" Class="mb-2">@a.Summary</MudText>
+                                }
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                    @if (!string.IsNullOrEmpty(a.Category))
+                                    {
+                                        <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled">@a.Category</MudChip>
+                                    }
+                                    @foreach (var tag in a.Tags)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Href="@($"/guide/tag/{tag}")">@tag</MudChip>
+                                    }
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudBadge>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string? Tag { get; set; }
+    [Parameter] public string? Category { get; set; }
+
+    private List<GuideArticleDto>? articles;
+    private int readCount;
+    private int totalCount;
+
+    private double ProgressPercent => totalCount == 0 ? 0 : (double)readCount / totalCount * 100;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        var all = await Guide.GetAllForUserAsync(userId);
+
+        totalCount = all.Count;
+        readCount = all.Count(d => d.IsRead);
+
+        // Apply filters
+        if (!string.IsNullOrEmpty(Tag))
+        {
+            articles = all.Where(d => d.Article.Tags.Contains(Tag, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+        else if (!string.IsNullOrEmpty(Category))
+        {
+            articles = all.Where(d => string.Equals(d.Article.Category, Category, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        else
+        {
+            articles = all;
+        }
+    }
+}

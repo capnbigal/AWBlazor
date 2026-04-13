@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+@layout AWBlazorApp.Components.Layout.MainLayout
+
+@if (HttpContext is null)
+{
+    @* If a developer adds an Account page without [ExcludeFromInteractiveRouting], the page
+       will end up rendering inside an interactive circuit where HttpContext is null. We do
+       NOT call NavigationManager.Refresh here — that creates a tight loop because each refresh
+       just produces another interactive circuit. Showing the spinner forever makes the bug
+       loud and easy to find. *@
+    <MudAlert Severity="Severity.Error" Class="ma-4">
+        Identity page rendered interactively. Add <code>@@attribute [ExcludeFromInteractiveRouting]</code>
+        to this page (or to the folder's <code>_Imports.razor</code>).
+    </MudAlert>
+}
+else
+{
+    @Body
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+}

@@ -1,4 +1,4 @@
-# ElementaryApp
+# AWBlazorApp
 
 A Blazor Server application running on .NET 10 with EF Core and MudBlazor, backed by SQL Server
 (AdventureWorks2022). Features interactive analytics dashboards, 90+ CRUD pages with expandable
@@ -38,11 +38,11 @@ phases. The current state is documented below.
 
 ```pwsh
 git clone <this repo>
-cd ElementaryApp
-dotnet restore ElementaryApp.slnx
-dotnet build  ElementaryApp.slnx
-dotnet test   ElementaryApp.slnx       # 213 integration + unit tests
-dotnet run --project ElementaryApp
+cd AWBlazorApp
+dotnet restore AWBlazorApp.slnx
+dotnet build  AWBlazorApp.slnx
+dotnet test   AWBlazorApp.slnx       # 213 integration + unit tests
+dotnet run --project AWBlazorApp
 ```
 
 Then open `https://localhost:5001/`.
@@ -50,7 +50,7 @@ Then open `https://localhost:5001/`.
 ## First-run database behavior
 
 The app talks to **ELITE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
-in `ElementaryApp/Data/DatabaseInitializer.cs` runs four steps in order:
+in `AWBlazorApp/Data/DatabaseInitializer.cs` runs four steps in order:
 
 1. **`ReconcileMigrationHistoryAsync`** — if your database already contains tables that one of
    our EF migrations would create (e.g. you ran an earlier prerelease and the `AspNetRoles`
@@ -96,7 +96,7 @@ to the real database column casing (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, etc.
 Use user secrets in development to keep your SMTP credentials out of source control:
 
 ```pwsh
-cd ElementaryApp
+cd AWBlazorApp
 dotnet user-secrets set "Smtp:Host" "smtp.example.com"
 dotnet user-secrets set "Smtp:Username" "myuser"
 dotnet user-secrets set "Smtp:Password" "mypassword"
@@ -143,7 +143,7 @@ SHA-256 hashes; legacy plain-text keys are supported for backwards compatibility
 ## Project layout
 
 ```
-ElementaryApp/
+AWBlazorApp/
 ├── Authentication/             ApiKeyAuthenticationHandler, HangfireDashboardAuthFilter
 ├── Components/
 │   ├── Account/                Identity scaffold pages (all static SSR)
@@ -170,13 +170,13 @@ ElementaryApp/
 │   ├── img/                    Static images
 │   └── css/account-forms.css   Shared styling for the static-SSR Identity forms
 ├── Program.cs
-└── ElementaryApp.csproj
+└── AWBlazorApp.csproj
 
-ElementaryApp.Tests/
+AWBlazorApp.Tests/
 ├── IntegrationTest.cs          213 tests covering pages, endpoints, form POSTs, API keys
 ├── FormPostHelper.cs           GET → parse antiforgery → POST helper
 ├── UnitTest.cs                 Standalone EF unit tests
-└── ElementaryApp.Tests.csproj
+└── AWBlazorApp.Tests.csproj
 ```
 
 ## Architecture notes
@@ -259,7 +259,7 @@ If you ever see VS pop up on a `NavigationException` here, either:
 ## Tests
 
 ```pwsh
-dotnet test ElementaryApp.slnx
+dotnet test AWBlazorApp.slnx
 ```
 
 The test fixture spins up a `WebApplicationFactory<Program>` with
