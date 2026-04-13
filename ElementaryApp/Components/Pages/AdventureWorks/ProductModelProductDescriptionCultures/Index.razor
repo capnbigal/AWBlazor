@@ -84,8 +84,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.ProductModelProductDescriptionCultureAuditLogs.Add(ProductModelProductDescriptionCultureAuditService.RecordDelete(entity, changedBy));
         db.ProductModelProductDescriptionCultures.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Link deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Link deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

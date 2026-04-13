@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreatePersonRequest> CreateValidator
 @inject MudFormValidator<UpdatePersonRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,7 +17,7 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudSelect T="string" Value="@createModel.PersonType" ValueChanged="@((string? v) => createModel = createModel with { PersonType = v })" Label="Person type" Variant="Variant.Outlined" Required="true">

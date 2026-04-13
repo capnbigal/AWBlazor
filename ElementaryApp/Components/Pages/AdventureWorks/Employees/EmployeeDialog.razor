@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateEmployeeRequest> CreateValidator
 @inject MudFormValidator<UpdateEmployeeRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -15,7 +16,7 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkAutocomplete TValue="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Person (business entity)" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" /></MudItem>
                     <MudItem xs="12" sm="4"><MudTextField Value="@createModel.NationalIDNumber" ValueChanged="@((string? v) => createModel = createModel with { NationalIDNumber = v })" Label="National ID #" Variant="Variant.Outlined" Required="true" MaxLength="15" /></MudItem>
                     <MudItem xs="12" sm="4"><MudTextField Value="@createModel.LoginID" ValueChanged="@((string? v) => createModel = createModel with { LoginID = v })" Label="Login ID" Variant="Variant.Outlined" Required="true" MaxLength="256" /></MudItem>
                     <MudItem xs="12"><MudTextField Value="@createModel.JobTitle" ValueChanged="@((string? v) => createModel = createModel with { JobTitle = v })" Label="Job title" Variant="Variant.Outlined" Required="true" MaxLength="50" /></MudItem>

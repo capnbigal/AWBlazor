@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductVendorRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create product vendor" : $"Edit ({Model!.ProductId}, {Model.BusinessEntityId})")</MudText></TitleContent>
@@ -15,11 +16,11 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Vendor id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Vendor" SearchFunc="Lookup.SearchVendorsAsync" Required="true" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.AverageLeadTime" ValueChanged="@((int v) => createModel = createModel with { AverageLeadTime = v })" Label="Lead time (days)" Variant="Variant.Outlined" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="decimal" Value="@createModel.StandardPrice" ValueChanged="@((decimal v) => createModel = createModel with { StandardPrice = v })" Label="Std price" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.UnitMeasureCode" ValueChanged="@((string? v) => createModel = createModel with { UnitMeasureCode = v })" Label="UoM code" Variant="Variant.Outlined" Required="true" MaxLength="3" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkSelect TValue="string" Value="@(createModel.UnitMeasureCode ?? "")" ValueChanged="@((string v) => createModel = createModel with { UnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Unit of measure" Items="_unitMeasures" Required="true" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.MinOrderQty" ValueChanged="@((int v) => createModel = createModel with { MinOrderQty = v })" Label="Min qty" Variant="Variant.Outlined" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.MaxOrderQty" ValueChanged="@((int v) => createModel = createModel with { MaxOrderQty = v })" Label="Max qty" Variant="Variant.Outlined" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@createModel.OnOrderQty" ValueChanged="@((int? v) => createModel = createModel with { OnOrderQty = v })" Label="On order qty" Variant="Variant.Outlined" Clearable="true" Min="0" /></MudItem>
@@ -32,7 +33,7 @@
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.AverageLeadTime" ValueChanged="@((int? v) => updateModel = updateModel with { AverageLeadTime = v })" Label="Lead time (days)" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="decimal?" Value="@updateModel.StandardPrice" ValueChanged="@((decimal? v) => updateModel = updateModel with { StandardPrice = v })" Label="Std price" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudTextField Value="@updateModel.UnitMeasureCode" ValueChanged="@((string? v) => updateModel = updateModel with { UnitMeasureCode = v })" Label="UoM code" Variant="Variant.Outlined" MaxLength="3" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkSelect TValue="string" Value="@(updateModel.UnitMeasureCode ?? "")" ValueChanged="@((string v) => updateModel = updateModel with { UnitMeasureCode = string.IsNullOrEmpty(v) ? null : v })" Label="Unit of measure" Items="_unitMeasures" Clearable="true" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.MinOrderQty" ValueChanged="@((int? v) => updateModel = updateModel with { MinOrderQty = v })" Label="Min qty" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.MaxOrderQty" ValueChanged="@((int? v) => updateModel = updateModel with { MaxOrderQty = v })" Label="Max qty" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
                     <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.OnOrderQty" ValueChanged="@((int? v) => updateModel = updateModel with { OnOrderQty = v })" Label="On order qty" Variant="Variant.Outlined" Clearable="true" Min="0" /></MudItem>
@@ -55,9 +56,12 @@
     private CreateProductVendorRequest createModel = new() { AverageLeadTime = 1, MinOrderQty = 1, MaxOrderQty = 1 };
     private UpdateProductVendorRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<string>> _unitMeasures = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _unitMeasures = await Lookup.GetUnitMeasuresAsync();
+
         if (Model is not null)
             updateModel = new UpdateProductVendorRequest
             {

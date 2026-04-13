@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateTransactionHistoryArchiveRequest> CreateValidator
 @inject MudFormValidator<UpdateTransactionHistoryArchiveRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -19,7 +20,7 @@
                         <MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Transaction id" Variant="Variant.Outlined" Required="true" Min="1" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Label="Product" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="int" Value="@createModel.ReferenceOrderId" ValueChanged="@((int v) => createModel = createModel with { ReferenceOrderId = v })" Label="Reference order id" Variant="Variant.Outlined" Required="true" Min="1" />
@@ -51,7 +52,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.ProductId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.ProductId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductId = v == 0 ? null : v })" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Label="Product" Clearable="true" InitialDisplayText="@_productDisplay" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="int?" Value="@updateModel.ReferenceOrderId" ValueChanged="@((int? v) => updateModel = updateModel with { ReferenceOrderId = v })" Label="Reference order id" Variant="Variant.Outlined" Clearable="true" Min="1" />
@@ -94,8 +95,9 @@
     private CreateTransactionHistoryArchiveRequest createModel = new() { TransactionDate = DateTime.UtcNow.Date };
     private UpdateTransactionHistoryArchiveRequest updateModel = new();
     private bool saving;
+    private string? _productDisplay;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (Model is not null)
         {
@@ -109,6 +111,7 @@
                 Quantity = Model.Quantity,
                 ActualCost = Model.ActualCost,
             };
+            _productDisplay = await Lookup.GetProductNameAsync(Model.ProductId);
         }
     }
 

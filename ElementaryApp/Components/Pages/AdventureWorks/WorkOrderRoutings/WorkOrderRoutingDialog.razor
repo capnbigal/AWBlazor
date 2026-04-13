@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateWorkOrderRoutingRequest> CreateValidator
 @inject MudFormValidator<UpdateWorkOrderRoutingRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,16 +17,16 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="int" Value="@createModel.WorkOrderId" ValueChanged="@((int v) => createModel = createModel with { WorkOrderId = v })" Label="Work order id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.WorkOrderId" ValueChanged="@((int v) => createModel = createModel with { WorkOrderId = v })" SearchFunc="@(q => Lookup.SearchWorkOrdersAsync(q))" Label="Work order" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Label="Product" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudNumericField T="short" Value="@createModel.OperationSequence" ValueChanged="@((short v) => createModel = createModel with { OperationSequence = v })" Label="Op sequence" Variant="Variant.Outlined" Required="true" Min="1" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="short" Value="@createModel.LocationId" ValueChanged="@((short v) => createModel = createModel with { LocationId = v })" Label="Location id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkSelect TValue="short" Value="@createModel.LocationId" ValueChanged="@((short v) => createModel = createModel with { LocationId = v })" Label="Location" Required="true" Items="_locations" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudDatePicker Date="@createModel.ScheduledStartDate" DateChanged="@((DateTime? v) => createModel = createModel with { ScheduledStartDate = v ?? DateTime.UtcNow.Date })" Label="Sched start" Variant="Variant.Outlined" />
@@ -56,7 +57,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4">
-                        <MudNumericField T="short?" Value="@updateModel.LocationId" ValueChanged="@((short? v) => updateModel = updateModel with { LocationId = v })" Label="Location id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="short?" Value="@updateModel.LocationId" ValueChanged="@((short? v) => updateModel = updateModel with { LocationId = v })" Label="Location" Clearable="true" Items="_locationsNullable" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudDatePicker Date="@updateModel.ScheduledStartDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { ScheduledStartDate = v })" Label="Sched start" Variant="Variant.Outlined" Clearable="true" />
@@ -98,9 +99,14 @@
     private CreateWorkOrderRoutingRequest createModel = new() { ScheduledStartDate = DateTime.UtcNow.Date, ScheduledEndDate = DateTime.UtcNow.Date };
     private UpdateWorkOrderRoutingRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<short>> _locations = [];
+    private List<LookupItem<short?>> _locationsNullable = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _locations = await Lookup.GetLocationsAsync();
+        _locationsNullable = _locations.Select(x => new LookupItem<short?>(x.Id, x.DisplayText)).ToList();
+
         if (Model is not null)
         {
             updateModel = new UpdateWorkOrderRoutingRequest

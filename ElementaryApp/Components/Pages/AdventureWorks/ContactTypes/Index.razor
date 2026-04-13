@@ -110,8 +110,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.ContactTypeAuditLogs.Add(ContactTypeAuditService.RecordDelete(entity, changedBy));
         db.ContactTypes.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Contact type deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Contact type deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

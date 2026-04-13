@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSalesPersonQuotaHistoryRequest> CreateValidator
 @inject MudFormValidator<UpdateSalesPersonQuotaHistoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,7 +17,7 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Sales person id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Sales person" Required="true" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@createModel.QuotaDate" DateChanged="@((DateTime? v) => createModel = createModel with { QuotaDate = v ?? DateTime.UtcNow.Date })" Label="Quota date" Variant="Variant.Outlined" />

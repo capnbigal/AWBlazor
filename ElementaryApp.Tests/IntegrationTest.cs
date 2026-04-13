@@ -155,7 +155,6 @@ public class IntegrationTest
 
         var body = await response.Content.ReadAsStringAsync();
         Assert.That(body, Does.Contain("/api/forecasts"));
-        Assert.That(body, Does.Contain("/api/forecasts"));
         Assert.That(body, Does.Contain("/api/tool-slots"));
     }
 
@@ -174,7 +173,6 @@ public class IntegrationTest
 
     // Authorized Blazor pages should redirect anonymous users to /Account/Login.
     [TestCase("/forecasts")]
-    [TestCase("/tool-slots")]
     [TestCase("/tool-slots")]
     [TestCase("/tool-slots/history")]
     [TestCase("/tool-slots/history/1")]

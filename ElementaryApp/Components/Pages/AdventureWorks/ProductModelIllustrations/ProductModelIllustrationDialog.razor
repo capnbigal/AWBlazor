@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateProductModelIllustrationRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">Link a model to an illustration</MudText></TitleContent>
@@ -13,7 +14,7 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.ProductModelId" ValueChanged="@((int v) => createModel = createModel with { ProductModelId = v })" Label="Product model id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkSelect TValue="int" Value="@createModel.ProductModelId" ValueChanged="@((int v) => createModel = createModel with { ProductModelId = v })" Label="Product model" Items="_productModels" Required="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="int" Value="@createModel.IllustrationId" ValueChanged="@((int v) => createModel = createModel with { IllustrationId = v })" Label="Illustration id" Variant="Variant.Outlined" Required="true" Min="1" />
@@ -33,6 +34,12 @@
     private MudForm form = null!;
     private CreateProductModelIllustrationRequest createModel = new();
     private bool saving;
+    private List<LookupItem<int>> _productModels = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _productModels = await Lookup.GetProductModelsAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

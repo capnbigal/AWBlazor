@@ -49,7 +49,7 @@
             </TemplateColumn>
             <PropertyColumn Property="x => x.LookbackMonths" Title="Lookback" />
             <PropertyColumn Property="x => x.HorizonPeriods" Title="Horizon" />
-            <TemplateColumn Title="Last computed">
+            <TemplateColumn Title="Last computed" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
                 <CellTemplate>
                     @(context.Item.LastComputedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never")
                 </CellTemplate>
@@ -80,6 +80,9 @@
         <PagerContent>
             <MudDataGridPager T="ForecastDefinitionDto" />
         </PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
     </MudDataGrid>
 </MudStack>
 
@@ -179,9 +182,15 @@
         }
 
         entity.DeletedDate = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-
-        Snackbar.Add("Forecast deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Forecast deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 }

@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSalesTerritoryRequest> CreateValidator
 @inject MudFormValidator<UpdateSalesTerritoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -19,7 +20,7 @@
                         <MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField Value="@createModel.CountryRegionCode" ValueChanged="@((string? v) => createModel = createModel with { CountryRegionCode = v })" Label="Country code" Variant="Variant.Outlined" Required="true" MaxLength="3" />
+                        <FkSelect TValue="string" Value="@createModel.CountryRegionCode" ValueChanged="@((string v) => createModel = createModel with { CountryRegionCode = v })" Label="Country / region" Required="true" Items="_countryRegions" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField Value="@createModel.GroupName" ValueChanged="@((string? v) => createModel = createModel with { GroupName = v })" Label="Group" Variant="Variant.Outlined" Required="true" MaxLength="50" HelperText="e.g. North America, Europe, Pacific" />
@@ -35,7 +36,7 @@
                         <MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField Value="@updateModel.CountryRegionCode" ValueChanged="@((string? v) => updateModel = updateModel with { CountryRegionCode = v })" Label="Country code" Variant="Variant.Outlined" Required="true" MaxLength="3" />
+                        <FkSelect TValue="string?" Value="@updateModel.CountryRegionCode" ValueChanged="@((string? v) => updateModel = updateModel with { CountryRegionCode = v })" Label="Country / region" Clearable="true" Items="_countryRegionsNullable" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField Value="@updateModel.GroupName" ValueChanged="@((string? v) => updateModel = updateModel with { GroupName = v })" Label="Group" Variant="Variant.Outlined" Required="true" MaxLength="50" />
@@ -71,6 +72,14 @@
     private CreateSalesTerritoryRequest createModel = new();
     private UpdateSalesTerritoryRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<string>> _countryRegions = [];
+    private List<LookupItem<string?>> _countryRegionsNullable = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _countryRegions = await Lookup.GetCountryRegionsAsync();
+        _countryRegionsNullable = _countryRegions.Select(x => new LookupItem<string?>(x.Id, x.DisplayText)).ToList();
+    }
 
     protected override void OnInitialized()
     {

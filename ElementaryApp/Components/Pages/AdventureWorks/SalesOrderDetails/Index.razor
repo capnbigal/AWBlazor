@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 
 <PageTitle>Sales order details</PageTitle>
 
@@ -24,8 +25,8 @@
 
     <MudPaper Class="pa-3" Elevation="1">
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterSalesOrderId" Label="Sales order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterSalesOrderId ?? 0)" ValueChanged="@(v => { filterSalesOrderId = v == 0 ? null : v; })" Label="Sales order" SearchFunc="@(q => Lookup.SearchSalesOrdersAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
         </MudGrid>
     </MudPaper>
 
@@ -101,8 +102,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.SalesOrderDetailAuditLogs.Add(SalesOrderDetailAuditService.RecordDelete(entity, changedBy));
         db.SalesOrderDetails.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Detail deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Detail deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

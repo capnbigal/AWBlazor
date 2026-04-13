@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSalesOrderHeaderSalesReasonRequest> CreateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">Link a sales reason to an order</MudText></TitleContent>
@@ -13,10 +14,10 @@
         <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.SalesOrderId" ValueChanged="@((int v) => createModel = createModel with { SalesOrderId = v })" Label="Sales order id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkAutocomplete TValue="int" Value="@createModel.SalesOrderId" ValueChanged="@((int v) => createModel = createModel with { SalesOrderId = v })" Label="Sales order" SearchFunc="Lookup.SearchSalesOrdersAsync" Required="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Value="@createModel.SalesReasonId" ValueChanged="@((int v) => createModel = createModel with { SalesReasonId = v })" Label="Sales reason id" Variant="Variant.Outlined" Required="true" Min="1" />
+                    <FkSelect TValue="int" Value="@createModel.SalesReasonId" ValueChanged="@((int v) => createModel = createModel with { SalesReasonId = v })" Label="Sales reason" Items="_salesReasons" Required="true" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -33,6 +34,12 @@
     private MudForm form = null!;
     private CreateSalesOrderHeaderSalesReasonRequest createModel = new();
     private bool saving;
+    private List<LookupItem<int>> _salesReasons = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _salesReasons = await Lookup.GetSalesReasonsAsync();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

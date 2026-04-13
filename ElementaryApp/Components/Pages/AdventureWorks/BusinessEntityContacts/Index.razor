@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 
 <PageTitle>Business entity contacts</PageTitle>
 
@@ -23,7 +24,7 @@
     </MudStack>
 
     <MudPaper Class="pa-3" Elevation="1">
-        <MudNumericField T="int?" @bind-Value="filterBusinessEntityId" Label="Business entity id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+        <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Business entity" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
     <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
@@ -87,8 +88,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.BusinessEntityContactAuditLogs.Add(BusinessEntityContactAuditService.RecordDelete(entity, changedBy));
         db.BusinessEntityContacts.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Link deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Link deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

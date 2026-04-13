@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 
 <PageTitle>Sales persons</PageTitle>
 
@@ -23,7 +24,7 @@
     </MudStack>
 
     <MudPaper Class="pa-3" Elevation="1">
-        <MudNumericField T="int?" @bind-Value="filterTerritoryId" Label="Territory id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+        <FkSelect TValue="int" Value="@(filterTerritoryId ?? 0)" ValueChanged="@(v => { filterTerritoryId = v == 0 ? null : v; })" Label="Territory" Items="_territories" Clearable="true" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
     <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
@@ -53,12 +54,21 @@
         </Columns>
         <ChildRowContent><SalesPersonExpandedRow SalesPersonId="@context.Item.Id" /></ChildRowContent>
         <PagerContent><MudDataGridPager T="SalesPersonDto" /></PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
     </MudDataGrid>
 </MudStack>
 
 @code {
     private MudDataGrid<SalesPersonDto> grid = null!;
     private int? filterTerritoryId;
+    private List<LookupItem<int>> _territories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+    }
 
     private async Task<GridData<SalesPersonDto>> LoadServerDataAsync(GridState<SalesPersonDto> state, CancellationToken ct)
     {
@@ -108,8 +118,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.SalesPersonAuditLogs.Add(SalesPersonAuditService.RecordDelete(entity, changedBy));
         db.SalesPersons.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Sales person deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Sales person deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSalesPersonRequest> CreateValidator
 @inject MudFormValidator<UpdateSalesPersonRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -16,10 +17,10 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.Id" ValueChanged="@((int v) => createModel = createModel with { Id = v })" Label="Employee" Required="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@createModel.TerritoryId" ValueChanged="@((int? v) => createModel = createModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(createModel.TerritoryId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Clearable="true" Items="_territories" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="decimal?" Value="@createModel.SalesQuota" ValueChanged="@((decimal? v) => createModel = createModel with { SalesQuota = v })" Label="Sales quota" Variant="Variant.Outlined" Clearable="true" />
@@ -38,7 +39,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.TerritoryId" ValueChanged="@((int? v) => updateModel = updateModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkSelect TValue="int" Value="@(updateModel.TerritoryId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { TerritoryId = v == 0 ? null : v })" Label="Territory" Clearable="true" Items="_territories" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudNumericField T="decimal?" Value="@updateModel.SalesQuota" ValueChanged="@((decimal? v) => updateModel = updateModel with { SalesQuota = v })" Label="Sales quota" Variant="Variant.Outlined" Clearable="true" />
@@ -74,9 +75,12 @@
     private CreateSalesPersonRequest createModel = new();
     private UpdateSalesPersonRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _territories = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateSalesPersonRequest

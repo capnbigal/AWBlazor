@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateProductReviewRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create review" : $"Edit review #{Model!.Id}")</MudText></TitleContent>
@@ -16,7 +17,7 @@
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@createModel.ReviewDate" DateChanged="@((DateTime? v) => createModel = createModel with { ReviewDate = v ?? DateTime.UtcNow.Date })" Label="Review date" Variant="Variant.Outlined" />
@@ -41,7 +42,7 @@
             <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudNumericField T="int?" Value="@updateModel.ProductId" ValueChanged="@((int? v) => updateModel = updateModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Clearable="true" Min="1" />
+                        <FkAutocomplete TValue="int" Value="@(updateModel.ProductId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductId = v == 0 ? null : v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" InitialDisplayText="@_editProductName" Clearable="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Date="@updateModel.ReviewDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { ReviewDate = v })" Label="Review date" Variant="Variant.Outlined" Clearable="true" />
@@ -77,11 +78,13 @@
     private CreateProductReviewRequest createModel = new() { ReviewDate = DateTime.UtcNow.Date, Rating = 5 };
     private UpdateProductReviewRequest updateModel = new();
     private bool saving;
+    private string? _editProductName;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (Model is not null)
         {
+            _editProductName = await Lookup.GetProductNameAsync(Model.ProductId);
             updateModel = new UpdateProductReviewRequest
             {
                 ProductId = Model.ProductId,

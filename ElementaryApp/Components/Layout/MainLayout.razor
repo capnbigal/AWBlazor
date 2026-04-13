@@ -21,7 +21,16 @@
                        Href="@DarkModeToggleUrl" />
         <AuthorizeView>
             <Authorized>
-                <MudText Class="mr-3">@context.User.Identity?.Name</MudText>
+                @{
+                    var userName = context.User.Identity?.Name ?? "";
+                    var initials = string.Join("", userName.Split('@')[0]
+                        .Split(new[] { '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Take(2)
+                        .Select(p => char.ToUpper(p[0])));
+                    if (initials.Length == 0) initials = "?";
+                }
+                <MudAvatar Color="Color.Secondary" Size="Size.Small" Class="mr-2">@initials</MudAvatar>
+                <MudText Class="mr-3" Typo="Typo.body2">@userName</MudText>
                 <form action="Account/Logout" method="post">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="" />

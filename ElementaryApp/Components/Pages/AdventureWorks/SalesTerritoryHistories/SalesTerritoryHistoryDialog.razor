@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateSalesTerritoryHistoryRequest> CreateValidator
 @inject MudFormValidator<UpdateSalesTerritoryHistoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -15,8 +16,8 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Business entity id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="4"><MudNumericField T="int" Value="@createModel.TerritoryId" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v })" Label="Territory id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Label="Sales person" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><FkSelect TValue="int" Value="@createModel.TerritoryId" ValueChanged="@((int v) => createModel = createModel with { TerritoryId = v })" Label="Territory" Required="true" Items="_territories" /></MudItem>
                     <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.StartDate" DateChanged="@((DateTime? v) => createModel = createModel with { StartDate = v ?? DateTime.UtcNow.Date })" Label="Start date" Variant="Variant.Outlined" /></MudItem>
                     <MudItem xs="12"><MudDatePicker Date="@createModel.EndDate" DateChanged="@((DateTime? v) => createModel = createModel with { EndDate = v })" Label="End date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
                 </MudGrid>
@@ -46,9 +47,12 @@
     private CreateSalesTerritoryHistoryRequest createModel = new() { StartDate = DateTime.UtcNow.Date };
     private UpdateSalesTerritoryHistoryRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _territories = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _territories = await Lookup.GetSalesTerritoriesAsync();
+
         if (Model is not null) updateModel = new UpdateSalesTerritoryHistoryRequest { EndDate = Model.EndDate };
     }
 

@@ -1,6 +1,7 @@
 @inject NavigationManager Navigation
 
-<MudAutocomplete T="SearchItem" @bind-Value="selectedItem" SearchFunc="SearchAsync"
+<MudAutocomplete T="SearchItem" Value="selectedItem" ValueChanged="OnItemSelected"
+                 SearchFunc="SearchAsync"
                  Placeholder="Search pages... (Ctrl+K)" Variant="Variant.Outlined" Dense="true"
                  Margin="Margin.Dense" Clearable="true" Immediate="true"
                  ToStringFunc="@(item => item?.Name ?? "")"
@@ -29,9 +30,11 @@
         new("HR Analytics", "analytics/hr", "Analytics", Icons.Material.Filled.Groups),
         new("Purchasing Analytics", "analytics/purchasing", "Analytics", Icons.Material.Filled.ShoppingBag),
         new("Forecast Analytics", "analytics/forecasts", "Analytics", Icons.Material.Filled.Analytics),
+        new("Process Analytics", "analytics/processes", "Analytics", Icons.Material.Filled.Assessment),
 
         // App data
         new("Forecasts", "forecasts", "App Data", Icons.Material.Filled.TrendingUp),
+        new("Processes", "processes", "App Data", Icons.Material.Filled.AccountTree),
         new("Tool Slots", "tool-slots", "App Data", Icons.Material.Filled.Build),
 
         // Sales
@@ -79,6 +82,7 @@
         new("Database Explorer", "reports", "Tools", Icons.Material.Filled.Assessment),
         new("User Guide", "guide", "Content", Icons.Material.Filled.MenuBook),
         new("Guide Stats", "admin/guide-stats", "Admin", Icons.Material.Filled.MenuBook),
+        new("Permissions", "admin/permissions", "Admin", Icons.Material.Filled.Security),
     ];
 
     private Task<IEnumerable<SearchItem>> SearchAsync(string? value, CancellationToken ct)
@@ -94,13 +98,13 @@
         return Task.FromResult(results);
     }
 
-    protected override void OnParametersSet()
+    private void OnItemSelected(SearchItem? item)
     {
-        if (selectedItem is not null)
+        selectedItem = item;
+        if (item is not null)
         {
-            var url = selectedItem.Url;
             selectedItem = null;
-            Navigation.NavigateTo(url);
+            Navigation.NavigateTo(item.Url);
         }
     }
 

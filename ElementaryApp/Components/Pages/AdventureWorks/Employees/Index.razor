@@ -39,7 +39,7 @@
             <PropertyColumn Property="x => x.Gender" Title="G" />
             <PropertyColumn Property="x => x.HireDate" Title="Hired" Format="yyyy-MM-dd" />
             <PropertyColumn Property="x => x.CurrentFlag" Title="Current" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -58,6 +58,9 @@
             <EmployeeExpandedRow EmployeeId="@context.Item.Id" />
         </ChildRowContent>
         <PagerContent><MudDataGridPager T="EmployeeDto" /></PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
     </MudDataGrid>
 </MudStack>
 
@@ -116,8 +119,15 @@
         var changedBy = await GetCurrentUserNameAsync();
         db.EmployeeAuditLogs.Add(EmployeeAuditService.RecordDelete(entity, changedBy));
         db.Employees.Remove(entity);
-        await db.SaveChangesAsync();
-        Snackbar.Add("Employee deleted.", Severity.Success);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Employee deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
         await grid.ReloadServerData();
     }
 

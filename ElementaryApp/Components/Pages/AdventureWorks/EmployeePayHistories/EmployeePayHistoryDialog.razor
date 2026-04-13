@@ -6,6 +6,7 @@
 @inject MudFormValidator<CreateEmployeePayHistoryRequest> CreateValidator
 @inject MudFormValidator<UpdateEmployeePayHistoryRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -15,7 +16,7 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Employee id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Employee" Required="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" /></MudItem>
                     <MudItem xs="12" sm="6"><MudDatePicker Date="@createModel.RateChangeDate" DateChanged="@((DateTime? v) => createModel = createModel with { RateChangeDate = v ?? DateTime.UtcNow.Date })" Label="Rate change date" Variant="Variant.Outlined" /></MudItem>
                     <MudItem xs="12" sm="6"><MudNumericField T="decimal" Value="@createModel.Rate" ValueChanged="@((decimal v) => createModel = createModel with { Rate = v })" Label="Rate" Variant="Variant.Outlined" Required="true" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="12" sm="6">

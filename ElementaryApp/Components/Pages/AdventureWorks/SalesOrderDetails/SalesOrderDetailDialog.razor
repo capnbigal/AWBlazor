@@ -7,6 +7,7 @@
 @inject MudFormValidator<UpdateSalesOrderDetailRequest> UpdateValidator
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject LookupService Lookup
 
 <MudDialog>
     <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create order detail" : $"Edit detail ({Model!.SalesOrderId}, {Model.SalesOrderDetailId})")</MudText></TitleContent>
@@ -15,10 +16,10 @@
         {
             <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.SalesOrderId" ValueChanged="@((int v) => createModel = createModel with { SalesOrderId = v })" Label="Sales order id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="12" sm="6"><MudNumericField T="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.SalesOrderId" ValueChanged="@((int v) => createModel = createModel with { SalesOrderId = v })" Label="Sales order" SearchFunc="Lookup.SearchSalesOrdersAsync" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="short" Value="@createModel.OrderQty" ValueChanged="@((short v) => createModel = createModel with { OrderQty = v })" Label="Order qty" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
-                    <MudItem xs="6" sm="3"><MudNumericField T="int" Value="@createModel.SpecialOfferId" ValueChanged="@((int v) => createModel = createModel with { SpecialOfferId = v })" Label="Special offer id" Variant="Variant.Outlined" Required="true" Min="1" /></MudItem>
+                    <MudItem xs="6" sm="3"><FkSelect TValue="int" Value="@createModel.SpecialOfferId" ValueChanged="@((int v) => createModel = createModel with { SpecialOfferId = v })" Label="Special offer" Items="_specialOffers" Required="true" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.UnitPrice" ValueChanged="@((decimal v) => createModel = createModel with { UnitPrice = v })" Label="Unit price" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="6" sm="3"><MudNumericField T="decimal" Value="@createModel.UnitPriceDiscount" ValueChanged="@((decimal v) => createModel = createModel with { UnitPriceDiscount = v })" Label="Discount" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
                     <MudItem xs="12"><MudTextField Value="@createModel.CarrierTrackingNumber" ValueChanged="@((string? v) => createModel = createModel with { CarrierTrackingNumber = v })" Label="Carrier tracking #" Variant="Variant.Outlined" MaxLength="25" /></MudItem>
@@ -52,9 +53,12 @@
     private CreateSalesOrderDetailRequest createModel = new() { OrderQty = 1, SpecialOfferId = 1 };
     private UpdateSalesOrderDetailRequest updateModel = new();
     private bool saving;
+    private List<LookupItem<int>> _specialOffers = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        _specialOffers = await Lookup.GetSpecialOffersAsync();
+
         if (Model is not null)
         {
             updateModel = new UpdateSalesOrderDetailRequest

@@ -23,7 +23,7 @@ phases. The current state is documented below.
 | Markdown | Markdig 1.1 + YamlDotNet 16 |
 | Caching | Microsoft.Extensions.Caching.Memory (5-min TTL on analytics) |
 | Security | Rate limiting, security headers, SHA-256 API key hashing |
-| Testing | NUnit 4 + Microsoft.AspNetCore.Mvc.Testing + EF Core SQLite (in-memory) |
+| Testing | NUnit 4 + Microsoft.AspNetCore.Mvc.Testing (real SQL Server) |
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ git clone <this repo>
 cd ElementaryApp
 dotnet restore ElementaryApp.slnx
 dotnet build  ElementaryApp.slnx
-dotnet test   ElementaryApp.slnx       # 214 integration + unit tests
+dotnet test   ElementaryApp.slnx       # 213 integration + unit tests
 dotnet run --project ElementaryApp
 ```
 
@@ -65,7 +65,7 @@ in `ElementaryApp/Data/DatabaseInitializer.cs` runs four steps in order:
    columns the model expects but the live table is missing. NOT NULL columns are logged as
    errors and must be added manually.
 5. **`SeedAsync`** — creates Identity roles, the four seed users below, and reference data
-   (10 booking coupons, 3 sample bookings).
+   (Identity roles and seed users). Forecast definitions are created by users through the UI.
 
 The `dbo.ToolSlotConfigurations` table is **excluded from migrations** (`ExcludeFromMigrations`
 in `ApplicationDbContext.OnModelCreating`). EF reads from and writes to it but never tries to
@@ -111,14 +111,14 @@ dotnet user-secrets set "Smtp:Password" "mypassword"
 | `/analytics/production` | Production analytics: work orders, scrap rate, throughput, lifecycle |
 | `/analytics/hr` | HR analytics: headcount, tenure, compensation, departments |
 | `/analytics/purchasing` | Purchasing analytics: PO spend, vendors, lead time |
-| `/blog` | Markdown blog index (reads `_posts/*.md`) |
-| `/blog/{slug}` | Single blog post |
-| `/bookings` | Bookings CRUD (any authenticated user) |
-| `/coupons` | Coupons CRUD (any authenticated user) |
+| `/forecasts` | Forecasting CRUD (any authenticated user) |
+| `/guide` | User guide index |
+| `/guide/{slug}` | Single guide article |
+| `/guide/tag/{tag}` | Guide articles filtered by tag |
 | `/tool-slots` | Tool slot configurations CRUD (any authenticated user) |
 | `/reports` | Database explorer with row counts, schema distribution, CSV export |
 | `/aw/*` | 90+ AdventureWorks CRUD pages with expandable row drill-throughs |
-| `/admin` | Admin dashboard with recent bookings, API key usage, request volume chart |
+| `/admin` | Admin dashboard with recent forecasts, API key usage, request volume chart |
 | `/admin/users` | Identity user list (Admin role) |
 | `/admin/request-log` | Browse the Serilog `RequestLogs` table (Admin role) |
 | `/hangfire` | Hangfire dashboard (Admin role; only mounted when `Features:Hangfire=true`) |
@@ -132,8 +132,7 @@ dotnet user-secrets set "Smtp:Password" "mypassword"
 |---|---|---|
 | `GET` | `/api/hello/{name}` | anonymous |
 | `GET` | `/api/admin/data` | Admin |
-| `GET POST PATCH DELETE` | `/api/bookings` | cookie or `X-Api-Key` |
-| `GET POST PATCH DELETE` | `/api/coupons` | cookie or `X-Api-Key` |
+| `GET POST PATCH DELETE` | `/api/forecasts` | cookie or `X-Api-Key` |
 | `GET POST PATCH DELETE` | `/api/tool-slots` | cookie or `X-Api-Key` |
 | `GET` | `/api/users`, `/api/users/{id}` | Admin |
 
@@ -153,9 +152,9 @@ ElementaryApp/
 │   └── Pages/
 │       ├── Analytics/          Sales, Production, HR, Purchasing dashboards
 │       ├── AdventureWorks/     90+ CRUD pages with ExpandedRow drill-through components
-│       └── ...                 Home, Blog, Bookings, Coupons, ToolSlots, Admin, Reports
+│       └── ...                 Home, Analytics, Forecasts, Guide, ToolSlots, Admin, Reports
 ├── Data/
-│   ├── Entities/               Booking, Coupon, ToolSlotConfiguration, ApiKey + 90+ AdventureWorks entities
+│   ├── Entities/               Forecasting entities (ForecastDefinition, ForecastDataPoint, ForecastHistoricalSnapshot), ArticleRead, ToolSlotConfiguration, ApiKey + 90+ AdventureWorks entities
 │   ├── ApplicationDbContext.cs
 │   ├── ApplicationUser.cs      Extends IdentityUser with FirstName/LastName/DisplayName/ProfileUrl
 │   ├── AuditingInterceptor.cs  Populates audit fields via SaveChangesInterceptor
@@ -164,8 +163,8 @@ ElementaryApp/
 ├── Endpoints/                  Minimal-API endpoint groups
 ├── Models/                     Request/response DTOs (no entity coupling)
 ├── Validators/                 FluentValidation rules + MudFormValidator adapter
-├── Services/                   AnalyticsCacheService, MarkdownBlogService, SmtpEmailJob, HangfireSmtpEmailSender
-├── _posts/                     Markdown blog posts (read at startup)
+├── Services/                   UserGuideService, AnalyticsCacheService, NotificationService, Forecasting/*, SmtpEmailJob, HangfireSmtpEmailSender
+├── _posts/                     Markdown content for user guide (read at startup)
 ├── _pages, _includes, _videos/ Other content folders (currently unused; reserved for future)
 ├── wwwroot/
 │   ├── img/                    Static images
@@ -174,10 +173,10 @@ ElementaryApp/
 └── ElementaryApp.csproj
 
 ElementaryApp.Tests/
-├── IntegrationTest.cs          18 tests covering pages, endpoints, form POSTs, API keys
+├── IntegrationTest.cs          213 tests covering pages, endpoints, form POSTs, API keys
 ├── FormPostHelper.cs           GET → parse antiforgery → POST helper
-├── UnitTest.cs                 Standalone EF unit test
-└── ElementaryApp.Tests.csproj  Includes Microsoft.EntityFrameworkCore.Sqlite for in-memory testing
+├── UnitTest.cs                 Standalone EF unit tests
+└── ElementaryApp.Tests.csproj
 ```
 
 ## Architecture notes
@@ -263,23 +262,22 @@ If you ever see VS pop up on a `NavigationException` here, either:
 dotnet test ElementaryApp.slnx
 ```
 
-The test fixture spins up a `WebApplicationFactory<Program>` with the production EF Core
-SQL Server registration **replaced** by a SQLite-in-memory connection. `Features:Hangfire`
-and `RequestLogs:Enabled` are set to `false` so the test host doesn't try to reach a real
-SQL Server. `DatabaseInitializer` detects the non-SQL-Server provider and falls back to
-`EnsureCreatedAsync` instead of running migrations.
+The test fixture spins up a `WebApplicationFactory<Program>` with
+`builder.UseEnvironment("Development")`, which reads `appsettings.Development.json` and points
+EF at **ELITE / AdventureWorks2022_dev**. `Features:Hangfire` and `RequestLogs:Enabled` are set
+to `false` via in-memory configuration overrides. Tests run against the real SQL Server instance
+-- no in-memory substitute is used.
 
-Coverage as of Phase 7 (214 tests):
+Coverage as of Phase 7 (213 tests):
 
 - Page renders: `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword`
-- Anonymous redirects from `/bookings`, `/coupons`, `/tool-slots`, `/admin`, `/admin/users`
+- Anonymous redirects from `/forecasts`, `/tool-slots`, `/admin`, `/admin/users`
 - `/api/hello/{name}` returns greeting JSON
-- `/api/bookings` returns 401 for anonymous request
+- `/api/forecasts` returns 401 for anonymous request
 - Swagger spec is served and contains all CRUD groups
 - **Form POST**: valid login credentials → redirect; invalid login → re-render with error;
   forgot-password → redirect to confirmation
-- **API key auth**: valid key returns booking data; invalid key → 401; revoked key → 401
-- Standalone unit test: Booking ↔ Coupon FK relationship via in-memory DbContext
+- **API key auth**: valid key returns forecast data; invalid key → 401; revoked key → 401
 
 The form-POST tests use `FormPostHelper.PostFormAsync`, which does the standard browser flow
 (GET → parse antiforgery token → POST). This is the only kind of test that catches MudBlazor
@@ -289,9 +287,6 @@ SSR form-binding regressions — page-render tests alone are not enough.
 
 These were considered and intentionally left out:
 
-- **Anthropic AI chat** — was originally part of Phase 4 but skipped at the request of the
-  user. To re-add, install the `Anthropic` NuGet package, register a `ChatService` against
-  `IAnthropicClient`, and add a Blazor chat UI with InteractiveServer rendering.
 - **External login providers (Google, Microsoft, GitHub, etc.)** — the code path is referenced
   in `ExternalLogins.razor` but the form-handler endpoints are not wired up. To enable, add
   `services.AddAuthentication().AddGoogle(...)` etc. in `Program.cs` and restore the
@@ -313,7 +308,7 @@ state across five phases:
    collapsed 4 projects → 2.
 2. **Phase 2** — DTOs + Minimal API endpoints + FluentValidation + Swashbuckle.
 3. **Phase 3** — MudBlazor CRUD pages + Identity scaffold rebuild + role-aware nav.
-4. **Phase 4** — SQL Server switch + Hangfire + Serilog + API Keys + Markdig blog.
+4. **Phase 4** — SQL Server switch + Hangfire + Serilog + API Keys + Markdig.
 5. **Phase 5** — Form-POST tests, API key tests, restored 2FA/ExternalLogins/PersonalData pages.
 6. **Phase 6** — Analytics dashboards (Sales, Production, HR, Purchasing) with time-intelligence
    charts, ExpandedRowTemplate drill-through on 10 entity pages, cross-entity navigation links,
@@ -322,6 +317,6 @@ state across five phases:
    security headers, API key SHA-256 hashing.
 
 The original Vue/Tailwind/ServiceStack files have all been removed. `_posts/`, `_pages/`,
-`_includes/`, `_videos/` are kept as content folders for the markdown blog system but the
-original ServiceStack-aware markdown rendering pipeline is gone — `Services/MarkdownBlogService.cs`
-is a lightweight 120-line replacement.
+`_includes/`, `_videos/` are kept as content folders for the user guide system but the
+original ServiceStack-aware markdown rendering pipeline is gone — `Services/UserGuideService.cs`
+is a lightweight replacement.
