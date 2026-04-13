@@ -23,6 +23,9 @@
         <!-- UI: MudBlazor -->
         <PackageReference Include="MudBlazor" Version="9.3.0" />
 
+        <!-- SignalR client (for real-time notification listener in Blazor components) -->
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.*" />
+
         <!-- Validation -->
         <PackageReference Include="FluentValidation" Version="12.*" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.*" />

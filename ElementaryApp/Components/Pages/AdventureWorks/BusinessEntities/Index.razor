@@ -27,7 +27,7 @@
         it has no editable data of its own. Persons, Stores, and Vendors all share this ID.
     </MudText>
 
-    <MudDataGrid T="BusinessEntityDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="BusinessEntityDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.RowGuid" Title="Row GUID" />

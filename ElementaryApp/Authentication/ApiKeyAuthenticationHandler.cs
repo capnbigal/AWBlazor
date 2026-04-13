@@ -42,9 +42,13 @@ public sealed class ApiKeyAuthenticationHandler(
         }
 
         await using var db = await dbFactory.CreateDbContextAsync();
+
+        // Support both legacy plain-text keys and SHA-256 hashed keys.
+        // Try exact match first (plain-text), then hash match.
+        var hashedKey = ApiKeyHasher.Hash(providedKey);
         var apiKey = await db.ApiKeys
             .Include(k => k.User)
-            .FirstOrDefaultAsync(k => k.Key == providedKey);
+            .FirstOrDefaultAsync(k => k.Key == providedKey || k.Key == hashedKey);
 
         if (apiKey is null)
         {

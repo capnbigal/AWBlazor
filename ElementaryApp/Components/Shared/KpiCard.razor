@@ -1,0 +1,55 @@
+@* Reusable KPI stat card with icon, value, label, and optional trend indicator. *@
+
+<MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="@($"border-top: 4px solid var(--mud-palette-{ColorCss});")">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <MudIcon Icon="@Icon" Color="@Color" Size="Size.Large" />
+    }
+    <MudText Typo="@ValueTypo" Class="mt-2">@Value</MudText>
+    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@Label</MudText>
+    @if (!string.IsNullOrEmpty(Trend))
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
+            <MudIcon Icon="@TrendIcon" Color="@TrendColor" Size="Size.Small" />
+            <MudText Typo="Typo.caption" Color="@TrendColor">@Trend</MudText>
+        </MudStack>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public Typo ValueTypo { get; set; } = Typo.h3;
+    /// <summary>Optional trend text, e.g. "+12% vs prior period"</summary>
+    [Parameter] public string? Trend { get; set; }
+    /// <summary>Positive = up/green, negative = down/red, neutral = default.</summary>
+    [Parameter] public TrendDirection TrendDirection { get; set; } = TrendDirection.Neutral;
+
+    private string ColorCss => Color switch
+    {
+        Color.Primary   => "primary",
+        Color.Secondary => "secondary",
+        Color.Info      => "info",
+        Color.Success   => "success",
+        Color.Warning   => "warning",
+        Color.Error     => "error",
+        Color.Dark      => "dark",
+        _               => "primary",
+    };
+
+    private string TrendIcon => TrendDirection switch
+    {
+        TrendDirection.Up   => Icons.Material.Filled.TrendingUp,
+        TrendDirection.Down => Icons.Material.Filled.TrendingDown,
+        _                   => Icons.Material.Filled.TrendingFlat,
+    };
+
+    private Color TrendColor => TrendDirection switch
+    {
+        TrendDirection.Up   => Color.Success,
+        TrendDirection.Down => Color.Error,
+        _                   => Color.Default,
+    };
+}

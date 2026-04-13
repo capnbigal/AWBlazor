@@ -39,7 +39,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.PersonType" Title="Type" />

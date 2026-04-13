@@ -1,4 +1,5 @@
 @page "/"
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 
 <PageTitle>Elementary App</PageTitle>
 
@@ -6,42 +7,217 @@
     <MudPaper Class="pa-6" Elevation="2">
         <MudText Typo="Typo.h3" GutterBottom="true">Welcome to Elementary App</MudText>
         <MudText Typo="Typo.body1">
-            This site has been migrated from ServiceStack + Vue to a pure Blazor Server stack
-            running on .NET 10, EF Core and MudBlazor. The remaining features (bookings CRUD,
-            tool-slot configurations, blog content, background jobs, request logging,
-            API keys and AI chat) will come back online in the upcoming phases of the migration.
+            A full-stack Blazor Server application built on .NET 10, EF Core 10, MudBlazor 9,
+            and the AdventureWorks2022 database. Create forecasts with time-series methods,
+            manage tool slot configurations, explore 90+ AdventureWorks reference tables,
+            and analyze business data through interactive analytics dashboards.
         </MudText>
     </MudPaper>
 
-    <MudGrid>
-        <MudItem xs="12" md="6">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Stack</MudText>
-                    <MudList T="string" Dense="true">
-                        <MudListItem Icon="@Icons.Material.Filled.Check">.NET 10</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.Check">Blazor Server (Interactive)</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.Check">MudBlazor 9</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.Check">EF Core 10 + SQLite</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.Check">ASP.NET Core Identity</MudListItem>
-                    </MudList>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Coming back next</MudText>
-                    <MudList T="string" Dense="true">
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Bookings &amp; Coupons CRUD</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Tool Slot Configurations</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Hangfire SMTP jobs</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Serilog SQLite request log</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">API key auth</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.PendingActions">Anthropic-backed AI chat</MudListItem>
-                    </MudList>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+    <AuthorizeView>
+        <Authorized>
+            @if (loaded)
+            {
+                <MudGrid>
+                    <MudItem xs="6" sm="3">
+                        <KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary"
+                                 Value="@salesOrderCount.ToString("N0")" Label="Sales orders" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <KpiCard Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success"
+                                 Value="@activeForecasts.ToString("N0")" Label="Active forecasts" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <KpiCard Icon="@Icons.Material.Filled.Construction" Color="Color.Warning"
+                                 Value="@openWorkOrders.ToString("N0")" Label="Open work orders" />
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <KpiCard Icon="@Icons.Material.Filled.People" Color="Color.Info"
+                                 Value="@userCount.ToString("N0")" Label="Users" />
+                    </MudItem>
+                </MudGrid>
+            }
+
+            <MudText Typo="Typo.h5">Analytics dashboards</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Sales</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Revenue, orders, territories</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardActions>
+                            <MudButton Href="analytics/sales" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudIcon Icon="@Icons.Material.Filled.Factory" Color="Color.Primary" Size="Size.Large" />
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Production</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Work orders, scrap, throughput</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardActions>
+                            <MudButton Href="analytics/production" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Size="Size.Large" />
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Human Resources</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Headcount, tenure, pay</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardActions>
+                            <MudButton Href="analytics/hr" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Warning" Size="Size.Large" />
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Purchasing</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">POs, vendors, spend</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardActions>
+                            <MudButton Href="analytics/purchasing" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Info" Size="Size.Large" />
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Forecasts</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Accuracy, methods, evaluations</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardActions>
+                            <MudButton Href="analytics/forecasts" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <MudText Typo="Typo.h5" Class="mt-2">Quick access</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary" Size="Size.Large" />
+                            <MudText Typo="Typo.subtitle1" Class="mt-2">Forecasts</MudText>
+                        </MudCardContent>
+                        <MudCardActions Class="justify-center">
+                            <MudButton Href="forecasts" Color="Color.Primary" Variant="Variant.Text">Manage</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Info" Size="Size.Large" />
+                            <MudText Typo="Typo.subtitle1" Class="mt-2">Tool Slots</MudText>
+                        </MudCardContent>
+                        <MudCardActions Class="justify-center">
+                            <MudButton Href="tool-slots" Color="Color.Primary" Variant="Variant.Text">Manage</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Success" Size="Size.Large" />
+                            <MudText Typo="Typo.subtitle1" Class="mt-2">Database Explorer</MudText>
+                        </MudCardContent>
+                        <MudCardActions Class="justify-center">
+                            <MudButton Href="reports" Color="Color.Primary" Variant="Variant.Text">Explore</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </Authorized>
+        <NotAuthorized>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">Stack</MudText>
+                            <MudList T="string" Dense="true">
+                                <MudListItem Icon="@Icons.Material.Filled.Check">.NET 10</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">Blazor Server (Interactive)</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">MudBlazor 9</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">EF Core 10 + SQL Server</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">ASP.NET Core Identity</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">Hangfire background jobs</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Check">Serilog structured logging</MudListItem>
+                            </MudList>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">Features</MudText>
+                            <MudList T="string" Dense="true">
+                                <MudListItem Icon="@Icons.Material.Filled.BarChart">Sales, Production, HR & Purchasing analytics</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.TrendingUp">Forecasting with 4 methods</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Build">Tool Slot Configurations</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Storage">90+ AdventureWorks reference tables</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.VpnKey">API key authentication</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.MenuBook">User guide with read tracking</MudListItem>
+                            </MudList>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </NotAuthorized>
+    </AuthorizeView>
 </MudStack>
+
+@code {
+    private bool loaded;
+    private int salesOrderCount;
+    private int activeForecasts;
+    private int openWorkOrders;
+    private int userCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            salesOrderCount = await db.SalesOrderHeaders.CountAsync();
+            activeForecasts = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == Data.Entities.Forecasting.ForecastStatus.Active);
+            openWorkOrders = await db.WorkOrders.CountAsync(w => w.EndDate == null);
+            userCount = await db.Users.CountAsync();
+            loaded = true;
+        }
+        catch
+        {
+            // Home page should never fail — swallow DB errors gracefully
+        }
+    }
+}

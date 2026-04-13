@@ -18,7 +18,7 @@ public static class DatabaseInitializer
     /// <summary>
     /// Entry point — applies pending migrations and seeds. Used by Program.cs.
     /// ElementaryApp only supports SQL Server (production = <c>AdventureWorks2022</c>, dev/test =
-    /// <c>AdventureWorks2022_dev</c>, both on <c>SHOOSHEE</c>). If the configured provider is
+    /// <c>AdventureWorks2022_dev</c>, both on <c>ELITE</c>). If the configured provider is
     /// anything else the call throws — there is no longer a SQLite fallback.
     /// </summary>
     public static async Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default)
@@ -33,10 +33,10 @@ public static class DatabaseInitializer
         {
             throw new InvalidOperationException(
                 $"ElementaryApp only supports the SQL Server EF provider; current provider is '{provider}'. " +
-                "Production points at AdventureWorks2022 on SHOOSHEE; dev and tests point at AdventureWorks2022_dev.");
+                "Production points at AdventureWorks2022 on ELITE; dev and tests point at AdventureWorks2022_dev.");
         }
 
-        // The target database may already contain Identity / Bookings tables that were created
+        // The target database may already contain Identity / Forecasting tables that were created
         // out-of-band (or by an earlier prerelease that used different migration IDs). If so,
         // MigrateAsync will fail with "object already exists". Reconcile the __EFMigrationsHistory
         // table against the live schema first so MigrateAsync only applies migrations whose
@@ -468,47 +468,10 @@ public static class DatabaseInitializer
         }
     }
 
-    private static async Task SeedReferenceDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
+    private static Task SeedReferenceDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
     {
-        if (!await db.Coupons.AnyAsync(cancellationToken))
-        {
-            int[] discounts = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70];
-            var expiry = DateTime.UtcNow.AddDays(30);
-            db.Coupons.AddRange(discounts.Select(d => new Coupon
-            {
-                Id = $"BOOK{d}",
-                Description = $"{d}% off",
-                Discount = d,
-                ExpiryDate = expiry,
-            }));
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        if (!await db.Bookings.AnyAsync(cancellationToken))
-        {
-            db.Bookings.AddRange(
-                CreateSeedBooking("First Booking!", RoomType.Queen, 10, 100m, "BOOK10", "employee@email.com"),
-                CreateSeedBooking("Booking 2", RoomType.Double, 12, 120m, "BOOK25", "manager@email.com"),
-                CreateSeedBooking("Booking the 3rd", RoomType.Suite, 13, 130m, null, "employee@email.com"));
-            await db.SaveChangesAsync(cancellationToken);
-        }
-    }
-
-    private static Booking CreateSeedBooking(
-        string name, RoomType type, int roomNo, decimal cost, string? couponId, string by)
-    {
-        var now = DateTime.UtcNow;
-        return new Booking
-        {
-            Name = name,
-            RoomType = type,
-            RoomNumber = roomNo,
-            Cost = cost,
-            BookingStartDate = now.AddDays(roomNo),
-            BookingEndDate = now.AddDays(roomNo + 7),
-            CouponId = couponId,
-            CreatedBy = by,
-            ModifiedBy = by,
-        };
+        // Booking/Coupon seed data removed — replaced by Forecasting domain.
+        // Forecast definitions are created by users through the UI.
+        return Task.CompletedTask;
     }
 }

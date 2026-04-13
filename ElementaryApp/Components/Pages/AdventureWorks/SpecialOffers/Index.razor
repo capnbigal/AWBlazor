@@ -31,6 +31,7 @@
 
     <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="SpecialOfferDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.Description" Title="Description" />
             <PropertyColumn Property="x => x.DiscountPct" Title="Discount" Format="P2" />
@@ -56,6 +57,9 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent>
+            <SpecialOfferExpandedRow OfferId="@context.Item.Id" />
+        </ChildRowContent>
         <PagerContent><MudDataGridPager T="SpecialOfferDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

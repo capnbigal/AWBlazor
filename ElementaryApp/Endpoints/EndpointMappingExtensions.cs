@@ -8,8 +8,7 @@ public static class EndpointMappingExtensions
     {
         app.MapHelloEndpoints();
         app.MapAdminEndpoints();
-        app.MapBookingEndpoints();
-        app.MapCouponEndpoints();
+        app.MapForecastEndpoints();
         app.MapToolSlotConfigurationEndpoints();
         app.MapUserEndpoints();
 

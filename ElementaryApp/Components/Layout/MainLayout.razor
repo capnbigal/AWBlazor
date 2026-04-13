@@ -1,9 +1,11 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
-<MudThemeProvider @rendermode="InteractiveServer" />
+<MudThemeProvider @rendermode="InteractiveServer" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<NotificationListener />
 
 <MudLayout>
     <MudAppBar Elevation="1">
@@ -13,6 +15,10 @@
                        OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h6" Class="ml-2">Elementary App</MudText>
         <MudSpacer />
+        <GlobalSearch />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       Href="@DarkModeToggleUrl" />
         <AuthorizeView>
             <Authorized>
                 <MudText Class="mr-3">@context.User.Identity?.Name</MudText>
@@ -43,7 +49,25 @@
 </MudLayout>
 
 @code {
+    [CascadingParameter(Name = "InitialDarkMode")]
+    private bool InitialDarkMode { get; set; }
+
+    private bool _isDarkMode;
     private bool _drawerOpen = true;
 
+    protected override void OnInitialized()
+    {
+        _isDarkMode = InitialDarkMode;
+    }
+
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private string DarkModeToggleUrl
+    {
+        get
+        {
+            var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+            return $"/api/toggle-dark-mode?returnUrl=/{Uri.EscapeDataString(currentPath)}";
+        }
+    }
 }

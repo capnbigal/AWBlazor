@@ -1,0 +1,108 @@
+@inject NavigationManager Navigation
+
+<MudAutocomplete T="SearchItem" @bind-Value="selectedItem" SearchFunc="SearchAsync"
+                 Placeholder="Search pages... (Ctrl+K)" Variant="Variant.Outlined" Dense="true"
+                 Margin="Margin.Dense" Clearable="true" Immediate="true"
+                 ToStringFunc="@(item => item?.Name ?? "")"
+                 AdornmentIcon="@Icons.Material.Filled.Search"
+                 Style="max-width: 300px; background: rgba(255,255,255,0.1); border-radius: 4px;"
+                 Class="mr-3 global-search-input">
+    <ItemTemplate>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@context.Icon" Size="Size.Small" />
+            <div>
+                <MudText Typo="Typo.body2">@context.Name</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Category</MudText>
+            </div>
+        </MudStack>
+    </ItemTemplate>
+</MudAutocomplete>
+
+@code {
+    private SearchItem? selectedItem;
+
+    private static readonly List<SearchItem> allItems =
+    [
+        // Analytics
+        new("Sales Analytics", "analytics/sales", "Analytics", Icons.Material.Filled.AttachMoney),
+        new("Production Analytics", "analytics/production", "Analytics", Icons.Material.Filled.Factory),
+        new("HR Analytics", "analytics/hr", "Analytics", Icons.Material.Filled.Groups),
+        new("Purchasing Analytics", "analytics/purchasing", "Analytics", Icons.Material.Filled.ShoppingBag),
+        new("Forecast Analytics", "analytics/forecasts", "Analytics", Icons.Material.Filled.Analytics),
+
+        // App data
+        new("Forecasts", "forecasts", "App Data", Icons.Material.Filled.TrendingUp),
+        new("Tool Slots", "tool-slots", "App Data", Icons.Material.Filled.Build),
+
+        // Sales
+        new("Sales Orders", "aw/sales-order-headers", "Sales", Icons.Material.Filled.Receipt),
+        new("Sales Order Details", "aw/sales-order-details", "Sales", Icons.Material.Filled.ListAlt),
+        new("Customers", "aw/customers", "Sales", Icons.Material.Filled.PeopleAlt),
+        new("Sales Persons", "aw/sales-persons", "Sales", Icons.Material.Filled.Badge),
+        new("Sales Territories", "aw/sales-territories", "Sales", Icons.Material.Filled.Map),
+        new("Special Offers", "aw/special-offers", "Sales", Icons.Material.Filled.LocalOffer),
+        new("Stores", "aw/stores", "Sales", Icons.Material.Filled.Store),
+        new("Credit Cards", "aw/credit-cards", "Sales", Icons.Material.Filled.CreditCard),
+        new("Currencies", "aw/currencies", "Sales", Icons.Material.Filled.Payments),
+        new("Currency Rates", "aw/currency-rates", "Sales", Icons.Material.Filled.CurrencyExchange),
+
+        // Production
+        new("Products", "aw/products", "Production", Icons.Material.Filled.Inventory2),
+        new("Product Models", "aw/product-models", "Production", Icons.Material.Filled.Layers),
+        new("Work Orders", "aw/work-orders", "Production", Icons.Material.Filled.Construction),
+        new("Bill of Materials", "aw/bill-of-materials", "Production", Icons.Material.Filled.AccountTree),
+        new("Product Categories", "aw/product-categories", "Production", Icons.Material.Filled.Category),
+        new("Product Inventory", "aw/product-inventories", "Production", Icons.Material.Filled.Warehouse),
+        new("Transaction History", "aw/transaction-histories", "Production", Icons.Material.Filled.Receipt),
+        new("Locations", "aw/locations", "Production", Icons.Material.Filled.Place),
+
+        // Purchasing
+        new("Purchase Orders", "aw/purchase-order-headers", "Purchasing", Icons.Material.Filled.Receipt),
+        new("Vendors", "aw/vendors", "Purchasing", Icons.Material.Filled.Business),
+        new("Ship Methods", "aw/ship-methods", "Purchasing", Icons.Material.Filled.LocalShipping),
+
+        // HR
+        new("Employees", "aw/employees", "HR", Icons.Material.Filled.Badge),
+        new("Departments", "aw/departments", "HR", Icons.Material.Filled.AccountTree),
+        new("Pay History", "aw/employee-pay-histories", "HR", Icons.Material.Filled.Payments),
+
+        // Person
+        new("Persons", "aw/persons", "Person", Icons.Material.Filled.Person),
+        new("Addresses", "aw/addresses", "Person", Icons.Material.Filled.LocationOn),
+        new("Email Addresses", "aw/email-addresses", "Person", Icons.Material.Filled.Email),
+
+        // Admin
+        new("Admin Dashboard", "admin", "Admin", Icons.Material.Filled.Dashboard),
+        new("Users", "admin/users", "Admin", Icons.Material.Filled.People),
+        new("Request Log", "admin/request-log", "Admin", Icons.Material.Filled.Receipt),
+        new("User Activity", "admin/activity", "Admin", Icons.Material.Filled.Timeline),
+        new("Database Explorer", "reports", "Tools", Icons.Material.Filled.Assessment),
+        new("User Guide", "guide", "Content", Icons.Material.Filled.MenuBook),
+        new("Guide Stats", "admin/guide-stats", "Admin", Icons.Material.Filled.MenuBook),
+    ];
+
+    private Task<IEnumerable<SearchItem>> SearchAsync(string? value, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(allItems.Take(10));
+
+        var results = allItems
+            .Where(i => i.Name.Contains(value, StringComparison.OrdinalIgnoreCase)
+                     || i.Category.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .Take(15);
+
+        return Task.FromResult(results);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (selectedItem is not null)
+        {
+            var url = selectedItem.Url;
+            selectedItem = null;
+            Navigation.NavigateTo(url);
+        }
+    }
+
+    public sealed record SearchItem(string Name, string Url, string Category, string Icon);
+}

@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="SalesOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.SalesOrderId" Title="Order id" />
             <PropertyColumn Property="x => x.SalesOrderDetailId" Title="Detail id" />

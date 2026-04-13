@@ -26,7 +26,7 @@
         <MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.WorkOrderId" Title="Work order" />
             <PropertyColumn Property="x => x.ProductId" Title="Product" />

@@ -1,0 +1,112 @@
+@page "/guide/{Slug}"
+@attribute [Authorize]
+@using ElementaryApp.Services
+@inject UserGuideService Guide
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>@(article?.Title ?? "Article")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/guide">
+        Back to Guide
+    </MudButton>
+
+    @if (article is null)
+    {
+        <MudAlert Severity="Severity.Warning">Article not found.</MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.h4">@article.Title</MudText>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @article.Date.ToString("MMMM d, yyyy")
+            </MudText>
+            @if (!string.IsNullOrEmpty(article.Author))
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    &mdash; @article.Author
+                </MudText>
+            }
+            @if (!string.IsNullOrEmpty(article.Category))
+            {
+                <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled">@article.Category</MudChip>
+            }
+            @foreach (var tag in article.Tags)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Href="@($"/guide/tag/{tag}")">@tag</MudChip>
+            }
+        </MudStack>
+
+        <MudDivider />
+
+        <article class="mud-typography">
+            @((MarkupString)article.HtmlBody.Value)
+        </article>
+
+        @* ── Previous / Next navigation ──────────────────────────────────── *@
+        <MudDivider Class="my-4" />
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            @if (previousSlug is not null)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@($"/guide/{previousSlug}")">
+                    Previous
+                </MudButton>
+            }
+            else
+            {
+                <MudSpacer />
+            }
+            @if (nextSlug is not null)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           Href="@($"/guide/{nextSlug}")">
+                    Next
+                </MudButton>
+            }
+        </MudStack>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private GuideArticle? article;
+    private string? previousSlug;
+    private string? nextSlug;
+
+    protected override async Task OnInitializedAsync()
+    {
+        article = Guide.FindBySlug(Slug);
+        if (article is null) return;
+
+        // Mark as read
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is not null)
+        {
+            await Guide.MarkAsReadAsync(Slug, userId);
+        }
+
+        // Determine previous / next
+        var all = Guide.All;
+        var index = -1;
+        for (var i = 0; i < all.Count; i++)
+        {
+            if (string.Equals(all[i].Slug, Slug, StringComparison.OrdinalIgnoreCase))
+            {
+                index = i;
+                break;
+            }
+        }
+
+        if (index > 0)
+            previousSlug = all[index - 1].Slug;
+        if (index >= 0 && index < all.Count - 1)
+            nextSlug = all[index + 1].Slug;
+    }
+}

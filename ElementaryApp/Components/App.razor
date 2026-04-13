@@ -13,7 +13,9 @@
     <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
 <body>
-    <Routes @rendermode="@PageRenderMode" />
+    <CascadingValue Name="InitialDarkMode" Value="@IsDarkMode">
+        <Routes @rendermode="@PageRenderMode" />
+    </CascadingValue>
 
     <div id="blazor-error-ui" data-nosnippet>
         An unhandled error has occurred.
@@ -23,6 +25,7 @@
 
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
 
@@ -42,4 +45,6 @@
     // See: https://learn.microsoft.com/aspnet/core/blazor/security/server/
     private IComponentRenderMode? PageRenderMode
         => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    public bool IsDarkMode => HttpContext.Request.Cookies["darkMode"] == "true";
 }

@@ -1,5 +1,6 @@
 using ElementaryApp.Data.Entities;
 using ElementaryApp.Data.Entities.AdventureWorks;
+using ElementaryApp.Data.Entities.Forecasting;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +9,14 @@ namespace ElementaryApp.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
-    public DbSet<Booking> Bookings => Set<Booking>();
-    public DbSet<Coupon> Coupons => Set<Coupon>();
+    // Forecasting
+    public DbSet<ForecastDefinition> ForecastDefinitions => Set<ForecastDefinition>();
+    public DbSet<ForecastDataPoint> ForecastDataPoints => Set<ForecastDataPoint>();
+    public DbSet<ForecastHistoricalSnapshot> ForecastHistoricalSnapshots => Set<ForecastHistoricalSnapshot>();
+
+    // User guide read tracking
+    public DbSet<ArticleRead> ArticleReads => Set<ArticleRead>();
+
     public DbSet<ToolSlotConfiguration> ToolSlotConfigurations => Set<ToolSlotConfiguration>();
     public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
@@ -190,16 +197,43 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(builder);
 
-        builder.Entity<Booking>(b =>
+        // --- Forecasting entities ---
+        builder.Entity<ForecastDefinition>(b =>
         {
-            b.HasOne(x => x.Coupon)
-                .WithMany(c => c.Bookings)
-                .HasForeignKey(x => x.CouponId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            b.HasIndex(x => x.CouponId);
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.DataSource);
             b.HasIndex(x => x.CreatedDate);
             b.HasIndex(x => x.DeletedDate);
+        });
+
+        builder.Entity<ForecastDataPoint>(b =>
+        {
+            b.HasOne(x => x.ForecastDefinition)
+                .WithMany(d => d.DataPoints)
+                .HasForeignKey(x => x.ForecastDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.ForecastDefinitionId, x.PeriodDate }).IsUnique();
+            b.HasIndex(x => x.PeriodDate);
+        });
+
+        builder.Entity<ForecastHistoricalSnapshot>(b =>
+        {
+            b.HasOne(x => x.ForecastDefinition)
+                .WithMany(d => d.HistoricalSnapshots)
+                .HasForeignKey(x => x.ForecastDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.ForecastDefinitionId, x.PeriodDate }).IsUnique();
+        });
+
+        // --- Article read tracking ---
+        builder.Entity<ArticleRead>(b =>
+        {
+            b.HasIndex(x => new { x.UserId, x.ArticleSlug }).IsUnique();
+            b.HasIndex(x => x.ArticleSlug);
+            b.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ToolSlotConfigurations is a pre-existing table in AdventureWorks2022 that is managed

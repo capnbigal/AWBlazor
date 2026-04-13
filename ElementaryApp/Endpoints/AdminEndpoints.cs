@@ -15,14 +15,12 @@ public static class AdminEndpoints
 
         group.MapGet("/data", async Task<Ok<AdminDataResponse>> (ApplicationDbContext db, CancellationToken ct) =>
         {
-            var bookings = await db.Bookings.CountAsync(ct);
-            var coupons = await db.Coupons.CountAsync(ct);
+            var forecasts = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null, ct);
             var toolSlots = await db.ToolSlotConfigurations.CountAsync(ct);
 
             return TypedResults.Ok(new AdminDataResponse(
             [
-                new PageStats("Bookings", bookings),
-                new PageStats("Coupons", coupons),
+                new PageStats("Forecasts", forecasts),
                 new PageStats("ToolSlotConfigurations", toolSlots),
             ]));
         })

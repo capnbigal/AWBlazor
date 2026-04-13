@@ -1,8 +1,10 @@
 # ElementaryApp
 
-A Blazor Server application running on .NET 10 with EF Core and MudBlazor, backed by SQL Server.
+A Blazor Server application running on .NET 10 with EF Core and MudBlazor, backed by SQL Server
+(AdventureWorks2022). Features interactive analytics dashboards, 90+ CRUD pages with expandable
+row drill-throughs, dark mode, global search, API key authentication, and production hardening.
 
-Originally a ServiceStack + Vue template; migrated to a pure open-source .NET stack across five
+Originally a ServiceStack + Vue template; migrated to a pure open-source .NET stack across seven
 phases. The current state is documented below.
 
 ## Stack
@@ -19,12 +21,14 @@ phases. The current state is documented below.
 | Background jobs | Hangfire 1.8 (SQL Server storage) |
 | Logging | Serilog 10 (Console + MSSqlServer sink for request logs) |
 | Markdown | Markdig 1.1 + YamlDotNet 16 |
+| Caching | Microsoft.Extensions.Caching.Memory (5-min TTL on analytics) |
+| Security | Rate limiting, security headers, SHA-256 API key hashing |
 | Testing | NUnit 4 + Microsoft.AspNetCore.Mvc.Testing + EF Core SQLite (in-memory) |
 
 ## Prerequisites
 
 - **.NET 10 SDK**
-- **SQL Server instance** named `SHOOSHEE` reachable from your dev machine, with a database
+- **SQL Server instance** named `ELITE` reachable from your dev machine, with a database
   named `AdventureWorks2022`. Adjust `ConnectionStrings:DefaultConnection` in
   `appsettings.json` (or via user secrets) if your server is named differently.
 - **Windows authentication** access to the SQL Server (the default connection string uses
@@ -37,7 +41,7 @@ git clone <this repo>
 cd ElementaryApp
 dotnet restore ElementaryApp.slnx
 dotnet build  ElementaryApp.slnx
-dotnet test   ElementaryApp.slnx       # 18 integration + unit tests
+dotnet test   ElementaryApp.slnx       # 214 integration + unit tests
 dotnet run --project ElementaryApp
 ```
 
@@ -45,7 +49,7 @@ Then open `https://localhost:5001/`.
 
 ## First-run database behavior
 
-The app talks to **SHOOSHEE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
+The app talks to **ELITE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
 in `ElementaryApp/Data/DatabaseInitializer.cs` runs four steps in order:
 
 1. **`ReconcileMigrationHistoryAsync`** — if your database already contains tables that one of
@@ -81,7 +85,7 @@ to the real database column casing (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, etc.
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `ConnectionStrings:DefaultConnection` | `Server=SHOOSHEE;Database=AdventureWorks2022;Trusted_Connection=True;TrustServerCertificate=True` | Production database (also used by Hangfire and the Serilog request-log sink) |
+| `ConnectionStrings:DefaultConnection` | `Server=ELITE;Database=AdventureWorks2022;Trusted_Connection=True;TrustServerCertificate=True` | Production database (also used by Hangfire and the Serilog request-log sink) |
 | `Smtp:Host` | empty | When empty, registration / forgot-password emails are logged but not delivered. Set to enable real SMTP. |
 | `Smtp:Port`, `Smtp:Username`, `Smtp:Password`, `Smtp:EnableSsl`, `Smtp:FromEmail`, `Smtp:FromName` | various | Standard SMTP settings |
 | `Smtp:DevToEmail` | null | If set, all outbound mail is redirected here (useful for dev) |
@@ -102,18 +106,24 @@ dotnet user-secrets set "Smtp:Password" "mypassword"
 
 | Path | Notes |
 |---|---|
-| `/` | Home page |
+| `/` | Home page with live KPI cards and dashboard links |
+| `/analytics/sales` | Sales analytics: revenue, orders, territories, top products, quota vs actual |
+| `/analytics/production` | Production analytics: work orders, scrap rate, throughput, lifecycle |
+| `/analytics/hr` | HR analytics: headcount, tenure, compensation, departments |
+| `/analytics/purchasing` | Purchasing analytics: PO spend, vendors, lead time |
 | `/blog` | Markdown blog index (reads `_posts/*.md`) |
 | `/blog/{slug}` | Single blog post |
 | `/bookings` | Bookings CRUD (any authenticated user) |
 | `/coupons` | Coupons CRUD (any authenticated user) |
 | `/tool-slots` | Tool slot configurations CRUD (any authenticated user) |
-| `/admin` | Admin dashboard (Admin role) |
+| `/reports` | Database explorer with row counts, schema distribution, CSV export |
+| `/aw/*` | 90+ AdventureWorks CRUD pages with expandable row drill-throughs |
+| `/admin` | Admin dashboard with recent bookings, API key usage, request volume chart |
 | `/admin/users` | Identity user list (Admin role) |
 | `/admin/request-log` | Browse the Serilog `RequestLogs` table (Admin role) |
 | `/hangfire` | Hangfire dashboard (Admin role; only mounted when `Features:Hangfire=true`) |
-| `/swagger` | Swagger UI for the REST API (Development environment only) |
-| `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword`, etc. | Identity scaffold pages (static SSR) |
+| `/swagger` | Swagger UI for the REST API (Admin role in production, open in Development) |
+| `/Account/Login`, etc. | Identity scaffold pages (static SSR) |
 | `/Account/Manage` | Profile + linked sub-pages: Email, Password, Two-factor, External logins, Personal data, API keys |
 
 ### REST API
@@ -128,7 +138,8 @@ dotnet user-secrets set "Smtp:Password" "mypassword"
 | `GET` | `/api/users`, `/api/users/{id}` | Admin |
 
 API keys can be generated by any signed-in user from `/Account/Manage/ApiKeys`. They authenticate
-via the `X-Api-Key: ek_...` header and inherit the owning user's roles.
+via the `X-Api-Key: ek_...` header and inherit the owning user's roles. New keys are stored as
+SHA-256 hashes; legacy plain-text keys are supported for backwards compatibility.
 
 ## Project layout
 
@@ -137,10 +148,14 @@ ElementaryApp/
 ├── Authentication/             ApiKeyAuthenticationHandler, HangfireDashboardAuthFilter
 ├── Components/
 │   ├── Account/                Identity scaffold pages (all static SSR)
-│   ├── Layout/                 MainLayout + NavMenu
-│   └── Pages/                  Home, Blog, Bookings, Coupons, ToolSlots, Admin
+│   ├── Layout/                 MainLayout (dark mode, global search) + NavMenu
+│   ├── Shared/                 TimeSeriesChart, KpiCard, GlobalSearch, TrendDirection
+│   └── Pages/
+│       ├── Analytics/          Sales, Production, HR, Purchasing dashboards
+│       ├── AdventureWorks/     90+ CRUD pages with ExpandedRow drill-through components
+│       └── ...                 Home, Blog, Bookings, Coupons, ToolSlots, Admin, Reports
 ├── Data/
-│   ├── Entities/               Booking, Coupon, ToolSlotConfiguration, ApiKey, AuditableEntity
+│   ├── Entities/               Booking, Coupon, ToolSlotConfiguration, ApiKey + 90+ AdventureWorks entities
 │   ├── ApplicationDbContext.cs
 │   ├── ApplicationUser.cs      Extends IdentityUser with FirstName/LastName/DisplayName/ProfileUrl
 │   ├── AuditingInterceptor.cs  Populates audit fields via SaveChangesInterceptor
@@ -149,7 +164,7 @@ ElementaryApp/
 ├── Endpoints/                  Minimal-API endpoint groups
 ├── Models/                     Request/response DTOs (no entity coupling)
 ├── Validators/                 FluentValidation rules + MudFormValidator adapter
-├── Services/                   MarkdownBlogService, SmtpEmailJob, HangfireSmtpEmailSender, SmtpConfig
+├── Services/                   AnalyticsCacheService, MarkdownBlogService, SmtpEmailJob, HangfireSmtpEmailSender
 ├── _posts/                     Markdown blog posts (read at startup)
 ├── _pages, _includes, _videos/ Other content folders (currently unused; reserved for future)
 ├── wwwroot/
@@ -254,7 +269,7 @@ and `RequestLogs:Enabled` are set to `false` so the test host doesn't try to rea
 SQL Server. `DatabaseInitializer` detects the non-SQL-Server provider and falls back to
 `EnsureCreatedAsync` instead of running migrations.
 
-Coverage as of Phase 5:
+Coverage as of Phase 7 (214 tests):
 
 - Page renders: `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword`
 - Anonymous redirects from `/bookings`, `/coupons`, `/tool-slots`, `/admin`, `/admin/users`
@@ -299,8 +314,12 @@ state across five phases:
 2. **Phase 2** — DTOs + Minimal API endpoints + FluentValidation + Swashbuckle.
 3. **Phase 3** — MudBlazor CRUD pages + Identity scaffold rebuild + role-aware nav.
 4. **Phase 4** — SQL Server switch + Hangfire + Serilog + API Keys + Markdig blog.
-5. **Phase 5** — Form-POST tests, API key tests, restored 2FA/ExternalLogins/PersonalData
-   pages, this README.
+5. **Phase 5** — Form-POST tests, API key tests, restored 2FA/ExternalLogins/PersonalData pages.
+6. **Phase 6** — Analytics dashboards (Sales, Production, HR, Purchasing) with time-intelligence
+   charts, ExpandedRowTemplate drill-through on 10 entity pages, cross-entity navigation links,
+   global search, dark mode toggle, live Home page KPIs, CSV chart export.
+7. **Phase 7** — SQL-side GroupBy query optimization, IMemoryCache with 5-min TTL, rate limiting,
+   security headers, API key SHA-256 hashing.
 
 The original Vue/Tailwind/ServiceStack files have all been removed. `_posts/`, `_pages/`,
 `_includes/`, `_videos/` are kept as content folders for the markdown blog system but the

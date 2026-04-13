@@ -1,0 +1,144 @@
+@using ElementaryApp.Data.Entities.AdventureWorks
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Product</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Name: <MudLink Href="aw/products" Color="Color.Primary">@productName</MudLink></MudText>
+                    <MudText Typo="Typo.body2">Product ID: <strong>@(workOrder?.ProductId)</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Quantities</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Ordered: <strong>@(workOrder?.OrderQty.ToString("N0") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Stocked: <strong>@(workOrder?.StockedQty.ToString("N0") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Scrapped: <strong>@(workOrder?.ScrappedQty.ToString("N0") ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Timeline</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Start: <strong>@(workOrder?.StartDate.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Due: <strong>@(workOrder?.DueDate.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">End: <strong>@(workOrder?.EndDate?.ToString("yyyy-MM-dd") ?? "In progress")</strong></MudText>
+                    @if (workOrder?.EndDate.HasValue == true)
+                    {
+                        var days = (workOrder.EndDate.Value - workOrder.StartDate).TotalDays;
+                        <MudText Typo="Typo.body2">Duration: <strong>@days.ToString("N0") days</strong></MudText>
+                    }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        @if (routingSteps.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">Routing steps</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th>Seq</th>
+                        <th>Location</th>
+                        <th>Scheduled start</th>
+                        <th>Scheduled end</th>
+                        <th>Actual start</th>
+                        <th>Actual end</th>
+                        <th style="text-align:right">Hours</th>
+                        <th style="text-align:right">Planned cost</th>
+                        <th style="text-align:right">Actual cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in routingSteps)
+                    {
+                        <tr>
+                            <td>@r.Sequence</td>
+                            <td>@r.LocationName</td>
+                            <td>@r.ScheduledStart.ToString("yyyy-MM-dd")</td>
+                            <td>@r.ScheduledEnd.ToString("yyyy-MM-dd")</td>
+                            <td>@(r.ActualStart?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td>@(r.ActualEnd?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td style="text-align:right">@(r.ActualHours?.ToString("N1") ?? "—")</td>
+                            <td style="text-align:right">@r.PlannedCost.ToString("C2")</td>
+                            <td style="text-align:right">@(r.ActualCost?.ToString("C2") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="7" style="text-align:right"><strong>Totals:</strong></td>
+                        <td style="text-align:right"><strong>@routingSteps.Sum(r => r.PlannedCost).ToString("C2")</strong></td>
+                        <td style="text-align:right"><strong>@routingSteps.Where(r => r.ActualCost.HasValue).Sum(r => r.ActualCost!.Value).ToString("C2")</strong></td>
+                    </tr>
+                </tfoot>
+            </MudSimpleTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">No routing steps defined for this work order.</MudAlert>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int WorkOrderId { get; set; }
+
+    private bool loading = true;
+    private WorkOrder? workOrder;
+    private string productName = "";
+    private List<RoutingStepRow> routingSteps = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        workOrder = await db.WorkOrders.AsNoTracking().FirstOrDefaultAsync(w => w.Id == WorkOrderId);
+
+        if (workOrder is not null)
+        {
+            var product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == workOrder.ProductId);
+            productName = product?.Name ?? $"Product {workOrder.ProductId}";
+        }
+
+        var locations = await db.Locations.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.Name);
+        var routings = await db.WorkOrderRoutings.AsNoTracking()
+            .Where(r => r.WorkOrderId == WorkOrderId)
+            .OrderBy(r => r.OperationSequence)
+            .ToListAsync();
+
+        routingSteps = routings.Select(r => new RoutingStepRow
+        {
+            Sequence = r.OperationSequence,
+            LocationName = locations.GetValueOrDefault(r.LocationId, $"Location {r.LocationId}"),
+            ScheduledStart = r.ScheduledStartDate,
+            ScheduledEnd = r.ScheduledEndDate,
+            ActualStart = r.ActualStartDate,
+            ActualEnd = r.ActualEndDate,
+            ActualHours = r.ActualResourceHrs,
+            PlannedCost = r.PlannedCost,
+            ActualCost = r.ActualCost,
+        }).ToList();
+
+        loading = false;
+    }
+
+    private sealed class RoutingStepRow
+    {
+        public short Sequence { get; init; }
+        public string LocationName { get; init; } = "";
+        public DateTime ScheduledStart { get; init; }
+        public DateTime ScheduledEnd { get; init; }
+        public DateTime? ActualStart { get; init; }
+        public DateTime? ActualEnd { get; init; }
+        public decimal? ActualHours { get; init; }
+        public decimal PlannedCost { get; init; }
+        public decimal? ActualCost { get; init; }
+    }
+}

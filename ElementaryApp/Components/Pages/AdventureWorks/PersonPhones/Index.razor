@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id" />
             <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type id" />

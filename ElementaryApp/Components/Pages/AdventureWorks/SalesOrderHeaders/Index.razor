@@ -39,8 +39,9 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="SalesOrderHeaderDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.SalesOrderNumber" Title="Order #" />
             <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd" />
@@ -63,6 +64,9 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent>
+            <SalesOrderHeaderExpandedRow OrderId="@context.Item.Id" />
+        </ChildRowContent>
         <PagerContent><MudDataGridPager T="SalesOrderHeaderDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

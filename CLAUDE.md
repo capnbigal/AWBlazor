@@ -26,7 +26,7 @@ The solution is `ElementaryApp.slnx` (XML solution file). Two projects: `Element
 
 .NET 10 + Blazor Web App (mixed Interactive Server + static SSR) + MudBlazor 9 + EF Core 10 (SQL Server) + ASP.NET Core Identity + Hangfire 1.8 + Serilog 10 + FluentValidation 12 + Swashbuckle + Markdig + YamlDotNet + NUnit.
 
-**Databases (all SQL Server on `SHOOSHEE`):**
+**Databases (all SQL Server on `ELITE`):**
 - **Production:** `AdventureWorks2022` — used by the Production environment (`appsettings.json` `DefaultConnection`).
 - **Dev / test:** `AdventureWorks2022_dev` — used by the Development environment (`appsettings.Development.json` `DefaultConnection`). Integration tests run against this database via `WebApplicationFactory<Program>` in the Development environment.
 
@@ -93,7 +93,7 @@ This is the BL0008 analyzer warning's actual fix. Apply to every `[SupplyParamet
 4. **`PatchMissingColumnsAsync`** — walks every entity in the **design-time** model (via `db.GetService<IDesignTimeModel>().Model`, **not** `db.Model` — the runtime model strips migration metadata) and `ALTER TABLE ADD`s any **nullable** columns the model expects but the live table is missing. NOT NULL columns are logged as errors and require manual SQL.
 5. **`SeedAsync`** — creates Identity roles + 4 seed users + 10 booking coupons + 3 sample bookings.
 
-All five steps run in both production (`AdventureWorks2022`) and dev/test (`AdventureWorks2022_dev`) — they only differ in which database on `SHOOSHEE` the connection string points at. Non-SQL-Server providers are rejected up front with `InvalidOperationException`.
+All five steps run in both production (`AdventureWorks2022`) and dev/test (`AdventureWorks2022_dev`) — they only differ in which database on `ELITE` the connection string points at. Non-SQL-Server providers are rejected up front with `InvalidOperationException`.
 
 ### 5. `dbo.ToolSlotConfigurations` is externally managed
 
@@ -127,7 +127,7 @@ Users manage their own keys at `/Account/Manage/ApiKeys`. Keys are stored plain-
 
 ## Test infrastructure
 
-`ElementaryApp.Tests/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`SHOOSHEE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `SHOOSHEE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
+`ElementaryApp.Tests/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`ELITE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `ELITE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
 
 The test fixture only overrides two feature flags via in-memory configuration:
 
@@ -153,22 +153,38 @@ Nothing else about the host is rewritten — EF, Identity, the minimal-API endpo
 There are several memory notes in `~/.claude/projects/C--Users-capnb-source-repos-ElementaryApp/memory/`:
 
 - `project_migration_status.md` — locked-in technology decisions, the 5-phase migration history, what NOT to reintroduce
-- `project_database_target.md` — SQL Server SHOOSHEE / AdventureWorks2022 specifics, ToolSlotConfigurations external management
+- `project_database_target.md` — SQL Server ELITE / AdventureWorks2022 specifics, ToolSlotConfigurations external management
 - `feedback_mudblazor_ssr_forms.md` — the MudBlazor + static SSR forms gotcha (most important practical rule)
 - `feedback_migration_style.md` — user prefers aggressive single-shot phases over micro-commits
 
 Before starting non-trivial work, read these memory notes — they capture decisions that aren't obvious from the code.
 
+## Analytics & data exploration (Phase 6-7)
+
+Four analytics dashboards at `/analytics/*` (Sales, Production, HR, Purchasing) use the shared `TimeSeriesChart` and `KpiCard` components in `Components/Shared/`. The Sales dashboard uses SQL-side GroupBy queries and `AnalyticsCacheService` (IMemoryCache, 5-minute TTL). The other dashboards still load data in-memory — migrate them to the cached/SQL pattern as they grow.
+
+Ten entity pages have `<HierarchyColumn>` + `<ChildRowContent>` with self-contained `*ExpandedRow.razor` components that load related data on expand. Cross-entity links (MudLink) in expanded rows navigate between related pages.
+
+`GlobalSearch.razor` provides a search autocomplete in the app bar. `MainLayout.razor` has a dark mode toggle via `MudThemeProvider @bind-IsDarkMode`.
+
+`TimeSeriesChart` has a CSV download button that exports the currently-filtered chart data.
+
+## Security (Phase 7)
+
+- **Rate limiting**: fixed-window 100 req/min via `AddRateLimiter` in Program.cs
+- **Security headers**: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy — inline middleware in Program.cs
+- **API key hashing**: `Authentication/ApiKeyHasher.cs` uses SHA-256. The auth handler checks both plain-text and hashed keys for backwards compatibility. New keys should be stored hashed.
+- **Logout antiforgery**: The `/Account/Logout` endpoint has `.DisableAntiforgery()` because the Blazor Server circuit's antiforgery token can desync with the HTTP pipeline.
+
 ## Forward-looking work
 
-`docs/phase-plan.md` documents Phases 6-12 (deployment cleanup, identity completeness, observability, AI chat, hardening, performance, documentation). The original 5-phase migration is complete; phases 6+ are forward-looking and independent — pick whichever applies to the user's current need.
+`docs/phase-plan.md` documents Phases 8-14 (deployment/CI, identity completeness, observability, AI chat, further hardening, performance, documentation). Phases 1-7 are complete; phases 8+ are forward-looking and independent — pick whichever applies to the user's current need.
 
 ## Things explicitly NOT in this project
 
 - **No Tailwind, no Vue, no NPM toolchain.** Removed in Phase 1. Never reintroduce.
 - **No ServiceStack.** Removed in Phase 1. Never reintroduce.
-- **No SQLite — at all.** Neither the app nor the test project references `Microsoft.EntityFrameworkCore.Sqlite` / `Microsoft.Data.Sqlite`. Tests run against real SQL Server (`SHOOSHEE / AdventureWorks2022_dev`). Never reintroduce SQLite.
-- **No external auth providers** (Google/Microsoft/GitHub) wired up — see Phase 7 in `docs/phase-plan.md` to add.
-- **No 2FA QR code rendering** — only the manual setup key + `otpauth://` URI. See Phase 7b.
-- **No Anthropic AI chat** — explicitly skipped during Phase 4. See Phase 9 to reintroduce.
-- **No git repo** — `git init` has not been run. Files are not under version control yet.
+- **No SQLite — at all.** Neither the app nor the test project references `Microsoft.EntityFrameworkCore.Sqlite` / `Microsoft.Data.Sqlite`. Tests run against real SQL Server (`ELITE / AdventureWorks2022_dev`). Never reintroduce SQLite.
+- **No external auth providers** (Google/Microsoft/GitHub) wired up — see Phase 9 in `docs/phase-plan.md` to add.
+- **No 2FA QR code rendering** — only the manual setup key + `otpauth://` URI. See Phase 9b.
+- **No Anthropic AI chat** — explicitly skipped during Phase 4. See Phase 11 to reintroduce.

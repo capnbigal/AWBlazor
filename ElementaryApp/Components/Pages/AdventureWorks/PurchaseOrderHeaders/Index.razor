@@ -31,6 +31,7 @@
 
     <MudDataGrid T="PurchaseOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="PurchaseOrderHeaderDto" />
             <PropertyColumn Property="x => x.Id" Title="PO #" />
             <PropertyColumn Property="x => x.Status" Title="Status" />
             <PropertyColumn Property="x => x.VendorId" Title="Vendor" />
@@ -53,6 +54,7 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent><PurchaseOrderExpandedRow PurchaseOrderId="@context.Item.Id" /></ChildRowContent>
         <PagerContent><MudDataGridPager T="PurchaseOrderHeaderDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

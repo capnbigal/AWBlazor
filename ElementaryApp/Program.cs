@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.OpenApi;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using MudBlazor.Services;
 using Serilog;
 
@@ -71,10 +73,10 @@ var configuration = builder.Configuration;
 var appDataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(appDataPath);
 
-// Production points at SQL Server SHOOSHEE / AdventureWorks2022. Integration tests override
+// Production points at SQL Server ELITE / AdventureWorks2022. Integration tests override
 // this DbContext registration via ConfigureTestServices to use a SQLite in-memory database.
 var connectionString = configuration.GetConnectionString("DefaultConnection")
-                       ?? "Server=SHOOSHEE;Database=AdventureWorks2022;Trusted_Connection=True;TrustServerCertificate=True";
+                       ?? "Server=ELITE;Database=AdventureWorks2022;Trusted_Connection=True;TrustServerCertificate=True";
 
 services.AddHttpContextAccessor();
 services.AddSingleton<AuditingInterceptor>();
@@ -144,6 +146,7 @@ services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfi
 services.Configure<SmtpConfig>(configuration.GetSection("Smtp"));
 services.AddTransient<SmtpEmailJob>();
 services.AddTransient<RequestLogCleanupJob>();
+services.AddTransient<ApiKeyHashMigrationJob>();
 
 var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
 var smtpHost = configuration["Smtp:Host"];
@@ -180,14 +183,46 @@ else
     services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 }
 
+// --- Caching ----------------------------------------------------------------------------------
+services.AddMemoryCache();
+services.AddSingleton<AnalyticsCacheService>();
+services.AddSingleton<NotificationService>();
+
+// --- Forecasting services ----------------------------------------------------------------
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastDataSourceProvider, ElementaryApp.Services.Forecasting.ForecastDataSourceProvider>();
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastComputationService, ElementaryApp.Services.Forecasting.ForecastComputationService>();
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastAlgorithm, ElementaryApp.Services.Forecasting.SimpleMovingAverageAlgorithm>();
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastAlgorithm, ElementaryApp.Services.Forecasting.WeightedMovingAverageAlgorithm>();
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastAlgorithm, ElementaryApp.Services.Forecasting.ExponentialSmoothingAlgorithm>();
+services.AddScoped<ElementaryApp.Services.Forecasting.IForecastAlgorithm, ElementaryApp.Services.Forecasting.LinearRegressionAlgorithm>();
+services.AddTransient<ElementaryApp.Services.Forecasting.ForecastEvaluationJob>();
+
+// --- Rate limiting -----------------------------------------------------------------------
+services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.PermitLimit = 100;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("auth", limiter =>
+    {
+        limiter.PermitLimit = 5;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+});
+
 // --- Blazor + MudBlazor -----------------------------------------------------------------------
 services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 services.AddMudServices();
 
-// Lightweight markdown blog (loads + parses _posts/*.md once at startup).
-services.AddSingleton<MarkdownBlogService>();
+// User guide (loads _posts/*.md at startup, DB-backed read tracking).
+services.AddSingleton<UserGuideService>();
 
 // --- API: validators + Swagger ----------------------------------------------------------------
 services.AddValidatorsFromAssemblyContaining<Program>();
@@ -218,6 +253,20 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// --- Security headers ------------------------------------------------------------------------
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self' data:;";
+    await next();
+});
+
+app.UseRateLimiter();
 app.UseSerilogRequestLogging(options =>
 {
     options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
@@ -266,7 +315,25 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
+
+// Dark mode toggle — sets a cookie and redirects back. No JS needed.
+app.MapGet("/api/toggle-dark-mode", (HttpContext ctx) =>
+{
+    var current = ctx.Request.Cookies["darkMode"] == "true";
+    var newValue = !current;
+    ctx.Response.Cookies.Append("darkMode", newValue.ToString().ToLowerInvariant(), new CookieOptions
+    {
+        HttpOnly = false,
+        SameSite = SameSiteMode.Strict,
+        MaxAge = TimeSpan.FromDays(365),
+        IsEssential = true,
+    });
+    var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
+    return Results.LocalRedirect($"~{returnUrl}");
+});
 app.MapApiEndpoints();
+app.MapChartExportEndpoints();
+app.MapHub<ElementaryApp.Hubs.NotificationHub>(ElementaryApp.Hubs.NotificationHub.HubUrl);
 
 // Health check endpoints — /healthz for liveness (anonymous), /healthz/ready for readiness (Admin-only).
 app.MapHealthChecks("/healthz", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
@@ -315,6 +382,14 @@ if (hangfireEnabled)
         "request-log-cleanup",
         job => job.ExecuteAsync(),
         Cron.Daily(3, 0)); // Run at 3 AM UTC daily
+
+    RecurringJob.AddOrUpdate<ElementaryApp.Services.Forecasting.ForecastEvaluationJob>(
+        "forecast-evaluation",
+        job => job.ExecuteAsync(),
+        Cron.Daily(4, 0)); // Run at 4 AM UTC daily, after cleanup at 3 AM
+
+    // One-time job to hash any remaining plain-text API keys. Safe to re-run.
+    BackgroundJob.Enqueue<ApiKeyHashMigrationJob>(job => job.ExecuteAsync());
 }
 
 // Database migration + seed runs synchronously on host start, before the pipeline begins

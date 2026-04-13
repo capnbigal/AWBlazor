@@ -31,6 +31,7 @@
 
     <MudDataGrid T="EmployeeDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="EmployeeDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.LoginID" Title="Login" />
             <PropertyColumn Property="x => x.JobTitle" Title="Job title" />
@@ -53,6 +54,9 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent>
+            <EmployeeExpandedRow EmployeeId="@context.Item.Id" />
+        </ChildRowContent>
         <PagerContent><MudDataGridPager T="EmployeeDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

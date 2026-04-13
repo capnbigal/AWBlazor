@@ -7,10 +7,13 @@
 | **Phase 1** | Foundation: csproj, Program.cs, MudBlazor, EF Core entities, AuditingInterceptor, project collapse from 4 → 2 | DONE |
 | **Phase 2** | DTOs in `Models/`, FluentValidation in `Validators/`, Minimal-API endpoints in `Endpoints/`, Swashbuckle Swagger UI | DONE |
 | **Phase 3** | MudBlazor CRUD pages (Bookings, Coupons, ToolSlots, Admin, Users), `IDbContextFactory` for components, FluentValidation→MudForm adapter, Identity scaffold rebuild | DONE |
-| **Phase 4** | SQL Server (SHOOSHEE / AdventureWorks2022), Hangfire, Serilog request log, API Keys (entity + auth handler + UI), Markdig blog, all the post-deploy patches (migration reconciler, schema patcher, missing-table creator, render-mode fix, MudBlazor SSR form fix, ToolSlotConfiguration column mapping) | DONE |
+| **Phase 4** | SQL Server (ELITE / AdventureWorks2022), Hangfire, Serilog request log, API Keys (entity + auth handler + UI), Markdig blog, all the post-deploy patches (migration reconciler, schema patcher, missing-table creator, render-mode fix, MudBlazor SSR form fix, ToolSlotConfiguration column mapping) | DONE |
 | **Phase 5** | Form-POST integration tests, API key auth tests, restored 2FA / ExternalLogins / PersonalData pages, project README | DONE |
 
-**The original 5-phase migration is complete.** Phases 6 onwards in this document are
+| **Phase 6** | Analytics & data exploration: 4 analytics dashboards (Sales, Production, HR, Purchasing) with time-intelligence charts, reusable TimeSeriesChart + KpiCard components, ExpandedRowTemplate drill-through on 10 entity pages, cross-entity navigation links, global search, dark mode toggle, live Home page KPIs, CSV chart export | DONE |
+| **Phase 7** | Performance & hardening: SQL-side GroupBy query optimization on Sales dashboard, IMemoryCache with 5-minute TTL via AnalyticsCacheService, rate limiting (100 req/min fixed window), security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy), API key SHA-256 hashing with backwards-compatible plain-text support | DONE |
+
+**The original 5-phase migration and Phases 6-7 are complete.** Phases 8 onwards in this document are
 forward-looking — they capture work that was intentionally deferred during the migration
 plus the production-readiness items you'd naturally want before going live.
 
@@ -19,7 +22,7 @@ point out the few cases where one phase needs another to be done first.
 
 ---
 
-## Phase 6 — Deployment & CI cleanup
+## Phase 8 — Deployment & CI cleanup
 
 **Why this phase exists:** the `.kamal/` and `.github/workflows/` files are still the
 ServiceStack-era originals. They reference packages, secrets, and project structures that no
@@ -60,7 +63,7 @@ have to verify against a real environment.
 
 ---
 
-## Phase 7 — Identity completeness
+## Phase 9 — Identity completeness
 
 **Why this phase exists:** I deliberately built the minimum viable Identity surface in Phases 1-5.
 A few features were skipped because they require external dependencies or non-trivial extra
@@ -68,7 +71,7 @@ endpoints. If you ever need them in production, this phase covers the work.
 
 **Risk level:** low to medium. These are additive — none of them break existing functionality.
 
-### 7a — External authentication providers (Google, Microsoft, GitHub, etc.)
+### 9a — External authentication providers (Google, Microsoft, GitHub, etc.)
 
 Currently `ExternalLogins.razor` shows an empty list and a placeholder explaining that no
 providers are configured. To enable real external auth:
@@ -91,7 +94,7 @@ providers are configured. To enable real external auth:
 - [ ] Store provider secrets in user secrets / environment variables, never in `appsettings.json`
 - [ ] Add an integration test that verifies the OAuth challenge is issued correctly (you can't end-to-end test the actual provider response without mocking)
 
-### 7b — 2FA QR code rendering
+### 9b — 2FA QR code rendering
 
 Currently `EnableAuthenticator.razor` shows the manual setup key + the `otpauth://` URI.
 Mobile authenticator apps can parse the URI directly when opened on a phone, but a proper QR
@@ -102,7 +105,7 @@ code is friendlier.
 - [ ] Test on iOS Authenticator + Microsoft Authenticator + Google Authenticator
 - [ ] Update the README "Things explicitly NOT in this project" section to remove the QR code item
 
-### 7c — Email confirmation flow tests
+### 9c — Email confirmation flow tests
 
 Currently the registration flow generates a confirmation token and emails a callback link
 (via the Hangfire-backed SmtpEmailSender), but there's no integration test that walks the
@@ -122,7 +125,7 @@ an hour or two depending on how much you wire into the test sender.
 
 ---
 
-## Phase 8 — Observability & operations
+## Phase 10 — Observability & operations
 
 **Why this phase exists:** the migration was about replacing ServiceStack, not adding observability
 features. For production you'll want healthchecks, structured logging enrichment, and a way to
@@ -159,7 +162,7 @@ OpenTelemetry is a day or two.
 
 ---
 
-## Phase 9 — AI chat (Anthropic) — OPTIONAL
+## Phase 11 — AI chat (Anthropic) — OPTIONAL
 
 **Why this phase exists:** you explicitly skipped Anthropic AI chat during Phase 4. If you ever
 want it back, here's the path. Skip this whole phase if AI chat isn't part of your roadmap.
@@ -189,54 +192,38 @@ want it back, here's the path. Skip this whole phase if AI chat isn't part of yo
 
 ---
 
-## Phase 10 — Hardening & security review
+## Phase 12 — Further hardening & security review
 
-**Why this phase exists:** the migration focused on functional parity. Production deployment
-needs explicit attention to attack surface, rate limiting, and OWASP fundamentals.
+**Why this phase exists:** Phase 7 added rate limiting, security headers, and API key hashing.
+This phase covers the remaining hardening items for a production-grade deployment.
 
-**Risk level:** medium. Some changes (rate limiting, security headers) can break existing
-functionality if misconfigured.
+**Risk level:** medium. Some changes can break existing functionality if misconfigured.
 
-### Tasks
+### Completed in Phase 7
 
-- [ ] **Rate limiting** — use the built-in `Microsoft.AspNetCore.RateLimiting` middleware
-  - Apply a global limit on all `/api/*` endpoints (e.g. 100 req/minute per IP)
-  - Apply a stricter limit on `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword` (e.g. 5 req/minute per IP) to make brute force harder
-  - Per-API-key limits via the `partitionKey` selector
-- [ ] **Security headers** — add a small middleware or use `NetEscapades.AspNetCore.SecurityHeaders`
-  - `Content-Security-Policy` — restrict to self + MudBlazor's inline styles
-  - `Strict-Transport-Security` — already handled by `UseHsts()` in production
-  - `X-Frame-Options: DENY`
-  - `X-Content-Type-Options: nosniff`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-- [ ] **CORS** — currently no CORS policy is configured because everything is same-origin. If
-  you ever want to allow API key clients from a different origin, add an explicit policy
-- [ ] **Antiforgery audit** — verify every form POST has `<AntiforgeryToken />` (the form-POST
-  tests should catch any that don't, but a manual sweep is worth doing)
-- [ ] **Secrets audit** — make sure no real credentials are in `appsettings.json`. Move the
-  SQL Server password (if/when you switch from Trusted_Connection), SMTP credentials, and
-  Hangfire dashboard authorization to user secrets / environment variables
-- [ ] **Password policy review** — currently `IdentityCore` uses default settings:
-  - Required length: 6
-  - Required digit: yes
-  - Required lowercase: yes
-  - Required uppercase: yes
-  - Required non-alphanumeric: yes
-  - Adjust via `services.AddIdentityCore<>(options => { options.Password.RequiredLength = 12; ... })` if your security policy needs stronger
-- [ ] **API key rotation policy** — currently keys never expire. Consider:
-  - Default `ExpiresDate` to `CreatedDate + 1 year`
-  - Add a reminder banner on `/Account/Manage/ApiKeys` for keys expiring in <30 days
-  - Add a Hangfire job that emails users when their keys are about to expire
-- [ ] **Audit logging** — every Booking/Coupon/ApiKey CRUD operation already populates audit
-  fields via `AuditingInterceptor`. Consider also writing a separate `AuditLog` table for
-  high-value events (login, password change, API key generation, role grant)
+- [x] **Rate limiting** — fixed-window 100 req/min via `Microsoft.AspNetCore.RateLimiting`
+- [x] **Security headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+- [x] **API key hashing** — SHA-256 via `ApiKeyHasher`, backwards-compatible with legacy plain-text keys
+
+### Remaining tasks
+
+- [ ] **Stricter rate limits** on auth endpoints — `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword` (e.g. 5 req/minute per IP)
+- [ ] **Per-API-key rate limits** via the `partitionKey` selector
+- [ ] **Content-Security-Policy** — restrict to self + MudBlazor's inline styles
+- [ ] **CORS** — add explicit policy if API key clients will call from different origins
+- [ ] **Antiforgery audit** — verify every form POST (the form-POST tests catch most, but a manual sweep is worth doing)
+- [ ] **Secrets audit** — confirm no real credentials in `appsettings.json`
+- [ ] **Password policy review** — currently uses ASP.NET Core Identity defaults (length 6, requires digit/upper/lower/special). Adjust if your policy requires stronger
+- [ ] **API key rotation policy** — default `ExpiresDate` to `CreatedDate + 1 year`, reminder banner for keys expiring in <30 days, Hangfire job for expiry notifications
+- [ ] **Hash migration** — add a Hangfire job or startup task that hashes any remaining plain-text API keys in the database
+- [ ] **High-value event audit logging** — write a separate `AuditLog` table for login, password change, API key generation, role grant
 
 **Estimated effort:** rate limiting + security headers is half a day. The full security
 review is a multi-day effort with manual testing.
 
 ---
 
-## Phase 11 — Performance & scale
+## Phase 13 — Performance & scale
 
 **Why this phase exists:** the app currently handles small datasets fine. If your real
 `AdventureWorks2022.dbo.ToolSlotConfigurations` has 100k+ rows, the MudDataGrid pagination
@@ -277,7 +264,7 @@ will work but the table-scan queries will get slow. This phase is the "make it f
 
 ---
 
-## Phase 12 — Documentation & contributor onboarding
+## Phase 14 — Documentation & contributor onboarding
 
 **Why this phase exists:** the README from Phase 5 is the user-facing documentation. This
 phase adds the developer-facing material for anyone who has to extend the codebase later.
@@ -306,7 +293,7 @@ phase adds the developer-facing material for anyone who has to extend the codeba
   - `scripts/setup.ps1` (or `setup.sh`) that:
     - Verifies .NET 10 SDK is installed
     - Restores packages
-    - Verifies SHOOSHEE is reachable (or prompts for an alternate connection string)
+    - Verifies ELITE is reachable (or prompts for an alternate connection string)
     - Runs the migrations + seed
     - Opens the app
 - [ ] **`docs/troubleshooting.md`** — common issues + their fixes, mostly drawing from the
@@ -320,15 +307,15 @@ phase adds the developer-facing material for anyone who has to extend the codeba
 
 | Phase | Priority | Risk | Blocked by | Skip if... |
 |---|---|---|---|---|
-| 6 — Deployment & CI | high if deploying soon | medium | confirm Kamal usage | not deploying |
-| 7a — External logins | medium | medium | none | local-only auth is fine |
-| 7b — 2FA QR code | low | low | none | manual key is acceptable |
-| 7c — Email confirmation tests | low | low | none | already tested manually |
-| 8 — Observability | high before production | low | none | dev-only |
-| 9 — AI chat | optional | low | none | not in roadmap |
-| 10 — Hardening | high before production | medium | none | internal-only app |
-| 11 — Performance | low until scale matters | low | real usage data | small dataset |
-| 12 — Documentation | low but cumulative | none | none | solo developer |
+| 8 — Deployment & CI | high if deploying soon | medium | confirm Kamal usage | not deploying |
+| 9a — External logins | medium | medium | none | local-only auth is fine |
+| 9b — 2FA QR code | low | low | none | manual key is acceptable |
+| 9c — Email confirmation tests | low | low | none | already tested manually |
+| 10 — Observability | high before production | low | none | dev-only |
+| 11 — AI chat | optional | low | none | not in roadmap |
+| 12 — Further hardening | medium | medium | none | internal-only app |
+| 13 — Performance | low until scale matters | low | real usage data | small dataset |
+| 14 — Documentation | low but cumulative | none | none | solo developer |
 
 ---
 
@@ -346,4 +333,4 @@ phase adds the developer-facing material for anyone who has to extend the codeba
 
 ---
 
-*Last updated: end of Phase 5. Next update: when Phase 6 work is started.*
+*Last updated: end of Phase 7 (2026-04-12). Analytics dashboards, data exploration, dark mode, global search, security hardening, caching, and query optimization are all in place.*

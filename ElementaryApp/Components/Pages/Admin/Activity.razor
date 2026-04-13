@@ -1,0 +1,454 @@
+@page "/admin/activity"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Data.SqlClient
+@using System.Data
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>User activity</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">User activity</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">
+        Aggregated from the <code>dbo.RequestLogs</code> Serilog sink table.
+    </MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (loadError is not null)
+    {
+        <MudAlert Severity="Severity.Warning">@loadError</MudAlert>
+    }
+    else
+    {
+        @* ── KPI row ──────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Http" Color="Color.Primary"
+                         Value="@requestsToday.ToString("N0")" Label="Requests today" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.People" Color="Color.Info"
+                         Value="@uniqueUsersToday.ToString("N0")" Label="Unique users today" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.DateRange" Color="Color.Success"
+                         Value="@requestsThisWeek.ToString("N0")" Label="Requests this week" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error"
+                         Value="@errorsToday.ToString("N0")" Label="Errors today" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Request volume by day (last 30 days) ────────────────────────── *@
+        @if (volumeLabels.Length > 0)
+        {
+            <TimeSeriesChart Title="Request volume (last 30 days)"
+                             ChartType="ChartType.Bar"
+                             Labels="@volumeLabels"
+                             Series="@volumeSeries"
+                             Periods="@(new[] { "All" })"
+                             ShowGranularity="false"
+                             Height="320px" />
+        }
+        else
+        {
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h6">Request volume (last 30 days)</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No data available.</MudText>
+            </MudPaper>
+        }
+
+        @* ── Top 10 most-visited pages ───────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-2">Top 10 most-visited pages</MudText>
+            @if (topPages.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No data available.</MudText>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Path</th>
+                            <th style="text-align:right">Hits</th>
+                            <th style="text-align:right">Unique users</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var rank = 1; }
+                        @foreach (var p in topPages)
+                        {
+                            <tr>
+                                <td>@(rank++)</td>
+                                <td><code>@p.Path</code></td>
+                                <td style="text-align:right">@p.Hits.ToString("N0")</td>
+                                <td style="text-align:right">@p.UniqueUsers.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+
+        @* ── Top active users (last 7 days) ──────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-2">Top active users (last 7 days)</MudText>
+            @if (topUsers.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No data available.</MudText>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th style="text-align:right">Requests</th>
+                            <th>Last seen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in topUsers)
+                        {
+                            <tr>
+                                <td>@u.UserName</td>
+                                <td style="text-align:right">@u.RequestCount.ToString("N0")</td>
+                                <td>@u.LastSeen.ToString("yyyy-MM-dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+
+        @* ── Requests by HTTP method ─────────────────────────────────────── *@
+        @if (methodLabels.Length > 0)
+        {
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3">Requests by HTTP method</MudText>
+                <MudChart T="double" ChartType="ChartType.Pie"
+                          InputData="@methodData"
+                          InputLabels="@methodLabels"
+                          Width="300px" Height="300px" />
+            </MudPaper>
+        }
+
+        @* ── Recent errors (last 10) ─────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-2">Recent errors (last 10)</MudText>
+            @if (recentErrors.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No errors found.</MudText>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Level</th>
+                            <th>Path</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in recentErrors)
+                        {
+                            <tr>
+                                <td style="white-space:nowrap">@e.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>
+                                    <MudChip T="string" Size="Size.Small" Color="@(e.Level == "Fatal" ? Color.Dark : Color.Error)">
+                                        @e.Level
+                                    </MudChip>
+                                </td>
+                                <td><code>@(e.RequestPath ?? "—")</code></td>
+                                <td>@Truncate(e.Message, 120)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private string? loadError;
+
+    // KPIs
+    private int requestsToday;
+    private int uniqueUsersToday;
+    private int requestsThisWeek;
+    private int errorsToday;
+
+    // Volume chart (30 days)
+    private string[] volumeLabels = [];
+    private List<ChartSeries<double>> volumeSeries = [];
+
+    // Top pages
+    private List<PageStat> topPages = [];
+
+    // Top users
+    private List<UserStat> topUsers = [];
+
+    // HTTP method pie chart
+    private string[] methodLabels = [];
+    private double[] methodData = [];
+
+    // Recent errors
+    private List<ErrorRow> recentErrors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var conn = (SqlConnection)db.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+
+            // Check if table exists
+            await using (var existsCmd = new SqlCommand("SELECT OBJECT_ID('dbo.RequestLogs','U')", conn))
+            {
+                var result = await existsCmd.ExecuteScalarAsync();
+                if (result is null || result == DBNull.Value)
+                {
+                    loadError = "The dbo.RequestLogs table does not exist yet. It will be created on the first Serilog write.";
+                    loading = false;
+                    return;
+                }
+            }
+
+            // Discover available columns
+            var cols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await using (var colCmd = new SqlCommand(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'RequestLogs'", conn))
+            {
+                await using var reader = await colCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                    cols.Add(reader.GetString(0));
+            }
+
+            var hasUserName = cols.Contains("UserName");
+            var hasRequestPath = cols.Contains("RequestPath");
+            var hasRequestMethod = cols.Contains("RequestMethod");
+
+            // ── KPIs ──────────────────────────────────────────────────────
+            await using (var cmd = new SqlCommand("""
+                SELECT
+                    COUNT(*) AS RequestsToday,
+                    COUNT(DISTINCT CASE WHEN UserName IS NOT NULL AND UserName <> '' THEN UserName END) AS UniqueUsersToday
+                FROM dbo.RequestLogs
+                WHERE TimeStamp >= CAST(GETUTCDATE() AS date)
+                """, conn))
+            {
+                if (!hasUserName)
+                    cmd.CommandText = """
+                        SELECT COUNT(*) AS RequestsToday, 0 AS UniqueUsersToday
+                        FROM dbo.RequestLogs
+                        WHERE TimeStamp >= CAST(GETUTCDATE() AS date)
+                        """;
+                await using var r = await cmd.ExecuteReaderAsync();
+                if (await r.ReadAsync())
+                {
+                    requestsToday = r.GetInt32(0);
+                    uniqueUsersToday = r.GetInt32(1);
+                }
+            }
+
+            await using (var cmd = new SqlCommand("""
+                SELECT COUNT(*) FROM dbo.RequestLogs
+                WHERE TimeStamp >= DATEADD(day, -7, GETUTCDATE())
+                """, conn))
+            {
+                requestsThisWeek = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+            }
+
+            await using (var cmd = new SqlCommand("""
+                SELECT COUNT(*) FROM dbo.RequestLogs
+                WHERE TimeStamp >= CAST(GETUTCDATE() AS date)
+                  AND [Level] IN ('Error', 'Fatal')
+                """, conn))
+            {
+                errorsToday = Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
+            }
+
+            // ── Volume by day (last 30 days) ─────────────────────────────
+            await using (var cmd = new SqlCommand("""
+                SELECT CAST(TimeStamp AS date) AS [Day], COUNT(*) AS [Cnt]
+                FROM dbo.RequestLogs
+                WHERE TimeStamp >= DATEADD(day, -30, GETUTCDATE())
+                GROUP BY CAST(TimeStamp AS date)
+                ORDER BY [Day]
+                """, conn))
+            {
+                cmd.CommandTimeout = 30;
+                await using var r = await cmd.ExecuteReaderAsync();
+                var days = new List<(DateTime Day, int Count)>();
+                while (await r.ReadAsync())
+                    days.Add((r.GetDateTime(0), r.GetInt32(1)));
+
+                if (days.Count > 0)
+                {
+                    volumeLabels = days.Select(d => d.Day.ToString("MM-dd")).ToArray();
+                    volumeSeries = [new ChartSeries<double> { Name = "Requests", Data = days.Select(d => (double)d.Count).ToArray() }];
+                }
+            }
+
+            // ── Top 10 most-visited pages ────────────────────────────────
+            if (hasRequestPath)
+            {
+                var topPagesSql = hasUserName
+                    ? """
+                      SELECT TOP 10
+                          RequestPath,
+                          COUNT(*) AS Hits,
+                          COUNT(DISTINCT CASE WHEN UserName IS NOT NULL AND UserName <> '' THEN UserName END) AS UniqueUsers
+                      FROM dbo.RequestLogs
+                      WHERE RequestPath IS NOT NULL AND RequestPath <> ''
+                      GROUP BY RequestPath
+                      ORDER BY Hits DESC
+                      """
+                    : """
+                      SELECT TOP 10
+                          RequestPath,
+                          COUNT(*) AS Hits,
+                          0 AS UniqueUsers
+                      FROM dbo.RequestLogs
+                      WHERE RequestPath IS NOT NULL AND RequestPath <> ''
+                      GROUP BY RequestPath
+                      ORDER BY Hits DESC
+                      """;
+
+                await using var cmd = new SqlCommand(topPagesSql, conn);
+                cmd.CommandTimeout = 30;
+                await using var r = await cmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    topPages.Add(new PageStat
+                    {
+                        Path = r.GetString(0),
+                        Hits = r.GetInt32(1),
+                        UniqueUsers = r.GetInt32(2),
+                    });
+                }
+            }
+
+            // ── Top active users (last 7 days) ──────────────────────────
+            if (hasUserName)
+            {
+                await using var cmd = new SqlCommand("""
+                    SELECT TOP 10
+                        UserName,
+                        COUNT(*) AS RequestCount,
+                        MAX(TimeStamp) AS LastSeen
+                    FROM dbo.RequestLogs
+                    WHERE TimeStamp >= DATEADD(day, -7, GETUTCDATE())
+                      AND UserName IS NOT NULL AND UserName <> ''
+                    GROUP BY UserName
+                    ORDER BY RequestCount DESC
+                    """, conn);
+                cmd.CommandTimeout = 30;
+                await using var r = await cmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    topUsers.Add(new UserStat
+                    {
+                        UserName = r.GetString(0),
+                        RequestCount = r.GetInt32(1),
+                        LastSeen = r.GetDateTime(2),
+                    });
+                }
+            }
+
+            // ── Requests by HTTP method ──────────────────────────────────
+            if (hasRequestMethod)
+            {
+                await using var cmd = new SqlCommand("""
+                    SELECT RequestMethod, COUNT(*) AS Cnt
+                    FROM dbo.RequestLogs
+                    WHERE RequestMethod IS NOT NULL AND RequestMethod <> ''
+                    GROUP BY RequestMethod
+                    ORDER BY Cnt DESC
+                    """, conn);
+                cmd.CommandTimeout = 30;
+                await using var r = await cmd.ExecuteReaderAsync();
+                var methods = new List<(string Method, int Count)>();
+                while (await r.ReadAsync())
+                    methods.Add((r.GetString(0), r.GetInt32(1)));
+
+                if (methods.Count > 0)
+                {
+                    methodLabels = methods.Select(m => m.Method).ToArray();
+                    methodData = methods.Select(m => (double)m.Count).ToArray();
+                }
+            }
+
+            // ── Recent errors (last 10) ──────────────────────────────────
+            {
+                var errorSelectCols = new List<string> { "[TimeStamp]", "[Level]", "[Message]" };
+                if (hasRequestPath) errorSelectCols.Add("[RequestPath]");
+
+                var sql = $"""
+                    SELECT TOP 10 {string.Join(", ", errorSelectCols)}
+                    FROM dbo.RequestLogs
+                    WHERE [Level] IN ('Error', 'Fatal')
+                    ORDER BY [TimeStamp] DESC
+                    """;
+
+                await using var cmd = new SqlCommand(sql, conn);
+                cmd.CommandTimeout = 30;
+                await using var r = await cmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    recentErrors.Add(new ErrorRow
+                    {
+                        TimeStamp = r.GetDateTime(r.GetOrdinal("TimeStamp")),
+                        Level = r.IsDBNull(r.GetOrdinal("Level")) ? "Unknown" : r.GetString(r.GetOrdinal("Level")),
+                        Message = r.IsDBNull(r.GetOrdinal("Message")) ? null : r.GetString(r.GetOrdinal("Message")),
+                        RequestPath = hasRequestPath ? (r.IsDBNull(r.GetOrdinal("RequestPath")) ? null : r.GetString(r.GetOrdinal("RequestPath"))) : null,
+                    });
+                }
+            }
+
+            loading = false;
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Failed to load activity data: {ex.Message}";
+            loading = false;
+        }
+    }
+
+    private static string Truncate(string? text, int maxLength) =>
+        string.IsNullOrEmpty(text)
+            ? "—"
+            : text.Length <= maxLength ? text : text[..maxLength] + "...";
+
+    private sealed class PageStat
+    {
+        public string Path { get; init; } = "";
+        public int Hits { get; init; }
+        public int UniqueUsers { get; init; }
+    }
+
+    private sealed class UserStat
+    {
+        public string UserName { get; init; } = "";
+        public int RequestCount { get; init; }
+        public DateTime LastSeen { get; init; }
+    }
+
+    private sealed class ErrorRow
+    {
+        public DateTime TimeStamp { get; init; }
+        public string Level { get; init; } = "";
+        public string? Message { get; init; }
+        public string? RequestPath { get; init; }
+    }
+}

@@ -1,0 +1,159 @@
+@* Reusable time-series chart with period presets and granularity controls.
+   Wraps MudChart and provides consistent period-selector UX across all analytics pages.
+   CSV export uses a server-side Minimal API endpoint — no JS required. *@
+@inject NavigationManager Navigation
+@inject Microsoft.Extensions.Caching.Memory.IMemoryCache MemoryCache
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
+        <MudText Typo="Typo.h6">@Title</MudText>
+        <MudSpacer />
+        @if (FilteredLabels.Length > 0)
+        {
+            <MudTooltip Text="Download CSV">
+                <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" Color="Color.Default"
+                               Href="@ExportUrl" Target="_blank" />
+            </MudTooltip>
+        }
+        @if (ShowGranularity)
+        {
+            <MudToggleGroup T="Granularity" @bind-Value="SelectedGranularity" Color="Color.Primary" Size="Size.Small"
+                            SelectionMode="SelectionMode.SingleSelection" Dense="true">
+                <MudToggleItem T="Granularity" Value="Granularity.Monthly" Text="Month" />
+                <MudToggleItem T="Granularity" Value="Granularity.Quarterly" Text="Quarter" />
+                <MudToggleItem T="Granularity" Value="Granularity.Yearly" Text="Year" />
+            </MudToggleGroup>
+        }
+        <MudToggleGroup T="string" @bind-Value="SelectedPeriod" Color="Color.Primary" Size="Size.Small"
+                        SelectionMode="SelectionMode.SingleSelection" Dense="true">
+            @foreach (var p in Periods)
+            {
+                <MudToggleItem T="string" Value="@p" Text="@p" />
+            }
+        </MudToggleGroup>
+    </MudStack>
+
+    @if (Loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (FilteredLabels.Length == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No data for the selected period.</MudAlert>
+    }
+    else
+    {
+        <MudChart T="double"
+                  ChartType="@ChartType"
+                  ChartSeries="@FilteredSeries"
+                  XAxisLabels="@FilteredLabels"
+                  Width="100%" Height="@Height"
+                  ChartOptions="@Options" />
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Chart";
+    [Parameter] public ChartType ChartType { get; set; } = ChartType.Line;
+    [Parameter] public string Height { get; set; } = "320px";
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public bool ShowGranularity { get; set; } = true;
+
+    [Parameter] public string[] Labels { get; set; } = [];
+    [Parameter] public List<ChartSeries<double>> Series { get; set; } = [];
+    [Parameter] public string[] Periods { get; set; } = ["6M", "12M", "24M", "All"];
+    [Parameter] public EventCallback<PeriodChangedArgs> OnPeriodChanged { get; set; }
+    [Parameter] public ChartOptions? ChartOptions { get; set; }
+
+    private string _selectedPeriod = "";
+    private string SelectedPeriod
+    {
+        get => _selectedPeriod;
+        set
+        {
+            if (_selectedPeriod == value) return;
+            _selectedPeriod = value;
+            _exportKey = null; // invalidate cached export
+            _ = NotifyPeriodChanged();
+        }
+    }
+
+    private Granularity _selectedGranularity = Granularity.Monthly;
+    private Granularity SelectedGranularity
+    {
+        get => _selectedGranularity;
+        set
+        {
+            if (_selectedGranularity == value) return;
+            _selectedGranularity = value;
+            _exportKey = null;
+            _ = NotifyPeriodChanged();
+        }
+    }
+
+    private ChartOptions Options => ChartOptions ?? new ChartOptions();
+    private string? _exportKey;
+
+    private string ExportUrl
+    {
+        get
+        {
+            if (_exportKey is null)
+            {
+                var (labels, series) = GetFilteredRange();
+                var exportSeries = series.Select(s =>
+                    new ElementaryApp.Endpoints.ChartExportEndpoints.ChartExportSeries(s.Name, s.Data.ToArray())).ToList();
+                _exportKey = ElementaryApp.Endpoints.ChartExportEndpoints.StoreForExport(
+                    MemoryCache, Title, SelectedPeriod, labels, exportSeries);
+            }
+            return $"api/chart-export/{_exportKey}";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Periods.Length > 0)
+            _selectedPeriod = Periods[0];
+    }
+
+    private string[] FilteredLabels => GetFilteredRange().labels;
+    private List<ChartSeries<double>> FilteredSeries => GetFilteredRange().series;
+
+    private (string[] labels, List<ChartSeries<double>> series) GetFilteredRange()
+    {
+        if (Labels.Length == 0 || Series.Count == 0)
+            return ([], []);
+
+        var count = SelectedPeriod switch
+        {
+            "3M" => 3,
+            "6M" => 6,
+            "12M" => 12,
+            "24M" => 24,
+            "36M" => 36,
+            _ => Labels.Length,
+        };
+
+        if (count >= Labels.Length)
+            return (Labels, Series);
+
+        var skip = Labels.Length - count;
+        var labels = Labels.Skip(skip).ToArray();
+        var series = Series.Select(s => new ChartSeries<double>
+        {
+            Name = s.Name,
+            Data = s.Data.Skip(skip).ToArray(),
+        }).ToList();
+
+        return (labels, series);
+    }
+
+    private async Task NotifyPeriodChanged()
+    {
+        if (OnPeriodChanged.HasDelegate)
+            await OnPeriodChanged.InvokeAsync(new PeriodChangedArgs(SelectedPeriod, SelectedGranularity));
+    }
+
+    public record PeriodChangedArgs(string Period, Granularity Granularity);
+    public enum Granularity { Monthly, Quarterly, Yearly }
+}

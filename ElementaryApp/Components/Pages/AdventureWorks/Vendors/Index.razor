@@ -31,6 +31,7 @@
 
     <MudDataGrid T="VendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="VendorDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.AccountNumber" Title="Account #" />
             <PropertyColumn Property="x => x.Name" Title="Name" />
@@ -54,6 +55,7 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent><VendorExpandedRow VendorId="@context.Item.Id" /></ChildRowContent>
         <PagerContent><MudDataGridPager T="VendorDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

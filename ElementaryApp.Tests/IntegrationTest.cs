@@ -15,7 +15,7 @@ namespace ElementaryApp.Tests;
 /// <summary>
 /// Smoke-tests the Blazor host. The Blazor host runs in its registered Development configuration,
 /// which means the EF Core <see cref="IDbContextFactory{TContext}"/> points at SQL Server
-/// <c>SHOOSHEE / AdventureWorks2022_dev</c> (per <c>appsettings.Development.json</c>). Tests only
+/// <c>ELITE / AdventureWorks2022_dev</c> (per <c>appsettings.Development.json</c>). Tests only
 /// override the Hangfire + Serilog SQL sink feature flags via in-memory config so a test run
 /// doesn't spin up background workers or spam the dev <c>RequestLogs</c> table — everything else,
 /// including EF, uses the production wiring against the real SQL Server instance.
@@ -38,7 +38,7 @@ public class IntegrationTest
                 builder.UseContentRoot(tempContentRoot);
 
                 // Keep the real SQL Server DbContextFactory (it reads from the Development
-                // connection string = AdventureWorks2022_dev on SHOOSHEE). Only disable the
+                // connection string = AdventureWorks2022_dev on ELITE). Only disable the
                 // Hangfire background server and the Serilog MSSqlServer sink: tests shouldn't
                 // spin up worker threads or spam the dev RequestLogs table.
                 builder.ConfigureAppConfiguration((_, config) =>
@@ -63,7 +63,7 @@ public class IntegrationTest
         {
             throw new InvalidOperationException(
                 "WebApplicationFactory failed to start the host against AdventureWorks2022_dev on " +
-                "SHOOSHEE. Confirm the database is reachable and the current user has access. " +
+                "ELITE. Confirm the database is reachable and the current user has access. " +
                 "See InnerException.", ex);
         }
 
@@ -136,13 +136,13 @@ public class IntegrationTest
     }
 
     [Test]
-    public async Task Bookings_Endpoint_Without_Auth_Returns_Unauthorized()
+    public async Task Forecasts_Endpoint_Without_Auth_Returns_Unauthorized()
     {
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
         });
-        var response = await client.GetAsync("/api/bookings");
+        var response = await client.GetAsync("/api/forecasts");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
@@ -154,8 +154,8 @@ public class IntegrationTest
         Assert.That(response.IsSuccessStatusCode, Is.True);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.That(body, Does.Contain("/api/bookings"));
-        Assert.That(body, Does.Contain("/api/coupons"));
+        Assert.That(body, Does.Contain("/api/forecasts"));
+        Assert.That(body, Does.Contain("/api/forecasts"));
         Assert.That(body, Does.Contain("/api/tool-slots"));
     }
 
@@ -173,8 +173,8 @@ public class IntegrationTest
     }
 
     // Authorized Blazor pages should redirect anonymous users to /Account/Login.
-    [TestCase("/bookings")]
-    [TestCase("/coupons")]
+    [TestCase("/forecasts")]
+    [TestCase("/tool-slots")]
     [TestCase("/tool-slots")]
     [TestCase("/tool-slots/history")]
     [TestCase("/tool-slots/history/1")]
@@ -492,10 +492,10 @@ public class IntegrationTest
 
     // ── API key auth tests ──────────────────────────────────────────────────────────────────
     // The Phase 4 ApiKeyAuthenticationHandler had zero coverage. Seed an ApiKey for the seeded
-    // admin user, then exercise the X-Api-Key header against /api/bookings.
+    // admin user, then exercise the X-Api-Key header against /api/forecasts.
 
     [Test]
-    public async Task Bookings_Endpoint_With_Valid_ApiKey_Returns_Data()
+    public async Task Forecasts_Endpoint_With_Valid_ApiKey_Returns_Data()
     {
         const string testKey = "ek_test_integration_key";
 
@@ -518,17 +518,17 @@ public class IntegrationTest
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Api-Key", testKey);
 
-        var response = await client.GetAsync("/api/bookings");
+        var response = await client.GetAsync("/api/forecasts");
         Assert.That(response.IsSuccessStatusCode, Is.True,
             $"Expected 200, got {(int)response.StatusCode} {response.StatusCode}");
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.That(body, Does.Contain("\"results\"").IgnoreCase,
-            "Response should be a PagedResult with a results array.");
+        Assert.That(body, Does.Contain("\"items\"").IgnoreCase,
+            "Response should be a paged result with an items array.");
     }
 
     [Test]
-    public async Task Bookings_Endpoint_With_Invalid_ApiKey_Returns_Unauthorized()
+    public async Task Forecasts_Endpoint_With_Invalid_ApiKey_Returns_Unauthorized()
     {
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -536,12 +536,12 @@ public class IntegrationTest
         });
         client.DefaultRequestHeaders.Add("X-Api-Key", "ek_definitely_not_a_real_key");
 
-        var response = await client.GetAsync("/api/bookings");
+        var response = await client.GetAsync("/api/forecasts");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
     [Test]
-    public async Task Bookings_Endpoint_With_Revoked_ApiKey_Returns_Unauthorized()
+    public async Task Forecasts_Endpoint_With_Revoked_ApiKey_Returns_Unauthorized()
     {
         const string revokedKey = "ek_revoked_integration_key";
 
@@ -568,7 +568,7 @@ public class IntegrationTest
         });
         client.DefaultRequestHeaders.Add("X-Api-Key", revokedKey);
 
-        var response = await client.GetAsync("/api/bookings");
+        var response = await client.GetAsync("/api/forecasts");
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 

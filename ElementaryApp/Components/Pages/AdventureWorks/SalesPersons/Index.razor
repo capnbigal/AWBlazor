@@ -28,6 +28,7 @@
 
     <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="SalesPersonDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.TerritoryId" Title="Territory id" />
             <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0" />
@@ -50,6 +51,7 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent><SalesPersonExpandedRow SalesPersonId="@context.Item.Id" /></ChildRowContent>
         <PagerContent><MudDataGridPager T="SalesPersonDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>

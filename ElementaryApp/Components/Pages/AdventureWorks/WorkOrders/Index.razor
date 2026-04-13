@@ -26,8 +26,9 @@
         <MudNumericField T="int?" @bind-Value="filterProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="WorkOrderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="WorkOrderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
         <Columns>
+            <HierarchyColumn T="WorkOrderDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.ProductId" Title="Product id" />
             <PropertyColumn Property="x => x.OrderQty" Title="Order qty" />
@@ -51,6 +52,9 @@
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
+        <ChildRowContent>
+            <WorkOrderExpandedRow WorkOrderId="@context.Item.Id" />
+        </ChildRowContent>
         <PagerContent><MudDataGridPager T="WorkOrderDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>
