@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using ElementaryApp.Data;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,6 @@ namespace Microsoft.AspNetCore.Routing;
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {
     // Endpoints required by the Identity Razor components in Components/Account/Pages.
-    // External-login linking is intentionally still removed — there are no external auth
-    // providers configured in this app. If you add Google/Microsoft/etc. via
-    // services.AddAuthentication().AddGoogle(...) you'll also need to restore the
-    // /PerformExternalLogin and /Manage/LinkExternalLogin endpoints from the standard scaffold.
     public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -28,7 +25,37 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             return TypedResults.LocalRedirect($"~/{returnUrl}");
         }).DisableAntiforgery();
 
+        accountGroup.MapPost("/PerformExternalLogin", (
+            HttpContext context,
+            [FromServices] SignInManager<ApplicationUser> signInManager,
+            [FromForm] string provider,
+            [FromForm] string returnUrl) =>
+        {
+            IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> query =
+                [new("ReturnUrl", returnUrl), new("Action", "ExternalLogin.Callback")];
+            var redirectUrl = UriHelper.BuildRelative(
+                context.Request.PathBase,
+                "/Account/ExternalLogin",
+                QueryString.Create(query));
+            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return TypedResults.Challenge(properties, [provider]);
+        }).DisableAntiforgery();
+
         var manageGroup = accountGroup.MapGroup("/Manage").RequireAuthorization();
+
+        manageGroup.MapPost("/LinkExternalLogin", (
+            HttpContext context,
+            [FromServices] SignInManager<ApplicationUser> signInManager,
+            [FromForm] string provider) =>
+        {
+            // Request a redirect to the external login provider to link a login for the current user.
+            var redirectUrl = UriHelper.BuildRelative(
+                context.Request.PathBase,
+                "/Account/Manage/ExternalLogins");
+            var properties = signInManager.ConfigureExternalAuthenticationProperties(
+                provider, redirectUrl, signInManager.UserManager.GetUserId(context.User));
+            return TypedResults.Challenge(properties, [provider]);
+        }).DisableAntiforgery();
 
         // POST /Account/Manage/DownloadPersonalData — exports the user's [PersonalData] fields
         // and any external-login provider keys + authenticator key as a JSON download.

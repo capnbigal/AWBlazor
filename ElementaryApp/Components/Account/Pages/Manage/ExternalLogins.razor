@@ -64,13 +64,20 @@
             {
                 <MudDivider Class="my-3" />
                 <MudText Typo="Typo.subtitle1">Add another service to log in</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Linking external accounts is implemented in the standard ASP.NET Core
-                    scaffold but the form-handler endpoint is not currently wired up — it was
-                    intentionally removed during the ServiceStack→Blazor migration. Re-enable
-                    by restoring <code>MapPost("/LinkExternalLogin", ...)</code> in
-                    <code>IdentityComponentsEndpointRouteBuilderExtensions.cs</code> if needed.
-                </MudText>
+                <form action="/Account/Manage/LinkExternalLogin" method="post">
+                    <AntiforgeryToken />
+                    @foreach (var provider in otherLogins)
+                    {
+                        <MudButton ButtonType="ButtonType.Submit"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Class="mt-2 mr-2"
+                                   name="Provider"
+                                   Value="@provider.Name">
+                            @provider.DisplayName
+                        </MudButton>
+                    }
+                </form>
             }
         }
     </MudPaper>

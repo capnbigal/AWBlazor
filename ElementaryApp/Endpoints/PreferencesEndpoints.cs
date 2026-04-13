@@ -12,7 +12,8 @@ public static class PreferencesEndpoints
             ctx.Response.Cookies.Append("darkMode", newValue.ToString().ToLowerInvariant(), new CookieOptions
             {
                 HttpOnly = false,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
                 MaxAge = TimeSpan.FromDays(365),
                 IsEssential = true,
             });

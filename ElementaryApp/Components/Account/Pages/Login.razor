@@ -71,11 +71,33 @@
                 Register as a new user
             </MudLink>
         </MudStack>
+
+        @if (externalLogins.Count > 0)
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.subtitle1" GutterBottom="true">Use another service to log in</MudText>
+            <form action="/Account/PerformExternalLogin" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                @foreach (var provider in externalLogins)
+                {
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Class="mt-2 mr-2"
+                               name="Provider"
+                               Value="@provider.Name">
+                        @provider.DisplayName
+                    </MudButton>
+                }
+            </form>
+        }
     </MudPaper>
 </MudContainer>
 
 @code {
     private string? errorMessage;
+    private IList<AuthenticationScheme> externalLogins = [];
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -96,6 +118,8 @@
             // Clear the existing external cookie to ensure a clean login process.
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
+
+        externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
     public async Task LoginUser()
