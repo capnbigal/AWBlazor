@@ -31,6 +31,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ToolSlotConfiguration> ToolSlotConfigurations => Set<ToolSlotConfiguration>();
     public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
 
     // AdventureWorks2022 reference-data tables — DBA owns all of these, we read/write but
     // NEVER alter or drop them. Every entity below is configured with ExcludeFromMigrations().
@@ -331,6 +332,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SecurityAuditLog>(b =>
+        {
+            b.ToTable("SecurityAuditLogs");
+            b.HasIndex(x => x.UserId);
+            b.HasIndex(x => x.Timestamp);
         });
 
         // ── AdventureWorks reference-data tables ────────────────────────────────────────────

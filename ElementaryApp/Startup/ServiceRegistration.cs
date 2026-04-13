@@ -84,7 +84,17 @@ public static class ServiceRegistration
         services.AddDataProtection()
             .PersistKeysToFileSystem(new DirectoryInfo("App_Data"));
 
-        services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+        services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.SignIn.RequireConfirmedAccount = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager()
@@ -119,7 +129,10 @@ public static class ServiceRegistration
                     DisableGlobalLocks = true,
                     SchemaName = "HangFire",
                 }));
-            services.AddHangfireServer();
+            services.AddHangfireServer(options =>
+            {
+                options.WorkerCount = Environment.ProcessorCount * 2;
+            });
 
             services.AddSingleton<IEmailSender<ApplicationUser>>(
                 !string.IsNullOrWhiteSpace(smtpHost)

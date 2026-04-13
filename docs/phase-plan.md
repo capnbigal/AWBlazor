@@ -10,12 +10,13 @@
 | **Phase 4** | SQL Server (ELITE / AdventureWorks2022), Hangfire, Serilog request log, API Keys (entity + auth handler + UI), Markdig blog, all the post-deploy patches (migration reconciler, schema patcher, missing-table creator, render-mode fix, MudBlazor SSR form fix, ToolSlotConfiguration column mapping) | DONE |
 | **Phase 5** | Form-POST integration tests, API key auth tests, restored 2FA / ExternalLogins / PersonalData pages, project README | DONE |
 
-| **Phase 6** | Analytics & data exploration: 4 analytics dashboards (Sales, Production, HR, Purchasing) with time-intelligence charts, reusable TimeSeriesChart + KpiCard components, ExpandedRowTemplate drill-through on 10 entity pages, cross-entity navigation links, global search, dark mode toggle, live Home page KPIs, CSV chart export | DONE |
-| **Phase 7** | Performance & hardening: SQL-side GroupBy query optimization on Sales dashboard, IMemoryCache with 5-minute TTL via AnalyticsCacheService, rate limiting (100 req/min fixed window), security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy), API key SHA-256 hashing with backwards-compatible plain-text support | DONE |
+| **Phase 6** | Analytics & data exploration: 5 analytics dashboards (Sales, Production, HR, Purchasing, Bookings→Forecasts) with time-intelligence charts, reusable TimeSeriesChart + KpiCard components, ExpandedRowTemplate drill-through on 10 entity pages, cross-entity navigation links, global search, dark mode toggle, live Home page KPIs, CSV chart export | DONE |
+| **Phase 7** | Performance & hardening: SQL-side GroupBy query optimization, IMemoryCache with 5-minute TTL, rate limiting, security headers, API key SHA-256 hashing, SignalR notifications, user activity dashboard | DONE |
+| **Phase 8** | Replaced Bookings/Coupons with Forecasting domain (4 methods, 6 data sources, Hangfire evaluation job). Replaced Blog with User Guide (15 articles, read tracking, admin stats). Updated all docs. | DONE |
+| **Phase 9** | Program.cs refactoring (400→79 lines, Startup/ extraction). FK dropdown conversion (73 pages via LookupService + FkSelect/FkAutocomplete). Data permissions (PermissionArea enum, AreaPermissionMiddleware, admin config page). Process Management (4 entities, ordered steps, cron scheduling, timeline viewer, analytics). UI polish (status chips, empty states, breadcrumbs, responsive columns, error handling on 63 pages). | DONE |
+| **Phase 10** | CI cleanup (stale Kamal/workflows deleted, build.yml updated). 2FA QR code (QRCoder). Security hardening (password policy, lockout, SecurityAuditLog). Performance tuning (Hangfire worker config). Documentation (CONTRIBUTING.md, setup script, troubleshooting, GitHub templates). | DONE |
 
-**The original 5-phase migration and Phases 6-7 are complete.** Phases 8 onwards in this document are
-forward-looking — they capture work that was intentionally deferred during the migration
-plus the production-readiness items you'd naturally want before going live.
+**All phases are complete.** The items below document the original forward-looking plans. Most have been addressed in Phases 6-10. Remaining items that require external dependencies (OAuth providers) or infrastructure decisions (Kamal deployment target) are noted.
 
 Each phase below is **independent** and can be tackled in any order. The "Prerequisite" notes
 point out the few cases where one phase needs another to be done first.
@@ -303,19 +304,15 @@ phase adds the developer-facing material for anyone who has to extend the codeba
 
 ---
 
-## Quick reference: priority + risk matrix
+## Quick reference: remaining items
 
-| Phase | Priority | Risk | Blocked by | Skip if... |
-|---|---|---|---|---|
-| 8 — Deployment & CI | high if deploying soon | medium | confirm Kamal usage | not deploying |
-| 9a — External logins | medium | medium | none | local-only auth is fine |
-| 9b — 2FA QR code | low | low | none | manual key is acceptable |
-| 9c — Email confirmation tests | low | low | none | already tested manually |
-| 10 — Observability | high before production | low | none | dev-only |
-| 11 — AI chat | optional | low | none | not in roadmap |
-| 12 — Further hardening | medium | medium | none | internal-only app |
-| 13 — Performance | low until scale matters | low | real usage data | small dataset |
-| 14 — Documentation | low but cumulative | none | none | solo developer |
+| Item | Status | Notes |
+|---|---|---|
+| 9a — External logins (Google/Microsoft/GitHub) | NOT DONE | Requires OAuth credentials + provider NuGet packages |
+| 9c — Email confirmation flow tests | NOT DONE | Needs test IEmailSender mock |
+| 11 — AI chat (Anthropic) | POSTPONED | User decision to defer |
+| Kamal deployment target | NOT DONE | Requires deployment infrastructure confirmation |
+| OpenTelemetry / Prometheus metrics | NOT DONE | Optional observability |
 
 ---
 
@@ -333,4 +330,4 @@ phase adds the developer-facing material for anyone who has to extend the codeba
 
 ---
 
-*Last updated: end of Phase 7 (2026-04-12). Analytics dashboards, data exploration, dark mode, global search, security hardening, caching, and query optimization are all in place.*
+*Last updated: end of Phase 10 (2026-04-13). All planned phases complete. Remaining items are external-dependency-gated (OAuth providers, deployment infrastructure) or user-deferred (AI chat).*

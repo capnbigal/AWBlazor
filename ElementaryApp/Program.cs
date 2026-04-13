@@ -51,6 +51,8 @@ builder.Host.UseSerilog((context, services, configuration) =>
 // --- Service registration (see Startup/ServiceRegistration.cs) --------------------------------
 var services = builder.Services;
 var configuration = builder.Configuration;
+// Connection pool tuning: if needed, append "Min Pool Size=10;Max Pool Size=200;" to the
+// connection string in appsettings.json (environment-specific). The defaults are Min=0, Max=100.
 var connectionString = configuration.GetConnectionString("DefaultConnection")
                        ?? "Server=ELITE;Database=AdventureWorks2022;Trusted_Connection=True;TrustServerCertificate=True";
 

@@ -30,6 +30,19 @@
             </MudAlert>
         }
 
+        @if (expiringKeys.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">
+                <MudText Typo="Typo.body2">
+                    <strong>Keys expiring soon:</strong>
+                    @foreach (var ek in expiringKeys)
+                    {
+                        <br /><span>@ek.Name &mdash; expires @ek.ExpiresDate!.Value.ToString("yyyy-MM-dd")</span>
+                    }
+                </MudText>
+            </MudAlert>
+        }
+
         <MudText Class="mb-4" Typo="Typo.body2" Color="Color.Secondary">
             Use API keys to authenticate REST clients with the <code>X-Api-Key</code> header. Keys
             inherit your role assignments. Treat them as secrets.
@@ -121,6 +134,7 @@
     private string? newlyGeneratedKey { get; set; }
 
     private List<ApiKey> keys = [];
+    private List<ApiKey> expiringKeys = [];
 
     // The static-SSR form binder can null out form-bound properties on GET; restore them.
     protected override void OnInitialized()
@@ -137,6 +151,14 @@
             .Where(k => k.UserId == user.Id)
             .OrderByDescending(k => k.CreatedDate)
             .ToListAsync();
+
+        var thirtyDaysFromNow = DateTime.UtcNow.AddDays(30);
+        expiringKeys = keys
+            .Where(k => k.RevokedDate is null
+                        && k.ExpiresDate is not null
+                        && k.ExpiresDate <= thirtyDaysFromNow
+                        && k.ExpiresDate > DateTime.UtcNow)
+            .ToList();
     }
 
     private async Task OnGenerateAsync()
