@@ -52,7 +52,7 @@ public static class ServiceRegistration
         return services;
     }
 
-    public static IServiceCollection AddApplicationIdentity(this IServiceCollection services)
+    public static IServiceCollection AddApplicationIdentity(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddCascadingAuthenticationState();
         services.AddScoped<IdentityUserAccessor>();
@@ -99,6 +99,30 @@ public static class ServiceRegistration
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
+
+        // External authentication providers — configure via user secrets:
+        //   dotnet user-secrets set "Authentication:Google:ClientId" "your-id"
+        //   dotnet user-secrets set "Authentication:Google:ClientSecret" "your-secret"
+        var googleClientId = configuration["Authentication:Google:ClientId"];
+        var microsoftClientId = configuration["Authentication:Microsoft:ClientId"];
+
+        if (!string.IsNullOrEmpty(googleClientId))
+        {
+            services.AddAuthentication().AddGoogle(options =>
+            {
+                options.ClientId = googleClientId;
+                options.ClientSecret = configuration["Authentication:Google:ClientSecret"] ?? "";
+            });
+        }
+
+        if (!string.IsNullOrEmpty(microsoftClientId))
+        {
+            services.AddAuthentication().AddMicrosoftAccount(options =>
+            {
+                options.ClientId = microsoftClientId;
+                options.ClientSecret = configuration["Authentication:Microsoft:ClientSecret"] ?? "";
+            });
+        }
 
         return services;
     }

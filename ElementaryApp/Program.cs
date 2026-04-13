@@ -60,7 +60,7 @@ var connectionString = configuration.GetConnectionString("DefaultConnection")
 Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
 
 services.AddApplicationDatabase(connectionString);
-services.AddApplicationIdentity();
+services.AddApplicationIdentity(configuration);
 services.AddHangfireServices(configuration, connectionString);
 services.AddForecastingServices();
 services.AddApplicationRateLimiting();

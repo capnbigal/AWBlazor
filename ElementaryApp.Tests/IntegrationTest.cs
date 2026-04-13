@@ -1,10 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
+using System.Web;
 using ElementaryApp.Data;
 using ElementaryApp.Data.Entities;
 using ElementaryApp.Models;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +28,7 @@ public class IntegrationTest
 {
     private string tempContentRoot = null!;
     private WebApplicationFactory<Program> factory = null!;
+    private static readonly TestEmailSender testEmailSender = new();
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
@@ -48,6 +53,13 @@ public class IntegrationTest
                         ["Features:Hangfire"] = "false",
                         ["RequestLogs:Enabled"] = "false",
                     });
+                });
+
+                builder.ConfigureTestServices(services =>
+                {
+                    // Replace the real email sender with a test double that captures sent emails
+                    // so tests can inspect confirmation links, password reset codes, etc.
+                    services.AddSingleton<IEmailSender<ApplicationUser>>(testEmailSender);
                 });
             });
 
@@ -669,6 +681,82 @@ public class IntegrationTest
             .ExecuteDeleteAsync();
     }
 
+    // ── Email confirmation flow test ──────────────────────────────────────────────────────────
+    // Exercises the full registration → email confirmation flow: register a new user, capture the
+    // confirmation email via TestEmailSender, follow the confirmation link, and verify success.
+
+    [Test]
+    public async Task Register_Then_Confirm_Email_Completes_Successfully()
+    {
+        var uniqueEmail = $"test-{Guid.NewGuid():N}@integration-test.local";
+        const string password = "Test@1234!Xyz";
+
+        testEmailSender.SentEmails.Clear();
+
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        // 1. POST the registration form via FormPostHelper.
+        var registerResponse = await FormPostHelper.PostFormAsync(client, "/Account/Register", "register",
+            new Dictionary<string, string>
+            {
+                ["Input.Email"] = uniqueEmail,
+                ["Input.Password"] = password,
+                ["Input.ConfirmPassword"] = password,
+            });
+
+        // Registration with RequireConfirmedAccount=true redirects to /Account/Login.
+        Assert.That(registerResponse.StatusCode,
+            Is.EqualTo(HttpStatusCode.Redirect).Or.EqualTo(HttpStatusCode.Found),
+            $"Expected redirect after registration, got {(int)registerResponse.StatusCode} {registerResponse.StatusCode}");
+
+        // 2. Verify the test email sender captured a confirmation email.
+        Assert.That(testEmailSender.SentEmails, Has.Count.GreaterThanOrEqualTo(1),
+            "Expected at least one email to be sent after registration.");
+
+        var confirmationEmail = testEmailSender.SentEmails
+            .FirstOrDefault(e => e.Email == uniqueEmail && e.Subject == "Confirm your email");
+        Assert.That(confirmationEmail, Is.Not.EqualTo(default((ApplicationUser, string, string, string))),
+            $"Expected a confirmation email sent to {uniqueEmail}.");
+
+        // 3. Extract the confirmation link from the email HTML.
+        var hrefMatch = Regex.Match(confirmationEmail.HtmlMessage, @"href='([^']+)'");
+        Assert.That(hrefMatch.Success, Is.True,
+            "Expected the confirmation email to contain an href link.");
+
+        // The confirmation link in the email is HTML-encoded (e.g. &amp; instead of &).
+        var confirmationUrl = HttpUtility.HtmlDecode(hrefMatch.Groups[1].Value);
+        // The URL from NavigationManager is absolute; convert to relative for the test client.
+        var uri = new Uri(confirmationUrl);
+        var relativePath = uri.PathAndQuery;
+
+        // 4. GET the confirmation link. Use a new client that follows redirects so we land on
+        //    the final rendered page (ConfirmEmail.razor may redirect through enhanced navigation).
+        var followClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = true,
+        });
+        var confirmResponse = await followClient.GetAsync(relativePath);
+
+        Assert.That(confirmResponse.IsSuccessStatusCode, Is.True,
+            $"Expected 200 from confirmation link, got {(int)confirmResponse.StatusCode} {confirmResponse.StatusCode}");
+
+        var confirmBody = await confirmResponse.Content.ReadAsStringAsync();
+        Assert.That(confirmBody, Does.Contain("Thank you for confirming your email"),
+            "Expected the confirmation page to show a success message.");
+
+        // 5. Clean up: delete the test user from the database.
+        await using var db = await GetDbContextAsync();
+        var testUser = await db.Users.FirstOrDefaultAsync(u => u.Email == uniqueEmail);
+        if (testUser is not null)
+        {
+            db.Users.Remove(testUser);
+            await db.SaveChangesAsync();
+        }
+    }
+
     /// <summary>
     /// Resolves an <see cref="ApplicationDbContext"/> from the test factory's service provider
     /// so test setup code can read/write the AdventureWorks2022_dev schema directly.
@@ -678,5 +766,32 @@ public class IntegrationTest
         var scope = factory.Services.CreateScope();
         var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
         return await dbFactory.CreateDbContextAsync();
+    }
+
+    /// <summary>
+    /// Test double for <see cref="IEmailSender{ApplicationUser}"/> that captures all sent emails
+    /// so tests can inspect confirmation links, password reset codes, etc.
+    /// </summary>
+    private sealed class TestEmailSender : IEmailSender<ApplicationUser>
+    {
+        public List<(ApplicationUser User, string Email, string Subject, string HtmlMessage)> SentEmails { get; } = [];
+
+        public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+        {
+            SentEmails.Add((user, email, "Confirm your email", $"<a href='{confirmationLink}'>Confirm</a>"));
+            return Task.CompletedTask;
+        }
+
+        public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
+        {
+            SentEmails.Add((user, email, "Reset your password", $"<a href='{resetLink}'>Reset</a>"));
+            return Task.CompletedTask;
+        }
+
+        public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
+        {
+            SentEmails.Add((user, email, "Password reset code", resetCode));
+            return Task.CompletedTask;
+        }
     }
 }
