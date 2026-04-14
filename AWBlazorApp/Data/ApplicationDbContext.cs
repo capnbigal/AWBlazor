@@ -35,6 +35,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
     public DbSet<SavedQuery> SavedQueries => Set<SavedQuery>();
     public DbSet<KpiSnapshot> KpiSnapshots => Set<KpiSnapshot>();
+    public DbSet<DashboardItem> DashboardItems => Set<DashboardItem>();
 
     // AdventureWorks2022 reference-data tables — DBA owns all of these, we read/write but
     // NEVER alter or drop them. Every entity below is configured with ExcludeFromMigrations().
