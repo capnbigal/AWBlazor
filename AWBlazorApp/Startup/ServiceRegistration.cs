@@ -240,6 +240,7 @@ public static class ServiceRegistration
         services.AddMemoryCache();
         services.AddSingleton<AnalyticsCacheService>();
         services.AddSingleton<NotificationService>();
+        services.AddScoped<NotificationRuleEvaluator>();
         services.AddSingleton<UserGuideService>();
         services.AddSingleton<LookupService>();
         services.AddScoped<IPermissionService, PermissionService>();

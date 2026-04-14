@@ -1,0 +1,243 @@
+@page "/notifications"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities
+@using AWBlazorApp.Services
+@using Microsoft.AspNetCore.Identity
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Notification rules</PageTitle>
+
+<MudStack Spacing="4">
+    <div>
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <div>
+                <MudText Typo="Typo.h4">Notification rules</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Get a SignalR toast when a metric crosses your threshold. Rules are evaluated every 5 minutes
+                    by a Hangfire job; each rule has its own cooldown so you won't get spammed.
+                </MudText>
+            </div>
+            <MudSpacer />
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled"
+                       OnClick="OpenNewAsync">New rule</MudButton>
+        </MudStack>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (rules.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No rules yet. Click "New rule" to create one.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@rules" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Active</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Metric</MudTh>
+                <MudTh>Condition</MudTh>
+                <MudTh>Cooldown</MudTh>
+                <MudTh>Last value</MudTh>
+                <MudTh>Last triggered</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudSwitch T="bool" Value="@context.IsActive" Color="Color.Success"
+                               ValueChanged="@(async v => await ToggleActiveAsync(context, v))" />
+                </MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>@NotificationRuleEvaluator.Label(context.Metric)</MudTd>
+                <MudTd><code>@OperatorSymbol(context.Operator) @context.Threshold.ToString("N0")</code></MudTd>
+                <MudTd>@context.CooldownMinutes min</MudTd>
+                <MudTd>@(context.LastValue?.ToString("N0") ?? "—")</MudTd>
+                <MudTd>@(context.LastTriggeredDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   OnClick="@(() => OpenEditAsync(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => DeleteAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudStack>
+
+@if (editing is not null)
+{
+    <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
+        <TitleContent>@(editing.Id == 0 ? "New rule" : "Edit rule")</TitleContent>
+        <DialogContent>
+            <MudStack Spacing="3">
+                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined"
+                              Required="true" MaxLength="100" Immediate="true" />
+                <MudSelect T="NotificationMetric" @bind-Value="editing.Metric" Label="Metric" Variant="Variant.Outlined">
+                    @foreach (var m in Enum.GetValues<NotificationMetric>())
+                    {
+                        <MudSelectItem T="NotificationMetric" Value="@m">@NotificationRuleEvaluator.Label(m)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudStack Row="true" Spacing="2">
+                    <MudSelect T="NotificationOperator" @bind-Value="editing.Operator" Label="Operator" Variant="Variant.Outlined" Style="max-width: 180px;">
+                        <MudSelectItem T="NotificationOperator" Value="NotificationOperator.GreaterThan">&gt; greater than</MudSelectItem>
+                        <MudSelectItem T="NotificationOperator" Value="NotificationOperator.LessThan">&lt; less than</MudSelectItem>
+                        <MudSelectItem T="NotificationOperator" Value="NotificationOperator.EqualTo">= equal to</MudSelectItem>
+                    </MudSelect>
+                    <MudNumericField T="double" @bind-Value="editing.Threshold" Label="Threshold" Variant="Variant.Outlined" />
+                </MudStack>
+                <MudNumericField T="int" @bind-Value="editing.CooldownMinutes" Label="Cooldown (minutes)"
+                                 Variant="Variant.Outlined" Min="1" Max="10080" />
+                <MudSwitch T="bool" @bind-Value="editing.IsActive" Color="Color.Success" Label="Active" />
+            </MudStack>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CancelEdit">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private List<NotificationRule> rules = new();
+    private bool loading = true;
+    private NotificationRule? editing;
+    private bool dialogOpen;
+    private string currentUserId = "";
+    private readonly DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(state.User);
+        if (user is null)
+        {
+            loading = false;
+            return;
+        }
+        currentUserId = user.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        rules = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.NotificationRules.Where(r => r.UserId == currentUserId).OrderByDescending(r => r.Id));
+        loading = false;
+    }
+
+    private Task OpenNewAsync()
+    {
+        editing = new NotificationRule
+        {
+            UserId = currentUserId,
+            Name = "Work orders alert",
+            Metric = NotificationMetric.OpenWorkOrders,
+            Operator = NotificationOperator.GreaterThan,
+            Threshold = 500,
+            CooldownMinutes = 60,
+            IsActive = true,
+        };
+        dialogOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OpenEditAsync(NotificationRule rule)
+    {
+        editing = new NotificationRule
+        {
+            Id = rule.Id,
+            UserId = rule.UserId,
+            Name = rule.Name,
+            Metric = rule.Metric,
+            Operator = rule.Operator,
+            Threshold = rule.Threshold,
+            CooldownMinutes = rule.CooldownMinutes,
+            IsActive = rule.IsActive,
+            CreatedDate = rule.CreatedDate,
+            LastEvaluatedDate = rule.LastEvaluatedDate,
+            LastTriggeredDate = rule.LastTriggeredDate,
+            LastValue = rule.LastValue,
+        };
+        dialogOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private void CancelEdit()
+    {
+        dialogOpen = false;
+        editing = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (editing is null) return;
+        if (string.IsNullOrWhiteSpace(editing.Name))
+        {
+            Snackbar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        if (editing.Id == 0)
+        {
+            db.NotificationRules.Add(editing);
+        }
+        else
+        {
+            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.NotificationRules.Where(r => r.Id == editing.Id && r.UserId == currentUserId));
+            if (existing is null) { Snackbar.Add("Rule not found.", Severity.Error); return; }
+            existing.Name = editing.Name;
+            existing.Metric = editing.Metric;
+            existing.Operator = editing.Operator;
+            existing.Threshold = editing.Threshold;
+            existing.CooldownMinutes = editing.CooldownMinutes;
+            existing.IsActive = editing.IsActive;
+        }
+        await db.SaveChangesAsync();
+
+        Snackbar.Add(editing.Id == 0 ? "Rule created." : "Rule updated.", Severity.Success);
+        dialogOpen = false;
+        editing = null;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(NotificationRule rule, bool active)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.NotificationRules.Where(r => r.Id == rule.Id && r.UserId == currentUserId));
+        if (existing is null) return;
+        existing.IsActive = active;
+        await db.SaveChangesAsync();
+        rule.IsActive = active;
+    }
+
+    private async Task DeleteAsync(NotificationRule rule)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.NotificationRules.Where(r => r.Id == rule.Id && r.UserId == currentUserId));
+        if (existing is null) return;
+        db.NotificationRules.Remove(existing);
+        await db.SaveChangesAsync();
+        rules.Remove(rule);
+        Snackbar.Add("Rule deleted.", Severity.Info);
+    }
+
+    private static string OperatorSymbol(NotificationOperator op) => op switch
+    {
+        NotificationOperator.GreaterThan => ">",
+        NotificationOperator.LessThan    => "<",
+        NotificationOperator.EqualTo     => "=",
+        _                                => "?",
+    };
+}

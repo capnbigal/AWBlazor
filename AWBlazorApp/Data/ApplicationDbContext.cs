@@ -32,6 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
+    public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
 
     // AdventureWorks2022 reference-data tables — DBA owns all of these, we read/write but
     // NEVER alter or drop them. Every entity below is configured with ExcludeFromMigrations().
