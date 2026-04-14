@@ -1,0 +1,256 @@
+@page "/my-activity"
+@attribute [Authorize]
+@using System.Globalization
+@using Microsoft.Data.SqlClient
+@inject IConfiguration Configuration
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>My activity</PageTitle>
+
+<MudStack Spacing="4">
+    <div>
+        <MudText Typo="Typo.h4">My activity</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            GitHub-style contribution grid of your HTTP requests over the last 52 weeks, sourced from
+            <code>dbo.RequestLogs</code>. Hover any cell for the day's count.
+        </MudText>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (error is not null)
+    {
+        <MudAlert Severity="Severity.Warning">@error</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Http" Color="Color.Primary"
+                         Value="@totalRequests.ToString("N0")" Label="Requests last 52 weeks" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.CalendarMonth" Color="Color.Info"
+                         Value="@activeDays.ToString("N0")" Label="Active days" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Warning"
+                         Value="@currentStreak.ToString("N0")" Label="Current streak (days)" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success"
+                         Value="@longestStreak.ToString("N0")" Label="Longest streak (days)" />
+            </MudItem>
+        </MudGrid>
+
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+                <MudText Typo="Typo.h6">Contributions</MudText>
+                <MudSpacer />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Less</MudText>
+                @foreach (var level in new[] { 0, 1, 2, 3, 4 })
+                {
+                    <div class="@($"heatmap-cell heatmap-level-{level}")"
+                         style="width: 14px; height: 14px; display: inline-block;"></div>
+                }
+                <MudText Typo="Typo.caption" Color="Color.Secondary">More</MudText>
+            </MudStack>
+
+            <div class="heatmap-scroll">
+                <div class="heatmap-grid-header">
+                    @foreach (var label in monthLabels)
+                    {
+                        <div class="heatmap-month-label" style="@($"grid-column: {label.Column} / span {label.Span};")">@label.Name</div>
+                    }
+                </div>
+                <div class="heatmap-grid">
+                    @for (int week = 0; week < totalWeeks; week++)
+                    {
+                        @for (int dow = 0; dow < 7; dow++)
+                        {
+                            var cell = GetCell(week, dow);
+                            if (cell is null)
+                            {
+                                <div class="heatmap-cell heatmap-placeholder"></div>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="@($"{cell.Count:N0} requests on {cell.Date:ddd, MMM d yyyy}")">
+                                    <div class="@($"heatmap-cell heatmap-level-{cell.Level}")"></div>
+                                </MudTooltip>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private string? error;
+
+    private Dictionary<DateOnly, int> dayCounts = new();
+    private int totalRequests;
+    private int activeDays;
+    private int currentStreak;
+    private int longestStreak;
+
+    private DateOnly startDate;
+    private int totalWeeks;
+    private List<MonthLabel> monthLabels = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userName = state.User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName))
+        {
+            error = "Could not resolve the current user name.";
+            loading = false;
+            return;
+        }
+
+        // Align grid to full weeks ending this Saturday.
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var endOfWeek = today.AddDays(6 - (int)today.DayOfWeek); // Saturday
+        startDate = endOfWeek.AddDays(-(52 * 7 - 1));
+        totalWeeks = 53;
+
+        var conn = Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(conn))
+        {
+            error = "No connection string configured.";
+            loading = false;
+            return;
+        }
+
+        try
+        {
+            await using var sql = new SqlConnection(conn);
+            await sql.OpenAsync();
+
+            // Check table exists first — non-fatal if the Serilog sink hasn't initialized yet.
+            await using (var exists = new SqlCommand("SELECT OBJECT_ID('dbo.RequestLogs','U')", sql))
+            {
+                if (await exists.ExecuteScalarAsync() is null or DBNull)
+                {
+                    error = "dbo.RequestLogs does not exist yet — make some requests and refresh.";
+                    loading = false;
+                    return;
+                }
+            }
+
+            await using var cmd = new SqlCommand(@"
+                SELECT CAST(TimeStamp AS date) AS Day, COUNT(*) AS Cnt
+                FROM dbo.RequestLogs
+                WHERE UserName = @u AND TimeStamp >= @from
+                GROUP BY CAST(TimeStamp AS date)", sql);
+            cmd.Parameters.AddWithValue("@u", userName);
+            cmd.Parameters.AddWithValue("@from", startDate.ToDateTime(TimeOnly.MinValue));
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var day = DateOnly.FromDateTime(reader.GetDateTime(0));
+                dayCounts[day] = reader.GetInt32(1);
+            }
+
+            totalRequests = dayCounts.Values.Sum();
+            activeDays = dayCounts.Count;
+            (currentStreak, longestStreak) = ComputeStreaks(today);
+            monthLabels = BuildMonthLabels();
+        }
+        catch (SqlException ex)
+        {
+            error = "Query failed: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private Cell? GetCell(int week, int dow)
+    {
+        var date = startDate.AddDays(week * 7 + dow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (date > today) return null;
+
+        dayCounts.TryGetValue(date, out var count);
+        return new Cell(date, count, LevelFor(count));
+    }
+
+    private static int LevelFor(int count) => count switch
+    {
+        0          => 0,
+        <= 3       => 1,
+        <= 10      => 2,
+        <= 30      => 3,
+        _          => 4,
+    };
+
+    private (int current, int longest) ComputeStreaks(DateOnly today)
+    {
+        int longest = 0, current = 0, running = 0;
+        var cursor = startDate;
+        while (cursor <= today)
+        {
+            if (dayCounts.ContainsKey(cursor))
+            {
+                running++;
+                if (running > longest) longest = running;
+            }
+            else
+            {
+                running = 0;
+            }
+            cursor = cursor.AddDays(1);
+        }
+
+        // Current streak = consecutive active days ending today (or yesterday if today is still empty).
+        current = 0;
+        var c = today;
+        while (c >= startDate && dayCounts.ContainsKey(c))
+        {
+            current++;
+            c = c.AddDays(-1);
+        }
+        return (current, longest);
+    }
+
+    private List<MonthLabel> BuildMonthLabels()
+    {
+        // A month label is positioned on the grid column where that month first appears.
+        var labels = new List<MonthLabel>();
+        var lastMonth = -1;
+        var lastMonthCol = 0;
+        for (int week = 0; week < totalWeeks; week++)
+        {
+            var firstDayOfWeek = startDate.AddDays(week * 7);
+            if (firstDayOfWeek.Month != lastMonth)
+            {
+                if (lastMonth != -1)
+                    labels[^1] = labels[^1] with { Span = week + 1 - lastMonthCol };
+
+                labels.Add(new MonthLabel(
+                    CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(firstDayOfWeek.Month),
+                    week + 1,    // CSS grid is 1-indexed
+                    1));
+                lastMonth = firstDayOfWeek.Month;
+                lastMonthCol = week + 1;
+            }
+        }
+        // Close out the last label's span.
+        if (labels.Count > 0)
+            labels[^1] = labels[^1] with { Span = totalWeeks + 1 - lastMonthCol };
+
+        return labels;
+    }
+
+    private sealed record Cell(DateOnly Date, int Count, int Level);
+    private sealed record MonthLabel(string Name, int Column, int Span);
+}

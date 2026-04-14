@@ -134,6 +134,45 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     justify-content: center;
 }
 
+/* My Activity contribution heatmap — GitHub-style grid. Colors tuned for both themes. */
+.heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+
+.heatmap-grid-header {
+    display: grid;
+    grid-template-columns: repeat(53, 14px);
+    gap: 3px;
+    margin-bottom: 4px;
+    padding-left: 24px;
+}
+
+.heatmap-month-label {
+    font-size: 0.72rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-rows: repeat(7, 14px);
+    grid-template-columns: repeat(53, 14px);
+    grid-auto-flow: column;
+    gap: 3px;
+    padding-left: 24px;
+}
+
+.heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 12%, var(--mud-palette-background-grey));
+}
+
+.heatmap-placeholder { background-color: transparent; }
+.heatmap-level-0 { background-color: color-mix(in srgb, var(--mud-palette-text-primary) 6%,  transparent); }
+.heatmap-level-1 { background-color: color-mix(in srgb, var(--mud-palette-success) 30%, transparent); }
+.heatmap-level-2 { background-color: color-mix(in srgb, var(--mud-palette-success) 55%, transparent); }
+.heatmap-level-3 { background-color: color-mix(in srgb, var(--mud-palette-success) 80%, transparent); }
+.heatmap-level-4 { background-color: var(--mud-palette-success); }
+
 .api-explorer-json {
     background-color: var(--mud-palette-background-grey);
     border: 1px solid var(--mud-palette-divider);
