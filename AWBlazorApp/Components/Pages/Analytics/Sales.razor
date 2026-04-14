@@ -26,12 +26,14 @@
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success"
-                         Value="@totalRevenue.ToString("C0")" Label="Total revenue"
+                         Value="@NumberFormat.CompactCurrency(totalRevenue)" Label="Total revenue"
+                         ValueTitle="@totalRevenue.ToString("C0")"
                          Trend="@revenueTrend" TrendDirection="@revenueTrendDir" />
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info"
-                         Value="@avgOrderValue.ToString("C0")" Label="Avg order value" />
+                         Value="@NumberFormat.CompactCurrency(avgOrderValue)"
+                         ValueTitle="@avgOrderValue.ToString("C0")" Label="Avg order value" />
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Warning"
@@ -45,7 +47,8 @@
                          Labels="@revenueLabels"
                          Series="@revenueSeries"
                          Periods="@(new[] { "12M", "24M", "36M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
 
         @* ── Orders & shipments over time ───────────────────────────────────── *@
         <TimeSeriesChart Title="Orders placed vs. shipped per month"
@@ -126,7 +129,8 @@
                              Labels="@quotaLabels"
                              Series="@quotaSeries"
                              Periods="@(new[] { "12M", "All" })"
-                             ShowGranularity="false" />
+                             ShowGranularity="false"
+                             YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
         }
     }
 </MudStack>

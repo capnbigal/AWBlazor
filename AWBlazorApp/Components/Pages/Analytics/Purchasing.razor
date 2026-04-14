@@ -26,12 +26,14 @@
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success"
-                         Value="@totalSpend.ToString("C0")" Label="Total spend"
+                         Value="@NumberFormat.CompactCurrency(totalSpend)" Label="Total spend"
+                         ValueTitle="@totalSpend.ToString("C0")"
                          Trend="@spendTrend" TrendDirection="@spendTrendDir" />
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info"
-                         Value="@avgPOValue.ToString("C0")" Label="Avg PO value" />
+                         Value="@NumberFormat.CompactCurrency(avgPOValue)"
+                         ValueTitle="@avgPOValue.ToString("C0")" Label="Avg PO value" />
             </MudItem>
             <MudItem xs="6" sm="3">
                 <KpiCard Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Warning"
@@ -45,7 +47,8 @@
                          Labels="@spendLabels"
                          Series="@spendSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
 
         @* ── POs placed vs completed ────────────────────────────────────────── *@
         <TimeSeriesChart Title="POs placed vs. completed per month"

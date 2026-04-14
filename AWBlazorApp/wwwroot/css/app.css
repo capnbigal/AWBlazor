@@ -50,10 +50,26 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     }
 }
 
-/* KPI card text overflow protection */
-.kpi-card .mud-typography {
+/* KPI card value: single-line, auto-shrink so large numbers fit inside the card instead of
+   wrapping to a second line. Callers should also use NumberFormat.Compact* for huge values. */
+.kpi-card .kpi-value {
+    font-size: clamp(1.15rem, 2.6vw, 2.125rem);
+    line-height: 1.15;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kpi-card .kpi-label {
+    text-align: center;
+    max-width: 100%;
     overflow-wrap: break-word;
-    word-break: break-word;
+}
+
+/* App-bar action buttons (Sign in, Sign out, Register) should never wrap to a second line. */
+.mud-appbar .mud-button {
+    white-space: nowrap;
 }
 
 /* Fill the MudGrid row height so cards with/without a Trend row line up. */

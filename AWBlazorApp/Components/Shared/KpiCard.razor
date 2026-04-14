@@ -5,8 +5,8 @@
     {
         <MudIcon Icon="@Icon" Color="@Color" Size="Size.Large" />
     }
-    <MudText Typo="@ValueTypo" Class="mt-2">@Value</MudText>
-    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@Label</MudText>
+    <MudText Typo="@ValueTypo" Class="mt-2 kpi-value" title="@(ValueTitle ?? Value)">@Value</MudText>
+    <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="kpi-label">@Label</MudText>
     @if (!string.IsNullOrEmpty(Trend))
     {
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
@@ -20,6 +20,8 @@
     [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
     [Parameter] public Color Color { get; set; } = Color.Primary;
     [Parameter] public string Value { get; set; } = "";
+    /// <summary>Optional full-precision tooltip shown on hover when Value is abbreviated.</summary>
+    [Parameter] public string? ValueTitle { get; set; }
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public Typo ValueTypo { get; set; } = Typo.h3;
     /// <summary>Optional trend text, e.g. "+12% vs prior period"</summary>

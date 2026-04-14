@@ -3,6 +3,7 @@
    CSV export uses a server-side Minimal API endpoint — no JS required. *@
 @inject NavigationManager Navigation
 @inject Microsoft.Extensions.Caching.Memory.IMemoryCache MemoryCache
+@using MudBlazor.Charts
 
 <MudPaper Class="pa-4" Elevation="2">
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
@@ -63,7 +64,13 @@
     [Parameter] public List<ChartSeries<double>> Series { get; set; } = [];
     [Parameter] public string[] Periods { get; set; } = ["6M", "12M", "24M", "All"];
     [Parameter] public EventCallback<PeriodChangedArgs> OnPeriodChanged { get; set; }
-    [Parameter] public ChartOptions? ChartOptions { get; set; }
+    /// <summary>Optional pre-built chart options. When null, options are derived from ChartType + YAxisFormat.</summary>
+    [Parameter] public IChartOptions? ChartOptions { get; set; }
+
+    /// <summary>.NET format string applied to the Y-axis tick labels. Default is "N0" (thousands-separated integer).</summary>
+    [Parameter] public string YAxisFormat { get; set; } = "N0";
+    /// <summary>Optional custom Y-axis label formatter. Overrides <see cref="YAxisFormat"/>. Use for compact formats like $5.9M.</summary>
+    [Parameter] public Func<double, string>? YAxisToStringFunc { get; set; }
 
     private string _selectedPeriod = "";
     private string SelectedPeriod
@@ -91,7 +98,23 @@
         }
     }
 
-    private ChartOptions Options => ChartOptions ?? new ChartOptions();
+    private IChartOptions Options
+    {
+        get
+        {
+            if (ChartOptions is not null)
+                return ChartOptions;
+
+            // Use chart-type-specific options so YAxisFormat / YAxisToStringFunc take effect.
+            return ChartType switch
+            {
+                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
+                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
+                ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
+                _                    => new ChartOptions(),
+            };
+        }
+    }
     private string? _exportKey;
 
     private string ExportUrl
