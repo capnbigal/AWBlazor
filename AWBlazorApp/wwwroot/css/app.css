@@ -22,6 +22,12 @@
     word-break: break-word;
 }
 
+/* Fill the MudGrid row height so cards with/without a Trend row line up. */
+.kpi-card,
+.dashboard-skeleton {
+    height: 100%;
+}
+
 /* Skeleton loaders match content density */
 .dashboard-skeleton {
     min-height: 120px;
