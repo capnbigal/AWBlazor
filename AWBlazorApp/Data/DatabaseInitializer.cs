@@ -64,7 +64,89 @@ public static class DatabaseInitializer
         // would re-include every model-only table.
         await EnsureCompositeIndexesAsync(db, logger, cancellationToken);
 
+        // /analytics/geo plots Person.Address.SpatialLocation. Some AdventureWorks restores
+        // ship the column with NULLs; seed country-centroid + jitter so the map has data.
+        await EnsureSpatialLocationSeededAsync(db, logger, cancellationToken);
+
         await SeedAsync(sp, cancellationToken);
+    }
+
+    /// <summary>
+    /// If fewer than ~10% of Person.Address rows have a populated SpatialLocation, populate the
+    /// remainder with country-centroid + wide random jitter based on the row's StateProvince →
+    /// CountryRegionCode. Read-only for databases where SpatialLocation is already seeded.
+    /// </summary>
+    private static async Task EnsureSpatialLocationSeededAsync(
+        ApplicationDbContext db, ILogger logger, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var probe = await db.Database.SqlQueryRaw<SpatialProbe>(@"
+                SELECT
+                    CAST(COUNT(*) AS bigint)                                          AS Total,
+                    CAST(SUM(CASE WHEN SpatialLocation IS NULL THEN 1 ELSE 0 END) AS bigint) AS NullCount
+                FROM Person.Address").ToListAsync(cancellationToken);
+
+            var row = probe.FirstOrDefault();
+            if (row is null || row.Total == 0)
+            {
+                logger.LogInformation("Skipping SpatialLocation seed — Person.Address is empty.");
+                return;
+            }
+
+            // >10% already populated → assume the data is intact, skip.
+            var populated = row.Total - row.NullCount;
+            if (populated * 10 >= row.Total)
+            {
+                logger.LogInformation("SpatialLocation already populated on {Populated}/{Total} rows; skipping seed.",
+                    populated, row.Total);
+                return;
+            }
+
+            // Wide jitter so markers spread across each country instead of piling up on the centroid.
+            // Coordinates are rough (no degrees-per-km normalization) — good enough for a POC map.
+            const string seedSql = @"
+WITH Centroids AS (
+    SELECT CountryRegionCode, Lat, Lng, LatJitter, LngJitter FROM (VALUES
+        ('US', 39.0,  -98.0, 12.0, 30.0),
+        ('CA', 56.0, -106.0, 10.0, 35.0),
+        ('GB', 54.0,   -2.0,  3.0,  3.0),
+        ('DE', 51.0,   10.0,  3.0,  5.0),
+        ('FR', 46.0,    2.0,  4.0,  5.0),
+        ('AU',-25.0,  135.0, 14.0, 22.0),
+        ('JP', 36.0,  138.0,  6.0,  8.0),
+        ('BR',-14.0,  -55.0, 14.0, 16.0),
+        ('ES', 40.0,   -4.0,  3.0,  5.0),
+        ('IT', 42.0,   12.0,  4.0,  4.0),
+        ('NL', 52.0,    5.0,  1.0,  1.5),
+        ('MX', 23.0, -102.0,  8.0, 12.0),
+        ('KR', 36.0,  128.0,  2.5,  2.0)
+    ) AS t(CountryRegionCode, Lat, Lng, LatJitter, LngJitter)
+)
+UPDATE a
+SET SpatialLocation = geography::Point(
+    c.Lat + ((CAST(ABS(CHECKSUM(NEWID())) % 2000 AS float) / 1000.0) - 1.0) * c.LatJitter,
+    c.Lng + ((CAST(ABS(CHECKSUM(NEWID())) % 2000 AS float) / 1000.0) - 1.0) * c.LngJitter,
+    4326)
+FROM Person.Address a
+INNER JOIN Person.StateProvince sp ON sp.StateProvinceID = a.StateProvinceID
+INNER JOIN Centroids c ON c.CountryRegionCode = sp.CountryRegionCode
+WHERE a.SpatialLocation IS NULL;";
+
+            var affected = await db.Database.ExecuteSqlRawAsync(seedSql, cancellationToken);
+            logger.LogInformation("Seeded SpatialLocation on {Affected} Person.Address rows.", affected);
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal — the map will just show "no geo-tagged addresses" if this fails.
+            logger.LogWarning(ex, "SpatialLocation seed failed (continuing startup)");
+        }
+    }
+
+    private sealed class SpatialProbe
+    {
+        public long Total { get; set; }
+        public long NullCount { get; set; }
     }
 
     /// <summary>
