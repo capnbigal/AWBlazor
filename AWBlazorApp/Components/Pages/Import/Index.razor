@@ -1,0 +1,352 @@
+@page "/import"
+@attribute [Authorize]
+@using System.Globalization
+@using System.Text
+@using AWBlazorApp.Data.Entities.Forecasting
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>CSV import</PageTitle>
+
+<MudStack Spacing="3">
+    <div>
+        <MudText Typo="Typo.h4">CSV import wizard</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            Bulk-upload forecast data points for an existing forecast definition. Walks through
+            upload → column mapping → validation → commit with a MudStepper. Missing or invalid
+            rows are flagged before anything is inserted.
+        </MudText>
+    </div>
+
+    <MudStepper @ref="stepper" NonLinear="false">
+        <ChildContent>
+            @* ── Step 1 — pick target + upload ───────────────────────────────── *@
+            <MudStep Title="Upload" Icon="@Icons.Material.Filled.CloudUpload">
+                <ChildContent>
+                    <MudStack Spacing="3">
+                        <MudSelect T="int" @bind-Value="forecastId" Label="Forecast definition" Variant="Variant.Outlined">
+                            @foreach (var f in forecasts)
+                            {
+                                <MudSelectItem T="int" Value="@f.Id">@f.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            CSV must include a <code>PeriodDate</code> header and a <code>ForecastedValue</code> header.
+                            Optional: <code>ActualValue</code>. Example:
+                        </MudText>
+                        <pre class="api-explorer-json">PeriodDate,ForecastedValue,ActualValue
+2026-01-01,1200.00,1180.50
+2026-02-01,1250.00,
+2026-03-01,1300.00,</pre>
+
+                        <MudFileUpload T="IBrowserFile" FilesChanged="OnFileChosen" Accept=".csv,text/csv"
+                                       MaximumFileCount="1">
+                            <ActivatorContent>
+                                <MudButton HtmlTag="label" Variant="Variant.Outlined" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.CloudUpload">
+                                    Choose CSV file
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+
+                        @if (!string.IsNullOrEmpty(fileName))
+                        {
+                            <MudAlert Severity="Severity.Success" Dense="true">
+                                Loaded @fileName — @rawRows.Count rows, @headers.Count columns.
+                            </MudAlert>
+                        }
+                    </MudStack>
+                </ChildContent>
+            </MudStep>
+
+            @* ── Step 2 — column mapping ─────────────────────────────────────── *@
+            <MudStep Title="Map columns" Icon="@Icons.Material.Filled.SwapHoriz">
+                <ChildContent>
+                    @if (headers.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info">Upload a CSV first.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Pick which CSV column feeds each target field.
+                            </MudText>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText Style="min-width: 180px;">PeriodDate <strong>*</strong></MudText>
+                                <MudSelect T="string" @bind-Value="mapPeriodDate" @bind-Value:after="BuildPreview" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var h in headers) { <MudSelectItem T="string" Value="@h">@h</MudSelectItem> }
+                                </MudSelect>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText Style="min-width: 180px;">ForecastedValue <strong>*</strong></MudText>
+                                <MudSelect T="string" @bind-Value="mapForecasted" @bind-Value:after="BuildPreview" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var h in headers) { <MudSelectItem T="string" Value="@h">@h</MudSelectItem> }
+                                </MudSelect>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText Style="min-width: 180px;">ActualValue <em>(optional)</em></MudText>
+                                <MudSelect T="string" @bind-Value="mapActual" @bind-Value:after="BuildPreview" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                                    <MudSelectItem T="string" Value="@("")">— none —</MudSelectItem>
+                                    @foreach (var h in headers) { <MudSelectItem T="string" Value="@h">@h</MudSelectItem> }
+                                </MudSelect>
+                            </MudStack>
+                        </MudStack>
+                    }
+                </ChildContent>
+            </MudStep>
+
+            @* ── Step 3 — validate ───────────────────────────────────────────── *@
+            <MudStep Title="Validate" Icon="@Icons.Material.Filled.FactCheck">
+                <ChildContent>
+                    @if (preview.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info">Complete the previous steps to see validation results.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" Spacing="2">
+                                <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">@validCount valid</MudChip>
+                                <MudChip T="string" Color="Color.Error"   Variant="Variant.Filled">@errorCount errors</MudChip>
+                            </MudStack>
+
+                            <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="max-height: 420px; overflow: auto;">
+                                <thead>
+                                    <tr>
+                                        <th>Row</th>
+                                        <th>Period</th>
+                                        <th>Forecasted</th>
+                                        <th>Actual</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in preview.Take(200))
+                                    {
+                                        <tr>
+                                            <td>@r.RowNumber</td>
+                                            <td>@(r.PeriodDate?.ToString("yyyy-MM-dd") ?? r.RawPeriod)</td>
+                                            <td>@(r.ForecastedValue?.ToString("N2") ?? r.RawForecasted)</td>
+                                            <td>@(r.ActualValue?.ToString("N2") ?? r.RawActual)</td>
+                                            <td>
+                                                @if (r.Error is null)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Success">OK</MudChip>
+                                                }
+                                                else
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Error">@r.Error</MudChip>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                            @if (preview.Count > 200)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Showing first 200 of @preview.Count rows.</MudText>
+                            }
+                        </MudStack>
+                    }
+                </ChildContent>
+            </MudStep>
+
+            @* ── Step 4 — commit ─────────────────────────────────────────────── *@
+            <MudStep Title="Commit" Icon="@Icons.Material.Filled.Check">
+                <ChildContent>
+                    <MudStack Spacing="3">
+                        @if (!committed)
+                        {
+                            <MudAlert Severity="Severity.Warning">
+                                About to insert <strong>@validCount</strong> data points into forecast
+                                "<strong>@SelectedForecastName</strong>". @(errorCount > 0 ? $"{errorCount} invalid rows will be skipped." : "")
+                            </MudAlert>
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save"
+                                       Disabled="@(committing || validCount == 0)" OnClick="CommitAsync">
+                                @(committing ? "Inserting..." : $"Commit {validCount} rows")
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Success">
+                                Inserted @commitCount data points. <MudLink Href="@($"/forecasts/{forecastId}")">View the forecast →</MudLink>
+                            </MudAlert>
+                            <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh"
+                                       OnClick="ResetAsync">Import another file</MudButton>
+                        }
+                    </MudStack>
+                </ChildContent>
+            </MudStep>
+        </ChildContent>
+    </MudStepper>
+</MudStack>
+
+@code {
+    private MudStepper? stepper;
+    private int forecastId;
+    private string fileName = "";
+    private List<ForecastOption> forecasts = new();
+    private List<string> headers = new();
+    private List<string[]> rawRows = new();
+
+    private string mapPeriodDate = "";
+    private string mapForecasted = "";
+    private string mapActual = "";
+
+    private List<PreviewRow> preview = new();
+    private int validCount;
+    private int errorCount;
+
+    private bool committing;
+    private bool committed;
+    private int commitCount;
+
+    private string SelectedForecastName => forecasts.FirstOrDefault(f => f.Id == forecastId)?.Name ?? "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        forecasts = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.ForecastDefinitions
+                .Where(f => f.DeletedDate == null)
+                .OrderBy(f => f.Name)
+                .Select(f => new ForecastOption(f.Id, f.Name)));
+
+        if (forecasts.Count > 0) forecastId = forecasts[0].Id;
+    }
+
+    private async Task OnFileChosen(IBrowserFile? file)
+    {
+        if (file is null) return;
+        if (file.Size > 10 * 1024 * 1024)
+        {
+            Snackbar.Add("File too large — 10 MB max.", Severity.Warning);
+            return;
+        }
+
+        using var reader = new StreamReader(file.OpenReadStream(10 * 1024 * 1024), Encoding.UTF8);
+        var all = await reader.ReadToEndAsync();
+        var lines = all.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length == 0)
+        {
+            Snackbar.Add("CSV is empty.", Severity.Warning);
+            return;
+        }
+
+        headers = SplitCsvLine(lines[0]).ToList();
+        rawRows = lines.Skip(1).Select(l => SplitCsvLine(l).ToArray()).ToList();
+        fileName = file.Name;
+
+        // Auto-suggest mappings based on header names.
+        mapPeriodDate = headers.FirstOrDefault(h => h.Equals("PeriodDate", StringComparison.OrdinalIgnoreCase)
+                                                 || h.Contains("date", StringComparison.OrdinalIgnoreCase)) ?? "";
+        mapForecasted = headers.FirstOrDefault(h => h.Equals("ForecastedValue", StringComparison.OrdinalIgnoreCase)
+                                                 || h.Contains("forecast", StringComparison.OrdinalIgnoreCase)) ?? "";
+        mapActual     = headers.FirstOrDefault(h => h.Equals("ActualValue", StringComparison.OrdinalIgnoreCase)
+                                                 || h.Contains("actual", StringComparison.OrdinalIgnoreCase)) ?? "";
+
+        BuildPreview();
+    }
+
+    private void BuildPreview()
+    {
+        preview = new List<PreviewRow>();
+        if (string.IsNullOrEmpty(mapPeriodDate) || string.IsNullOrEmpty(mapForecasted)) return;
+
+        var iDate = headers.IndexOf(mapPeriodDate);
+        var iForecast = headers.IndexOf(mapForecasted);
+        var iActual = string.IsNullOrEmpty(mapActual) ? -1 : headers.IndexOf(mapActual);
+
+        for (int i = 0; i < rawRows.Count; i++)
+        {
+            var cols = rawRows[i];
+            var rowNum = i + 2; // +1 for 1-based, +1 for header
+            var rawP = iDate < cols.Length ? cols[iDate] : "";
+            var rawF = iForecast < cols.Length ? cols[iForecast] : "";
+            var rawA = iActual >= 0 && iActual < cols.Length ? cols[iActual] : "";
+
+            DateTime? period = null;
+            decimal? fcst = null;
+            decimal? actual = null;
+            string? err = null;
+
+            if (DateTime.TryParse(rawP, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var parsedDate))
+                period = parsedDate.Date;
+            else
+                err = "Bad date";
+
+            if (err is null)
+            {
+                if (decimal.TryParse(rawF, NumberStyles.Any, CultureInfo.InvariantCulture, out var f))
+                    fcst = f;
+                else
+                    err = "Bad forecast value";
+            }
+
+            if (err is null && !string.IsNullOrWhiteSpace(rawA))
+            {
+                if (decimal.TryParse(rawA, NumberStyles.Any, CultureInfo.InvariantCulture, out var a))
+                    actual = a;
+                else
+                    err = "Bad actual value";
+            }
+
+            preview.Add(new PreviewRow(rowNum, rawP, rawF, rawA, period, fcst, actual, err));
+        }
+
+        validCount = preview.Count(r => r.Error is null);
+        errorCount = preview.Count(r => r.Error is not null);
+    }
+
+    private async Task CommitAsync()
+    {
+        committing = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var toInsert = preview
+                .Where(r => r.Error is null)
+                .Select(r => new ForecastDataPoint
+                {
+                    ForecastDefinitionId = forecastId,
+                    PeriodDate = r.PeriodDate!.Value,
+                    ForecastedValue = r.ForecastedValue!.Value,
+                    ActualValue = r.ActualValue,
+                })
+                .ToList();
+
+            db.ForecastDataPoints.AddRange(toInsert);
+            commitCount = await db.SaveChangesAsync();
+            committed = true;
+            Snackbar.Add($"Inserted {commitCount} data points.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Insert failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            committing = false;
+        }
+    }
+
+    private Task ResetAsync()
+    {
+        fileName = ""; headers.Clear(); rawRows.Clear(); preview.Clear();
+        mapPeriodDate = ""; mapForecasted = ""; mapActual = "";
+        validCount = 0; errorCount = 0;
+        committed = false; commitCount = 0;
+        return stepper?.ResetAsync() ?? Task.CompletedTask;
+    }
+
+    // Minimal CSV split — no quoted-comma support. Good enough for AW sample data.
+    private static IEnumerable<string> SplitCsvLine(string line) => line.Split(',').Select(s => s.Trim());
+
+    private sealed record ForecastOption(int Id, string Name);
+    private sealed record PreviewRow(int RowNumber, string RawPeriod, string RawForecasted, string RawActual,
+                                     DateTime? PeriodDate, decimal? ForecastedValue, decimal? ActualValue, string? Error);
+}
