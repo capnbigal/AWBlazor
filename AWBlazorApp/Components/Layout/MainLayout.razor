@@ -14,7 +14,7 @@
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-2">AWBlazor</MudText>
+        <MudText Typo="Typo.h6" Class="ml-2 app-bar-title">AWBlazor</MudText>
         <MudSpacer />
         <GlobalSearch />
         <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
@@ -31,7 +31,7 @@
                     if (initials.Length == 0) initials = "?";
                 }
                 <MudAvatar Color="Color.Secondary" Size="Size.Small" Class="mr-2">@initials</MudAvatar>
-                <MudText Class="mr-3" Typo="Typo.body2">@userName</MudText>
+                <MudText Class="mr-3 app-bar-username" Typo="Typo.body2">@userName</MudText>
                 <form action="Account/Logout" method="post">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="" />

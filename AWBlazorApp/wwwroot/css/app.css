@@ -1,20 +1,54 @@
 /* Global app overrides — theme-aware styling not covered by MudBlazor defaults. */
 
-/* GlobalSearch in the app bar: subtle translucent fill that works in both light and dark mode */
+/* GlobalSearch in the app bar: uses currentColor so fill, border, and text stay legible
+   against the app bar in both light and dark mode. */
 .global-search-input .mud-input-control {
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
     border-radius: 4px;
     transition: background-color 0.15s ease;
 }
 
 .global-search-input .mud-input-control:hover,
 .global-search-input .mud-input-control:focus-within {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: color-mix(in srgb, currentColor 16%, transparent);
 }
 
-/* In dark mode the app bar already has a dark background, so the translucent white overlay
-   reads as a slightly-lighter input. In light mode the app bar is colored (primary), so it
-   also reads correctly. */
+.global-search-input .mud-input-outlined-border {
+    border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.global-search-input .mud-input-control:hover .mud-input-outlined-border,
+.global-search-input .mud-input-control:focus-within .mud-input-outlined-border {
+    border-color: currentColor;
+}
+
+.global-search-input input,
+.global-search-input input::placeholder {
+    color: currentColor;
+}
+
+.global-search-input input::placeholder {
+    opacity: 0.75;
+}
+
+/* In light mode the app bar uses dark text on a light surface; match the input text to the
+   same faded currentColor the border uses so the two read as a unified control. */
+html:not([data-mud-theme="dark"]) .global-search-input input,
+html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
+    color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+/* Keep the header from wrapping on small screens by hiding long text labels. */
+@media (max-width: 599.98px) {
+    .app-bar-title,
+    .app-bar-username {
+        display: none;
+    }
+
+    .global-search-input {
+        max-width: 180px;
+    }
+}
 
 /* KPI card text overflow protection */
 .kpi-card .mud-typography {
