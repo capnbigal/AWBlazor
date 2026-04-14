@@ -51,7 +51,7 @@ public static class MiddlewarePipeline
             };
         });
 
-        app.UseStaticFiles();
+        app.MapStaticAssets();
         app.UseAntiforgery();
         app.UseAuthentication();
         app.UseAuthorization();
