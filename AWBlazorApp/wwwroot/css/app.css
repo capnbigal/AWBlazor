@@ -186,6 +186,21 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     white-space: pre;
 }
 
+/* KPI tiles on /kpis — compact tile with large value + sparkline footer. */
+.kpi-tile .kpi-value {
+    font-size: clamp(1.25rem, 2.6vw, 2.25rem);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kpi-tile .kpi-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Quick-access cards (Forecasts / Tool Slots / Database Explorer) equal height too. */
 .home-quick-card {
     display: flex;

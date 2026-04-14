@@ -165,6 +165,11 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(CancellationToken.None),
                 "*/5 * * * *");
 
+            RecurringJob.AddOrUpdate<AWBlazorApp.Services.KpiSnapshotJob>(
+                "kpi-snapshot-job",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Hourly());
+
             BackgroundJob.Enqueue<ApiKeyHashMigrationJob>(job => job.ExecuteAsync());
         }
 
