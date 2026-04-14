@@ -11,6 +11,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IConfiguration Configuration
 
 <PageTitle>Log in</PageTitle>
 
@@ -110,7 +111,17 @@
     private string? ReturnUrl { get; set; }
 
     // The static-SSR form binder can null out Input on GET; defensively re-initialize.
-    protected override void OnInitialized() => Input ??= new();
+    // Demo convenience: when Demo:AutofillLogin is true, prefill seed admin creds on GET.
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+        var autofill = Configuration.GetValue("Demo:AutofillLogin", defaultValue: false);
+        if (autofill && HttpContext is not null && HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            Input.Email = "admin@email.com";
+            Input.Password = "p@55wOrd";
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

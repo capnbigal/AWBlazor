@@ -44,6 +44,9 @@ services:
       # Feature flags (override as needed).
       Features__Hangfire: "true"
       Features__RateLimiting: "true"
+      # Demo convenience: when true, /Account/Login prefills the seed admin creds.
+      # Flip via DEMO_AUTOFILL_LOGIN in .env + `docker compose up -d app`. Never true in real prod.
+      Demo__AutofillLogin: "${DEMO_AUTOFILL_LOGIN:-false}"
       # SMTP (set in .env on the droplet).
       Smtp__Host: "${SMTP_HOST:-}"
       Smtp__Port: "${SMTP_PORT:-587}"

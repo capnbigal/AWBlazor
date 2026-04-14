@@ -62,6 +62,23 @@
     private bool _isDarkMode;
     private bool _drawerOpen = true;
 
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    // During SSR (including static-SSR Identity pages) HttpContext is available and
+    // OnAfterRenderAsync/JS interop is not — read the cookie directly so the first-paint
+    // theme matches the interactive theme. Without this, MudThemeProvider renders light on
+    // static-SSR pages while the inline <style> paints html/body dark, causing a split look.
+    protected override void OnInitialized()
+    {
+        if (HttpContext is not null
+            && HttpContext.Request.Cookies.TryGetValue("darkMode", out var raw)
+            && bool.TryParse(raw, out var isDark))
+        {
+            _isDarkMode = isDark;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)

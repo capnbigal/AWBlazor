@@ -9,16 +9,16 @@ ARG DOTNET_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
 WORKDIR /src
 
-# Restore as a distinct layer — cache-friendly. Only the .csproj files are needed here.
-COPY AWBlazorApp/AWBlazorApp.csproj          AWBlazorApp/
-COPY AWBlazorApp.Tests/AWBlazorApp.Tests.csproj AWBlazorApp.Tests/
-COPY AWBlazorApp.slnx                         .
+# Restore as a distinct layer — cache-friendly. Only the main .csproj is needed.
+# The Tests project and .slnx are excluded from the build context by .dockerignore
+# and aren't required to build the shipped image.
+COPY AWBlazorApp/AWBlazorApp.csproj AWBlazorApp/
 RUN dotnet restore AWBlazorApp/AWBlazorApp.csproj
 
 # Copy the rest of the source and publish.
 COPY AWBlazorApp/ AWBlazorApp/
 WORKDIR /src/AWBlazorApp
-RUN dotnet publish -c Release -o /app/publish --no-restore /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
 # ---- runtime -------------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS final
