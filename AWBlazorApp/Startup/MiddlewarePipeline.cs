@@ -160,6 +160,11 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 "*/15 * * * *");
 
+            RecurringJob.AddOrUpdate<AWBlazorApp.Services.NotificationRuleEvaluator>(
+                "notification-rule-evaluator",
+                job => job.ExecuteAsync(CancellationToken.None),
+                "*/5 * * * *");
+
             BackgroundJob.Enqueue<ApiKeyHashMigrationJob>(job => job.ExecuteAsync());
         }
 
