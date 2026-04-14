@@ -106,6 +106,47 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     margin-top: auto;
 }
 
+/* API Explorer — endpoint list + JSON viewer */
+.api-endpoint-row {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.1s ease;
+}
+
+.api-endpoint-row:hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.api-endpoint-row.selected {
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 20%, transparent);
+}
+
+.api-endpoint-path {
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.api-method-chip {
+    min-width: 60px;
+    justify-content: center;
+}
+
+.api-explorer-json {
+    background-color: var(--mud-palette-background-grey);
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 520px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    white-space: pre;
+}
+
 /* Quick-access cards (Forecasts / Tool Slots / Database Explorer) equal height too. */
 .home-quick-card {
     display: flex;
