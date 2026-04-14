@@ -38,8 +38,17 @@
                 </div>
             }
 
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error" Class="mt-2">
-                Delete account
+            <div class="form-field">
+                <label class="form-label">
+                    <InputCheckbox @bind-Value="Input.ConfirmIntent" />
+                    I understand this will permanently delete my account and cannot be undone.
+                </label>
+                <ValidationMessage For="@(() => Input.ConfirmIntent)" class="form-error" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error" Class="mt-2"
+                       Disabled="@(!Input.ConfirmIntent)">
+                Permanently delete my account
             </MudButton>
         </EditForm>
     </MudPaper>
@@ -65,6 +74,12 @@
 
     private async Task OnValidSubmitAsync()
     {
+        if (!Input.ConfirmIntent)
+        {
+            message = "Error: you must confirm you understand this is permanent.";
+            return;
+        }
+
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
             message = "Error: incorrect password.";
@@ -89,5 +104,7 @@
     {
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
+
+        public bool ConfirmIntent { get; set; }
     }
 }

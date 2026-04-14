@@ -29,7 +29,15 @@ public static class MiddlewarePipeline
 
         app.UseHttpsRedirection();
         app.UseMiddleware<SecurityHeadersMiddleware>();
-        app.UseRateLimiter();
+
+        // Rate limiter can be disabled in tests via Features:RateLimiting=false so that
+        // rapid back-to-back HTTP calls in the integration suite don't trip the auth limiter
+        // and break unrelated test assertions.
+        var rateLimitingEnabled = app.Configuration.GetValue("Features:RateLimiting", defaultValue: true);
+        if (rateLimitingEnabled)
+        {
+            app.UseRateLimiter();
+        }
 
         app.UseSerilogRequestLogging(options =>
         {

@@ -1,0 +1,28 @@
+/* Global app overrides — theme-aware styling not covered by MudBlazor defaults. */
+
+/* GlobalSearch in the app bar: subtle translucent fill that works in both light and dark mode */
+.global-search-input .mud-input-control {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.global-search-input .mud-input-control:hover,
+.global-search-input .mud-input-control:focus-within {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* In dark mode the app bar already has a dark background, so the translucent white overlay
+   reads as a slightly-lighter input. In light mode the app bar is colored (primary), so it
+   also reads correctly. */
+
+/* KPI card text overflow protection */
+.kpi-card .mud-typography {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Skeleton loaders match content density */
+.dashboard-skeleton {
+    min-height: 120px;
+}

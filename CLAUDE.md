@@ -176,6 +176,14 @@ Ten entity pages have `<HierarchyColumn>` + `<ChildRowContent>` with self-contai
 - **API key hashing**: `Authentication/ApiKeyHasher.cs` uses SHA-256. The auth handler checks both plain-text and hashed keys for backwards compatibility. New keys should be stored hashed.
 - **Logout antiforgery**: The `/Account/Logout` endpoint has `.DisableAntiforgery()` because the Blazor Server circuit's antiforgery token can desync with the HTTP pipeline.
 
+### 8. Audited writes use `AddWithAuditAsync` / `DeleteWithAuditAsync`
+
+`Data/AuditedSaveExtensions.cs` provides helpers that wrap the entity insert + audit log insert
+in a single transaction. **All new CRUD code should use these** instead of two separate
+SaveChanges calls. The 67 existing AdventureWorks endpoints currently use an inline
+`BeginTransactionAsync` / `CommitAsync` pattern (added during the post-review hardening pass) —
+those will be migrated to the helper as a follow-up cleanup. The runtime behavior is identical.
+
 ## Forward-looking work
 
 `docs/phase-plan.md` documents Phases 8-14 (deployment/CI, identity completeness, observability, AI chat, further hardening, performance, documentation). Phases 1-7 are complete; phases 8+ are forward-looking and independent — pick whichever applies to the user's current need.

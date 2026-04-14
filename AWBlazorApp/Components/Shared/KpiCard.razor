@@ -1,6 +1,6 @@
 @* Reusable KPI stat card with icon, value, label, and optional trend indicator. *@
 
-<MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="2" Style="@($"border-top: 4px solid var(--mud-palette-{ColorCss});")">
+<MudPaper Class="pa-4 d-flex flex-column align-center kpi-card" Elevation="2" Style="@($"border-top: 4px solid var(--mud-palette-{ColorCss});")">
     @if (!string.IsNullOrEmpty(Icon))
     {
         <MudIcon Icon="@Icon" Color="@Color" Size="Size.Large" />

@@ -186,6 +186,7 @@ public abstract class IntegrationTestFixtureBase
                             {
                                 ["Features:Hangfire"] = "false",
                                 ["RequestLogs:Enabled"] = "false",
+                                ["Features:RateLimiting"] = "false",
                             });
                         });
                     });

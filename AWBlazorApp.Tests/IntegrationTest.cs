@@ -52,6 +52,10 @@ public class IntegrationTest
                     {
                         ["Features:Hangfire"] = "false",
                         ["RequestLogs:Enabled"] = "false",
+                        // Disable rate limiting in the shared test factory — the auth limiter
+                        // (5 req/min) would otherwise leak between unrelated tests. The rate
+                        // limiting test creates its own factory with this flag flipped on.
+                        ["Features:RateLimiting"] = "false",
                     });
                 });
 
@@ -504,13 +508,14 @@ public class IntegrationTest
     public async Task ResendEmailConfirmation_Form_Post_Returns_Confirmation_Message()
     {
         var client = factory.CreateClient();
-        var response = await FormPostHelper.PostFormAsync(client, "/Account/ResendEmailConfirmation", "resend-email-confirmation",
+        var response = await FormPostHelper.PostFormAsync(client, "/Account/ResendEmailConfirmation", "resend-confirmation",
             new Dictionary<string, string>
             {
                 ["Input.Email"] = "definitely-not-a-real-user@example.com",
             });
 
-        // The page should render success regardless (don't reveal whether the email exists).
+        // The page should render (success or re-render with status message). Don't reveal
+        // whether the email actually exists in the system.
         Assert.That(response.IsSuccessStatusCode, Is.True,
             $"Expected page to re-render, got {(int)response.StatusCode}");
     }
@@ -519,28 +524,39 @@ public class IntegrationTest
     public async Task Auth_Endpoint_Rate_Limiter_Returns_429_After_Threshold()
     {
         // Auth limiter is 5 req/min. Fire 10 rapid requests; at least one should hit 429.
-        // Use a unique IP/cookie via a fresh client per request to avoid sharing rate buckets.
-        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        // Spin up a dedicated factory with rate limiting ENABLED (the shared test factory
+        // disables it so it doesn't leak between unrelated tests).
+        using var rateLimitFactory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(b =>
+            {
+                b.UseEnvironment("Development");
+                b.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["Features:Hangfire"] = "false",
+                        ["RequestLogs:Enabled"] = "false",
+                        ["Features:RateLimiting"] = "true",
+                    });
+                });
+            });
+
+        var client = rateLimitFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
         });
 
+        // Use raw GET requests instead of FormPostHelper because the helper does GET-then-POST
+        // and the GET will start hitting 429 partway through, throwing.
         var statusCodes = new List<HttpStatusCode>();
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < 12; i++)
         {
-            // POST a deliberately invalid login so we don't trigger Identity sign-ins.
-            var response = await FormPostHelper.PostFormAsync(client, "/Account/Login", "login",
-                new Dictionary<string, string>
-                {
-                    ["Input.Email"] = $"ratelimit-{i}@example.com",
-                    ["Input.Password"] = "wrong-password",
-                    ["Input.RememberMe"] = "false",
-                });
+            var response = await client.GetAsync("/Account/Login");
             statusCodes.Add(response.StatusCode);
         }
 
         Assert.That(statusCodes, Has.Some.EqualTo(HttpStatusCode.TooManyRequests),
-            $"Expected at least one 429 from rate limiter after 10 requests. Got: [{string.Join(", ", statusCodes.Select(c => (int)c))}]");
+            $"Expected at least one 429 from rate limiter after 12 requests. Got: [{string.Join(", ", statusCodes.Select(c => (int)c))}]");
     }
 
     // ── API key auth tests ──────────────────────────────────────────────────────────────────

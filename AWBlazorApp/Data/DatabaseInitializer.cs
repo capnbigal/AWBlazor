@@ -58,7 +58,46 @@ public static class DatabaseInitializer
         // ApplicationUser (e.g. missing FirstName/LastName/DisplayName/ProfileUrl).
         await PatchMissingColumnsAsync(db, logger, cancellationToken);
 
+        // Composite indexes that improve dashboard / per-user-history query performance. These
+        // can't be added via a regular EF migration because the codebase uses runtime model
+        // diffing (EnsureMissingTablesAsync) instead of full migrations — a generated migration
+        // would re-include every model-only table.
+        await EnsureCompositeIndexesAsync(db, logger, cancellationToken);
+
         await SeedAsync(sp, cancellationToken);
+    }
+
+    /// <summary>
+    /// Idempotently creates the composite indexes flagged in the database review. Uses
+    /// IF NOT EXISTS guards so it's safe to run on every startup.
+    /// </summary>
+    private static async Task EnsureCompositeIndexesAsync(
+        ApplicationDbContext db, ILogger logger, CancellationToken cancellationToken)
+    {
+        var indexes = new[]
+        {
+            ("IX_ForecastDefinitions_Status_DeletedDate",
+             "CREATE NONCLUSTERED INDEX [IX_ForecastDefinitions_Status_DeletedDate] " +
+             "ON [dbo].[ForecastDefinitions]([Status], [DeletedDate]) " +
+             "INCLUDE ([CreatedDate])"),
+
+            ("IX_SecurityAuditLogs_UserId_Timestamp",
+             "CREATE NONCLUSTERED INDEX [IX_SecurityAuditLogs_UserId_Timestamp] " +
+             "ON [dbo].[SecurityAuditLogs]([UserId], [Timestamp] DESC)"),
+        };
+
+        foreach (var (name, createSql) in indexes)
+        {
+            try
+            {
+                var sql = $"IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = '{name}') {createSql}";
+                await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to create index {IndexName} (continuing startup)", name);
+            }
+        }
     }
 
     /// <summary>
