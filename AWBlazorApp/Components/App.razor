@@ -23,6 +23,15 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="AWBlazorApp.styles.css" />
 
+    <!-- Leaflet + MarkerCluster (used only by /analytics/geo). BSD-2-Clause / MIT.
+         Integrity hashes omitted intentionally — unpkg serves content through a CDN that
+         occasionally varies the exact byte sequence (different gzip encodings), which with
+         a pinned SRI hash causes the browser to silently block the script and the map to
+         never initialize. If this ever needs SRI, switch to a self-hosted copy in wwwroot. -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
     <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
 <body>
@@ -37,6 +46,9 @@
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="js/leaflet-map.js"></script>
 </body>
 </html>
 

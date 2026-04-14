@@ -91,6 +91,8 @@ public static class MiddlewarePipeline
         app.MapAdditionalIdentityEndpoints();
         app.MapApiEndpoints();
         app.MapChartExportEndpoints();
+        app.MapPhotoGalleryEndpoints();
+        app.MapGeoEndpoints();
         app.MapPreferencesEndpoints();
         app.MapPermissionEndpoints();
         app.MapHub<AWBlazorApp.Hubs.NotificationHub>(AWBlazorApp.Hubs.NotificationHub.HubUrl);

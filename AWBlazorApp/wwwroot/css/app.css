@@ -82,3 +82,38 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
 .dashboard-skeleton {
     min-height: 120px;
 }
+
+/* Home page analytics feature cards — equal height across the row and single-line
+   captions so Sales / Production / HR / Purchasing / Forecasts all line up. */
+.home-feature-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.home-feature-card .mud-card-header {
+    flex: 1 1 auto;
+    min-height: 96px;
+}
+
+.home-feature-card .mud-card-header .mud-card-header-content .mud-typography-body2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-feature-card .mud-card-actions {
+    margin-top: auto;
+}
+
+/* Quick-access cards (Forecasts / Tool Slots / Database Explorer) equal height too. */
+.home-quick-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 160px;
+}
+
+.home-quick-card .mud-card-content {
+    flex: 1 1 auto;
+}

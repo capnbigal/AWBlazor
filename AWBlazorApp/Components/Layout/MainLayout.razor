@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject PersistentComponentState AppState
 
 <MudThemeProvider @rendermode="InteractiveServer" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -65,12 +67,27 @@
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
-    // During SSR (including static-SSR Identity pages) HttpContext is available and
-    // OnAfterRenderAsync/JS interop is not — read the cookie directly so the first-paint
-    // theme matches the interactive theme. Without this, MudThemeProvider renders light on
-    // static-SSR pages while the inline <style> paints html/body dark, causing a split look.
+    private PersistingComponentStateSubscription? _persistingSubscription;
+    private const string StateKey = "theme.isDarkMode";
+
+    // Dark-mode handoff across prerender → interactive render:
+    //   1. On the SSR (prerender) pass HttpContext is available, so we read the "darkMode"
+    //      cookie and seed _isDarkMode. MudThemeProvider paints dark immediately.
+    //   2. We persist that value via PersistentComponentState so the subsequent interactive
+    //      render picks it up on its first pass instead of defaulting to false and causing
+    //      the brief light-mode flash.
+    //   3. OnAfterRenderAsync still reads the cookie via JS as a final safety net for
+    //      environments where prerendering is disabled.
     protected override void OnInitialized()
     {
+        _persistingSubscription = AppState.RegisterOnPersisting(PersistThemeState);
+
+        if (AppState.TryTakeFromJson<bool>(StateKey, out var persisted))
+        {
+            _isDarkMode = persisted;
+            return;
+        }
+
         if (HttpContext is not null
             && HttpContext.Request.Cookies.TryGetValue("darkMode", out var raw)
             && bool.TryParse(raw, out var isDark))
@@ -79,22 +96,33 @@
         }
     }
 
+    private Task PersistThemeState()
+    {
+        AppState.PersistAsJson(StateKey, _isDarkMode);
+        return Task.CompletedTask;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender) return;
+
+        try
         {
-            try
+            var fromCookie = await JS.InvokeAsync<bool>("getDarkModeCookie");
+            if (fromCookie != _isDarkMode)
             {
-                _isDarkMode = await JS.InvokeAsync<bool>("getDarkModeCookie");
+                _isDarkMode = fromCookie;
                 StateHasChanged();
             }
-            catch (JSException)
-            {
-                // JS not ready yet — the inline <head> script handles the visual state,
-                // so light mode is a safe default until the user toggles.
-            }
+        }
+        catch (JSException)
+        {
+            // JS not ready yet — the inline <head> script handles the visual state,
+            // so light mode is a safe default until the user toggles.
         }
     }
+
+    public void Dispose() => _persistingSubscription?.Dispose();
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 

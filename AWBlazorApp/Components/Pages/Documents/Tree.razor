@@ -1,0 +1,220 @@
+@page "/documents/tree"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities.AdventureWorks
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Document tree</PageTitle>
+
+<MudStack Spacing="4">
+    <div>
+        <MudText Typo="Typo.h4">Document tree</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            Production.Document hierarchy rendered with MudTreeView. Folders expand; files show metadata on select.
+        </MudText>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-2" Elevation="1">
+                    <MudTreeView T="DocNode" Items="@rootItems" Hover="true" Dense="true">
+                        <ItemTemplate Context="item">
+                            <MudTreeViewItem T="DocNode"
+                                             Value="@item.Value"
+                                             Items="@item.Children"
+                                             Icon="@IconFor(item.Value!)"
+                                             Text="@item.Value!.Title"
+                                             OnClick="@(() => selected = item.Value)"
+                                             CanExpand="@(item.Children?.Count > 0)" />
+                        </ItemTemplate>
+                    </MudTreeView>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="1">
+                    @if (selected is null)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Select a document to see details.</MudText>
+                    }
+                    else
+                    {
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@IconFor(selected)" Size="Size.Large" Color="@(selected.FolderFlag ? Color.Warning : Color.Primary)" />
+                                <div>
+                                    <MudText Typo="Typo.h6">@selected.Title</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@selected.Path</MudText>
+                                </div>
+                            </MudStack>
+                            <MudDivider />
+                            <MudSimpleTable Dense="true">
+                                <tbody>
+                                    <tr><th>Status</th><td>@StatusLabel(selected.Status)</td></tr>
+                                    <tr><th>File name</th><td>@(string.IsNullOrEmpty(selected.FileName) ? "—" : selected.FileName)</td></tr>
+                                    <tr><th>Extension</th><td>@(string.IsNullOrEmpty(selected.FileExtension) ? "—" : selected.FileExtension)</td></tr>
+                                    <tr><th>Revision</th><td>@(string.IsNullOrEmpty(selected.Revision) ? "—" : selected.Revision)</td></tr>
+                                    <tr><th>Change #</th><td>@selected.ChangeNumber</td></tr>
+                                    <tr><th>Size</th><td>@(selected.DocSize.HasValue ? $"{selected.DocSize:N0} bytes" : "—")</td></tr>
+                                    <tr><th>Modified</th><td>@selected.ModifiedDate.ToString("yyyy-MM-dd HH:mm")</td></tr>
+                                </tbody>
+                            </MudSimpleTable>
+                            @if (!string.IsNullOrEmpty(selected.Summary))
+                            {
+                                <MudDivider />
+                                <MudText Typo="Typo.subtitle2">Summary</MudText>
+                                <MudText Typo="Typo.body2">@selected.Summary</MudText>
+                            }
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private List<TreeItemData<DocNode>> rootItems = new();
+    private DocNode? selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        // Project to DTO up front so we don't drag DocumentContent bytes into memory.
+        var rows = await db.Documents.AsNoTracking()
+            .OrderBy(d => d.DocumentNode)
+            .Select(d => new
+            {
+                d.DocumentNode,
+                d.Title,
+                d.FolderFlag,
+                d.FileName,
+                d.FileExtension,
+                d.Revision,
+                d.ChangeNumber,
+                d.Status,
+                d.DocumentSummary,
+                d.ModifiedDate,
+                DocSize = d.DocumentContent != null ? (int?)d.DocumentContent.Length : null,
+            })
+            .ToListAsync();
+
+        var allNodes = rows.Select(r => new DocNode
+        {
+            Path = r.DocumentNode.ToString() ?? "/",
+            Title = r.Title,
+            FolderFlag = r.FolderFlag,
+            FileName = r.FileName,
+            FileExtension = r.FileExtension,
+            Revision = r.Revision,
+            ChangeNumber = r.ChangeNumber,
+            Status = r.Status,
+            Summary = r.DocumentSummary,
+            ModifiedDate = r.ModifiedDate,
+            DocSize = r.DocSize,
+        }).ToList();
+
+        rootItems = BuildTree(allNodes);
+        loading = false;
+    }
+
+    /// <summary>
+    /// Build a MudTreeView hierarchy by inspecting HierarchyId path strings:
+    /// "/" is root, "/1/" is level 1, "/1/2/" is level 2. Two-pass: collect children into mutable
+    /// per-parent lists keyed by path, then snapshot into immutable TreeItemData in the second pass.
+    /// MudBlazor's TreeItemData.Children is IReadOnlyCollection, so direct mutation after
+    /// construction doesn't compile.
+    /// </summary>
+    private static List<TreeItemData<DocNode>> BuildTree(List<DocNode> nodes)
+    {
+        var childrenByParent = new Dictionary<string, List<DocNode>>();
+        var roots = new List<DocNode>();
+
+        foreach (var node in nodes)
+        {
+            var parentPath = ParentPath(node.Path);
+            if (parentPath is not null && nodes.Any(n => n.Path == parentPath))
+            {
+                if (!childrenByParent.TryGetValue(parentPath, out var bucket))
+                    childrenByParent[parentPath] = bucket = new();
+                bucket.Add(node);
+            }
+            else
+            {
+                roots.Add(node);
+            }
+        }
+
+        return roots.Select(r => Materialize(r, childrenByParent)).ToList();
+    }
+
+    private static TreeItemData<DocNode> Materialize(DocNode node, Dictionary<string, List<DocNode>> childrenByParent)
+    {
+        var kids = childrenByParent.TryGetValue(node.Path, out var list)
+            ? list.Select(c => Materialize(c, childrenByParent)).ToList()
+            : new List<TreeItemData<DocNode>>();
+
+        return new TreeItemData<DocNode>
+        {
+            Value = node,
+            Text = node.Title,
+            Children = kids,
+            Expandable = kids.Count > 0,
+        };
+    }
+
+    /// <summary>Chops the trailing segment off a HierarchyId-style path. "/1/2/" → "/1/", "/1/" → "/", "/" → null.</summary>
+    private static string? ParentPath(string path)
+    {
+        if (string.IsNullOrEmpty(path) || path == "/") return null;
+        var trimmed = path.TrimEnd('/');
+        var lastSlash = trimmed.LastIndexOf('/');
+        return lastSlash < 0 ? "/" : path[..(lastSlash + 1)];
+    }
+
+    private static string IconFor(DocNode node)
+    {
+        if (node.FolderFlag) return Icons.Material.Filled.Folder;
+        return node.FileExtension?.ToLowerInvariant() switch
+        {
+            ".pdf"              => Icons.Material.Filled.PictureAsPdf,
+            ".doc" or ".docx"   => Icons.Material.Filled.Description,
+            ".xls" or ".xlsx"   => Icons.Material.Filled.TableChart,
+            ".ppt" or ".pptx"   => Icons.Material.Filled.Slideshow,
+            ".txt"              => Icons.Material.Filled.Article,
+            ".xml" or ".json"   => Icons.Material.Filled.Code,
+            ".zip" or ".7z" or ".rar" => Icons.Material.Filled.FolderZip,
+            _ => Icons.Material.Filled.InsertDriveFile,
+        };
+    }
+
+    private static string StatusLabel(byte status) => status switch
+    {
+        1 => "Pending",
+        2 => "Approved",
+        3 => "Obsolete",
+        _ => $"Unknown ({status})",
+    };
+
+    private sealed class DocNode
+    {
+        public string Path { get; set; } = "";
+        public string Title { get; set; } = "";
+        public bool FolderFlag { get; set; }
+        public string FileName { get; set; } = "";
+        public string FileExtension { get; set; } = "";
+        public string Revision { get; set; } = "";
+        public int ChangeNumber { get; set; }
+        public byte Status { get; set; }
+        public string? Summary { get; set; }
+        public DateTime ModifiedDate { get; set; }
+        public int? DocSize { get; set; }
+    }
+}
