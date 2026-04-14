@@ -11,10 +11,30 @@
         '#5e35b1', '#039be5', '#d81b60',
     ];
 
+    // Poll for Leaflet (loaded from unpkg). In Blazor Server, OnAfterRenderAsync(firstRender)
+    // can fire before async CDN scripts finish parsing, so naive calls to render() no-op.
+    // Retries every 50ms for up to ~5s before giving up.
+    function waitForLeaflet(timeoutMs) {
+        return new Promise((resolve, reject) => {
+            if (window.L) return resolve();
+            const started = Date.now();
+            const t = setInterval(() => {
+                if (window.L) { clearInterval(t); resolve(); }
+                else if (Date.now() - started > timeoutMs) {
+                    clearInterval(t);
+                    reject(new Error('Leaflet failed to load within ' + timeoutMs + 'ms'));
+                }
+            }, 50);
+        });
+    }
+
     window.awLeafletMap = {
-        render(elementId, markers) {
-            if (!window.L) {
-                console.warn('Leaflet not loaded yet');
+        async render(elementId, markers) {
+            await waitForLeaflet(5000);
+
+            const container = document.getElementById(elementId);
+            if (!container) {
+                console.warn('awLeafletMap: element not found: ' + elementId);
                 return;
             }
 
@@ -32,6 +52,10 @@
             } else {
                 inst.cluster.clearLayers();
             }
+
+            // Blazor's SPA-style navigation means the page container may have been laid out
+            // before Leaflet added its tiles. Tell Leaflet to recompute dimensions.
+            setTimeout(() => inst.map.invalidateSize(), 0);
 
             if (!markers || markers.length === 0) {
                 inst.map.setView([20, 0], 2);

@@ -4,6 +4,8 @@
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject ILogger<Geo> Logger
 
 <PageTitle>Geographic analytics</PageTitle>
 
@@ -109,7 +111,25 @@
             markerCount = markers.Count;
             uniqueTerritories = markers.Select(m => m.TerritoryId).Distinct().Count();
 
-            await JS.InvokeVoidAsync("awLeafletMap.render", MapElementId, markers);
+            if (markerCount == 0)
+            {
+                Snackbar.Add("No geo-tagged addresses found for the current filter.", Severity.Info);
+            }
+
+            try
+            {
+                await JS.InvokeVoidAsync("awLeafletMap.render", MapElementId, markers);
+            }
+            catch (JSException jsEx)
+            {
+                Logger.LogWarning(jsEx, "Leaflet render failed");
+                Snackbar.Add("Map failed to render: " + jsEx.Message, Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Geo map query failed");
+            Snackbar.Add("Map data query failed: " + ex.Message, Severity.Error);
         }
         finally
         {

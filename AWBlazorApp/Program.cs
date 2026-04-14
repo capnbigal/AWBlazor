@@ -1,6 +1,15 @@
+using System.Globalization;
 using AWBlazorApp.Data;
 using AWBlazorApp.Startup;
 using Serilog;
+
+// Pin the process culture to en-US so currency/number formatters render "$" instead of
+// the generic "¤" symbol on Linux containers where LANG may be unset and .NET falls back
+// to invariant culture (whose CurrencySymbol is "¤"). Fixes the symbol leaking into
+// MudChart axis labels, KPI cards, and CSV exports in production.
+var enUs = CultureInfo.GetCultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture   = enUs;
+CultureInfo.DefaultThreadCurrentUICulture = enUs;
 
 var builder = WebApplication.CreateBuilder(args);
 
