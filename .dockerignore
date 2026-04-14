@@ -1,0 +1,45 @@
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+**/*.user
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# Tests + related — not shipped in the image
+AWBlazorApp.Tests/
+export/
+docs/
+
+# Dev/local files
+*.md
+!AWBlazorApp/_posts/**
+!AWBlazorApp/_pages/**
+!AWBlazorApp/_includes/**
+
+# Secrets (never in image)
+.env
+.env.*
+!.env.template
+**/secrets.json
+**/appsettings.Development.json
+
+# Scripts that aren't baked into the app
+scripts/
+deployment/
+
+# CI configs
+.github/
