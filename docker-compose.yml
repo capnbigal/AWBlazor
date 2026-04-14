@@ -1,0 +1,64 @@
+name: awblazor
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: awblazor-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:?set SA_PASSWORD in .env}"
+      MSSQL_PID: Developer
+      MSSQL_COLLATION: SQL_Latin1_General_CP1_CI_AS
+    ports:
+      # Bind to localhost only. Public access is deliberately blocked — use `ufw deny 1433`
+      # on the host as defense-in-depth.
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+      - ./backups:/backups
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: awblazor:${APP_TAG:-latest}
+    container_name: awblazor-app
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      # Connection string — overrides appsettings.json DefaultConnection.
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=AdventureWorks2022;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True"
+      # Feature flags (override as needed).
+      Features__Hangfire: "true"
+      Features__RateLimiting: "true"
+      # SMTP (set in .env on the droplet).
+      Smtp__Host: "${SMTP_HOST:-}"
+      Smtp__Port: "${SMTP_PORT:-587}"
+      Smtp__Username: "${SMTP_USERNAME:-}"
+      Smtp__Password: "${SMTP_PASSWORD:-}"
+      Smtp__FromEmail: "${SMTP_FROM_EMAIL:-noreply@alibalib.com}"
+      Smtp__FromName: "${SMTP_FROM_NAME:-AWBlazor}"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - appdata:/app/App_Data
+    restart: unless-stopped
+
+volumes:
+  sqldata:
+    name: awblazor-sqldata
+  appdata:
+    name: awblazor-appdata

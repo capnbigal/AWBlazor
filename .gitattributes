@@ -1,0 +1,25 @@
+# Normalize line endings across platforms.
+* text=auto
+
+# Shell scripts and Dockerfiles MUST stay LF — CRLF breaks Linux execution.
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+deployment/** text eol=lf
+
+# Nginx configs, YAML stay LF (they're consumed on Linux)
+*.conf text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary files that should never be diffed
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+*.bak binary
+*.dll binary
+*.exe binary
+*.pdb binary

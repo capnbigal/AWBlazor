@@ -184,6 +184,20 @@ SaveChanges calls. The 67 existing AdventureWorks endpoints currently use an inl
 `BeginTransactionAsync` / `CommitAsync` pattern (added during the post-review hardening pass) —
 those will be migrated to the helper as a follow-up cleanup. The runtime behavior is identical.
 
+## Deployment
+
+Production hosting: **DigitalOcean droplet** at `alibalib.com`, Docker Compose stack with SQL Server 2022 + the .NET 10 app behind host-level Nginx + Let's Encrypt.
+
+- `Dockerfile` + `docker-compose.yml` at repo root
+- Deployment scripts + runbook under `deployment/`
+- **First deploy**: follow `deployment/first-deploy.md`
+- **Rollback**: `deployment/rollback.md`
+- Production connection string comes from env var (`ConnectionStrings__DefaultConnection`), NOT from appsettings.json
+- SQL Server container binds to `127.0.0.1:1433` only; `ufw deny 1433` on host for defense-in-depth
+- SA password lives in `/opt/awblazor/.env` (`chmod 600`, never committed)
+- Nightly SQL backups via `deployment/backup-sqlserver.sh` cron job
+- DO snapshot is the canonical rollback point — always take one before any deploy
+
 ## Forward-looking work
 
 `docs/phase-plan.md` documents Phases 8-14 (deployment/CI, identity completeness, observability, AI chat, further hardening, performance, documentation). Phases 1-7 are complete; phases 8+ are forward-looking and independent — pick whichever applies to the user's current need.
