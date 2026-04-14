@@ -1,0 +1,33 @@
+@* Carousel dialog for product gallery. Shown when the user clicks a thumbnail. *@
+
+<MudDialog>
+    <DialogContent>
+        @if (PhotoIds.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No large photos available for this product.</MudAlert>
+        }
+        else
+        {
+            <MudCarousel T="int" ItemsSource="@PhotoIds" Style="height: 480px;" AutoCycle="false" ShowBullets="@(PhotoIds.Count > 1)" ShowArrows="@(PhotoIds.Count > 1)">
+                <ItemTemplate>
+                    <div class="d-flex align-center justify-center" style="height: 100%; background-color: var(--mud-palette-background-grey);">
+                        <img src="@($"/api/gallery/photos/{context}/large")" alt="product photo"
+                             style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                    </div>
+                </ItemTemplate>
+            </MudCarousel>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Title { get; set; } = "Product photos";
+    [Parameter] public List<int> PhotoIds { get; set; } = new();
+
+    private void Close() => MudDialog.Close();
+}
