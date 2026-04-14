@@ -1,0 +1,247 @@
+@page "/dashboard"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities
+@using AWBlazorApp.Services
+@using AWBlazorApp.Shared
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor.Charts
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SavedQueryRunner Runner
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Dashboard</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="2">
+        <div>
+            <MudText Typo="Typo.h4">My dashboard</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Pin any saved query as a tile. Reorder with the arrows, resize with the width dropdown.
+                Layout persists per user.
+            </MudText>
+        </div>
+        <MudSpacer />
+        <MudSelect T="int" Value="addQueryId" ValueChanged="AddCardAsync" Placeholder="+ Add a card"
+                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 260px;">
+            @foreach (var q in availableQueries)
+            {
+                <MudSelectItem T="int" Value="@q.Id">@q.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (items.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            Nothing pinned yet. Create saved queries on <MudLink Href="queries">Saved queries</MudLink>,
+            then add them here with the picker above.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @for (int i = 0; i < items.Count; i++)
+            {
+                var idx = i;
+                var card = items[idx];
+                <MudItem xs="12" md="@card.Item.Width">
+                    <MudPaper Elevation="2" Class="pa-4 mud-height-full dashboard-card"
+                              Style="@($"border-top: 4px solid {BorderColor(card)};")">
+                        <MudStack Spacing="2" Style="height: 100%;">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@card.Query.Name</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @SavedQueryRunner.MetricLabel(card.Query.Metric)
+                                        @if (card.Query.GroupBy != QueryGroupBy.None)
+                                        {
+                                            <text> · by @card.Query.GroupBy.ToString().ToLower()</text>
+                                        }
+                                    </MudText>
+                                </div>
+                                <MudSpacer />
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small"
+                                               Disabled="@(idx == 0)" OnClick="@(() => MoveAsync(card, -1))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small"
+                                               Disabled="@(idx == items.Count - 1)" OnClick="@(() => MoveAsync(card, 1))" />
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
+                                    <MudMenuItem OnClick="@(() => ResizeAsync(card, 3))">Quarter width</MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => ResizeAsync(card, 4))">Third width</MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => ResizeAsync(card, 6))">Half width</MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => ResizeAsync(card, 12))">Full width</MudMenuItem>
+                                    <MudDivider />
+                                    <MudMenuItem OnClick="@(() => RemoveAsync(card))">Remove</MudMenuItem>
+                                </MudMenu>
+                            </MudStack>
+
+                            <MudText Typo="Typo.h4" Class="kpi-value">@FormatValue(card)</MudText>
+
+                            @if (card.Query.GroupBy != QueryGroupBy.None && card.Result.Buckets.Count > 1)
+                            {
+                                <div style="flex: 1 1 auto; min-height: 160px;">
+                                    <MudChart T="double" ChartType="ChartType.Line"
+                                              Width="100%" Height="160px"
+                                              ChartSeries="@card.Series"
+                                              XAxisLabels="@card.Labels"
+                                              ChartOptions="@card.Options" />
+                                </div>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private string currentUserId = "";
+    private int addQueryId;
+
+    private List<Card> items = new();
+    private List<SavedQuery> availableQueries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(state.User);
+        if (user is null) { loading = false; return; }
+        currentUserId = user.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        availableQueries = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.SavedQueries.Where(q => q.UserId == currentUserId).OrderBy(q => q.Name));
+
+        var dashItems = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.DashboardItems.Where(d => d.UserId == currentUserId).OrderBy(d => d.DisplayOrder));
+
+        items.Clear();
+        foreach (var item in dashItems)
+        {
+            var q = availableQueries.FirstOrDefault(x => x.Id == item.SavedQueryId);
+            if (q is null) continue; // saved query was deleted; skip
+            try
+            {
+                var result = await Runner.RunAsync(q);
+                items.Add(BuildCard(item, q, result));
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to run '{q.Name}': {ex.Message}", Severity.Warning);
+            }
+        }
+        loading = false;
+    }
+
+    private static Card BuildCard(DashboardItem item, SavedQuery q, SavedQueryRunner.QueryResult result)
+    {
+        var isCurrency = SavedQueryRunner.IsCurrency(q.Metric);
+        var series = new List<ChartSeries<double>> { new() { Name = "Value", Data = result.Buckets.Select(b => b.Value).ToArray() } };
+        var labels = result.Buckets.Select(b => b.Period?.ToString(q.GroupBy switch
+        {
+            QueryGroupBy.Day     => "MMM d",
+            QueryGroupBy.Week    => "MMM d",
+            QueryGroupBy.Month   => "yyyy-MM",
+            QueryGroupBy.Quarter => "yyyy 'Q'",
+            QueryGroupBy.Year    => "yyyy",
+            _                    => "",
+        }) ?? "").ToArray();
+        var options = new LineChartOptions
+        {
+            YAxisFormat = "N0",
+            YAxisToStringFunc = isCurrency ? v => NumberFormat.CompactCurrency(v, 0) : v => NumberFormat.Compact(v, 0),
+        };
+        return new Card(item, q, result, series, labels, options);
+    }
+
+    private static string FormatValue(Card c) =>
+        SavedQueryRunner.IsCurrency(c.Query.Metric)
+            ? NumberFormat.CompactCurrency(c.Result.Scalar)
+            : NumberFormat.Compact(c.Result.Scalar);
+
+    private static string BorderColor(Card c)
+    {
+        if (!c.Query.Target.HasValue) return "var(--mud-palette-primary)";
+        return c.Result.Scalar >= c.Query.Target.Value
+            ? "var(--mud-palette-success)"
+            : "var(--mud-palette-error)";
+    }
+
+    private async Task AddCardAsync(int queryId)
+    {
+        if (queryId == 0) return;
+        addQueryId = 0;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var order = items.Count == 0 ? 0 : items.Max(i => i.Item.DisplayOrder) + 1;
+        var newItem = new DashboardItem
+        {
+            UserId = currentUserId,
+            SavedQueryId = queryId,
+            DisplayOrder = order,
+            Width = 6,
+        };
+        db.DashboardItems.Add(newItem);
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task MoveAsync(Card card, int delta)
+    {
+        var currentIdx = items.IndexOf(card);
+        var swapIdx = currentIdx + delta;
+        if (swapIdx < 0 || swapIdx >= items.Count) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var a = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.DashboardItems.Where(x => x.Id == card.Item.Id && x.UserId == currentUserId));
+        var b = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.DashboardItems.Where(x => x.Id == items[swapIdx].Item.Id && x.UserId == currentUserId));
+        if (a is null || b is null) return;
+
+        (a.DisplayOrder, b.DisplayOrder) = (b.DisplayOrder, a.DisplayOrder);
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task ResizeAsync(Card card, int width)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.DashboardItems.Where(x => x.Id == card.Item.Id && x.UserId == currentUserId));
+        if (row is null) return;
+        row.Width = width;
+        await db.SaveChangesAsync();
+        card.Item.Width = width;
+        StateHasChanged();
+    }
+
+    private async Task RemoveAsync(Card card)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.DashboardItems.Where(x => x.Id == card.Item.Id && x.UserId == currentUserId));
+        if (row is null) return;
+        db.DashboardItems.Remove(row);
+        await db.SaveChangesAsync();
+        items.Remove(card);
+        StateHasChanged();
+    }
+
+    private sealed record Card(
+        DashboardItem Item, SavedQuery Query, SavedQueryRunner.QueryResult Result,
+        List<ChartSeries<double>> Series, string[] Labels, LineChartOptions Options);
+}
