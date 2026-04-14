@@ -216,6 +216,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => x.DataSource);
             b.HasIndex(x => x.CreatedDate);
             b.HasIndex(x => x.DeletedDate);
+            // Composite: dashboard queries filter by Status + DeletedDate together.
+            b.HasIndex(x => new { x.Status, x.DeletedDate });
         });
 
         builder.Entity<ForecastDataPoint>(b =>
@@ -339,6 +341,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.ToTable("SecurityAuditLogs");
             b.HasIndex(x => x.UserId);
             b.HasIndex(x => x.Timestamp);
+            // Composite: per-user history queries order by Timestamp DESC.
+            b.HasIndex(x => new { x.UserId, x.Timestamp });
         });
 
         // ── AdventureWorks reference-data tables ────────────────────────────────────────────

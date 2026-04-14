@@ -500,6 +500,49 @@ public class IntegrationTest
         Assert.That(response.Headers.Location?.ToString(), Does.Contain("/Account/ForgotPasswordConfirmation"));
     }
 
+    [Test]
+    public async Task ResendEmailConfirmation_Form_Post_Returns_Confirmation_Message()
+    {
+        var client = factory.CreateClient();
+        var response = await FormPostHelper.PostFormAsync(client, "/Account/ResendEmailConfirmation", "resend-email-confirmation",
+            new Dictionary<string, string>
+            {
+                ["Input.Email"] = "definitely-not-a-real-user@example.com",
+            });
+
+        // The page should render success regardless (don't reveal whether the email exists).
+        Assert.That(response.IsSuccessStatusCode, Is.True,
+            $"Expected page to re-render, got {(int)response.StatusCode}");
+    }
+
+    [Test]
+    public async Task Auth_Endpoint_Rate_Limiter_Returns_429_After_Threshold()
+    {
+        // Auth limiter is 5 req/min. Fire 10 rapid requests; at least one should hit 429.
+        // Use a unique IP/cookie via a fresh client per request to avoid sharing rate buckets.
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        var statusCodes = new List<HttpStatusCode>();
+        for (var i = 0; i < 10; i++)
+        {
+            // POST a deliberately invalid login so we don't trigger Identity sign-ins.
+            var response = await FormPostHelper.PostFormAsync(client, "/Account/Login", "login",
+                new Dictionary<string, string>
+                {
+                    ["Input.Email"] = $"ratelimit-{i}@example.com",
+                    ["Input.Password"] = "wrong-password",
+                    ["Input.RememberMe"] = "false",
+                });
+            statusCodes.Add(response.StatusCode);
+        }
+
+        Assert.That(statusCodes, Has.Some.EqualTo(HttpStatusCode.TooManyRequests),
+            $"Expected at least one 429 from rate limiter after 10 requests. Got: [{string.Join(", ", statusCodes.Select(c => (int)c))}]");
+    }
+
     // ── API key auth tests ──────────────────────────────────────────────────────────────────
     // The Phase 4 ApiKeyAuthenticationHandler had zero coverage. Seed an ApiKey for the seeded
     // admin user, then exercise the X-Api-Key header against /api/forecasts.

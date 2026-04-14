@@ -133,6 +133,7 @@ public static class ServiceRegistration
         services.Configure<SmtpConfig>(configuration.GetSection("Smtp"));
         services.AddTransient<SmtpEmailJob>();
         services.AddTransient<RequestLogCleanupJob>();
+        services.AddTransient<AuditLogCleanupJob>();
         services.AddTransient<ApiKeyHashMigrationJob>();
         services.AddTransient<ProcessSchedulerJob>();
 

@@ -146,13 +146,22 @@ else if (definition is not null)
 
         if (definition is null) { loading = false; return; }
 
+        // Cap each load to MaxRowsPerView. For long-running forecasts with thousands of
+        // historical points, eagerly loading everything blows up memory when many expand-rows
+        // are open at once.
+        const int MaxRowsPerView = 500;
+
         snapshots = await db.ForecastHistoricalSnapshots.AsNoTracking()
             .Where(s => s.ForecastDefinitionId == ForecastId)
+            .OrderByDescending(s => s.PeriodDate)
+            .Take(MaxRowsPerView)
             .OrderBy(s => s.PeriodDate)
             .ToListAsync();
 
         dataPoints = await db.ForecastDataPoints.AsNoTracking()
             .Where(dp => dp.ForecastDefinitionId == ForecastId)
+            .OrderByDescending(dp => dp.PeriodDate)
+            .Take(MaxRowsPerView)
             .OrderBy(dp => dp.PeriodDate)
             .ToListAsync();
 

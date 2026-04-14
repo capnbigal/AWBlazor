@@ -16,11 +16,36 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # Cache NuGet packages between runs.
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore
         run: dotnet restore AWBlazorApp.slnx
 
       - name: Build
-        run: dotnet build AWBlazorApp.slnx --no-restore
+        run: dotnet build AWBlazorApp.slnx --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test AWBlazorApp.slnx --no-build --verbosity normal
+      # Tests require SQL Server; in CI we only build (integration tests run against ELITE locally).
+      # If a CI SQL Server instance becomes available, add:
+      #   --collect:"XPlat Code Coverage" --logger:"trx;LogFileName=test-results.trx" --blame-hang-timeout=10min
+      # plus an upload-artifact step for the .trx and coverage.cobertura.xml files.
+
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore AWBlazorApp.slnx
+      - name: List vulnerable packages
+        run: dotnet list AWBlazorApp.slnx package --vulnerable --include-transitive
+        continue-on-error: true

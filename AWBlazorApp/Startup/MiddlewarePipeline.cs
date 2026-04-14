@@ -135,6 +135,11 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 Cron.Daily(3, 0));
 
+            RecurringJob.AddOrUpdate<AuditLogCleanupJob>(
+                "audit-log-cleanup",
+                job => job.ExecuteAsync(),
+                Cron.Daily(3, 30));
+
             RecurringJob.AddOrUpdate<AWBlazorApp.Services.Forecasting.ForecastEvaluationJob>(
                 "forecast-evaluation",
                 job => job.ExecuteAsync(),
