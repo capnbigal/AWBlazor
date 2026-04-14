@@ -1,0 +1,265 @@
+@page "/queries"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities
+@using AWBlazorApp.Services
+@using AWBlazorApp.Shared
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor.Charts
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SavedQueryRunner Runner
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Saved queries</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <div>
+            <MudText Typo="Typo.h4">Saved queries</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Reusable named queries over AdventureWorks data. Pick a metric, bucket by time,
+                optionally filter by date — then save to run again later (or pin to your dashboard
+                in a follow-up PR).
+            </MudText>
+        </div>
+        <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenNew">New query</MudButton>
+    </MudStack>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (queries.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No saved queries yet. Click "New query" to build one.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var q in queries)
+            {
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2" Class="mud-height-full">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@q.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @SavedQueryRunner.MetricLabel(q.Metric)
+                                    · grouped by @(q.GroupBy == QueryGroupBy.None ? "none" : q.GroupBy.ToString().ToLower())
+                                    @if (q.FromDate.HasValue || q.ToDate.HasValue)
+                                    {
+                                        <text> · </text>
+                                        @($"{q.FromDate?.ToString("yyyy-MM-dd") ?? "…"} to {q.ToDate?.ToString("yyyy-MM-dd") ?? "…"}")
+                                    }
+                                </MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" OnClick="@(() => RunAsync(q))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEdit(q))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(q))" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            @if (results.TryGetValue(q.Id, out var res))
+                            {
+                                <MudStack Spacing="2">
+                                    <MudText Typo="Typo.h4">@FormatValue(q.Metric, res.Scalar)</MudText>
+                                    @if (q.GroupBy != QueryGroupBy.None && res.Buckets.Count > 1)
+                                    {
+                                        <MudChart T="double" ChartType="ChartType.Line"
+                                                  Width="100%" Height="200px"
+                                                  ChartSeries="@BuildSeries(res)"
+                                                  XAxisLabels="@BuildLabels(res)"
+                                                  ChartOptions="@BuildOptions(q.Metric)" />
+                                    }
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        Last run @q.LastRunDate?.ToString("yyyy-MM-dd HH:mm") · @res.Buckets.Count points
+                                    </MudText>
+                                </MudStack>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Click ▶ to run this query.</MudText>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@if (editing is not null)
+{
+    <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
+        <TitleContent>@(editing.Id == 0 ? "New saved query" : "Edit saved query")</TitleContent>
+        <DialogContent>
+            <MudStack Spacing="3">
+                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
+                <MudSelect T="QueryMetric" @bind-Value="editing.Metric" Label="Metric" Variant="Variant.Outlined">
+                    @foreach (var m in Enum.GetValues<QueryMetric>())
+                    {
+                        <MudSelectItem T="QueryMetric" Value="@m">@SavedQueryRunner.MetricLabel(m)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="QueryGroupBy" @bind-Value="editing.GroupBy" Label="Group by" Variant="Variant.Outlined">
+                    @foreach (var g in Enum.GetValues<QueryGroupBy>())
+                    {
+                        <MudSelectItem T="QueryGroupBy" Value="@g">@g</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudStack Row="true" Spacing="2">
+                    <MudDatePicker @bind-Date="editing.FromDate" Label="From (optional)" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="editing.ToDate" Label="To (optional)" Variant="Variant.Outlined" />
+                </MudStack>
+            </MudStack>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(() => { dialogOpen = false; editing = null; })">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private List<SavedQuery> queries = new();
+    private readonly Dictionary<int, SavedQueryRunner.QueryResult> results = new();
+    private bool loading = true;
+    private SavedQuery? editing;
+    private bool dialogOpen;
+    private string currentUserId = "";
+    private readonly DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(state.User);
+        if (user is null) { loading = false; return; }
+        currentUserId = user.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        queries = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.SavedQueries.Where(q => q.UserId == currentUserId).OrderByDescending(q => q.Id));
+        loading = false;
+    }
+
+    private void OpenNew()
+    {
+        editing = new SavedQuery
+        {
+            UserId = currentUserId,
+            Name = "Monthly revenue",
+            Metric = QueryMetric.TotalSalesRevenue,
+            GroupBy = QueryGroupBy.Month,
+        };
+        dialogOpen = true;
+    }
+
+    private void OpenEdit(SavedQuery q)
+    {
+        editing = new SavedQuery
+        {
+            Id = q.Id, UserId = q.UserId, Name = q.Name,
+            Metric = q.Metric, GroupBy = q.GroupBy,
+            FromDate = q.FromDate, ToDate = q.ToDate,
+            CreatedDate = q.CreatedDate, LastRunDate = q.LastRunDate,
+        };
+        dialogOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (editing is null) return;
+        if (string.IsNullOrWhiteSpace(editing.Name)) { Snackbar.Add("Name is required.", Severity.Warning); return; }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        if (editing.Id == 0)
+        {
+            db.SavedQueries.Add(editing);
+        }
+        else
+        {
+            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.SavedQueries.Where(x => x.Id == editing.Id && x.UserId == currentUserId));
+            if (existing is null) { Snackbar.Add("Query not found.", Severity.Error); return; }
+            existing.Name = editing.Name;
+            existing.Metric = editing.Metric;
+            existing.GroupBy = editing.GroupBy;
+            existing.FromDate = editing.FromDate;
+            existing.ToDate = editing.ToDate;
+        }
+        await db.SaveChangesAsync();
+
+        dialogOpen = false; editing = null;
+        await LoadAsync();
+    }
+
+    private async Task RunAsync(SavedQuery q)
+    {
+        try
+        {
+            var result = await Runner.RunAsync(q);
+            results[q.Id] = result;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.SavedQueries.Where(x => x.Id == q.Id && x.UserId == currentUserId));
+            if (existing is not null)
+            {
+                existing.LastRunDate = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+                q.LastRunDate = existing.LastRunDate;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Query failed: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(SavedQuery q)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.SavedQueries.Where(x => x.Id == q.Id && x.UserId == currentUserId));
+        if (existing is null) return;
+        db.SavedQueries.Remove(existing);
+        await db.SaveChangesAsync();
+        queries.Remove(q);
+        results.Remove(q.Id);
+    }
+
+    private static string FormatValue(QueryMetric metric, double value) =>
+        SavedQueryRunner.IsCurrency(metric)
+            ? NumberFormat.CompactCurrency(value)
+            : NumberFormat.Compact(value);
+
+    private static List<ChartSeries<double>> BuildSeries(SavedQueryRunner.QueryResult res) =>
+        new() { new ChartSeries<double> { Name = "Value", Data = res.Buckets.Select(b => b.Value).ToArray() } };
+
+    private static string[] BuildLabels(SavedQueryRunner.QueryResult res) =>
+        res.Buckets.Select(b => b.Period?.ToString(res.GroupBy switch
+        {
+            QueryGroupBy.Day     => "MMM d",
+            QueryGroupBy.Week    => "MMM d",
+            QueryGroupBy.Month   => "yyyy-MM",
+            QueryGroupBy.Quarter => "yyyy 'Q'",
+            QueryGroupBy.Year    => "yyyy",
+            _                    => "",
+        }) ?? "").ToArray();
+
+    private static IChartOptions BuildOptions(QueryMetric metric) => new LineChartOptions
+    {
+        YAxisFormat = "N0",
+        YAxisToStringFunc = SavedQueryRunner.IsCurrency(metric)
+            ? v => NumberFormat.CompactCurrency(v, 0)
+            : v => NumberFormat.Compact(v, 0),
+    };
+}
