@@ -241,6 +241,7 @@ public static class ServiceRegistration
         services.AddSingleton<AnalyticsCacheService>();
         services.AddSingleton<NotificationService>();
         services.AddScoped<NotificationRuleEvaluator>();
+        services.AddScoped<SavedQueryRunner>();
         services.AddSingleton<UserGuideService>();
         services.AddSingleton<LookupService>();
         services.AddScoped<IPermissionService, PermissionService>();
