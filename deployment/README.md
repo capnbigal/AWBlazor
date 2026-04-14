@@ -8,6 +8,7 @@ Self-hosted deployment of AWBlazorApp to a single Linux droplet using Docker Com
 |---|---|
 | [`first-deploy.md`](./first-deploy.md) | Step-by-step runbook for the initial cutover |
 | [`rollback.md`](./rollback.md) | How to revert if deployment goes sideways |
+| [`commands.md`](./commands.md) | Glossary of the droplet/docker/nginx commands used most often |
 | [`nginx-awblazor.conf`](./nginx-awblazor.conf) | Nginx reverse-proxy config (installed on host) |
 | [`backup-sqlserver.sh`](./backup-sqlserver.sh) | Cron-driven daily `.bak` backup script |
 | [`restore-sqlserver.sh`](./restore-sqlserver.sh) | One-shot restore-from-bak utility |
