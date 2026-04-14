@@ -1,0 +1,179 @@
+@page "/kpis"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities
+@using AWBlazorApp.Services
+@using AWBlazorApp.Shared
+@using Microsoft.AspNetCore.Identity
+@using MudBlazor.Charts
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SavedQueryRunner Runner
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+
+<PageTitle>KPIs</PageTitle>
+
+<MudStack Spacing="4">
+    <div>
+        <MudText Typo="Typo.h4">KPI dashboard</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            Every saved query with <strong>IsKpi</strong> enabled shows here. Sparkline shows the last
+            90 days of hourly snapshots; target (if set) colors the tile.
+        </MudText>
+    </div>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (tiles.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            No KPIs yet. Go to <MudLink Href="queries">Saved queries</MudLink>, create one, then toggle the "KPI" switch on edit.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var tile in tiles)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudPaper Elevation="2" Class="pa-4 kpi-tile mud-height-full"
+                              Style="@($"border-top: 4px solid {TargetColor(tile)};")">
+                        <MudStack Spacing="2" Style="height: 100%;">
+                            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="kpi-label">@tile.Query.Name</MudText>
+                            <MudText Typo="Typo.h4" Class="kpi-value">@FormatValue(tile)</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @SavedQueryRunner.MetricLabel(tile.Query.Metric)
+                                @if (tile.Query.Target.HasValue)
+                                {
+                                    <text> · target @FormatTarget(tile)</text>
+                                }
+                            </MudText>
+                            @if (tile.History.Count > 1)
+                            {
+                                <div style="flex: 1 1 auto; min-height: 60px;">
+                                    <MudChart T="double" ChartType="ChartType.Line"
+                                              Width="100%" Height="60px"
+                                              ChartSeries="@tile.Series"
+                                              XAxisLabels="@tile.Labels"
+                                              ChartOptions="@tile.Options" />
+                                </div>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="margin-top: auto;">
+                                    Awaiting snapshots. Next hourly run adds the first data point.
+                                </MudText>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private string currentUserId = "";
+    private readonly List<KpiTile> tiles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(state.User);
+        if (user is null) { loading = false; return; }
+        currentUserId = user.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var queries = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.SavedQueries.Where(q => q.UserId == currentUserId && q.IsKpi).OrderBy(q => q.Name));
+
+        tiles.Clear();
+
+        var cutoff = DateTime.UtcNow.AddDays(-90);
+        var queryIds = queries.Select(q => q.Id).ToList();
+        var snapshots = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.KpiSnapshots
+                .Where(s => queryIds.Contains(s.SavedQueryId) && s.Timestamp >= cutoff)
+                .OrderBy(s => s.Timestamp));
+
+        foreach (var q in queries)
+        {
+            var history = snapshots.Where(s => s.SavedQueryId == q.Id).ToList();
+
+            // If there are no snapshots yet, run the query live so the tile isn't empty.
+            double currentValue;
+            if (history.Count == 0)
+            {
+                try
+                {
+                    var live = await Runner.RunAsync(new SavedQuery
+                    {
+                        Metric = q.Metric, GroupBy = QueryGroupBy.None,
+                        FromDate = q.FromDate, ToDate = q.ToDate,
+                    });
+                    currentValue = live.Scalar;
+                }
+                catch
+                {
+                    currentValue = 0;
+                }
+            }
+            else
+            {
+                currentValue = history[^1].Value;
+            }
+
+            var isCurrency = SavedQueryRunner.IsCurrency(q.Metric);
+            var series = new List<ChartSeries<double>>
+            {
+                new() { Name = "Value", Data = history.Select(s => s.Value).ToArray() },
+            };
+            var labels = history.Select(s => s.Timestamp.ToString("MM-dd HH:mm")).ToArray();
+            var options = new LineChartOptions
+            {
+                YAxisFormat = "N0",
+                YAxisToStringFunc = isCurrency ? v => NumberFormat.CompactCurrency(v, 0) : v => NumberFormat.Compact(v, 0),
+                ShowDataMarkers = false,
+                LineStrokeWidth = 2,
+            };
+
+            tiles.Add(new KpiTile(q, currentValue, history, series, labels, options));
+        }
+
+        loading = false;
+    }
+
+    private static string FormatValue(KpiTile tile) =>
+        SavedQueryRunner.IsCurrency(tile.Query.Metric)
+            ? NumberFormat.CompactCurrency(tile.CurrentValue)
+            : NumberFormat.Compact(tile.CurrentValue);
+
+    private static string FormatTarget(KpiTile tile) =>
+        SavedQueryRunner.IsCurrency(tile.Query.Metric)
+            ? NumberFormat.CompactCurrency(tile.Query.Target ?? 0)
+            : NumberFormat.Compact(tile.Query.Target ?? 0);
+
+    private static string TargetColor(KpiTile tile)
+    {
+        if (!tile.Query.Target.HasValue) return "var(--mud-palette-primary)";
+        return tile.CurrentValue >= tile.Query.Target.Value
+            ? "var(--mud-palette-success)"
+            : "var(--mud-palette-error)";
+    }
+
+    private sealed record KpiTile(
+        SavedQuery Query,
+        double CurrentValue,
+        List<KpiSnapshot> History,
+        List<ChartSeries<double>> Series,
+        string[] Labels,
+        LineChartOptions Options);
+}

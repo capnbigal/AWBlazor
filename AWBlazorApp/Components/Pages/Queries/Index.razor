@@ -114,6 +114,11 @@
                     <MudDatePicker @bind-Date="editing.FromDate" Label="From (optional)" Variant="Variant.Outlined" />
                     <MudDatePicker @bind-Date="editing.ToDate" Label="To (optional)" Variant="Variant.Outlined" />
                 </MudStack>
+                <MudDivider />
+                <MudSwitch T="bool" @bind-Value="editing.IsKpi" Color="Color.Success"
+                           Label="Track as KPI (hourly snapshots + /kpis tile)" />
+                <MudNumericField T="double?" @bind-Value="editing.Target" Label="Target (optional)"
+                                 Variant="Variant.Outlined" HelperText="Tiles color green if met, red if not." />
             </MudStack>
         </DialogContent>
         <DialogActions>
@@ -170,6 +175,7 @@
             Metric = q.Metric, GroupBy = q.GroupBy,
             FromDate = q.FromDate, ToDate = q.ToDate,
             CreatedDate = q.CreatedDate, LastRunDate = q.LastRunDate,
+            IsKpi = q.IsKpi, Target = q.Target,
         };
         dialogOpen = true;
     }
@@ -194,6 +200,8 @@
             existing.GroupBy = editing.GroupBy;
             existing.FromDate = editing.FromDate;
             existing.ToDate = editing.ToDate;
+            existing.IsKpi = editing.IsKpi;
+            existing.Target = editing.Target;
         }
         await db.SaveChangesAsync();
 

@@ -29,6 +29,16 @@ public class SavedQuery
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     public DateTime? LastRunDate { get; set; }
+
+    /// <summary>
+    /// When true, the KPI snapshot job records this query's scalar result every hour into
+    /// <see cref="KpiSnapshot"/>, enabling time-series history and sparkline rendering on the
+    /// KPI tile.
+    /// </summary>
+    public bool IsKpi { get; set; }
+
+    /// <summary>Optional target value used to color the tile (green when met, red when not).</summary>
+    public double? Target { get; set; }
 }
 
 public enum QueryMetric
