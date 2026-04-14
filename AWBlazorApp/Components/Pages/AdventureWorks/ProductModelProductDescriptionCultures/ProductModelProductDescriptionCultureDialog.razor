@@ -67,6 +67,7 @@
 
             var changedBy = await GetCurrentUserNameAsync();
             var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
             db.ProductModelProductDescriptionCultures.Add(entity);
             try
             {
@@ -79,6 +80,7 @@
             }
             db.ProductModelProductDescriptionCultureAuditLogs.Add(ProductModelProductDescriptionCultureAuditService.RecordCreate(entity, changedBy));
             await db.SaveChangesAsync();
+            await tx.CommitAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
         finally { saving = false; }

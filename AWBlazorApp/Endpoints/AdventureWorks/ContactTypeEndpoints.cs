@@ -59,10 +59,12 @@ public static class ContactTypeEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ContactTypes.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ContactTypeAuditLogs.Add(ContactTypeAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/contact-types/{entity.Id}", new IdResponse(entity.Id));
     }
 

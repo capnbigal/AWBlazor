@@ -60,10 +60,12 @@ public static class VendorEndpoints
             return TypedResults.Conflict($"Vendor with BusinessEntityId {request.Id} already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Vendors.Add(entity);
         await db.SaveChangesAsync(ct);
         db.VendorAuditLogs.Add(VendorAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/vendors/{entity.Id}", new IdResponse(entity.Id));
     }
 

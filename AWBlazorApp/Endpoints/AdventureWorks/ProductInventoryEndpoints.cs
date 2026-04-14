@@ -69,10 +69,12 @@ public static class ProductInventoryEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductInventories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductInventoryAuditLogs.Add(ProductInventoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/product-inventories/by-key?productId={entity.ProductId}&locationId={entity.LocationId}",
             new CompositeKeyResponse(new Dictionary<string, object>

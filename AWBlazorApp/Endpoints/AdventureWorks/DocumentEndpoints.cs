@@ -73,6 +73,7 @@ public static class DocumentEndpoints
             return TypedResults.Conflict($"Document with DocumentNode '{request.DocumentNode}' already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Documents.Add(entity);
         await db.SaveChangesAsync(ct);
 
@@ -80,6 +81,7 @@ public static class DocumentEndpoints
         var reloaded = await db.Documents.AsNoTracking().FirstAsync(x => x.DocumentNode == entity.DocumentNode, ct);
         db.DocumentAuditLogs.Add(DocumentAuditService.RecordCreate(reloaded, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/documents/by-key?documentNode={Uri.EscapeDataString(entity.DocumentNode.ToString())}",
             new StringIdResponse(entity.DocumentNode.ToString()));

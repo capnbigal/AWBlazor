@@ -93,11 +93,13 @@ public static class ToolSlotConfigurationEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ToolSlotConfigurations.Add(entity);
         await db.SaveChangesAsync(ct);
 
         db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
 
         return TypedResults.Created($"/api/tool-slots/{entity.Id}", new IdResponse(entity.Id));
     }

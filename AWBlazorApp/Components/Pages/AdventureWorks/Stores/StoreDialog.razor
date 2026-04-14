@@ -76,6 +76,7 @@
                 if (createModel.SalesPersonId.HasValue && !await db.SalesPersons.AnyAsync(x => x.Id == createModel.SalesPersonId.Value))
                 { Snackbar.Add($"Sales person #{createModel.SalesPersonId.Value} does not exist.", Severity.Error); return; }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Stores.Add(entity);
                 try
                 {
@@ -88,6 +89,7 @@
                 }
                 db.StoreAuditLogs.Add(StoreAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else

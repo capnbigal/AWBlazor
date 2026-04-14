@@ -56,10 +56,12 @@ public static class ScrapReasonEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ScrapReasons.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ScrapReasonAuditLogs.Add(ScrapReasonAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/scrap-reasons/{entity.Id}", new IdResponse(entity.Id));
     }
 

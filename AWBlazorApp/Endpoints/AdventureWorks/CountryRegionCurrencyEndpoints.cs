@@ -70,11 +70,13 @@ public static class CountryRegionCurrencyEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.CountryRegionCurrencies.Add(entity);
         await db.SaveChangesAsync(ct);
         db.CountryRegionCurrencyAuditLogs.Add(
             CountryRegionCurrencyAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/country-region-currencies/by-key?countryRegionCode={entity.CountryRegionCode}&currencyCode={entity.CurrencyCode}",
             new CompositeKeyResponse(new Dictionary<string, object>

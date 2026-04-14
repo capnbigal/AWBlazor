@@ -86,11 +86,13 @@ public static class AddressTypeEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.AddressTypes.Add(entity);
         await db.SaveChangesAsync(ct);
 
         db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
 
         return TypedResults.Created($"/api/aw/address-types/{entity.Id}", new IdResponse(entity.Id));
     }

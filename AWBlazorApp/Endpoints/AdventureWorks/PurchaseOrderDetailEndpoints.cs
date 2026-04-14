@@ -61,10 +61,12 @@ public static class PurchaseOrderDetailEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.PurchaseOrderDetails.Add(entity);
         await db.SaveChangesAsync(ct);
         db.PurchaseOrderDetailAuditLogs.Add(PurchaseOrderDetailAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/purchase-order-details/by-key?purchaseOrderId={entity.PurchaseOrderId}&purchaseOrderDetailId={entity.PurchaseOrderDetailId}",
             new CompositeKeyResponse(new Dictionary<string, object>

@@ -71,6 +71,7 @@
                 if (await db.SalesTerritoryHistories.AnyAsync(x => x.BusinessEntityId == createModel.BusinessEntityId && x.StartDate == createModel.StartDate && x.TerritoryId == createModel.TerritoryId))
                 { Snackbar.Add("Assignment already exists.", Severity.Error); return; }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.SalesTerritoryHistories.Add(entity);
                 try
                 {
@@ -83,6 +84,7 @@
                 }
                 db.SalesTerritoryHistoryAuditLogs.Add(SalesTerritoryHistoryAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else

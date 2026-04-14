@@ -59,10 +59,12 @@ public static class CurrencyRateEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.CurrencyRates.Add(entity);
         await db.SaveChangesAsync(ct);
         db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/currency-rates/{entity.Id}", new IdResponse(entity.Id));
     }
 

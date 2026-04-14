@@ -63,6 +63,7 @@ public static class SalesOrderDetailEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesOrderDetails.Add(entity);
         await db.SaveChangesAsync(ct);
         // Re-query to pick up computed LineTotal and the identity SalesOrderDetailId.
@@ -70,6 +71,7 @@ public static class SalesOrderDetailEndpoints
             .FirstAsync(x => x.SalesOrderId == entity.SalesOrderId && x.SalesOrderDetailId == entity.SalesOrderDetailId, ct);
         db.SalesOrderDetailAuditLogs.Add(SalesOrderDetailAuditService.RecordCreate(reloaded, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/sales-order-details/by-key?salesOrderId={entity.SalesOrderId}&salesOrderDetailId={entity.SalesOrderDetailId}",
             new CompositeKeyResponse(new Dictionary<string, object>

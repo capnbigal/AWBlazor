@@ -62,10 +62,12 @@ public static class PersonEndpoints
             return TypedResults.Conflict($"Person with BusinessEntityId {request.Id} already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Persons.Add(entity);
         await db.SaveChangesAsync(ct);
         db.PersonAuditLogs.Add(PersonAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/persons/{entity.Id}", new IdResponse(entity.Id));
     }
 

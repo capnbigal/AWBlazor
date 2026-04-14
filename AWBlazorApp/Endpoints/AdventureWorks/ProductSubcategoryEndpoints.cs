@@ -57,10 +57,12 @@ public static class ProductSubcategoryEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductSubcategories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductSubcategoryAuditLogs.Add(ProductSubcategoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/product-subcategories/{entity.Id}", new IdResponse(entity.Id));
     }
 

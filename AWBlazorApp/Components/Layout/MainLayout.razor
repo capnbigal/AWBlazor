@@ -59,15 +59,24 @@
 </MudLayout>
 
 @code {
-    [CascadingParameter(Name = "InitialDarkMode")]
-    private bool InitialDarkMode { get; set; }
-
     private bool _isDarkMode;
     private bool _drawerOpen = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _isDarkMode = InitialDarkMode;
+        if (firstRender)
+        {
+            try
+            {
+                _isDarkMode = await JS.InvokeAsync<bool>("getDarkModeCookie");
+                StateHasChanged();
+            }
+            catch (JSException)
+            {
+                // JS not ready yet — the inline <head> script handles the visual state,
+                // so light mode is a safe default until the user toggles.
+            }
+        }
     }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;

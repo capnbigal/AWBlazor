@@ -3,6 +3,7 @@
 @using AWBlazorApp.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUser> UserManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
 
 <PageTitle>Users</PageTitle>
 
@@ -59,12 +60,20 @@
             .Take(state.PageSize)
             .ToListAsync(ct);
 
-        var rows = new List<UserRow>(users.Count);
-        foreach (var u in users)
-        {
-            var roles = await UserManager.GetRolesAsync(u);
-            rows.Add(new UserRow(u.Id, u.UserName, u.Email, u.DisplayName, u.EmailConfirmed, string.Join(", ", roles)));
-        }
+        // Batch-load all user→role mappings in a single query instead of one per user.
+        // (UserManager.GetRolesAsync hits the DB per call — N+1 pattern at scale.)
+        var userIds = users.Select(u => u.Id).ToList();
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var rolesByUser = await db.UserRoles
+            .Where(ur => userIds.Contains(ur.UserId))
+            .Join(db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name })
+            .GroupBy(x => x.UserId)
+            .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.RoleName).ToList(), ct);
+
+        var rows = users.Select(u => new UserRow(
+            u.Id, u.UserName, u.Email, u.DisplayName, u.EmailConfirmed,
+            rolesByUser.TryGetValue(u.Id, out var roles) ? string.Join(", ", roles) : ""
+        )).ToList();
 
         return new GridData<UserRow> { Items = rows, TotalItems = total };
     }

@@ -100,23 +100,26 @@
 
     private async Task LoadDataAsync()
     {
-        // Load all users with roles
-        var allUsers = UserManager.Users.OrderBy(u => u.Email).ToList();
-        users = [];
-        foreach (var u in allUsers)
+        // Load all users + roles in 2 queries (no N+1).
+        var allUsers = await UserManager.Users.AsNoTracking().OrderBy(u => u.Email).ToListAsync();
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var userIds = allUsers.Select(u => u.Id).ToList();
+        var rolesByUser = await db.UserRoles
+            .Where(ur => userIds.Contains(ur.UserId))
+            .Join(db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name })
+            .GroupBy(x => x.UserId)
+            .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.RoleName).ToList());
+
+        users = allUsers.Select(u => new UserRow
         {
-            var roles = await UserManager.GetRolesAsync(u);
-            users.Add(new UserRow
-            {
-                Id = u.Id,
-                Email = u.Email ?? "",
-                DisplayName = u.DisplayName ?? u.Email ?? u.Id,
-                RolesText = string.Join(", ", roles),
-            });
-        }
+            Id = u.Id,
+            Email = u.Email ?? "",
+            DisplayName = u.DisplayName ?? u.Email ?? u.Id,
+            RolesText = rolesByUser.TryGetValue(u.Id, out var roles) ? string.Join(", ", roles) : "",
+        }).ToList();
 
         // Load all explicit grants
-        await using var db = await DbFactory.CreateDbContextAsync();
         var grants = await db.UserAreaPermissions.AsNoTracking().ToListAsync();
         explicitGrants = grants.ToDictionary(g => (g.UserId, g.Area), g => g.PermissionLevel);
 

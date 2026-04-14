@@ -94,6 +94,7 @@
                 { Snackbar.Add($"Product #{createModel.ProductId} does not exist.", Severity.Error); return; }
 
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.ShoppingCartItems.Add(entity);
                 try
                 {
@@ -106,6 +107,7 @@
                 }
                 db.ShoppingCartItemAuditLogs.Add(ShoppingCartItemAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else

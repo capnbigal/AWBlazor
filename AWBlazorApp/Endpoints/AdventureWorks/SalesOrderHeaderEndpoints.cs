@@ -59,12 +59,14 @@ public static class SalesOrderHeaderEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesOrderHeaders.Add(entity);
         await db.SaveChangesAsync(ct);
         // Re-query to pick up computed SalesOrderNumber and TotalDue.
         var reloaded = await db.SalesOrderHeaders.AsNoTracking().FirstAsync(x => x.Id == entity.Id, ct);
         db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordCreate(reloaded, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/sales-order-headers/{entity.Id}", new IdResponse(entity.Id));
     }
 

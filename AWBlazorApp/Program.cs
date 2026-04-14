@@ -64,6 +64,8 @@ services.AddApplicationIdentity(configuration);
 services.AddHangfireServices(configuration, connectionString);
 services.AddForecastingServices();
 services.AddApplicationRateLimiting();
+services.AddApplicationHsts();
+services.AddApplicationCookieHardening();
 services.AddBlazorAndServices();
 
 var app = builder.Build();

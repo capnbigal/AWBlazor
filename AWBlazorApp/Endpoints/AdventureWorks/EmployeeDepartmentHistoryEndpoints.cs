@@ -82,11 +82,13 @@ public static class EmployeeDepartmentHistoryEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.EmployeeDepartmentHistories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.EmployeeDepartmentHistoryAuditLogs.Add(
             EmployeeDepartmentHistoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/employee-department-histories/by-key?businessEntityId={entity.BusinessEntityId}&departmentId={entity.DepartmentId}&shiftId={entity.ShiftId}&startDate={entity.StartDate:yyyy-MM-dd}",
             new CompositeKeyResponse(new Dictionary<string, object>

@@ -69,10 +69,12 @@ public static class SalesTerritoryHistoryEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesTerritoryHistories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SalesTerritoryHistoryAuditLogs.Add(SalesTerritoryHistoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/sales-territory-histories/by-key?businessEntityId={entity.BusinessEntityId}&startDate={entity.StartDate:O}&territoryId={entity.TerritoryId}",
             new CompositeKeyResponse(new Dictionary<string, object>

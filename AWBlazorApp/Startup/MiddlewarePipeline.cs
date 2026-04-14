@@ -22,6 +22,8 @@ public static class MiddlewarePipeline
         else
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
+            // HSTS: 1-year max-age + includeSubDomains. Tells browsers to only ever connect
+            // via HTTPS, mitigating downgrade attacks. Default .NET value is only 30 days.
             app.UseHsts();
         }
 

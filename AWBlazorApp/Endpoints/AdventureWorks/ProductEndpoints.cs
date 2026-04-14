@@ -58,10 +58,12 @@ public static class ProductEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Products.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductAuditLogs.Add(ProductAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/products/{entity.Id}", new IdResponse(entity.Id));
     }
 

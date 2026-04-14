@@ -77,10 +77,12 @@ public static class PersonPhoneEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.PersonPhones.Add(entity);
         await db.SaveChangesAsync(ct);
         db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/person-phones/by-key?businessEntityId={entity.BusinessEntityId}&phoneNumber={Uri.EscapeDataString(entity.PhoneNumber)}&phoneNumberTypeId={entity.PhoneNumberTypeId}",
             new CompositeKeyResponse(new Dictionary<string, object>

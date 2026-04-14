@@ -93,6 +93,7 @@
                 { Snackbar.Add($"Special offer #{createModel.SpecialOfferId} does not exist.", Severity.Error); return; }
 
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.SalesOrderDetails.Add(entity);
                 try
                 {

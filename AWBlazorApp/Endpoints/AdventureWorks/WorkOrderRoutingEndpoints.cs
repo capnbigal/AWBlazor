@@ -71,11 +71,13 @@ public static class WorkOrderRoutingEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.WorkOrderRoutings.Add(entity);
         await db.SaveChangesAsync(ct);
         db.WorkOrderRoutingAuditLogs.Add(
             WorkOrderRoutingAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/work-order-routings/by-key?workOrderId={entity.WorkOrderId}&productId={entity.ProductId}&operationSequence={entity.OperationSequence}",
             new CompositeKeyResponse(new Dictionary<string, object>

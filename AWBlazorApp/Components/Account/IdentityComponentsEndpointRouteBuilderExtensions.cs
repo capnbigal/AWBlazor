@@ -23,7 +23,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         {
             await signInManager.SignOutAsync();
             return TypedResults.LocalRedirect($"~/{returnUrl}");
-        }).DisableAntiforgery();
+        }).DisableAntiforgery().RequireRateLimiting("auth");
 
         accountGroup.MapPost("/PerformExternalLogin", (
             HttpContext context,
@@ -39,7 +39,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
                 QueryString.Create(query));
             var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return TypedResults.Challenge(properties, [provider]);
-        }).DisableAntiforgery();
+        }).DisableAntiforgery().RequireRateLimiting("auth");
 
         var manageGroup = accountGroup.MapGroup("/Manage").RequireAuthorization();
 

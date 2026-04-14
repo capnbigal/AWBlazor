@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Components;
 
 namespace AWBlazorApp.Components.Account;
 
+[DebuggerStepThrough]
+[DebuggerNonUserCode]
 internal sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {
     public const string StatusCookieName = "Identity.StatusMessage";
@@ -27,6 +29,7 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
     // Debugging → General → Enable Just My Code). If JMC is off, the debugger will still
     // break on the throw — you can suppress it via Debug → Windows → Exception Settings,
     // search for "NavigationException", and uncheck the box.
+    [DebuggerHidden]
     [DebuggerNonUserCode]
     [DoesNotReturn]
     public void RedirectTo(string? uri)
@@ -45,6 +48,7 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
         throw new InvalidOperationException($"{nameof(IdentityRedirectManager)} can only be used during static rendering.");
     }
 
+    [DebuggerHidden]
     [DebuggerNonUserCode]
     [DoesNotReturn]
     public void RedirectTo(string uri, Dictionary<string, object?> queryParameters)
@@ -54,6 +58,7 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
         RedirectTo(newUri);
     }
 
+    [DebuggerHidden]
     [DebuggerNonUserCode]
     [DoesNotReturn]
     public void RedirectToWithStatus(string uri, string message, HttpContext context)
@@ -64,10 +69,12 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
 
     private string CurrentPath => navigationManager.ToAbsoluteUri(navigationManager.Uri).GetLeftPart(UriPartial.Path);
 
+    [DebuggerHidden]
     [DebuggerNonUserCode]
     [DoesNotReturn]
     public void RedirectToCurrentPage() => RedirectTo(CurrentPath);
 
+    [DebuggerHidden]
     [DebuggerNonUserCode]
     [DoesNotReturn]
     public void RedirectToCurrentPageWithStatus(string message, HttpContext context)

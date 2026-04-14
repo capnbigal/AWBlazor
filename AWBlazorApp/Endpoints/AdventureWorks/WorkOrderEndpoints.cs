@@ -56,6 +56,7 @@ public static class WorkOrderEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.WorkOrders.Add(entity);
         await db.SaveChangesAsync(ct);
 
@@ -63,6 +64,7 @@ public static class WorkOrderEndpoints
         var reloaded = await db.WorkOrders.AsNoTracking().FirstAsync(x => x.Id == entity.Id, ct);
         db.WorkOrderAuditLogs.Add(WorkOrderAuditService.RecordCreate(reloaded, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/work-orders/{entity.Id}", new IdResponse(entity.Id));
     }
 

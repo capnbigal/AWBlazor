@@ -61,6 +61,7 @@
                 if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.ProductModels.Add(entity);
                 try
                 {
@@ -73,6 +74,7 @@
                 }
                 db.ProductModelAuditLogs.Add(ProductModelAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else

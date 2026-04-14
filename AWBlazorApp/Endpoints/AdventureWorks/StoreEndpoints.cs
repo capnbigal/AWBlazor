@@ -63,10 +63,12 @@ public static class StoreEndpoints
             return TypedResults.Conflict($"Store with BusinessEntityId {request.Id} already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Stores.Add(entity);
         await db.SaveChangesAsync(ct);
         db.StoreAuditLogs.Add(StoreAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/stores/{entity.Id}", new IdResponse(entity.Id));
     }
 

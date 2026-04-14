@@ -59,10 +59,12 @@ public static class TransactionHistoryArchiveEndpoints
             return TypedResults.Conflict($"TransactionHistoryArchive with Id {request.Id} already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.TransactionHistoryArchives.Add(entity);
         await db.SaveChangesAsync(ct);
         db.TransactionHistoryArchiveAuditLogs.Add(TransactionHistoryArchiveAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/transaction-history-archives/{entity.Id}", new IdResponse(entity.Id));
     }
 

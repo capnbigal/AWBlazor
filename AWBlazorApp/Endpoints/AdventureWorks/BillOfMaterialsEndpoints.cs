@@ -56,10 +56,12 @@ public static class BillOfMaterialsEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.BillOfMaterials.Add(entity);
         await db.SaveChangesAsync(ct);
         db.BillOfMaterialsAuditLogs.Add(BillOfMaterialsAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/bill-of-materials/{entity.Id}", new IdResponse(entity.Id));
     }
 

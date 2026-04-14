@@ -56,10 +56,12 @@ public static class ShipMethodEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ShipMethods.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/ship-methods/{entity.Id}", new IdResponse(entity.Id));
     }
 

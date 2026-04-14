@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" @(IsDarkMode ? "data-mud-theme=\"dark\"" : "")>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,10 +7,11 @@
     <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
 
     <script>
-      (function() {
+      window.getDarkModeCookie = function() {
         var m = document.cookie.match(/(?:^|;\s*)darkMode=([^;]*)/);
-        if (m && m[1] === 'true') document.documentElement.setAttribute('data-mud-theme', 'dark');
-      })();
+        return m !== null && m[1] === 'true';
+      };
+      if (window.getDarkModeCookie()) document.documentElement.setAttribute('data-mud-theme', 'dark');
     </script>
     <style>
       html[data-mud-theme="dark"] { background-color: #1e1e1e; }
@@ -24,9 +25,7 @@
     <HeadOutlet @rendermode="@PageRenderMode" />
 </head>
 <body>
-    <CascadingValue Name="InitialDarkMode" Value="@IsDarkMode">
-        <Routes @rendermode="@PageRenderMode" />
-    </CascadingValue>
+    <Routes @rendermode="@PageRenderMode" />
 
     <div id="blazor-error-ui" data-nosnippet>
         An unhandled error has occurred.
@@ -56,6 +55,4 @@
     // See: https://learn.microsoft.com/aspnet/core/blazor/security/server/
     private IComponentRenderMode? PageRenderMode
         => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
-
-    public bool IsDarkMode => HttpContext.Request.Cookies["darkMode"] == "true";
 }

@@ -57,10 +57,12 @@ public static class SalesTaxRateEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesTaxRates.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SalesTaxRateAuditLogs.Add(SalesTaxRateAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/sales-tax-rates/{entity.Id}", new IdResponse(entity.Id));
     }
 

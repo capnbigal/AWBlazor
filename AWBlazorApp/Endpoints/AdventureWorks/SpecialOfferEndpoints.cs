@@ -57,10 +57,12 @@ public static class SpecialOfferEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SpecialOffers.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SpecialOfferAuditLogs.Add(SpecialOfferAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/special-offers/{entity.Id}", new IdResponse(entity.Id));
     }
 

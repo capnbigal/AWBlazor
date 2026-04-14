@@ -4,6 +4,7 @@
 
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Cryptography
+@using AWBlazorApp.Authentication
 @using AWBlazorApp.Data.Entities
 
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
@@ -172,14 +173,17 @@
             Name = string.IsNullOrWhiteSpace(GenerateInput.Name)
                 ? $"key-{DateTime.UtcNow:yyyyMMdd-HHmmss}"
                 : GenerateInput.Name,
-            Key = rawKey,
+            // Store SHA-256 hash, never the plaintext. The user sees the raw key once via the
+            // query param below; after that, only the hash exists in the database.
+            Key = ApiKeyHasher.Hash(rawKey),
             UserId = user.Id,
             CreatedDate = DateTime.UtcNow,
         });
         await db.SaveChangesAsync();
 
-        // Pass the new key back via a query param so the user sees it once. The page reads
-        // the param into newlyGeneratedKey via [SupplyParameterFromQuery].
+        // Pass the raw key back via a query param so the user sees it ONCE. The page reads
+        // the param into newlyGeneratedKey via [SupplyParameterFromQuery]. After this redirect
+        // the plaintext is gone — only the hash remains in the database.
         RedirectManager.RedirectTo("Account/Manage/ApiKeys", new() { ["new"] = rawKey });
     }
 

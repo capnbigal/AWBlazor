@@ -69,10 +69,12 @@ public static class SpecialOfferProductEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SpecialOfferProducts.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SpecialOfferProductAuditLogs.Add(SpecialOfferProductAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/special-offer-products/by-key?specialOfferId={entity.SpecialOfferId}&productId={entity.ProductId}",
             new CompositeKeyResponse(new Dictionary<string, object>

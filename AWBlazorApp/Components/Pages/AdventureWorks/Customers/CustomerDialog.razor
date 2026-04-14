@@ -111,6 +111,7 @@
                 { Snackbar.Add($"Territory #{createModel.TerritoryId.Value} does not exist.", Severity.Error); return; }
 
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Customers.Add(entity);
                 try
                 {

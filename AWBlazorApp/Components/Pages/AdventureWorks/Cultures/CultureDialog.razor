@@ -76,6 +76,7 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Cultures.Add(entity);
                 try
                 {
@@ -88,6 +89,7 @@
                 }
                 db.CultureAuditLogs.Add(CultureAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.CultureId));
             }
             else

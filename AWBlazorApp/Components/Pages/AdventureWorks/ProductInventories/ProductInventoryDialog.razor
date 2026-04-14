@@ -102,6 +102,7 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.ProductInventories.Add(entity);
                 try
                 {
@@ -114,6 +115,7 @@
                 }
                 db.ProductInventoryAuditLogs.Add(ProductInventoryAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else

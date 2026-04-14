@@ -92,6 +92,7 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.ProductCostHistories.Add(entity);
                 try
                 {
@@ -104,6 +105,7 @@
                 }
                 db.ProductCostHistoryAuditLogs.Add(ProductCostHistoryAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else

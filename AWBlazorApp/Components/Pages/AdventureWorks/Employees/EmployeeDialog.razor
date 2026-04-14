@@ -119,6 +119,7 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Employees.Add(entity);
                 try
                 {
@@ -131,6 +132,7 @@
                 }
                 db.EmployeeAuditLogs.Add(EmployeeAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
+                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else

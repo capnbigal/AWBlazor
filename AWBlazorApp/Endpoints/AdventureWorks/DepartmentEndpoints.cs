@@ -58,10 +58,12 @@ public static class DepartmentEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Departments.Add(entity);
         await db.SaveChangesAsync(ct);
         db.DepartmentAuditLogs.Add(DepartmentAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/departments/{entity.Id}", new IdResponse(entity.Id));
     }
 

@@ -57,10 +57,12 @@ public static class ShiftEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Shifts.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ShiftAuditLogs.Add(ShiftAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/shifts/{entity.Id}", new IdResponse(entity.Id));
     }
 

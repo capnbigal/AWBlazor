@@ -68,11 +68,13 @@ public static class ProductModelIllustrationEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductModelIllustrations.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductModelIllustrationAuditLogs.Add(
             ProductModelIllustrationAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/product-model-illustrations/by-key?productModelId={entity.ProductModelId}&illustrationId={entity.IllustrationId}",
             new CompositeKeyResponse(new Dictionary<string, object>

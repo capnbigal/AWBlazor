@@ -59,10 +59,12 @@ public static class ProductReviewEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductReviews.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductReviewAuditLogs.Add(ProductReviewAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/product-reviews/{entity.Id}", new IdResponse(entity.Id));
     }
 

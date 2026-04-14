@@ -67,10 +67,12 @@ public static class SalesPersonQuotaHistoryEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesPersonQuotaHistories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SalesPersonQuotaHistoryAuditLogs.Add(SalesPersonQuotaHistoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/sales-person-quota-histories/by-key?businessEntityId={entity.BusinessEntityId}&quotaDate={entity.QuotaDate:O}",
             new CompositeKeyResponse(new Dictionary<string, object>

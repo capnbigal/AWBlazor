@@ -67,10 +67,12 @@ public static class ProductCostHistoryEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductCostHistories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductCostHistoryAuditLogs.Add(ProductCostHistoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/product-cost-histories/by-key?productId={entity.ProductId}&startDate={entity.StartDate:O}",
             new CompositeKeyResponse(new Dictionary<string, object>

@@ -56,10 +56,12 @@ public static class PhoneNumberTypeEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.PhoneNumberTypes.Add(entity);
         await db.SaveChangesAsync(ct);
         db.PhoneNumberTypeAuditLogs.Add(PhoneNumberTypeAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/phone-number-types/{entity.Id}", new IdResponse(entity.Id));
     }
 

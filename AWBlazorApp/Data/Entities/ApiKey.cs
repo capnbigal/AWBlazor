@@ -10,8 +10,9 @@ public class ApiKey
 {
     public int Id { get; set; }
 
-    /// <summary>The plain key value sent in the X-Api-Key header. (Stored in plain text for now;
-    /// rotate to a hash if/when keys must be reissue-once.)</summary>
+    /// <summary>SHA-256 hash of the API key. New keys are stored hashed; legacy plain-text keys
+    /// (those starting with "ek_") are still accepted at the auth layer for backwards compat
+    /// until they're rotated. See <see cref="Authentication.ApiKeyHasher"/>.</summary>
     [Required]
     [MaxLength(128)]
     public string Key { get; set; } = string.Empty;

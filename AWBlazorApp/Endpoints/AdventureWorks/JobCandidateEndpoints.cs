@@ -56,10 +56,12 @@ public static class JobCandidateEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.JobCandidates.Add(entity);
         await db.SaveChangesAsync(ct);
         db.JobCandidateAuditLogs.Add(JobCandidateAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/job-candidates/{entity.Id}", new IdResponse(entity.Id));
     }
 

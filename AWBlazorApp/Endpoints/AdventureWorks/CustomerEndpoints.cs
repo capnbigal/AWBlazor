@@ -56,6 +56,7 @@ public static class CustomerEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Customers.Add(entity);
         await db.SaveChangesAsync(ct);
 
@@ -63,6 +64,7 @@ public static class CustomerEndpoints
         var reloaded = await db.Customers.AsNoTracking().FirstAsync(x => x.Id == entity.Id, ct);
         db.CustomerAuditLogs.Add(CustomerAuditService.RecordCreate(reloaded, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/customers/{entity.Id}", new IdResponse(entity.Id));
     }
 

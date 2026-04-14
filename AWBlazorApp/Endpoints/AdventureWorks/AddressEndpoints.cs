@@ -58,10 +58,12 @@ public static class AddressEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Addresses.Add(entity);
         await db.SaveChangesAsync(ct);
         db.AddressAuditLogs.Add(AddressAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/addresses/{entity.Id}", new IdResponse(entity.Id));
     }
 

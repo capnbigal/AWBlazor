@@ -13,9 +13,14 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
         headers["X-Frame-Options"] = "DENY";
         headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+        // Note: 'unsafe-inline' for style-src is required by MudBlazor (it injects inline styles
+        // for component layout). 'unsafe-eval' was previously here but was not required by Blazor;
+        // removing it tightens XSS protection.
         headers["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self' data:;";
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self' data:; " +
+            "frame-ancestors 'none'; base-uri 'self'; form-action 'self';";
+        headers["Cross-Origin-Resource-Policy"] = "same-site";
         await next(context);
     }
 }

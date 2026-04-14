@@ -56,10 +56,12 @@ public static class ShoppingCartItemEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ShoppingCartItems.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ShoppingCartItemAuditLogs.Add(ShoppingCartItemAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/shopping-cart-items/{entity.Id}", new IdResponse(entity.Id));
     }
 

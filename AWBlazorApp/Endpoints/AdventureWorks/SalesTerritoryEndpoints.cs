@@ -57,10 +57,12 @@ public static class SalesTerritoryEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.SalesTerritories.Add(entity);
         await db.SaveChangesAsync(ct);
         db.SalesTerritoryAuditLogs.Add(SalesTerritoryAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/sales-territories/{entity.Id}", new IdResponse(entity.Id));
     }
 

@@ -59,10 +59,12 @@ public static class CurrencyEndpoints
             return TypedResults.Conflict($"Currency code '{code}' already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Currencies.Add(entity);
         await db.SaveChangesAsync(ct);
         db.CurrencyAuditLogs.Add(CurrencyAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/currencies/{entity.CurrencyCode}", new StringIdResponse(entity.CurrencyCode));
     }
 

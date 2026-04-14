@@ -82,24 +82,20 @@ public sealed class ApiKeyAuthenticationHandler(
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
-        // Best-effort last-used tracking — fire-and-forget so it never blocks the request.
-        _ = Task.Run(async () =>
+        // Update LastUsedDate synchronously within the request — adds one DB write per
+        // authenticated API call but avoids the orphan-task and silent-failure risks of the
+        // previous fire-and-forget pattern. If perf becomes a concern, batch via a hosted
+        // service or Hangfire job that flushes timestamps every N seconds.
+        try
         {
-            try
-            {
-                await using var inner = await dbFactory.CreateDbContextAsync();
-                var entity = await inner.ApiKeys.FirstOrDefaultAsync(k => k.Id == apiKey.Id);
-                if (entity is not null)
-                {
-                    entity.LastUsedDate = DateTime.UtcNow;
-                    await inner.SaveChangesAsync();
-                }
-            }
-            catch
-            {
-                // Best-effort; intentionally swallowed.
-            }
-        });
+            apiKey.LastUsedDate = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Don't fail auth if the timestamp update fails — log it.
+            Logger.LogWarning(ex, "Failed to update LastUsedDate for ApiKey {KeyId}", apiKey.Id);
+        }
 
         var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationOptions.Scheme);
         var principal = new ClaimsPrincipal(identity);

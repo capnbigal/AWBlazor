@@ -60,10 +60,12 @@ public static class CountryRegionEndpoints
             return TypedResults.Conflict($"Country/region code '{code}' already exists.");
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.CountryRegions.Add(entity);
         await db.SaveChangesAsync(ct);
         db.CountryRegionAuditLogs.Add(CountryRegionAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/country-regions/{entity.CountryRegionCode}", new StringIdResponse(entity.CountryRegionCode));
     }
 

@@ -56,10 +56,12 @@ public static class CreditCardEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.CreditCards.Add(entity);
         await db.SaveChangesAsync(ct);
         db.CreditCardAuditLogs.Add(CreditCardAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created($"/api/aw/credit-cards/{entity.Id}", new IdResponse(entity.Id));
     }
 

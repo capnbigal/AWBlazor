@@ -141,6 +141,7 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Documents.Add(entity);
                 try
                 {

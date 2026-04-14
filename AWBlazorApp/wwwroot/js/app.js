@@ -10,7 +10,8 @@
 })();
 
 // Dark mode cookie helper — called from Blazor via JSInterop.
-function setDarkModeCookie(isDark) {
+// getDarkModeCookie() is defined inline in App.razor <head> so it's available before the circuit connects.
+window.setDarkModeCookie = function(isDark) {
     var value = isDark ? 'true' : 'false';
     var expires = new Date();
     expires.setFullYear(expires.getFullYear() + 1);
@@ -20,4 +21,4 @@ function setDarkModeCookie(isDark) {
     } else {
         document.documentElement.removeAttribute('data-mud-theme');
     }
-}
+};

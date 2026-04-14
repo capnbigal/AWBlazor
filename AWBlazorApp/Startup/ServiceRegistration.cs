@@ -204,6 +204,32 @@ public static class ServiceRegistration
         return services;
     }
 
+    public static IServiceCollection AddApplicationHsts(this IServiceCollection services)
+    {
+        // 1-year HSTS. Browsers cache this and refuse plain HTTP for the duration.
+        services.AddHsts(options =>
+        {
+            options.MaxAge = TimeSpan.FromDays(365);
+            options.IncludeSubDomains = true;
+            options.Preload = true;
+        });
+        return services;
+    }
+
+    public static IServiceCollection AddApplicationCookieHardening(this IServiceCollection services)
+    {
+        // Tighten Identity application cookie: 60-min sliding expiration with absolute cap.
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+            options.SlidingExpiration = true;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+            options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+        });
+        return services;
+    }
+
     public static IServiceCollection AddBlazorAndServices(this IServiceCollection services)
     {
         services.AddRazorComponents()

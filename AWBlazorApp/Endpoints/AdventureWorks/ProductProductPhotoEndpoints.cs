@@ -67,11 +67,13 @@ public static class ProductProductPhotoEndpoints
         }
 
         var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.ProductProductPhotos.Add(entity);
         await db.SaveChangesAsync(ct);
         db.ProductProductPhotoAuditLogs.Add(
             ProductProductPhotoAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
         return TypedResults.Created(
             $"/api/aw/product-product-photos/by-key?productId={entity.ProductId}&productPhotoId={entity.ProductPhotoId}",
             new CompositeKeyResponse(new Dictionary<string, object>
