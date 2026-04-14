@@ -243,6 +243,8 @@ public static class ServiceRegistration
         services.AddScoped<NotificationRuleEvaluator>();
         services.AddScoped<SavedQueryRunner>();
         services.AddScoped<KpiSnapshotJob>();
+        services.AddScoped<ReportDispatcher>();
+        services.AddScoped<ReportScheduleRegistry>();
         services.AddSingleton<UserGuideService>();
         services.AddSingleton<LookupService>();
         services.AddScoped<IPermissionService, PermissionService>();

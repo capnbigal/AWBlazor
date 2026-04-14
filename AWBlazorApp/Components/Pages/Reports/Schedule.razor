@@ -1,0 +1,235 @@
+@page "/reports/schedule"
+@attribute [Authorize]
+@using AWBlazorApp.Data.Entities
+@using AWBlazorApp.Services
+@using Microsoft.AspNetCore.Identity
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject ReportScheduleRegistry Registry
+@inject ISnackbar Snackbar
+
+<PageTitle>Scheduled reports</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <div>
+            <MudText Typo="Typo.h4">Scheduled email reports</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Pick a saved query, a cron schedule, and recipients — the report will be rendered as
+                a CSV and emailed on the cron (via Hangfire + the existing SMTP pipeline).
+            </MudText>
+        </div>
+        <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@(savedQueries.Count == 0)" OnClick="OpenNew">
+            New schedule
+        </MudButton>
+    </MudStack>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (savedQueries.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            You need at least one saved query first. Create one on
+            <MudLink Href="queries">Saved queries</MudLink>, then come back.
+        </MudAlert>
+    }
+    else if (schedules.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No scheduled reports yet. Click "New schedule" to create one.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@schedules" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Active</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Query</MudTh>
+                <MudTh>Cron</MudTh>
+                <MudTh>Recipients</MudTh>
+                <MudTh>Last run</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudSwitch T="bool" Value="@context.IsActive" Color="Color.Success"
+                               ValueChanged="@(async v => await ToggleActiveAsync(context, v))" />
+                </MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>@(savedQueries.FirstOrDefault(q => q.Id == context.SavedQueryId)?.Name ?? $"#{context.SavedQueryId}")</MudTd>
+                <MudTd><code>@context.Cron</code></MudTd>
+                <MudTd>@context.Recipients</MudTd>
+                <MudTd>@(context.LastRunDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   OnClick="@(() => OpenEdit(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => DeleteAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudStack>
+
+@if (editing is not null)
+{
+    <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
+        <TitleContent>@(editing.Id == 0 ? "New scheduled report" : "Edit scheduled report")</TitleContent>
+        <DialogContent>
+            <MudStack Spacing="3">
+                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
+                <MudSelect T="int" @bind-Value="editing.SavedQueryId" Label="Saved query" Variant="Variant.Outlined">
+                    @foreach (var q in savedQueries)
+                    {
+                        <MudSelectItem T="int" Value="@q.Id">@q.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField T="string" @bind-Value="editing.Cron" Label="Cron (Hangfire, 5 fields)"
+                              Variant="Variant.Outlined" Required="true" MaxLength="100"
+                              HelperText="Examples: 0 8 * * 1 (8am Mon) · 0 7 * * * (7am daily) · */15 * * * * (every 15 min)" />
+                <MudTextField T="string" @bind-Value="editing.Recipients" Label="Recipients (comma-separated)"
+                              Variant="Variant.Outlined" Required="true" MaxLength="500"
+                              HelperText="alice@example.com, bob@example.com" />
+                <MudSwitch T="bool" @bind-Value="editing.IsActive" Color="Color.Success" Label="Active" />
+            </MudStack>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(() => { dialogOpen = false; editing = null; })">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private bool loading = true;
+    private string currentUserId = "";
+    private List<ReportSchedule> schedules = new();
+    private List<SavedQuery> savedQueries = new();
+    private ReportSchedule? editing;
+    private bool dialogOpen;
+    private readonly DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(state.User);
+        if (user is null) { loading = false; return; }
+        currentUserId = user.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        savedQueries = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.SavedQueries.Where(q => q.UserId == currentUserId).OrderBy(q => q.Name));
+        schedules = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.ReportSchedules.Where(r => r.UserId == currentUserId).OrderByDescending(r => r.Id));
+        loading = false;
+    }
+
+    private void OpenNew()
+    {
+        editing = new ReportSchedule
+        {
+            UserId = currentUserId,
+            Name = "Weekly revenue",
+            SavedQueryId = savedQueries.First().Id,
+            Cron = "0 8 * * 1",
+            Recipients = "",
+            IsActive = true,
+        };
+        dialogOpen = true;
+    }
+
+    private void OpenEdit(ReportSchedule s)
+    {
+        editing = new ReportSchedule
+        {
+            Id = s.Id, UserId = s.UserId, Name = s.Name,
+            SavedQueryId = s.SavedQueryId, Cron = s.Cron, Recipients = s.Recipients,
+            IsActive = s.IsActive, CreatedDate = s.CreatedDate, LastRunDate = s.LastRunDate,
+        };
+        dialogOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (editing is null) return;
+        if (string.IsNullOrWhiteSpace(editing.Name))      { Snackbar.Add("Name is required.", Severity.Warning); return; }
+        if (string.IsNullOrWhiteSpace(editing.Cron))      { Snackbar.Add("Cron is required.", Severity.Warning); return; }
+        if (string.IsNullOrWhiteSpace(editing.Recipients)){ Snackbar.Add("At least one recipient is required.", Severity.Warning); return; }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        ReportSchedule saved;
+        if (editing.Id == 0)
+        {
+            db.ReportSchedules.Add(editing);
+            await db.SaveChangesAsync();
+            saved = editing;
+        }
+        else
+        {
+            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.ReportSchedules.Where(x => x.Id == editing.Id && x.UserId == currentUserId));
+            if (existing is null) { Snackbar.Add("Schedule not found.", Severity.Error); return; }
+            existing.Name = editing.Name;
+            existing.SavedQueryId = editing.SavedQueryId;
+            existing.Cron = editing.Cron;
+            existing.Recipients = editing.Recipients;
+            existing.IsActive = editing.IsActive;
+            await db.SaveChangesAsync();
+            saved = existing;
+        }
+
+        SyncHangfire(saved);
+
+        Snackbar.Add(editing.Id == 0 ? "Schedule created." : "Schedule updated.", Severity.Success);
+        dialogOpen = false; editing = null;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(ReportSchedule rule, bool active)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.ReportSchedules.Where(r => r.Id == rule.Id && r.UserId == currentUserId));
+        if (existing is null) return;
+        existing.IsActive = active;
+        await db.SaveChangesAsync();
+        rule.IsActive = active;
+        SyncHangfire(existing);
+    }
+
+    private async Task DeleteAsync(ReportSchedule rule)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.ReportSchedules.Where(r => r.Id == rule.Id && r.UserId == currentUserId));
+        if (existing is null) return;
+
+        Registry.Remove(existing.Id);
+        db.ReportSchedules.Remove(existing);
+        await db.SaveChangesAsync();
+        schedules.Remove(rule);
+        Snackbar.Add("Schedule removed.", Severity.Info);
+    }
+
+    private void SyncHangfire(ReportSchedule schedule)
+    {
+        try
+        {
+            if (schedule.IsActive) Registry.Register(schedule);
+            else Registry.Remove(schedule.Id);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Hangfire registration failed: {ex.Message}", Severity.Warning);
+        }
+    }
+}
