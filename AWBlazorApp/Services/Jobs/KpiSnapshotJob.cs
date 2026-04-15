@@ -1,9 +1,10 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Services.Insights;
 using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 /// <summary>
 /// Hourly Hangfire job: runs every SavedQuery flagged IsKpi and appends a KpiSnapshot row with

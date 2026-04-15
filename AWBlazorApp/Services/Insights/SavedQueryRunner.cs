@@ -5,7 +5,7 @@ using AWBlazorApp.Data.Entities.ProcessManagement;
 using AWBlazorApp.Data.Entities.Forecasting;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Insights;
 
 /// <summary>
 /// Executes SavedQuery definitions. Each <see cref="QueryMetric"/> knows how to pull a scalar

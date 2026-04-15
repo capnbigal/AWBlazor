@@ -1,4 +1,6 @@
 using AWBlazorApp.Components;
+using AWBlazorApp.Services.Jobs;
+using AWBlazorApp.Services.Notifications;
 using AWBlazorApp.Data;
 using AWBlazorApp.Endpoints;
 using AWBlazorApp.Services;
@@ -161,12 +163,12 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 "*/15 * * * *");
 
-            RecurringJob.AddOrUpdate<AWBlazorApp.Services.NotificationRuleEvaluator>(
+            RecurringJob.AddOrUpdate<AWBlazorApp.Services.Notifications.NotificationRuleEvaluator>(
                 "notification-rule-evaluator",
                 job => job.ExecuteAsync(CancellationToken.None),
                 "*/5 * * * *");
 
-            RecurringJob.AddOrUpdate<AWBlazorApp.Services.KpiSnapshotJob>(
+            RecurringJob.AddOrUpdate<AWBlazorApp.Services.Jobs.KpiSnapshotJob>(
                 "kpi-snapshot-job",
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Hourly());

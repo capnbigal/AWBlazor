@@ -3,7 +3,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities.ProcessManagement;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 public sealed class ProcessSchedulerJob(
     IDbContextFactory<ApplicationDbContext> dbFactory,

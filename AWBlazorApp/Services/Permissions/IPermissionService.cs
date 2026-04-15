@@ -1,6 +1,6 @@
 using AWBlazorApp.Data;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Permissions;
 
 public interface IPermissionService
 {
