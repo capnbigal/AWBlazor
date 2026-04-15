@@ -4,7 +4,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Services;
 
-namespace AWBlazorApp.Startup;
+namespace AWBlazorApp.App.Middleware;
 
 /// <summary>
 /// Middleware that enforces area-based permissions on all <c>/api/</c> routes.
