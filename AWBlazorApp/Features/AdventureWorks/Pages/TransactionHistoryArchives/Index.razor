@@ -1,0 +1,128 @@
+@page "/aw/transaction-history-archives"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Transaction history archive</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Transaction history archive</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.TransactionHistoryArchive</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/transaction-history-archives/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New archive entry</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="TransactionHistoryArchiveDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.ReferenceOrderId" Title="Ref order" />
+            <PropertyColumn Property="x => x.ReferenceOrderLineId" Title="Ref line" />
+            <PropertyColumn Property="x => x.TransactionDate" Title="Date" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.TransactionType" Title="Type" />
+            <PropertyColumn Property="x => x.Quantity" Title="Qty" />
+            <PropertyColumn Property="x => x.ActualCost" Title="Cost" Format="C2" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="TransactionHistoryArchiveDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<TransactionHistoryArchiveDto> grid = null!;
+    private int? filterProductId;
+
+    private async Task<GridData<TransactionHistoryArchiveDto>> LoadServerDataAsync(GridState<TransactionHistoryArchiveDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.TransactionHistoryArchives.AsNoTracking();
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(TransactionHistoryArchiveDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
+            nameof(TransactionHistoryArchiveDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(TransactionHistoryArchiveDto.TransactionDate) => sort.Descending ? query.OrderByDescending(x => x.TransactionDate) : query.OrderBy(x => x.TransactionDate),
+            _ => query.OrderByDescending(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<TransactionHistoryArchiveDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<TransactionHistoryArchiveDialog>("New archive entry", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Archive entry created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(TransactionHistoryArchiveDto row)
+    {
+        var parameters = new DialogParameters<TransactionHistoryArchiveDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<TransactionHistoryArchiveDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Archive entry updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(TransactionHistoryArchiveDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete archive entry?", $"Permanently delete archive entry #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.TransactionHistoryArchives.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Entry no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.TransactionHistoryArchiveAuditLogs.Add(TransactionHistoryArchiveAuditService.RecordDelete(entity, changedBy));
+        db.TransactionHistoryArchives.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Archive entry deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(TransactionHistoryArchiveDto row) => Navigation.NavigateTo($"aw/transaction-history-archives/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

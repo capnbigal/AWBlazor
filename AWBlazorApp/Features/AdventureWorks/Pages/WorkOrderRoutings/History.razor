@@ -1,0 +1,87 @@
+@page "/aw/work-order-routings/history"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Work order routing history</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/work-order-routings"))" />
+        <MudText Typo="Typo.h4">Work order routing history</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="2"><MudNumericField T="int?" @bind-Value="WorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="2"><MudNumericField T="int?" @bind-Value="ProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="2"><MudNumericField T="short?" @bind-Value="OperationSequence" Label="Op seq" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="WorkOrderRoutingAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.WorkOrderId" Title="Work order" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.OperationSequence" Title="Op seq" />
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
+            <PropertyColumn Property="x => x.LocationId" Title="Location" />
+            <PropertyColumn Property="x => x.PlannedCost" Title="Planned" Format="C2" />
+            <PropertyColumn Property="x => x.ActualCost" Title="Actual" Format="C2" />
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="WorkOrderRoutingAuditLogDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [SupplyParameterFromQuery] public int? WorkOrderId { get; set; }
+    [SupplyParameterFromQuery] public int? ProductId { get; set; }
+    [SupplyParameterFromQuery] public short? OperationSequence { get; set; }
+
+    private MudDataGrid<WorkOrderRoutingAuditLogDto> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+
+    private async Task<GridData<WorkOrderRoutingAuditLogDto>> LoadServerDataAsync(GridState<WorkOrderRoutingAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.WorkOrderRoutingAuditLogs.AsNoTracking();
+
+        if (WorkOrderId.HasValue) query = query.Where(a => a.WorkOrderId == WorkOrderId.Value);
+        if (ProductId.HasValue) query = query.Where(a => a.ProductId == ProductId.Value);
+        if (OperationSequence.HasValue) query = query.Where(a => a.OperationSequence == OperationSequence.Value);
+        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var needle = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
+        }
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<WorkOrderRoutingAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
+    };
+}

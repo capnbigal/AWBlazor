@@ -1,0 +1,131 @@
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateAddressTypeRequest> CreateValidator
+@inject MudFormValidator<UpdateAddressTypeRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsNew ? "Create address type" : $"Edit address type #{Model!.Id}")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })"
+                              Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })"
+                              Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">
+            @(saving ? "Saving..." : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public AddressTypeDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateAddressTypeRequest createModel = new();
+    private UpdateAddressTypeRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateAddressTypeRequest { Name = Model.Name };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel))
+                {
+                    Snackbar.Add("Please fix the errors in the form.", Severity.Error);
+                    return;
+                }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.AddressTypes.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel))
+                {
+                    Snackbar.Add("Please fix the errors in the form.", Severity.Error);
+                    return;
+                }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.AddressTypes.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null)
+                {
+                    MudDialog.Close(DialogResult.Cancel());
+                    return;
+                }
+                var before = AddressTypeAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

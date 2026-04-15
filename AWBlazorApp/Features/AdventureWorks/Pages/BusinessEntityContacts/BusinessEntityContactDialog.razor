@@ -1,0 +1,92 @@
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateBusinessEntityContactRequest> CreateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">Link a business entity to a contact</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Business entity" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <FkAutocomplete TValue="int" Value="@createModel.PersonId" ValueChanged="@((int v) => createModel = createModel with { PersonId = v })" Label="Person" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <FkSelect TValue="int" Value="@createModel.ContactTypeId" ValueChanged="@((int v) => createModel = createModel with { ContactTypeId = v })" Label="Contact type" Required="true" Items="_contactTypes" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm form = null!;
+    private CreateBusinessEntityContactRequest createModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _contactTypes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _contactTypes = await Lookup.GetContactTypesAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (await db.BusinessEntityContacts.AnyAsync(x =>
+                    x.BusinessEntityId == createModel.BusinessEntityId
+                    && x.PersonId == createModel.PersonId
+                    && x.ContactTypeId == createModel.ContactTypeId))
+            {
+                Snackbar.Add("Link already exists.", Severity.Error);
+                return;
+            }
+
+            var changedBy = await GetCurrentUserNameAsync();
+            var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.BusinessEntityContacts.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+            {
+                Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                return;
+            }
+            db.BusinessEntityContactAuditLogs.Add(BusinessEntityContactAuditService.RecordCreate(entity, changedBy));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

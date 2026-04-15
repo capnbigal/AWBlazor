@@ -1,0 +1,154 @@
+@page "/aw/products"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Products</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Products</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Product</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/products/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New product</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkSelect TValue="int" Value="@(filterSubcategoryId ?? 0)" ValueChanged="@(v => { filterSubcategoryId = v == 0 ? null : v; })" Label="Subcategory" Items="_subcategories" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <HierarchyColumn T="ProductDto" />
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.ProductNumber" Title="Number" />
+            <PropertyColumn Property="x => x.Color" Title="Color" />
+            <PropertyColumn Property="x => x.Size" Title="Size" />
+            <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2" />
+            <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2" />
+            <PropertyColumn Property="x => x.ProductLine" Title="Line" />
+            <PropertyColumn Property="x => x.Class" Title="Class" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent>
+            <ProductExpandedRow ProductId="@context.Item.Id" />
+        </ChildRowContent>
+        <PagerContent><MudDataGridPager T="ProductDto" /></PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductDto> grid = null!;
+    private string? filterName;
+    private int? filterSubcategoryId;
+    private List<LookupItem<int>> _subcategories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _subcategories = await Lookup.GetProductSubcategoriesAsync();
+    }
+
+    private async Task<GridData<ProductDto>> LoadServerDataAsync(GridState<ProductDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Products.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterName))
+        {
+            var n = filterName.Trim();
+            query = query.Where(x => x.Name.Contains(n));
+        }
+        if (filterSubcategoryId.HasValue) query = query.Where(x => x.ProductSubcategoryId == filterSubcategoryId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(ProductDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
+            nameof(ProductDto.ProductNumber) => sort.Descending ? query.OrderByDescending(x => x.ProductNumber) : query.OrderBy(x => x.ProductNumber),
+            nameof(ProductDto.ListPrice)     => sort.Descending ? query.OrderByDescending(x => x.ListPrice)     : query.OrderBy(x => x.ListPrice),
+            nameof(ProductDto.StandardCost)  => sort.Descending ? query.OrderByDescending(x => x.StandardCost)  : query.OrderBy(x => x.StandardCost),
+            _                                => query.OrderBy(x => x.Name),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<ProductDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductDialog>("New product", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Product created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductDto row)
+    {
+        var parameters = new DialogParameters<ProductDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Product updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete product?", $"Permanently delete product #{row.Id} ({row.Name})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Products.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Product no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductAuditLogs.Add(ProductAuditService.RecordDelete(entity, changedBy));
+        db.Products.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Product deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductDto row) => Navigation.NavigateTo($"aw/products/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -1,0 +1,121 @@
+@page "/aw/purchase-order-details"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Purchase order details</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Purchase order details</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Purchasing.PurchaseOrderDetail · composite PK (PurchaseOrderID, PurchaseOrderDetailID)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/purchase-order-details/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New line item</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterPurchaseOrderId" Label="PO id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="PurchaseOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #" />
+            <PropertyColumn Property="x => x.PurchaseOrderDetailId" Title="Line #" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.OrderQty" Title="Qty" />
+            <PropertyColumn Property="x => x.UnitPrice" Title="Unit price" Format="C2" />
+            <PropertyColumn Property="x => x.LineTotal" Title="Line total" Format="C2" />
+            <PropertyColumn Property="x => x.ReceivedQty" Title="Received" />
+            <PropertyColumn Property="x => x.StockedQty" Title="Stocked" />
+            <PropertyColumn Property="x => x.DueDate" Title="Due" Format="yyyy-MM-dd" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="PurchaseOrderDetailDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<PurchaseOrderDetailDto> grid = null!;
+    private int? filterPurchaseOrderId;
+
+    private async Task<GridData<PurchaseOrderDetailDto>> LoadServerDataAsync(GridState<PurchaseOrderDetailDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.PurchaseOrderDetails.AsNoTracking();
+        if (filterPurchaseOrderId.HasValue) query = query.Where(x => x.PurchaseOrderId == filterPurchaseOrderId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.PurchaseOrderId).ThenBy(x => x.PurchaseOrderDetailId)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<PurchaseOrderDetailDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<PurchaseOrderDetailDialog>("New line item", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Line item created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(PurchaseOrderDetailDto row)
+    {
+        var parameters = new DialogParameters<PurchaseOrderDetailDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<PurchaseOrderDetailDialog>($"Edit ({row.PurchaseOrderId}, {row.PurchaseOrderDetailId})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Line item updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(PurchaseOrderDetailDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete line item?", $"Permanently delete line ({row.PurchaseOrderId}, {row.PurchaseOrderDetailId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.PurchaseOrderDetails.FirstOrDefaultAsync(t => t.PurchaseOrderId == row.PurchaseOrderId && t.PurchaseOrderDetailId == row.PurchaseOrderDetailId);
+        if (entity is null) { Snackbar.Add("Row no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.PurchaseOrderDetailAuditLogs.Add(PurchaseOrderDetailAuditService.RecordDelete(entity, changedBy));
+        db.PurchaseOrderDetails.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Line item deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(PurchaseOrderDetailDto row)
+        => Navigation.NavigateTo($"aw/purchase-order-details/history?purchaseOrderId={row.PurchaseOrderId}&purchaseOrderDetailId={row.PurchaseOrderDetailId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

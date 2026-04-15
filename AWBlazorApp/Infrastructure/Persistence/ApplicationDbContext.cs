@@ -2,7 +2,7 @@ using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Features.ToolSlots.Domain;
 using AWBlazorApp.Data;
-using AWBlazorApp.Data.Entities.AdventureWorks;
+using AWBlazorApp.Features.AdventureWorks.Domain;
 using AWBlazorApp.Data.Entities.Auth;
 using AWBlazorApp.Features.Forecasting.Domain;
 using AWBlazorApp.Features.Insights.Domain;

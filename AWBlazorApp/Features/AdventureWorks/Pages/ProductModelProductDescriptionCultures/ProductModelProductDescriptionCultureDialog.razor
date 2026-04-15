@@ -1,0 +1,94 @@
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductModelProductDescriptionCultureRequest> CreateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">Link model ↔ description ↔ culture</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <FkSelect TValue="int" Value="@createModel.ProductModelId" ValueChanged="@((int v) => createModel = createModel with { ProductModelId = v })" Label="Product model" Items="_productModels" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudNumericField T="int" Value="@createModel.ProductDescriptionId" ValueChanged="@((int v) => createModel = createModel with { ProductDescriptionId = v })" Label="Description id" Variant="Variant.Outlined" Required="true" Min="1" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <FkSelect TValue="string" Value="@createModel.CultureId" ValueChanged="@((string v) => createModel = createModel with { CultureId = v })" Label="Culture" Items="_cultures" Required="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm form = null!;
+    private CreateProductModelProductDescriptionCultureRequest createModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _productModels = [];
+    private List<LookupItem<string>> _cultures = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _productModels = await Lookup.GetProductModelsAsync();
+        _cultures = await Lookup.GetCulturesAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (await db.ProductModelProductDescriptionCultures.AnyAsync(x =>
+                    x.ProductModelId == createModel.ProductModelId
+                    && x.ProductDescriptionId == createModel.ProductDescriptionId
+                    && x.CultureId == createModel.CultureId))
+            {
+                Snackbar.Add("Link already exists.", Severity.Error);
+                return;
+            }
+
+            var changedBy = await GetCurrentUserNameAsync();
+            var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.ProductModelProductDescriptionCultures.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+            {
+                Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                return;
+            }
+            db.ProductModelProductDescriptionCultureAuditLogs.Add(ProductModelProductDescriptionCultureAuditService.RecordCreate(entity, changedBy));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -1,0 +1,121 @@
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@using AWBlazorApp.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateJobCandidateRequest> CreateValidator
+@inject MudFormValidator<UpdateJobCandidateRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create job candidate" : $"Edit candidate #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <FkAutocomplete TValue="int" Value="@(createModel.BusinessEntityId ?? 0)" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v == 0 ? null : v })" Label="Employee (optional)" Clearable="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <FkAutocomplete TValue="int" Value="@(updateModel.BusinessEntityId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { BusinessEntityId = v == 0 ? null : v })" Label="Employee" Clearable="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" InitialDisplayText="@_editEmployeeDisplay" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public JobCandidateDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateJobCandidateRequest createModel = new();
+    private UpdateJobCandidateRequest updateModel = new();
+    private bool saving;
+    private string? _editEmployeeDisplay;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateJobCandidateRequest { BusinessEntityId = Model.BusinessEntityId };
+            if (Model.BusinessEntityId.HasValue)
+                _editEmployeeDisplay = await Lookup.GetEmployeeDisplayAsync(Model.BusinessEntityId.Value);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.JobCandidates.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.JobCandidateAuditLogs.Add(JobCandidateAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.JobCandidates.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = JobCandidateAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.JobCandidateAuditLogs.Add(JobCandidateAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
