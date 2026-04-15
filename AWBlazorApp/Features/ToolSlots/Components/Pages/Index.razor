@@ -1,8 +1,8 @@
 @page "/tool-slots"
 @attribute [Authorize]
 @using AWBlazorApp.Features.ToolSlots.Components.Pages
-@using AWBlazorApp.Models
-@using AWBlazorApp.Services
+@using AWBlazorApp.Shared.Models
+@using AWBlazorApp.Shared.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

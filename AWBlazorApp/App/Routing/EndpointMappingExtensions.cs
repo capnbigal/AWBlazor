@@ -4,7 +4,7 @@ using AWBlazorApp.Features.ProcessManagement.Endpoints;
 using AWBlazorApp.Features.ToolSlots.Endpoints;
 using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.Features.UserGuide.Services;
-using AWBlazorApp.Endpoints;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Features.AdventureWorks.Endpoints;
 using AWBlazorApp.Features.Admin.Endpoints;
 using AWBlazorApp.Features.Admin.Endpoints;

@@ -30,7 +30,7 @@ public static class CurrencyEndpoints
         return app;
     }
 
-    private static async Task<Ok<AWBlazorApp.Models.PagedResult<CurrencyDto>>> ListAsync(
+    private static async Task<Ok<AWBlazorApp.Shared.Models.PagedResult<CurrencyDto>>> ListAsync(
         ApplicationDbContext db, [FromQuery] int skip = 0, [FromQuery] int take = 50,
         [FromQuery] string? name = null, CancellationToken ct = default)
     {
@@ -39,7 +39,7 @@ public static class CurrencyEndpoints
         if (!string.IsNullOrWhiteSpace(name)) query = query.Where(x => x.Name.Contains(name));
         var total = await query.CountAsync(ct);
         var rows = await query.OrderBy(x => x.CurrencyCode).Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new AWBlazorApp.Models.PagedResult<CurrencyDto>(rows, total, skip, take));
+        return TypedResults.Ok(new AWBlazorApp.Shared.Models.PagedResult<CurrencyDto>(rows, total, skip, take));
     }
 
     private static async Task<Results<Ok<CurrencyDto>, NotFound>> GetAsync(string code, ApplicationDbContext db, CancellationToken ct)

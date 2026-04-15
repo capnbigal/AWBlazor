@@ -2,7 +2,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Features.Forecasting.Models;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.Forecasting.Domain;
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Models;
 using AWBlazorApp.Features.Forecasting.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;

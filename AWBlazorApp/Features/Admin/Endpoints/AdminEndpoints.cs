@@ -1,6 +1,6 @@
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 

@@ -6494,7 +6494,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkOrderRoutingAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ApiKey", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ApiKey", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6539,7 +6539,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ApiKeys");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ArticleRead", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ArticleRead", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6914,7 +6914,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProcessStepExecutions");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.SecurityAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.SecurityAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6953,7 +6953,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SecurityAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ToolSlotAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ToolSlotAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7064,7 +7064,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ToolSlotAuditLogs");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ToolSlotConfiguration", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ToolSlotConfiguration", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7177,7 +7177,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.UserAreaPermission", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.UserAreaPermission", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7338,7 +7338,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ApiKey", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ApiKey", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
                         .WithMany()
@@ -7349,7 +7349,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ArticleRead", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ArticleRead", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
                         .WithMany()
@@ -7455,7 +7455,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("ProcessStep");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.UserAreaPermission", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.UserAreaPermission", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
                         .WithMany("AreaPermissions")

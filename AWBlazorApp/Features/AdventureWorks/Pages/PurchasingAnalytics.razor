@@ -1,0 +1,334 @@
+@page "/analytics/purchasing"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Shared.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AnalyticsCacheService Cache
+
+<PageTitle>Purchasing analytics</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Purchasing analytics</MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Loading purchasing data...</MudText>
+    }
+    else
+    {
+        @* ── KPI row ────────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary"
+                         Value="@totalPOs.ToString("N0")" Label="Total POs"
+                         Trend="@poTrend" TrendDirection="@poTrendDir" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success"
+                         Value="@NumberFormat.CompactCurrency(totalSpend)" Label="Total spend"
+                         ValueTitle="@totalSpend.ToString("C0")"
+                         Trend="@spendTrend" TrendDirection="@spendTrendDir" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info"
+                         Value="@NumberFormat.CompactCurrency(avgPOValue)"
+                         ValueTitle="@avgPOValue.ToString("C0")" Label="Avg PO value" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Warning"
+                         Value="@($"{avgLeadTimeDays:N1} days")" Label="Avg lead time (order to ship)" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Spend over time ────────────────────────────────────────────────── *@
+        <TimeSeriesChart Title="Spend over time"
+                         ChartType="ChartType.Line"
+                         Labels="@spendLabels"
+                         Series="@spendSeries"
+                         Periods="@(new[] { "12M", "24M", "All" })"
+                         ShowGranularity="false"
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
+
+        @* ── POs placed vs completed ────────────────────────────────────────── *@
+        <TimeSeriesChart Title="POs placed vs. completed per month"
+                         ChartType="ChartType.Bar"
+                         Labels="@poCountLabels"
+                         Series="@poCountSeries"
+                         Periods="@(new[] { "12M", "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Top 10 vendors by spend ────────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Top 10 vendors by spend</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Vendor</th>
+                        <th style="text-align:right">PO count</th>
+                        <th style="text-align:right">Total spend</th>
+                        <th style="text-align:right">Avg PO value</th>
+                        <th>Share</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var rank = 0; }
+                    @foreach (var v in topVendors)
+                    {
+                        rank++;
+                        var pct = topVendorsTotal > 0 ? (double)v.Spend / (double)topVendorsTotal * 100 : 0;
+                        <tr>
+                            <td>@rank</td>
+                            <td><strong>@v.Name</strong></td>
+                            <td style="text-align:right">@v.POCount.ToString("N0")</td>
+                            <td style="text-align:right">@v.Spend.ToString("C0")</td>
+                            <td style="text-align:right">@v.AvgPOValue.ToString("C0")</td>
+                            <td style="min-width:150px">
+                                <MudProgressLinear Value="@pct" Color="Color.Success" Rounded="true" Size="Size.Small" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+
+        <MudGrid>
+            @* ── Vendor concentration ─────────────────────────────────────────── *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Vendor concentration</MudText>
+                    @if (vendorConcentrationLabels.Length > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Donut"
+                                  InputData="@vendorConcentrationData"
+                                  InputLabels="@vendorConcentrationLabels"
+                                  Width="100%" Height="280px" />
+                    }
+                </MudPaper>
+            </MudItem>
+
+            @* ── Spend by status ──────────────────────────────────────────────── *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Spend by status</MudText>
+                    @if (statusLabels.Length > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Pie"
+                                  InputData="@statusData"
+                                  InputLabels="@statusLabels"
+                                  Width="100%" Height="280px" />
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+
+    // KPIs
+    private int totalPOs;
+    private decimal totalSpend;
+    private decimal avgPOValue;
+    private double avgLeadTimeDays;
+    private string poTrend = "";
+    private TrendDirection poTrendDir;
+    private string spendTrend = "";
+    private TrendDirection spendTrendDir;
+
+    // Spend over time
+    private string[] spendLabels = [];
+    private List<ChartSeries<double>> spendSeries = [];
+
+    // POs placed vs completed
+    private string[] poCountLabels = [];
+    private List<ChartSeries<double>> poCountSeries = [];
+
+    // Top vendors
+    private List<VendorSpend> topVendors = [];
+    private decimal topVendorsTotal;
+
+    // Vendor concentration
+    private string[] vendorConcentrationLabels = [];
+    private double[] vendorConcentrationData = [];
+
+    // Spend by status
+    private string[] statusLabels = [];
+    private double[] statusData = [];
+
+    private static readonly Dictionary<byte, string> StatusNames = new()
+    {
+        [1] = "Pending",
+        [2] = "Approved",
+        [3] = "Rejected",
+        [4] = "Complete",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var data = await Cache.GetOrCreateAsync(Cache.Key("purchasing", "all"), LoadDataAsync);
+        totalPOs = data.TotalPOs;
+        totalSpend = data.TotalSpend;
+        avgPOValue = data.AvgPOValue;
+        avgLeadTimeDays = data.AvgLeadTimeDays;
+        poTrend = data.PoTrend;
+        poTrendDir = data.PoTrendDir;
+        spendTrend = data.SpendTrend;
+        spendTrendDir = data.SpendTrendDir;
+        spendLabels = data.SpendLabels;
+        spendSeries = data.SpendSeries;
+        poCountLabels = data.PoCountLabels;
+        poCountSeries = data.PoCountSeries;
+        topVendors = data.TopVendors;
+        topVendorsTotal = data.TopVendorsTotal;
+        vendorConcentrationLabels = data.VendorConcentrationLabels;
+        vendorConcentrationData = data.VendorConcentrationData;
+        statusLabels = data.StatusLabels;
+        statusData = data.StatusData;
+        loading = false;
+    }
+
+    private async Task<PurchasingData> LoadDataAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var result = new PurchasingData();
+
+        // ── KPIs (SQL-side aggregation) ──────────────────────────────────────
+        result.TotalPOs = await db.PurchaseOrderHeaders.CountAsync();
+        result.TotalSpend = await db.PurchaseOrderHeaders.SumAsync(o => o.TotalDue);
+        result.AvgPOValue = result.TotalPOs > 0 ? result.TotalSpend / result.TotalPOs : 0;
+
+        result.AvgLeadTimeDays = await db.PurchaseOrderHeaders
+            .Where(o => o.ShipDate != null)
+            .AverageAsync(o => (double)EF.Functions.DateDiffDay(o.OrderDate, o.ShipDate!.Value));
+
+        // Trend: SQL-side counts for last 12mo vs prior 12mo
+        var maxDate = await db.PurchaseOrderHeaders.MaxAsync(o => o.OrderDate);
+        var cutoff12 = maxDate.AddMonths(-12);
+        var cutoff24 = maxDate.AddMonths(-24);
+
+        var recentCount = await db.PurchaseOrderHeaders.CountAsync(o => o.OrderDate > cutoff12);
+        var priorCount = await db.PurchaseOrderHeaders.CountAsync(o => o.OrderDate > cutoff24 && o.OrderDate <= cutoff12);
+        if (priorCount > 0)
+        {
+            var poPctChange = ((double)recentCount / priorCount - 1) * 100;
+            result.PoTrend = $"{poPctChange:+0.0;-0.0}% vs prior 12mo";
+            result.PoTrendDir = poPctChange >= 0 ? TrendDirection.Up : TrendDirection.Down;
+
+            var priorSpend = await db.PurchaseOrderHeaders.Where(o => o.OrderDate > cutoff24 && o.OrderDate <= cutoff12).SumAsync(o => o.TotalDue);
+            var recentSpend = await db.PurchaseOrderHeaders.Where(o => o.OrderDate > cutoff12).SumAsync(o => o.TotalDue);
+            if (priorSpend > 0)
+            {
+                var spendPctChange = ((double)(recentSpend / priorSpend) - 1) * 100;
+                result.SpendTrend = $"{spendPctChange:+0.0;-0.0}% vs prior 12mo";
+                result.SpendTrendDir = spendPctChange >= 0 ? TrendDirection.Up : TrendDirection.Down;
+            }
+        }
+
+        // ── Spend over time (monthly, SQL GroupBy) ───────────────────────────
+        var byMonth = await db.PurchaseOrderHeaders.AsNoTracking()
+            .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Spend = (double)g.Sum(o => o.TotalDue), Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        result.SpendLabels = byMonth.Select(x => $"{x.Year}-{x.Month:D2}").ToArray();
+        result.SpendSeries = [new ChartSeries<double> { Name = "Spend", Data = byMonth.Select(x => x.Spend).ToArray() }];
+
+        // ── POs placed vs completed (monthly, SQL GroupBy) ──────────────────
+        var placedDict = byMonth.ToDictionary(x => $"{x.Year}-{x.Month:D2}", x => (double)x.Count);
+
+        var completedByMonth = await db.PurchaseOrderHeaders.AsNoTracking()
+            .Where(o => o.Status == 4)
+            .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = (double)g.Count() })
+            .ToListAsync();
+        var completedDict = completedByMonth.ToDictionary(x => $"{x.Year}-{x.Month:D2}", x => x.Count);
+
+        var allMonths = placedDict.Keys.Union(completedDict.Keys).OrderBy(k => k).ToArray();
+        result.PoCountLabels = allMonths;
+        result.PoCountSeries =
+        [
+            new ChartSeries<double> { Name = "Placed", Data = allMonths.Select(m => placedDict.GetValueOrDefault(m)).ToArray() },
+            new ChartSeries<double> { Name = "Completed", Data = allMonths.Select(m => completedDict.GetValueOrDefault(m)).ToArray() },
+        ];
+
+        // ── Top 10 vendors by spend (SQL GroupBy) ───────────────────────────
+        var vendors = await db.Vendors.AsNoTracking().ToDictionaryAsync(v => v.Id, v => v.Name);
+
+        var vendorGroups = await db.PurchaseOrderHeaders.AsNoTracking()
+            .GroupBy(o => o.VendorId)
+            .Select(g => new { VendorId = g.Key, Spend = g.Sum(o => o.TotalDue), POCount = g.Count() })
+            .OrderByDescending(x => x.Spend)
+            .ToListAsync();
+
+        var vendorSpendList = vendorGroups.Select(x => new VendorSpend
+        {
+            Name = vendors.GetValueOrDefault(x.VendorId, $"Vendor {x.VendorId}"),
+            POCount = x.POCount,
+            Spend = x.Spend,
+            AvgPOValue = x.POCount > 0 ? x.Spend / x.POCount : 0,
+        }).ToList();
+
+        result.TopVendors = vendorSpendList.Take(10).ToList();
+        result.TopVendorsTotal = result.TopVendors.Sum(v => v.Spend);
+
+        // ── Vendor concentration (donut) ─────────────────────────────────────
+        var topForDonut = vendorSpendList.Take(10).ToList();
+        var othersSpend = vendorSpendList.Skip(10).Sum(v => v.Spend);
+
+        var concentrationItems = topForDonut
+            .Select(v => new { v.Name, Spend = (double)v.Spend })
+            .ToList();
+
+        if (othersSpend > 0)
+            concentrationItems.Add(new { Name = "Others", Spend = (double)othersSpend });
+
+        result.VendorConcentrationLabels = concentrationItems.Select(x => x.Name).ToArray();
+        result.VendorConcentrationData = concentrationItems.Select(x => x.Spend).ToArray();
+
+        // ── Spend by status (SQL GroupBy) ────────────────────────────────────
+        var byStatus = await db.PurchaseOrderHeaders.AsNoTracking()
+            .GroupBy(o => o.Status)
+            .Select(g => new { Status = g.Key, Spend = (double)g.Sum(o => o.TotalDue) })
+            .OrderBy(x => x.Status)
+            .ToListAsync();
+
+        result.StatusLabels = byStatus.Select(x => StatusNames.GetValueOrDefault(x.Status, $"Status {x.Status}")).ToArray();
+        result.StatusData = byStatus.Select(x => x.Spend).ToArray();
+
+        return result;
+    }
+
+    private sealed class PurchasingData
+    {
+        public int TotalPOs { get; set; }
+        public decimal TotalSpend { get; set; }
+        public decimal AvgPOValue { get; set; }
+        public double AvgLeadTimeDays { get; set; }
+        public string PoTrend { get; set; } = "";
+        public TrendDirection PoTrendDir { get; set; }
+        public string SpendTrend { get; set; } = "";
+        public TrendDirection SpendTrendDir { get; set; }
+        public string[] SpendLabels { get; set; } = [];
+        public List<ChartSeries<double>> SpendSeries { get; set; } = [];
+        public string[] PoCountLabels { get; set; } = [];
+        public List<ChartSeries<double>> PoCountSeries { get; set; } = [];
+        public List<VendorSpend> TopVendors { get; set; } = [];
+        public decimal TopVendorsTotal { get; set; }
+        public string[] VendorConcentrationLabels { get; set; } = [];
+        public double[] VendorConcentrationData { get; set; } = [];
+        public string[] StatusLabels { get; set; } = [];
+        public double[] StatusData { get; set; } = [];
+    }
+
+    private sealed class VendorSpend
+    {
+        public string Name { get; init; } = "";
+        public int POCount { get; init; }
+        public decimal Spend { get; init; }
+        public decimal AvgPOValue { get; init; }
+    }
+}

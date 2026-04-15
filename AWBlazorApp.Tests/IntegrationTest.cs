@@ -1,13 +1,13 @@
 using System.Net;
 using AWBlazorApp.Features.ToolSlots.Models;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Data.Entities.Auth;
+using AWBlazorApp.Features.Identity.Domain;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using AWBlazorApp.Data;
-using AWBlazorApp.Data.Entities;
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Domain;
+using AWBlazorApp.Shared.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;

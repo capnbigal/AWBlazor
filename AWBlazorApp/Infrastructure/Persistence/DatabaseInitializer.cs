@@ -1,6 +1,6 @@
 using System.Data;
 using AWBlazorApp.Data;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;

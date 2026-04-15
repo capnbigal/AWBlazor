@@ -1,6 +1,6 @@
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Services.Jobs;
+using AWBlazorApp.Infrastructure.Jobs;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;

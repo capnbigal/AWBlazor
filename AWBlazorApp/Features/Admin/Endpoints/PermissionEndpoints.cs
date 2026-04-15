@@ -1,9 +1,9 @@
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.Admin.Services;
-using AWBlazorApp.Data.Entities.Auth;
-using AWBlazorApp.Data.Entities;
-using AWBlazorApp.Services;
+using AWBlazorApp.Features.Identity.Domain;
+using AWBlazorApp.Shared.Domain;
+using AWBlazorApp.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Admin.Endpoints;

@@ -3,14 +3,14 @@ using AWBlazorApp.Features.ProcessManagement.Services;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Forecasting.Services;
 using AWBlazorApp.Features.UserGuide.Services;
-using AWBlazorApp.Services.Jobs;
+using AWBlazorApp.Infrastructure.Jobs;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Infrastructure.Email;
 using AWBlazorApp.Features.Admin.Services;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Services;
+using AWBlazorApp.Shared.Services;
 using AWBlazorApp.Features.Forecasting.Services;
 using FluentValidation;
 using Hangfire;
@@ -260,7 +260,7 @@ public static class ServiceRegistration
         services.AddScoped<IPermissionService, PermissionService>();
 
         services.AddValidatorsFromAssemblyContaining<Program>();
-        services.AddTransient(typeof(AWBlazorApp.Validators.MudFormValidator<>));
+        services.AddTransient(typeof(AWBlazorApp.Shared.Validators.MudFormValidator<>));
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>

@@ -3,7 +3,7 @@ using AWBlazorApp.Features.ToolSlots.Domain;
 using AWBlazorApp.Features.ToolSlots.Models;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 
 namespace AWBlazorApp.Features.ToolSlots.Services;
 
