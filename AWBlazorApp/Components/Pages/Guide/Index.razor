@@ -69,38 +69,38 @@
             {
                 var a = dto.Article;
                 <MudItem xs="12" sm="6" md="4">
-                    <MudBadge Content="@("New")" Color="Color.Error" Overlap="true" Visible="@(!dto.IsRead)">
-                        <MudCard Elevation="2" Class="d-flex flex-column" Style="height:100%">
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudLink Href="@($"/guide/{a.Slug}")" Typo="Typo.h6" Color="Color.Inherit">
-                                        @a.Title
-                                    </MudLink>
-                                </CardHeaderContent>
-                                <CardHeaderActions>
-                                    <MudIcon Icon="@(dto.IsRead ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.FiberNew)"
-                                             Color="@(dto.IsRead ? Color.Success : Color.Error)"
-                                             Size="Size.Small" />
-                                </CardHeaderActions>
-                            </MudCardHeader>
-                            <MudCardContent Class="flex-grow-1">
-                                @if (!string.IsNullOrEmpty(a.Summary))
+                    <MudCard Elevation="2" Class="guide-article-card">
+                        <MudCardHeader Class="guide-article-header">
+                            <CardHeaderContent>
+                                <MudLink Href="@($"/guide/{a.Slug}")" Typo="Typo.h6" Color="Color.Inherit" Class="guide-article-title">
+                                    @a.Title
+                                </MudLink>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                         Color="@(dto.IsRead ? Color.Success : Color.Error)"
+                                         Icon="@(dto.IsRead ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.FiberNew)">
+                                    @(dto.IsRead ? "Read" : "New")
+                                </MudChip>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent Class="guide-article-body">
+                            @if (!string.IsNullOrEmpty(a.Summary))
+                            {
+                                <MudText Typo="Typo.body2" Class="guide-article-summary">@a.Summary</MudText>
+                            }
+                            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="guide-article-chips">
+                                @if (!string.IsNullOrEmpty(a.Category))
                                 {
-                                    <MudText Typo="Typo.body2" Class="mb-2">@a.Summary</MudText>
+                                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled">@a.Category</MudChip>
                                 }
-                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-                                    @if (!string.IsNullOrEmpty(a.Category))
-                                    {
-                                        <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled">@a.Category</MudChip>
-                                    }
-                                    @foreach (var tag in a.Tags)
-                                    {
-                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Href="@($"/guide/tag/{tag}")">@tag</MudChip>
-                                    }
-                                </MudStack>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudBadge>
+                                @foreach (var tag in a.Tags)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Href="@($"/guide/tag/{tag}")">@tag</MudChip>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
                 </MudItem>
             }
         </MudGrid>
