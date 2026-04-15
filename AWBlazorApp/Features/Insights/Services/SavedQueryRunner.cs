@@ -4,6 +4,7 @@ using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Shared.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
 using AWBlazorApp.Features.Forecasting.Domain;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Insights.Services;
@@ -54,42 +55,42 @@ public sealed class SavedQueryRunner(IDbContextFactory<ApplicationDbContext> dbF
         {
             QueryMetric.SalesOrderCount => await db.SalesOrderHeaders
                 .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(o => BucketKey(o.OrderDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, q.GroupBy))
                 .Select(g => new QueryBucket(g.Key, g.Count()))
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct),
 
             QueryMetric.TotalSalesRevenue => (await db.SalesOrderHeaders
                 .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(o => BucketKey(o.OrderDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, q.GroupBy))
                 .Select(g => new { Period = g.Key, Value = (double)g.Sum(x => x.TotalDue) })
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct)).Select(x => new QueryBucket(x.Period, x.Value)).ToList(),
 
             QueryMetric.AverageOrderValue => (await db.SalesOrderHeaders
                 .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(o => BucketKey(o.OrderDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, q.GroupBy))
                 .Select(g => new { Period = g.Key, Value = (double)g.Average(x => x.TotalDue) })
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct)).Select(x => new QueryBucket(x.Period, x.Value)).ToList(),
 
             QueryMetric.WorkOrderCount => await db.WorkOrders
                 .Where(DateFilter<Features.AdventureWorks.Domain.WorkOrder>(q, w => w.StartDate))
-                .GroupBy(w => BucketKey(w.StartDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.WorkOrder>(w => w.StartDate, q.GroupBy))
                 .Select(g => new QueryBucket(g.Key, g.Count()))
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct),
 
             QueryMetric.PurchaseOrderCount => await db.PurchaseOrderHeaders
                 .Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
-                .GroupBy(p => BucketKey(p.OrderDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.PurchaseOrderHeader>(p => p.OrderDate, q.GroupBy))
                 .Select(g => new QueryBucket(g.Key, g.Count()))
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct),
 
             QueryMetric.TotalPurchaseSpend => (await db.PurchaseOrderHeaders
                 .Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
-                .GroupBy(p => BucketKey(p.OrderDate, q.GroupBy))
+                .GroupBy(BucketSelector<Features.AdventureWorks.Domain.PurchaseOrderHeader>(p => p.OrderDate, q.GroupBy))
                 .Select(g => new { Period = g.Key, Value = (double)g.Sum(x => x.TotalDue) })
                 .OrderBy(b => b.Period)
                 .ToListAsync(ct)).Select(x => new QueryBucket(x.Period, x.Value)).ToList(),
@@ -122,20 +123,36 @@ public sealed class SavedQueryRunner(IDbContextFactory<ApplicationDbContext> dbF
         return System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(predicate, param);
     }
 
-    /// <summary>
-    /// Truncate a DateTime to the start of its bucket. EF Core can translate this style of
-    /// expression for SQL Server via DATEFROMPARTS / DATEDIFF — if the provider ever falls over
-    /// this, fall back to grouping on individual year/month/quarter ints.
-    /// </summary>
-    private static DateTime BucketKey(DateTime d, QueryGroupBy g) => g switch
+    // Sunday anchor used by the Week bucket — `(DateDiffDay(anchor, d) % 7)` gives the
+    // Sunday-relative day-of-week without leaning on `DateTime.DayOfWeek`, which the
+    // SQL Server provider doesn't translate.
+    private static readonly DateTime WeekAnchor = new(2000, 1, 2);
+
+    // Builds a translatable group-key selector by composing the per-group bucket lambda
+    // with the entity's date selector. Inlined this way (rather than calling a static
+    // method inside the GroupBy), EF Core can map each arm to DATEFROMPARTS / DATEADD.
+    private static Expression<Func<T, DateTime>> BucketSelector<T>(
+        Expression<Func<T, DateTime>> dateSelector, QueryGroupBy g)
     {
-        QueryGroupBy.Day     => new DateTime(d.Year, d.Month, d.Day),
-        QueryGroupBy.Week    => new DateTime(d.Year, d.Month, d.Day).AddDays(-(int)d.DayOfWeek),
-        QueryGroupBy.Month   => new DateTime(d.Year, d.Month, 1),
-        QueryGroupBy.Quarter => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1),
-        QueryGroupBy.Year    => new DateTime(d.Year, 1, 1),
-        _                    => d,
-    };
+        Expression<Func<DateTime, DateTime>> bucket = g switch
+        {
+            QueryGroupBy.Day     => d => new DateTime(d.Year, d.Month, d.Day),
+            QueryGroupBy.Week    => d => new DateTime(d.Year, d.Month, d.Day).AddDays(-(EF.Functions.DateDiffDay(WeekAnchor, d) % 7)),
+            QueryGroupBy.Month   => d => new DateTime(d.Year, d.Month, 1),
+            QueryGroupBy.Quarter => d => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1),
+            QueryGroupBy.Year    => d => new DateTime(d.Year, 1, 1),
+            _                    => d => d,
+        };
+
+        var body = new ParameterReplacer(bucket.Parameters[0], dateSelector.Body).Visit(bucket.Body)!;
+        return Expression.Lambda<Func<T, DateTime>>(body, dateSelector.Parameters);
+    }
+
+    private sealed class ParameterReplacer(ParameterExpression from, Expression to) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node)
+            => node == from ? to : base.VisitParameter(node);
+    }
 
     public static string MetricLabel(QueryMetric m) => m switch
     {
