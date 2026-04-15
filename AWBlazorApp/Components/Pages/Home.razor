@@ -150,9 +150,9 @@
         {
             await using var db = await DbFactory.CreateDbContextAsync();
             salesOrderCount = await db.SalesOrderHeaders.CountAsync();
-            activeForecasts = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == Data.Entities.Forecasting.ForecastStatus.Active);
+            activeForecasts = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == Features.Forecasting.Domain.ForecastStatus.Active);
             openWorkOrders = await db.WorkOrders.CountAsync(w => w.EndDate == null);
-            activeProcesses = await db.Processes.CountAsync(p => p.DeletedDate == null && p.Status == Data.Entities.ProcessManagement.ProcessStatus.Active);
+            activeProcesses = await db.Processes.CountAsync(p => p.DeletedDate == null && p.Status == Features.ProcessManagement.Domain.ProcessStatus.Active);
             userCount = await db.Users.CountAsync();
             productCount = await db.Products.CountAsync();
             employeeCount = await db.Employees.CountAsync();

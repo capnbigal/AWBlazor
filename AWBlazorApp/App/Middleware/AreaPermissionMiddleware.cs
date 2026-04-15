@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using AWBlazorApp.Services.Permissions;
+using AWBlazorApp.Features.Admin.Services;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Services;

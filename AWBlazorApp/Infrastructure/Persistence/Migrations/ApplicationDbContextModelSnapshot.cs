@@ -6570,7 +6570,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ArticleReads");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastDataPoint", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastDataPoint", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6609,7 +6609,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ForecastDataPoints");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastDefinition", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastDefinition", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6683,7 +6683,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ForecastDefinitions");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastHistoricalSnapshot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastHistoricalSnapshot", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6708,7 +6708,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ForecastHistoricalSnapshots");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.Process", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.Process", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6781,7 +6781,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Processes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessExecution", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6840,7 +6840,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProcessExecutions");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStep", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6874,7 +6874,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProcessSteps");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessStepExecution", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStepExecution", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7360,9 +7360,9 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastDataPoint", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastDataPoint", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.Entities.Forecasting.ForecastDefinition", "ForecastDefinition")
+                    b.HasOne("AWBlazorApp.Features.Forecasting.Domain.ForecastDefinition", "ForecastDefinition")
                         .WithMany("DataPoints")
                         .HasForeignKey("ForecastDefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -7371,9 +7371,9 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("ForecastDefinition");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastHistoricalSnapshot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastHistoricalSnapshot", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.Entities.Forecasting.ForecastDefinition", "ForecastDefinition")
+                    b.HasOne("AWBlazorApp.Features.Forecasting.Domain.ForecastDefinition", "ForecastDefinition")
                         .WithMany("HistoricalSnapshots")
                         .HasForeignKey("ForecastDefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -7382,7 +7382,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("ForecastDefinition");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.Process", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.Process", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "DefaultProcessor")
                         .WithMany()
@@ -7400,14 +7400,14 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessExecution", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "AssignedUser")
                         .WithMany()
                         .HasForeignKey("AssignedUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Data.Entities.ProcessManagement.Process", "Process")
+                    b.HasOne("AWBlazorApp.Features.ProcessManagement.Domain.Process", "Process")
                         .WithMany("Executions")
                         .HasForeignKey("ProcessId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -7418,9 +7418,9 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Process");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStep", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.Entities.ProcessManagement.Process", "Process")
+                    b.HasOne("AWBlazorApp.Features.ProcessManagement.Domain.Process", "Process")
                         .WithMany("Steps")
                         .HasForeignKey("ProcessId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -7429,20 +7429,20 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("Process");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessStepExecution", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStepExecution", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "CompletedByUser")
                         .WithMany()
                         .HasForeignKey("CompletedByUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Data.Entities.ProcessManagement.ProcessExecution", "ProcessExecution")
+                    b.HasOne("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", "ProcessExecution")
                         .WithMany("StepExecutions")
                         .HasForeignKey("ProcessExecutionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Data.Entities.ProcessManagement.ProcessStep", "ProcessStep")
+                    b.HasOne("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStep", "ProcessStep")
                         .WithMany()
                         .HasForeignKey("ProcessStepId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -7522,21 +7522,21 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("AreaPermissions");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Forecasting.ForecastDefinition", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastDefinition", b =>
                 {
                     b.Navigation("DataPoints");
 
                     b.Navigation("HistoricalSnapshots");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.Process", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.Process", b =>
                 {
                     b.Navigation("Executions");
 
                     b.Navigation("Steps");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ProcessManagement.ProcessExecution", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", b =>
                 {
                     b.Navigation("StepExecutions");
                 });

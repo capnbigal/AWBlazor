@@ -1,11 +1,13 @@
 using AWBlazorApp.Endpoints.AdventureWorks;
+using AWBlazorApp.Features.Forecasting.Endpoints;
+using AWBlazorApp.Features.ProcessManagement.Endpoints;
 using AWBlazorApp.Features.ToolSlots.Endpoints;
 using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Endpoints;
 using AWBlazorApp.Endpoints.AdventureWorks;
-using AWBlazorApp.Endpoints.Admin;
-using AWBlazorApp.Endpoints.Admin;
+using AWBlazorApp.Features.Admin.Endpoints;
+using AWBlazorApp.Features.Admin.Endpoints;
 
 namespace AWBlazorApp.App.Routing;
 
