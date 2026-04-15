@@ -1,0 +1,367 @@
+@page "/admin"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using Microsoft.Data.SqlClient
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@using System.Data
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject HealthCheckService HealthCheckService
+
+<PageTitle>Admin dashboard</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Admin dashboard</MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        @* ── KPI row ──────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary"
+                         Value="@forecastCount.ToString()" Label="Active forecasts" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Build" Color="Color.Info"
+                         Value="@toolSlotCount.ToString()" Label="Tool slot configs" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.People" Color="Color.Success"
+                         Value="@userCount.ToString()" Label="Users" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Recent bookings & API key usage ─────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-2">Recent forecasts</MudText>
+                    @if (recentForecasts.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No forecasts yet.</MudText>
+                    }
+                    else
+                    {
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Data source</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var f in recentForecasts)
+                                {
+                                    <tr>
+                                        <td>@f.Name</td>
+                                        <td>@f.DataSource</td>
+                                        <td>@f.Method</td>
+                                        <td>@f.Status</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                        <MudLink Href="forecasts" Typo="Typo.caption" Class="mt-1">View all forecasts</MudLink>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-2">API key usage</MudText>
+                    @if (apiKeyStats.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No API keys issued.</MudText>
+                    }
+                    else
+                    {
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Created</th>
+                                    <th>Last used</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var k in apiKeyStats)
+                                {
+                                    <tr>
+                                        <td>@k.Name</td>
+                                        <td>@k.CreatedDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@(k.LastUsedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                                        <td>
+                                            @if (k.RevokedDate.HasValue)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">Revoked</MudChip>
+                                            }
+                                            else if (k.ExpiresDate.HasValue && k.ExpiresDate < DateTime.UtcNow)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">Expired</MudChip>
+                                            }
+                                            else
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">Active</MudChip>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Request volume sparkline (last 14 days) ─────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-2">Request volume (last 14 days)</MudText>
+            @if (requestLabels.Length > 0)
+            {
+                <MudChart T="double" ChartType="ChartType.Bar"
+                          ChartSeries="@requestSeries"
+                          XAxisLabels="@requestLabels"
+                          Width="100%" Height="200px" />
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No request log data available.</MudText>
+            }
+            <MudLink Href="admin/request-log" Typo="Typo.caption">View full request log</MudLink>
+        </MudPaper>
+
+
+        @* ── System health ────────────────────────────────────────────────── *@
+        <MudText Typo="Typo.h5" Class="mt-2">System health</MudText>
+        @if (healthError is not null)
+        {
+            <MudAlert Severity="Severity.Error">Failed to load health checks: @healthError</MudAlert>
+        }
+        else if (healthEntries is null)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var entry in healthEntries)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Class="pa-4" Elevation="2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@HealthIcon(entry.Status)" Color="@HealthColor(entry.Status)" />
+                                <MudText Typo="Typo.subtitle1">@entry.Name</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Color="@HealthColor(entry.Status)" Variant="Variant.Filled">
+                                @entry.Status
+                            </MudChip>
+                            <MudText Typo="Typo.caption">@entry.Duration.TotalMilliseconds.ToString("N0") ms</MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+            @if (healthTotalDuration is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mt-1">Total: @healthTotalDuration.Value.TotalMilliseconds.ToString("N0") ms</MudText>
+            }
+        }
+
+        @* ── Operator tools ───────────────────────────────────────────────── *@
+        <MudText Typo="Typo.h5" Class="mt-4">Operator tools</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Api" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">API docs (Swagger)</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Interactive OpenAPI / Swagger UI for every <code>/api/*</code> endpoint.
+                    </MudText>
+                    <MudLink Href="swagger">Open Swagger UI</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">Hangfire dashboard</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Background job queue, recurring jobs, retries.
+                    </MudText>
+                    <MudLink Href="hangfire">Open Hangfire</MudLink>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">Request log</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Serilog-persisted request history from <code>dbo.RequestLogs</code>.
+                    </MudText>
+                    <MudLink Href="admin/request-log">Open request log</MudLink>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private int forecastCount;
+    private int toolSlotCount;
+    private int userCount;
+
+    // Recent forecasts
+    private List<RecentForecast> recentForecasts = [];
+
+    // API keys
+    private List<ApiKeyStat> apiKeyStats = [];
+
+    // Request volume
+    private string[] requestLabels = [];
+    private List<ChartSeries<double>> requestSeries = [];
+
+    // Health
+    private List<HealthEntry>? healthEntries;
+    private TimeSpan? healthTotalDuration;
+    private string? healthError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        // Core counts
+        forecastCount   = await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == Features.Forecasting.Domain.ForecastStatus.Active);
+        toolSlotCount   = await db.ToolSlotConfigurations.CountAsync();
+        userCount       = await db.Users.CountAsync();
+
+        // Recent forecasts (last 5)
+        recentForecasts = await db.ForecastDefinitions
+            .AsNoTracking()
+            .Where(f => f.DeletedDate == null)
+            .OrderByDescending(f => f.CreatedDate)
+            .Take(5)
+            .Select(f => new RecentForecast
+            {
+                Name = f.Name,
+                DataSource = f.DataSource.ToString(),
+                Method = f.Method.ToString(),
+                Status = f.Status.ToString(),
+            })
+            .ToListAsync();
+
+        // API key stats
+        apiKeyStats = await db.ApiKeys
+            .AsNoTracking()
+            .OrderByDescending(k => k.CreatedDate)
+            .Take(10)
+            .Select(k => new ApiKeyStat
+            {
+                Name = k.Name,
+                CreatedDate = k.CreatedDate,
+                LastUsedDate = k.LastUsedDate,
+                ExpiresDate = k.ExpiresDate,
+                RevokedDate = k.RevokedDate,
+            })
+            .ToListAsync();
+
+        // Request volume from RequestLogs (last 14 days via raw SQL)
+        try
+        {
+            var conn = (SqlConnection)db.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+
+            const string sql = """
+                SELECT CAST(TimeStamp AS date) AS [Day], COUNT(*) AS [Cnt]
+                FROM dbo.RequestLogs
+                WHERE TimeStamp >= DATEADD(day, -14, GETUTCDATE())
+                GROUP BY CAST(TimeStamp AS date)
+                ORDER BY [Day]
+                """;
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.CommandTimeout = 30;
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            var days = new List<(DateTime Day, int Count)>();
+            while (await reader.ReadAsync())
+                days.Add((reader.GetDateTime(0), reader.GetInt32(1)));
+
+            if (days.Count > 0)
+            {
+                requestLabels = days.Select(d => d.Day.ToString("MM-dd")).ToArray();
+                requestSeries = [new ChartSeries<double> { Name = "Requests", Data = days.Select(d => (double)d.Count).ToArray() }];
+            }
+        }
+        catch
+        {
+            // RequestLogs table might not exist yet — that's fine
+        }
+
+        loading = false;
+
+        // Health checks (non-blocking)
+        try
+        {
+            var report = await HealthCheckService.CheckHealthAsync();
+            healthEntries = report.Entries.Select(e => new HealthEntry
+            {
+                Name = e.Key,
+                Status = e.Value.Status,
+                Duration = e.Value.Duration,
+            }).ToList();
+            healthTotalDuration = report.TotalDuration;
+        }
+        catch (Exception ex)
+        {
+            healthError = ex.Message;
+        }
+    }
+
+    private sealed class RecentForecast
+    {
+        public string Name { get; init; } = "";
+        public string DataSource { get; init; } = "";
+        public string Method { get; init; } = "";
+        public string Status { get; init; } = "";
+    }
+
+    private sealed class ApiKeyStat
+    {
+        public string Name { get; init; } = "";
+        public DateTime CreatedDate { get; init; }
+        public DateTime? LastUsedDate { get; init; }
+        public DateTime? ExpiresDate { get; init; }
+        public DateTime? RevokedDate { get; init; }
+    }
+
+    private sealed class HealthEntry
+    {
+        public string Name { get; init; } = "";
+        public HealthStatus Status { get; init; }
+        public TimeSpan Duration { get; init; }
+    }
+
+    private static Color HealthColor(HealthStatus status) => status switch
+    {
+        HealthStatus.Healthy => Color.Success,
+        HealthStatus.Degraded => Color.Warning,
+        HealthStatus.Unhealthy => Color.Error,
+        _ => Color.Default,
+    };
+
+    private static string HealthIcon(HealthStatus status) => status switch
+    {
+        HealthStatus.Healthy => Icons.Material.Filled.CheckCircle,
+        HealthStatus.Degraded => Icons.Material.Filled.Warning,
+        HealthStatus.Unhealthy => Icons.Material.Filled.Error,
+        _ => Icons.Material.Filled.HelpOutline,
+    };
+}

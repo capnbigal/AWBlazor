@@ -4,12 +4,12 @@ using AWBlazorApp.Features.ToolSlots.Domain;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities.AdventureWorks;
 using AWBlazorApp.Data.Entities.Auth;
-using AWBlazorApp.Data.Entities.Forecasting;
-using AWBlazorApp.Data.Entities.Insights;
-using AWBlazorApp.Data.Entities.ProcessManagement;
+using AWBlazorApp.Features.Forecasting.Domain;
+using AWBlazorApp.Features.Insights.Domain;
+using AWBlazorApp.Features.ProcessManagement.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Process = AWBlazorApp.Data.Entities.ProcessManagement.Process;
+using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
 
 namespace AWBlazorApp.Infrastructure.Persistence;
 

@@ -1,5 +1,5 @@
-using AWBlazorApp.Data.Entities.Forecasting;
-using AWBlazorApp.Data.Entities.ProcessManagement;
+using AWBlazorApp.Features.Forecasting.Domain;
+using AWBlazorApp.Features.ProcessManagement.Domain;
 using MudBlazor;
 
 namespace AWBlazorApp.Components.Shared;

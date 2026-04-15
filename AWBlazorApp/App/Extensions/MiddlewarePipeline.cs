@@ -1,10 +1,13 @@
 using AWBlazorApp.Components;
+using AWBlazorApp.Features.ProcessManagement.Services;
+using AWBlazorApp.Features.Insights.Services;
+using AWBlazorApp.Features.Forecasting.Services;
 using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.App.Middleware;
 using AWBlazorApp.App.Routing;
-using AWBlazorApp.Endpoints.Admin;
+using AWBlazorApp.Features.Admin.Endpoints;
 using AWBlazorApp.Services.Jobs;
-using AWBlazorApp.Services.Notifications;
+using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Endpoints;
@@ -158,7 +161,7 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 Cron.Daily(3, 30));
 
-            RecurringJob.AddOrUpdate<AWBlazorApp.Services.Forecasting.ForecastEvaluationJob>(
+            RecurringJob.AddOrUpdate<AWBlazorApp.Features.Forecasting.Services.ForecastEvaluationJob>(
                 "forecast-evaluation",
                 job => job.ExecuteAsync(),
                 Cron.Daily(4, 0));
@@ -168,12 +171,12 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 "*/15 * * * *");
 
-            RecurringJob.AddOrUpdate<AWBlazorApp.Services.Notifications.NotificationRuleEvaluator>(
+            RecurringJob.AddOrUpdate<AWBlazorApp.Features.Insights.Services.NotificationRuleEvaluator>(
                 "notification-rule-evaluator",
                 job => job.ExecuteAsync(CancellationToken.None),
                 "*/5 * * * *");
 
-            RecurringJob.AddOrUpdate<AWBlazorApp.Services.Jobs.KpiSnapshotJob>(
+            RecurringJob.AddOrUpdate<AWBlazorApp.Features.Insights.Services.KpiSnapshotJob>(
                 "kpi-snapshot-job",
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Hourly());

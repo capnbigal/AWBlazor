@@ -1,6 +1,6 @@
 @page "/analytics/forecasts"
 @attribute [Authorize]
-@using AWBlazorApp.Data.Entities.Forecasting
+@using AWBlazorApp.Features.Forecasting.Domain
 @using AWBlazorApp.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AnalyticsCacheService Cache
