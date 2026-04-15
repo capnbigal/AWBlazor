@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 
-namespace AWBlazorApp.Components.Account;
+namespace AWBlazorApp.Scaffold.Identity.Account;
 
 [DebuggerStepThrough]
 [DebuggerNonUserCode]

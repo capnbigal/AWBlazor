@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 
-namespace AWBlazorApp.Components.Account;
+namespace AWBlazorApp.Scaffold.Identity.Account;
 
 internal sealed class IdentityUserAccessor(UserManager<ApplicationUser> userManager, IdentityRedirectManager redirectManager)
 {
