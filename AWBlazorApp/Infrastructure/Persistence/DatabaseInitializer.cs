@@ -74,6 +74,25 @@ public static class DatabaseInitializer
         await EnsureSpatialLocationSeededAsync(db, logger, cancellationToken);
 
         await SeedAsync(sp, cancellationToken);
+
+        // Demo convenience: when Demo:ShiftDates is true, slide every AdventureWorks date
+        // column forward so the canned 2011-2014 sample looks current. Mirrors the
+        // Demo:AutofillLogin pattern — never flip on in real prod. Idempotent: re-running
+        // no-ops once the data is already close to today.
+        var shiftDates = sp.GetRequiredService<IConfiguration>().GetValue("Demo:ShiftDates", defaultValue: false);
+        if (shiftDates)
+        {
+            try
+            {
+                var shifter = sp.GetRequiredService<Features.Admin.Services.AdventureWorksDateShifter>();
+                await shifter.ShiftAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Non-fatal — a shift failure shouldn't break app startup.
+                logger.LogWarning(ex, "AdventureWorks date shift failed (continuing startup)");
+            }
+        }
     }
 
     /// <summary>
