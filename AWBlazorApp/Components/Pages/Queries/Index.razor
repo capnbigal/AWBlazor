@@ -93,31 +93,34 @@
 
 @if (editing is not null)
 {
+    @* Local capture — prevents NRE in TitleContent / other nested fragments after SaveAsync
+       clears the top-level `editing` field mid-dismiss animation. *@
+    var e = editing;
     <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
-        <TitleContent>@(editing.Id == 0 ? "New saved query" : "Edit saved query")</TitleContent>
+        <TitleContent>@(e.Id == 0 ? "New saved query" : "Edit saved query")</TitleContent>
         <DialogContent>
             <MudStack Spacing="3">
-                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
-                <MudSelect T="QueryMetric" @bind-Value="editing.Metric" Label="Metric" Variant="Variant.Outlined">
+                <MudTextField T="string" @bind-Value="e.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
+                <MudSelect T="QueryMetric" @bind-Value="e.Metric" Label="Metric" Variant="Variant.Outlined">
                     @foreach (var m in Enum.GetValues<QueryMetric>())
                     {
                         <MudSelectItem T="QueryMetric" Value="@m">@SavedQueryRunner.MetricLabel(m)</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="QueryGroupBy" @bind-Value="editing.GroupBy" Label="Group by" Variant="Variant.Outlined">
+                <MudSelect T="QueryGroupBy" @bind-Value="e.GroupBy" Label="Group by" Variant="Variant.Outlined">
                     @foreach (var g in Enum.GetValues<QueryGroupBy>())
                     {
                         <MudSelectItem T="QueryGroupBy" Value="@g">@g</MudSelectItem>
                     }
                 </MudSelect>
                 <MudStack Row="true" Spacing="2">
-                    <MudDatePicker @bind-Date="editing.FromDate" Label="From (optional)" Variant="Variant.Outlined" />
-                    <MudDatePicker @bind-Date="editing.ToDate" Label="To (optional)" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="e.FromDate" Label="From (optional)" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="e.ToDate" Label="To (optional)" Variant="Variant.Outlined" />
                 </MudStack>
                 <MudDivider />
-                <MudSwitch T="bool" @bind-Value="editing.IsKpi" Color="Color.Success"
+                <MudSwitch T="bool" @bind-Value="e.IsKpi" Color="Color.Success"
                            Label="Track as KPI (hourly snapshots + /kpis tile)" />
-                <MudNumericField T="double?" @bind-Value="editing.Target" Label="Target (optional)"
+                <MudNumericField T="double?" @bind-Value="e.Target" Label="Target (optional)"
                                  Variant="Variant.Outlined" HelperText="Tiles color green if met, red if not." />
             </MudStack>
         </DialogContent>
