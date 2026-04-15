@@ -1,4 +1,5 @@
 using System.Text;
+using AWBlazorApp.Data.Entities.ToolSlots;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
 

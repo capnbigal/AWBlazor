@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Insights;
 
 /// <summary>
 /// A saved-query reference pinned to a user's personal dashboard. Each row has a DisplayOrder

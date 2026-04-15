@@ -1,6 +1,7 @@
 using System.Net;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Data.Entities.Auth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

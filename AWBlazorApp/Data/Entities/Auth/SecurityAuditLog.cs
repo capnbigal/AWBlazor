@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Auth;
 
 public class SecurityAuditLog
 {

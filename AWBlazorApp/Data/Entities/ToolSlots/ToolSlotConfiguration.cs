@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.ToolSlots;
 
 /// <summary>
 /// Represents the configuration of tool slots for different machine types and families.

@@ -1,7 +1,11 @@
 using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Data.Entities.AdventureWorks;
+using AWBlazorApp.Data.Entities.Auth;
 using AWBlazorApp.Data.Entities.Forecasting;
+using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data.Entities.ProcessManagement;
+using AWBlazorApp.Data.Entities.ToolSlots;
+using AWBlazorApp.Data.Entities.UserGuide;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Data.Entities.ProcessManagement.Process;

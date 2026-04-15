@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Data.Entities.Auth;
 using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Services;
 using Microsoft.EntityFrameworkCore;

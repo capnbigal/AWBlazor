@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AWBlazorApp.Data.Entities.UserGuide;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
 using Markdig;

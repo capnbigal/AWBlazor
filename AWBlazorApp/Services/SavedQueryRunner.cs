@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Data.Entities.ProcessManagement;
 using AWBlazorApp.Data.Entities.Forecasting;

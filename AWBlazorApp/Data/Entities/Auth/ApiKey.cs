@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Auth;
 
 /// <summary>
 /// API key tied to an Identity user. Validated by <see cref="Authentication.ApiKeyAuthenticationHandler"/>

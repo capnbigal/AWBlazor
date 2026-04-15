@@ -1,4 +1,5 @@
 using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Data.Entities.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace AWBlazorApp.Data;
