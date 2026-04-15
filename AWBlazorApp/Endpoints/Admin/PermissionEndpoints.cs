@@ -5,7 +5,7 @@ using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Endpoints;
+namespace AWBlazorApp.Endpoints.Admin;
 
 public static class PermissionEndpoints
 {
