@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Insights;
 
 /// <summary>
 /// One recorded run of a SavedQuery flagged IsKpi, used to build the sparkline history on the

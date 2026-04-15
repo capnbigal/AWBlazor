@@ -1,4 +1,5 @@
 using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Data.Entities.ToolSlots;
 
 namespace AWBlazorApp.Models;
 

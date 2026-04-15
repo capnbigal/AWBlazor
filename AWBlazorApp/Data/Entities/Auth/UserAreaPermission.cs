@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Auth;
 
 /// <summary>
 /// Explicit per-area permission grant for a user. One row per (UserId, Area).

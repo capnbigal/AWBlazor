@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Insights;
 
 /// <summary>
 /// A named, reusable query definition owned by a user. The /queries page runs these on demand,

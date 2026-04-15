@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Insights;
 
 /// <summary>
 /// User-defined alert rule evaluated by <see cref="Services.NotificationRuleEvaluator"/> on a

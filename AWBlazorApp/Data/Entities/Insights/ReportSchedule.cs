@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Data.Entities;
+namespace AWBlazorApp.Data.Entities.Insights;
 
 /// <summary>
 /// Scheduled email delivery of a SavedQuery result as a CSV attachment. A Hangfire recurring job
