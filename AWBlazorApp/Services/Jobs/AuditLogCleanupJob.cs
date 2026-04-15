@@ -2,6 +2,7 @@ using Hangfire;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 
 namespace AWBlazorApp.Services.Jobs;
 

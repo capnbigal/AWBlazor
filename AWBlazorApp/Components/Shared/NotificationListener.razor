@@ -9,7 +9,7 @@
     protected override async Task OnInitializedAsync()
     {
         _hub = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri(AWBlazorApp.Hubs.NotificationHub.HubUrl))
+            .WithUrl(Navigation.ToAbsoluteUri(AWBlazorApp.Infrastructure.SignalR.NotificationHub.HubUrl))
             .WithAutomaticReconnect()
             .Build();
 

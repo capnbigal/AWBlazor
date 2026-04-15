@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Data;
+namespace AWBlazorApp.Infrastructure.Persistence;
 
 /// <summary>
 /// Helpers for the create-entity-then-write-audit-log pattern that appears in 67+ endpoints

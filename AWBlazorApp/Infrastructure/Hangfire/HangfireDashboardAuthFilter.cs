@@ -1,7 +1,8 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Hangfire.Dashboard;
 
-namespace AWBlazorApp.Authentication;
+namespace AWBlazorApp.Infrastructure.Hangfire;
 
 /// <summary>
 /// Hangfire dashboard filter that only allows users in the Admin role.

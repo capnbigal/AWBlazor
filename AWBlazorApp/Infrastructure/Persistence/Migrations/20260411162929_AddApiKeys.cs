@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AWBlazorApp.Migrations
+namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class AddApiKeys : Migration

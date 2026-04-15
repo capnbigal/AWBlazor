@@ -2,6 +2,7 @@ using System.Text;
 using AWBlazorApp.Services.Jobs;
 using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;

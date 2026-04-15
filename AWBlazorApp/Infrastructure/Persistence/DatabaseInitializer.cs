@@ -1,4 +1,5 @@
 using System.Data;
+using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
-namespace AWBlazorApp.Data;
+namespace AWBlazorApp.Infrastructure.Persistence;
 
 /// <summary>
 /// Applies pending EF Core migrations on startup and seeds initial roles and users.

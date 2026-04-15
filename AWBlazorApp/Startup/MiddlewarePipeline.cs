@@ -3,6 +3,7 @@ using AWBlazorApp.Endpoints.Admin;
 using AWBlazorApp.Services.Jobs;
 using AWBlazorApp.Services.Notifications;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Endpoints;
 using AWBlazorApp.Services;
 using Hangfire;
@@ -99,7 +100,7 @@ public static class MiddlewarePipeline
         app.MapGeoEndpoints();
         app.MapPreferencesEndpoints();
         app.MapPermissionEndpoints();
-        app.MapHub<AWBlazorApp.Hubs.NotificationHub>(AWBlazorApp.Hubs.NotificationHub.HubUrl);
+        app.MapHub<AWBlazorApp.Infrastructure.SignalR.NotificationHub>(AWBlazorApp.Infrastructure.SignalR.NotificationHub.HubUrl);
 
         // Health checks — /healthz (anonymous liveness), /healthz/ready (Admin readiness).
         app.MapHealthChecks("/healthz", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
@@ -141,7 +142,7 @@ public static class MiddlewarePipeline
         {
             app.MapHangfireDashboard("/hangfire", new DashboardOptions
             {
-                Authorization = [new AWBlazorApp.Authentication.HangfireDashboardAuthFilter()],
+                Authorization = [new AWBlazorApp.Infrastructure.Hangfire.HangfireDashboardAuthFilter()],
             });
 
             RecurringJob.AddOrUpdate<RequestLogCleanupJob>(

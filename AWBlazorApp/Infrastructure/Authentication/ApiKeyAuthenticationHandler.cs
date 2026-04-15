@@ -1,13 +1,14 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AWBlazorApp.Authentication;
+namespace AWBlazorApp.Infrastructure.Authentication;
 
 public sealed class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions
 {

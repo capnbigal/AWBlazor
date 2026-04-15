@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Services.Permissions;
 using AWBlazorApp.Data.Entities.Auth;
 using AWBlazorApp.Data.Entities;

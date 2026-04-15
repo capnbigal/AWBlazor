@@ -1,4 +1,5 @@
 using System.Net;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Data.Entities.Auth;
@@ -144,7 +145,7 @@ public class ApiSmokeTests : IntegrationTestFixtureBase
 
         // Generate a unique key, store its hash so the auth handler can verify it.
         var rawKey = "ek_smoke_" + Guid.NewGuid().ToString("N");
-        var hashed = AWBlazorApp.Authentication.ApiKeyHasher.Hash(rawKey);
+        var hashed = AWBlazorApp.Infrastructure.Authentication.ApiKeyHasher.Hash(rawKey);
 
         db.ApiKeys.Add(new ApiKey
         {

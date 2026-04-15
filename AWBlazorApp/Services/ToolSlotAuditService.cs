@@ -1,6 +1,7 @@
 using System.Text;
 using AWBlazorApp.Data.Entities.ToolSlots;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities;
 
 namespace AWBlazorApp.Services;

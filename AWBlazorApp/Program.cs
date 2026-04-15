@@ -1,5 +1,6 @@
 using System.Globalization;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Startup;
 using Serilog;
 
