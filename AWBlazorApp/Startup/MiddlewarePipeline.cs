@@ -171,22 +171,12 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Hourly());
 
-            // Re-register all active ReportSchedules with Hangfire — handles the case where the
-            // Hangfire job store was wiped but the ReportSchedules table still has rows.
-            using (var scope = app.Services.CreateScope())
-            {
-                var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AWBlazorApp.Data.ApplicationDbContext>>();
-                var registry = scope.ServiceProvider.GetRequiredService<AWBlazorApp.Services.ReportScheduleRegistry>();
-                using var db = dbFactory.CreateDbContext();
-                foreach (var s in db.ReportSchedules.Where(s => s.IsActive).ToList())
-                {
-                    try { registry.Register(s); }
-                    catch (Exception ex)
-                    {
-                        app.Logger.LogWarning(ex, "Failed to re-register ReportSchedule {Id}", s.Id);
-                    }
-                }
-            }
+            // Note: ReportSchedule recurring jobs are registered by the /reports/schedule page
+            // whenever a user saves or toggles a schedule. Hangfire's own SQL storage persists
+            // them across restarts, so there's no need to re-register at startup. An earlier
+            // version of this file ran a one-time loop here against ReportSchedules, but that
+            // query ran before DatabaseInitializer had created the table on first deploy,
+            // crashing the host with "Invalid object name 'ReportSchedules'".
 
             BackgroundJob.Enqueue<ApiKeyHashMigrationJob>(job => job.ExecuteAsync());
         }
