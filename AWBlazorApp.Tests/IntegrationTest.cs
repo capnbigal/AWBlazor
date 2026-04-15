@@ -920,6 +920,62 @@ public class IntegrationTest
     }
 
     /// <summary>
+    /// Reproduces the production failure where ApiKeyHashMigrationJob hit a duplicate-key
+    /// collision on IX_ApiKeys_Key because a plain-text row's hashed form already existed
+    /// in another row. Asserts the job drops the duplicate plain-text row instead of
+    /// blowing up on SaveChanges.
+    /// </summary>
+    [Test]
+    public async Task ApiKeyHashMigrationJob_Drops_Duplicates_Instead_Of_Crashing()
+    {
+        const string rawKey = "ek_migration_collision_test";
+        var hash = AWBlazorApp.Infrastructure.Authentication.ApiKeyHasher.Hash(rawKey);
+
+        await using (var db = await GetDbContextAsync())
+        {
+            var user = await db.Users.FirstAsync(u => u.Email == "admin@email.com");
+
+            // Wipe any leftover rows from prior test runs.
+            var existing = await db.ApiKeys.Where(k => k.Name.StartsWith("collision-test-")).ToListAsync();
+            db.ApiKeys.RemoveRange(existing);
+            await db.SaveChangesAsync();
+
+            // The collision: one plain-text row + one row whose Key is already the hashed form.
+            db.ApiKeys.Add(new AWBlazorApp.Features.Identity.Domain.ApiKey
+            {
+                Key = rawKey, Name = "collision-test-plaintext", UserId = user.Id, CreatedDate = DateTime.UtcNow,
+            });
+            db.ApiKeys.Add(new AWBlazorApp.Features.Identity.Domain.ApiKey
+            {
+                Key = hash, Name = "collision-test-hashed", UserId = user.Id, CreatedDate = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var job = new AWBlazorApp.Infrastructure.Jobs.ApiKeyHashMigrationJob(
+            scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>(),
+            scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AWBlazorApp.Infrastructure.Jobs.ApiKeyHashMigrationJob>>());
+
+        // Pre-fix this throws DbUpdateException. Post-fix it completes cleanly.
+        await job.ExecuteAsync();
+
+        await using (var db = await GetDbContextAsync())
+        {
+            var survivors = await db.ApiKeys
+                .Where(k => k.Name.StartsWith("collision-test-"))
+                .ToListAsync();
+            Assert.That(survivors, Has.Count.EqualTo(1),
+                "Expected the plain-text duplicate to be dropped and only the pre-hashed row to survive.");
+            Assert.That(survivors[0].Name, Is.EqualTo("collision-test-hashed"));
+            Assert.That(survivors[0].Key, Is.EqualTo(hash));
+
+            db.ApiKeys.RemoveRange(survivors);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
     /// Exercises AdventureWorksDateShifter against AdventureWorks2022_dev. Runs twice and asserts
     /// the second run is a no-op — idempotence is the critical guarantee because this service
     /// runs on every startup under <c>Demo:ShiftDates=true</c>. The first run may or may not apply
