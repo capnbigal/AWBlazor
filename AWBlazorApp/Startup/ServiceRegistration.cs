@@ -2,9 +2,10 @@ using AWBlazorApp.Components.Account;
 using AWBlazorApp.Services.Jobs;
 using AWBlazorApp.Services.Notifications;
 using AWBlazorApp.Services.Insights;
-using AWBlazorApp.Services.Email;
+using AWBlazorApp.Infrastructure.Email;
 using AWBlazorApp.Services.Permissions;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Services;
 using AWBlazorApp.Services.Forecasting;
 using FluentValidation;
@@ -72,8 +73,8 @@ public static class ServiceRegistration
             .AddIdentityCookies();
 
         services.AddAuthentication()
-            .AddScheme<Authentication.ApiKeyAuthenticationOptions, Authentication.ApiKeyAuthenticationHandler>(
-                Authentication.ApiKeyAuthenticationOptions.Scheme, _ => { });
+            .AddScheme<AWBlazorApp.Infrastructure.Authentication.ApiKeyAuthenticationOptions, AWBlazorApp.Infrastructure.Authentication.ApiKeyAuthenticationHandler>(
+                AWBlazorApp.Infrastructure.Authentication.ApiKeyAuthenticationOptions.Scheme, _ => { });
 
         services.AddAuthorization(options =>
         {
@@ -82,7 +83,7 @@ public static class ServiceRegistration
                 policy.RequireAuthenticatedUser();
                 policy.AddAuthenticationSchemes(
                     IdentityConstants.ApplicationScheme,
-                    Authentication.ApiKeyAuthenticationOptions.Scheme);
+                    AWBlazorApp.Infrastructure.Authentication.ApiKeyAuthenticationOptions.Scheme);
             });
         });
 

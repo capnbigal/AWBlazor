@@ -1,6 +1,7 @@
 using System.Data;
 using System.Text;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 

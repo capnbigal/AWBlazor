@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Data;
+namespace AWBlazorApp.Infrastructure.Persistence;
 
 /// <summary>
 /// Wraps <see cref="DatabaseInitializer.InitializeAsync"/> so it runs as part of the host's

@@ -1,10 +1,11 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Services.Jobs;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
-namespace AWBlazorApp.Services.Email;
+namespace AWBlazorApp.Infrastructure.Email;
 
 /// <summary>
 /// Implements <see cref="IEmailSender{ApplicationUser}"/> by enqueuing a Hangfire background

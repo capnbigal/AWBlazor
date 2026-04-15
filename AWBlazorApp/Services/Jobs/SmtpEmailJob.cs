@@ -1,5 +1,5 @@
 using System.Net.Mail;
-using AWBlazorApp.Services.Email;
+using AWBlazorApp.Infrastructure.Email;
 using Hangfire;
 using Microsoft.Extensions.Options;
 

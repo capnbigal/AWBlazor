@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 
 namespace AWBlazorApp.Components.Account;
 

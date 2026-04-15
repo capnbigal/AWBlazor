@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using System.Security.Claims;
 
 namespace AWBlazorApp.Components.Account;

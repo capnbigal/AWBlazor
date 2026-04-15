@@ -1,5 +1,6 @@
-using AWBlazorApp.Authentication;
+using AWBlazorApp.Infrastructure.Authentication;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Services.Jobs;

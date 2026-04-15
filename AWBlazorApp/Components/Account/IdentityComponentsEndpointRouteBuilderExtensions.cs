@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

@@ -1,4 +1,4 @@
-using AWBlazorApp.Hubs;
+using AWBlazorApp.Infrastructure.SignalR;
 using Microsoft.AspNetCore.SignalR;
 
 namespace AWBlazorApp.Services.Notifications;

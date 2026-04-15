@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Endpoints;

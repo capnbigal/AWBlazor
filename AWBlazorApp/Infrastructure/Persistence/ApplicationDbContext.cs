@@ -1,4 +1,5 @@
 using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities.AdventureWorks;
 using AWBlazorApp.Data.Entities.Auth;
 using AWBlazorApp.Data.Entities.Forecasting;
@@ -10,7 +11,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Data.Entities.ProcessManagement.Process;
 
-namespace AWBlazorApp.Data;
+namespace AWBlazorApp.Infrastructure.Persistence;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)

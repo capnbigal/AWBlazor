@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data.Entities;
 using AWBlazorApp.Data.Entities.ProcessManagement;

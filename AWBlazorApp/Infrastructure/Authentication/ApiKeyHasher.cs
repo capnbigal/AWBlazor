@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace AWBlazorApp.Authentication;
+namespace AWBlazorApp.Infrastructure.Authentication;
 
 /// <summary>
 /// SHA-256 hash utility for API keys. New keys are stored as hashes;

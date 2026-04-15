@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace AWBlazorApp.Data;
+namespace AWBlazorApp.Infrastructure.Persistence;
 
 /// <summary>
 /// Populates audit fields (CreatedBy/CreatedDate/ModifiedBy/ModifiedDate/DeletedDate)
