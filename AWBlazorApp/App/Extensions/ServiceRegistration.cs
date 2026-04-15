@@ -1,4 +1,4 @@
-using AWBlazorApp.Components.Account;
+using AWBlazorApp.Scaffold.Identity.Account;
 using AWBlazorApp.Features.ProcessManagement.Services;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Forecasting.Services;

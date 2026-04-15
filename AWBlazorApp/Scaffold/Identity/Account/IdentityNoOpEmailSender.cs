@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 
-namespace AWBlazorApp.Components.Account;
+namespace AWBlazorApp.Scaffold.Identity.Account;
 
 // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
 internal sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>
