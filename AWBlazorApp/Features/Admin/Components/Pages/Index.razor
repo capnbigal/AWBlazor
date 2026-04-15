@@ -3,8 +3,11 @@
 @using Microsoft.Data.SqlClient
 @using Microsoft.Extensions.Diagnostics.HealthChecks
 @using System.Data
+@using AWBlazorApp.Features.Admin.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject HealthCheckService HealthCheckService
+@inject AdventureWorksDateShifter DateShifter
+@inject ISnackbar Snackbar
 
 <PageTitle>Admin dashboard</PageTitle>
 
@@ -209,6 +212,39 @@
                     <MudLink Href="admin/request-log">Open request log</MudLink>
                 </MudPaper>
             </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Warning" />
+                        <MudText Typo="Typo.subtitle1">Shift AdventureWorks dates</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Slide every date in Sales / Purchasing / Production / HR / Person forward so
+                        the 2011-2014 sample looks current. Preserves all relative gaps. Safe to
+                        re-run — it no-ops if data is already within a week of today.
+                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.FastForward"
+                                   OnClick="ShiftDatesAsync" Disabled="@shifting">
+                            @(shifting ? "Shifting..." : "Shift dates to today")
+                        </MudButton>
+                    </MudStack>
+                    @if (lastShiftResult is not null)
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2" Color="Color.Secondary">
+                            @if (lastShiftResult.DidShift)
+                            {
+                                @($"Shifted by {lastShiftResult.OffsetDays} days across {lastShiftResult.ColumnsUpdated} columns ({lastShiftResult.RowsUpdated:N0} row updates). New max OrderDate: {lastShiftResult.NewMaxOrderDate:yyyy-MM-dd}.")
+                            }
+                            else
+                            {
+                                @($"Skipped — {lastShiftResult.SkipReason}.")
+                            }
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
         </MudGrid>
     }
 </MudStack>
@@ -233,6 +269,32 @@
     private List<HealthEntry>? healthEntries;
     private TimeSpan? healthTotalDuration;
     private string? healthError;
+
+    // Date shift tool
+    private bool shifting;
+    private ShiftResult? lastShiftResult;
+
+    private async Task ShiftDatesAsync()
+    {
+        shifting = true;
+        try
+        {
+            lastShiftResult = await DateShifter.ShiftAsync();
+            Snackbar.Add(
+                lastShiftResult.DidShift
+                    ? $"Shifted by {lastShiftResult.OffsetDays} days ({lastShiftResult.RowsUpdated:N0} rows)."
+                    : $"No shift applied — {lastShiftResult.SkipReason}.",
+                lastShiftResult.DidShift ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Shift failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            shifting = false;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

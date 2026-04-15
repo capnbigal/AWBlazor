@@ -920,6 +920,43 @@ public class IntegrationTest
     }
 
     /// <summary>
+    /// Exercises AdventureWorksDateShifter against AdventureWorks2022_dev. Runs twice and asserts
+    /// the second run is a no-op — idempotence is the critical guarantee because this service
+    /// runs on every startup under <c>Demo:ShiftDates=true</c>. The first run may or may not apply
+    /// a shift depending on whether the dev DB has already been shifted by a prior run; either
+    /// path is valid and each produces a no-op second call.
+    /// </summary>
+    [Test]
+    public async Task AdventureWorks_Date_Shifter_Is_Idempotent()
+    {
+        using var scope = factory.Services.CreateScope();
+        var shifter = scope.ServiceProvider
+            .GetRequiredService<AWBlazorApp.Features.Admin.Services.AdventureWorksDateShifter>();
+
+        var first = await shifter.ShiftAsync();
+
+        if (first.DidShift)
+        {
+            Assert.That(first.OffsetDays, Is.Not.EqualTo(0));
+            Assert.That(first.ColumnsUpdated, Is.GreaterThan(0));
+            Assert.That(first.RowsUpdated, Is.GreaterThan(0));
+            Assert.That((DateTime.Today - first.NewMaxOrderDate.Date).Duration(),
+                Is.LessThanOrEqualTo(TimeSpan.FromDays(7)),
+                "New max OrderDate should be within a week of today.");
+        }
+        else
+        {
+            Assert.That(first.SkipReason, Is.Not.Null);
+        }
+
+        // Regardless of the first-run path, a second call must not re-shift — that would compound
+        // on every startup and push the data indefinitely into the future.
+        var second = await shifter.ShiftAsync();
+        Assert.That(second.DidShift, Is.False,
+            $"Second shift should be a no-op but applied offset={second.OffsetDays}.");
+    }
+
+    /// <summary>
     /// Resolves an <see cref="ApplicationDbContext"/> from the test factory's service provider
     /// so test setup code can read/write the AdventureWorks2022_dev schema directly.
     /// </summary>

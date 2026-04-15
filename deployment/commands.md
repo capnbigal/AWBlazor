@@ -74,6 +74,22 @@ sed -i 's/^DEMO_AUTOFILL_LOGIN=true/DEMO_AUTOFILL_LOGIN=false/' .env
 docker compose up -d app
 ```
 
+## AdventureWorks date-shift toggle
+
+When `DEMO_SHIFT_DATES=true`, the app slides every date column in Sales / Purchasing / Production / HumanResources / Person forward on startup (and exposes a "Shift dates to today" button on `/admin`) so the 2011-2014 sample data stays current. Uniform shift preserves every relative gap (lead times, hire-age spreads, price-history windows). Idempotent — a re-run while already within a week of today no-ops. Never enable in real prod.
+
+```bash
+cd /opt/awblazor
+
+# Turn ON
+echo 'DEMO_SHIFT_DATES=true' >> .env
+docker compose up -d app
+
+# Turn OFF
+sed -i 's/^DEMO_SHIFT_DATES=true/DEMO_SHIFT_DATES=false/' .env
+docker compose up -d app
+```
+
 ## Nginx
 
 ```bash

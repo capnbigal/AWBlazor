@@ -47,6 +47,10 @@ services:
       # Demo convenience: when true, /Account/Login prefills the seed admin creds.
       # Flip via DEMO_AUTOFILL_LOGIN in .env + `docker compose up -d app`. Never true in real prod.
       Demo__AutofillLogin: "${DEMO_AUTOFILL_LOGIN:-false}"
+      # Demo convenience: when true, AdventureWorks business dates get shifted forward on
+      # startup (and by the Admin "Shift dates to today" button) so the 2011-2014 sample looks
+      # current. Mirrors Demo__AutofillLogin. Never true in real prod.
+      Demo__ShiftDates: "${DEMO_SHIFT_DATES:-false}"
       # SMTP (set in .env on the droplet).
       Smtp__Host: "${SMTP_HOST:-}"
       Smtp__Port: "${SMTP_PORT:-587}"

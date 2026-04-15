@@ -203,6 +203,7 @@ public static class ServiceRegistration
         services.AddScoped<IForecastAlgorithm, CrostonAlgorithm>();
         services.AddScoped<IForecastAlgorithm, ThetaAlgorithm>();
         services.AddTransient<ForecastEvaluationJob>();
+        services.AddScoped<AWBlazorApp.Features.Admin.Services.AdventureWorksDateShifter>();
         return services;
     }
 
