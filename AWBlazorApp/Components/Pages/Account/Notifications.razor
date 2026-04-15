@@ -116,9 +116,10 @@
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(state.User);
-        if (user is null)
+        if (user is null || string.IsNullOrEmpty(user.Id))
         {
             loading = false;
+            Snackbar.Add("Could not identify the current user. Please sign in again.", Severity.Error);
             return;
         }
         currentUserId = user.Id;
@@ -180,32 +181,40 @@
     private async Task SaveAsync()
     {
         if (editing is null) return;
-        if (string.IsNullOrWhiteSpace(editing.Name))
+        if (string.IsNullOrWhiteSpace(editing.Name)) { Snackbar.Add("Name is required.", Severity.Warning); return; }
+        if (string.IsNullOrEmpty(currentUserId))     { Snackbar.Add("Not signed in.", Severity.Error); return; }
+
+        var wasNew = editing.Id == 0;
+        try
         {
-            Snackbar.Add("Name is required.", Severity.Warning);
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (wasNew)
+            {
+                db.NotificationRules.Add(editing);
+            }
+            else
+            {
+                var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                    db.NotificationRules.Where(r => r.Id == editing.Id && r.UserId == currentUserId));
+                if (existing is null) { Snackbar.Add("Rule not found.", Severity.Error); return; }
+                existing.Name = editing.Name;
+                existing.Metric = editing.Metric;
+                existing.Operator = editing.Operator;
+                existing.Threshold = editing.Threshold;
+                existing.CooldownMinutes = editing.CooldownMinutes;
+                existing.IsActive = editing.IsActive;
+            }
+            await db.SaveChangesAsync();
+            Snackbar.Add(wasNew ? "Rule created." : "Rule updated.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Save failed: " + ex.Message, Severity.Error);
+            dialogOpen = false;
+            editing = null;
             return;
         }
 
-        await using var db = await DbFactory.CreateDbContextAsync();
-        if (editing.Id == 0)
-        {
-            db.NotificationRules.Add(editing);
-        }
-        else
-        {
-            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                db.NotificationRules.Where(r => r.Id == editing.Id && r.UserId == currentUserId));
-            if (existing is null) { Snackbar.Add("Rule not found.", Severity.Error); return; }
-            existing.Name = editing.Name;
-            existing.Metric = editing.Metric;
-            existing.Operator = editing.Operator;
-            existing.Threshold = editing.Threshold;
-            existing.CooldownMinutes = editing.CooldownMinutes;
-            existing.IsActive = editing.IsActive;
-        }
-        await db.SaveChangesAsync();
-
-        Snackbar.Add(editing.Id == 0 ? "Rule created." : "Rule updated.", Severity.Success);
         dialogOpen = false;
         editing = null;
         await LoadAsync();

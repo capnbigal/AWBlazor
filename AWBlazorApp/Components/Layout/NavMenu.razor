@@ -9,10 +9,23 @@
             <MudNavLink Href="forecasts" Icon="@Icons.Material.Filled.TrendingUp">Forecasts</MudNavLink>
             <MudNavLink Href="processes" Icon="@Icons.Material.Filled.AccountTree">Processes</MudNavLink>
             <MudNavLink Href="tool-slots" Icon="@Icons.Material.Filled.Build">Tool slots</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    @* Admin-gated planning tools. These four pages currently run un-bounded queries via
+       SavedQueryRunner — they are restricted to Admin until PR B adds query timeouts,
+       mandatory date ranges, and per-user indexes. *@
+    <AuthorizeView Roles="@AppRoles.Admin">
+        <Authorized>
             <MudNavLink Href="queries" Icon="@Icons.Material.Filled.QueryStats">Saved queries</MudNavLink>
             <MudNavLink Href="kpis" Icon="@Icons.Material.Filled.Dashboard">KPIs</MudNavLink>
             <MudNavLink Href="dashboard" Icon="@Icons.Material.Filled.Dashboard">My dashboard</MudNavLink>
             <MudNavLink Href="reports/schedule" Icon="@Icons.Material.Filled.Schedule">Scheduled reports</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView>
+        <Authorized>
 
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.overline" Class="px-4">Analytics</MudText>

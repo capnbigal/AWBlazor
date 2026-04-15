@@ -1,5 +1,5 @@
 @page "/queries"
-@attribute [Authorize]
+@attribute [Authorize(Roles = AppRoles.Admin)]
 @using AWBlazorApp.Data.Entities
 @using AWBlazorApp.Services
 @using AWBlazorApp.Shared
@@ -144,7 +144,14 @@
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(state.User);
-        if (user is null) { loading = false; return; }
+        // Fail-closed: without a resolved user id we refuse to touch the DB rather than
+        // accidentally query with UserId="" which would share rows across unauthenticated users.
+        if (user is null || string.IsNullOrEmpty(user.Id))
+        {
+            loading = false;
+            Snackbar.Add("Could not identify the current user. Please sign in again.", Severity.Error);
+            return;
+        }
         currentUserId = user.Id;
         await LoadAsync();
     }
@@ -185,30 +192,47 @@
 
     private async Task SaveAsync()
     {
+        // Validation — keep dialog open for correction.
         if (editing is null) return;
         if (string.IsNullOrWhiteSpace(editing.Name)) { Snackbar.Add("Name is required.", Severity.Warning); return; }
+        if (string.IsNullOrEmpty(currentUserId))    { Snackbar.Add("Not signed in.",     Severity.Error);   return; }
 
-        await using var db = await DbFactory.CreateDbContextAsync();
-        if (editing.Id == 0)
+        var wasNew = editing.Id == 0;
+        try
         {
-            db.SavedQueries.Add(editing);
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (wasNew)
+            {
+                db.SavedQueries.Add(editing);
+            }
+            else
+            {
+                var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                    db.SavedQueries.Where(x => x.Id == editing.Id && x.UserId == currentUserId));
+                if (existing is null) { Snackbar.Add("Query not found.", Severity.Error); return; }
+                existing.Name = editing.Name;
+                existing.Metric = editing.Metric;
+                existing.GroupBy = editing.GroupBy;
+                existing.FromDate = editing.FromDate;
+                existing.ToDate = editing.ToDate;
+                existing.IsKpi = editing.IsKpi;
+                existing.Target = editing.Target;
+            }
+            await db.SaveChangesAsync();
+            Snackbar.Add(wasNew ? "Query created." : "Query saved.", Severity.Success);
         }
-        else
+        catch (Exception ex)
         {
-            var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                db.SavedQueries.Where(x => x.Id == editing.Id && x.UserId == currentUserId));
-            if (existing is null) { Snackbar.Add("Query not found.", Severity.Error); return; }
-            existing.Name = editing.Name;
-            existing.Metric = editing.Metric;
-            existing.GroupBy = editing.GroupBy;
-            existing.FromDate = editing.FromDate;
-            existing.ToDate = editing.ToDate;
-            existing.IsKpi = editing.IsKpi;
-            existing.Target = editing.Target;
+            // Close the dialog so users aren't stuck staring at a frozen form. Surface the error
+            // via snackbar — they can re-open via New/Edit to retry.
+            Snackbar.Add("Save failed: " + ex.Message, Severity.Error);
+            dialogOpen = false;
+            editing = null;
+            return;
         }
-        await db.SaveChangesAsync();
 
-        dialogOpen = false; editing = null;
+        dialogOpen = false;
+        editing = null;
         await LoadAsync();
     }
 
