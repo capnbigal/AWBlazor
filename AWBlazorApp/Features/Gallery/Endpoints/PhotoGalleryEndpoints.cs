@@ -2,7 +2,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Endpoints;
+namespace AWBlazorApp.Features.Gallery.Endpoints;
 
 public static class PhotoGalleryEndpoints
 {

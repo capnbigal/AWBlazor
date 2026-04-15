@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using AWBlazorApp.Data;
 
-namespace AWBlazorApp.Data.Entities.UserGuide;
+namespace AWBlazorApp.Features.UserGuide.Domain;
 
 /// <summary>
 /// Tracks when a user first reads a user-guide article. One row per user per slug.

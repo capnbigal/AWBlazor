@@ -1,7 +1,8 @@
 using AWBlazorApp.Data.Entities;
-using AWBlazorApp.Data.Entities.ToolSlots;
+using AWBlazorApp.Features.ToolSlots.Domain;
+using AWBlazorApp.Features.ToolSlots.Models;
 
-namespace AWBlazorApp.Models;
+namespace AWBlazorApp.Features.ToolSlots.Models;
 
 public sealed record ToolSlotConfigurationDto(
     int Id,

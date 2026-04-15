@@ -1,4 +1,7 @@
 using AWBlazorApp.Endpoints.AdventureWorks;
+using AWBlazorApp.Features.ToolSlots.Endpoints;
+using AWBlazorApp.Features.Gallery.Endpoints;
+using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Endpoints;
 using AWBlazorApp.Endpoints.AdventureWorks;
 using AWBlazorApp.Endpoints.Admin;

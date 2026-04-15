@@ -63,10 +63,10 @@
 
     <ItemGroup>
         <!-- Markdown blog content. Copied to publish output so MarkdownBlogService can read them at runtime. -->
-        <Content Include="_posts\**\*.md" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="_pages\**\*.md" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="_includes\**\*.md" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="_videos\**" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Features/UserGuide/Content/_posts\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Features/UserGuide/Content/_pages\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Features/UserGuide/Content/_includes\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Features/UserGuide/Content/_videos\**" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>
