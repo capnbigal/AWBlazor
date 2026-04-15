@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Permissions;
 
 /// <summary>
 /// Resolves effective permission level for a user on a given area.

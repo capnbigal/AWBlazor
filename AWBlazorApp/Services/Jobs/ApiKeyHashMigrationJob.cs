@@ -2,7 +2,7 @@ using AWBlazorApp.Authentication;
 using AWBlazorApp.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 /// <summary>
 /// One-time Hangfire job that migrates remaining plain-text API keys to SHA-256 hashes.

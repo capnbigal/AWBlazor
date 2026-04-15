@@ -1,7 +1,7 @@
 using Hangfire;
 using Microsoft.Data.SqlClient;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 /// <summary>
 /// Hangfire recurring job that purges <c>dbo.RequestLogs</c> rows older than 30 days.

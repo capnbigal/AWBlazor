@@ -1,11 +1,12 @@
 using System.Text;
+using AWBlazorApp.Services.Jobs;
 using AWBlazorApp.Data.Entities.Insights;
 using AWBlazorApp.Data;
 using AWBlazorApp.Data.Entities;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Insights;
 
 /// <summary>
 /// Runs a scheduled report: loads the ReportSchedule + its SavedQuery, executes the query,

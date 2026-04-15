@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Email;
 
 /// <summary>
 /// Bound from the "Smtp" section of appsettings.json. If <see cref="Host"/> is empty,

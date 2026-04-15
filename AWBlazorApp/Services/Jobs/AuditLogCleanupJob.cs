@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using AWBlazorApp.Data;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 /// <summary>
 /// Hangfire recurring job that purges audit-log rows older than the configured retention period

@@ -1,7 +1,7 @@
 using AWBlazorApp.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Notifications;
 
 public sealed class NotificationService(IHubContext<NotificationHub> hubContext)
 {

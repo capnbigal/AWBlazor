@@ -1,8 +1,9 @@
 using System.Net.Mail;
+using AWBlazorApp.Services.Email;
 using Hangfire;
 using Microsoft.Extensions.Options;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Jobs;
 
 /// <summary>
 /// Hangfire background job that delivers a single transactional email via System.Net.Mail.

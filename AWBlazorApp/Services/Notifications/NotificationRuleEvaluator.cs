@@ -5,7 +5,7 @@ using AWBlazorApp.Data.Entities.ProcessManagement;
 using AWBlazorApp.Data.Entities.Forecasting;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Services.Notifications;
 
 /// <summary>
 /// Evaluates every active NotificationRule on a recurring schedule. For each rule, computes the
