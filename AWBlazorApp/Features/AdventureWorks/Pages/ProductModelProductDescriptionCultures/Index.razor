@@ -26,7 +26,7 @@
         <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductModelId" Title="Model id" />
             <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description id" />

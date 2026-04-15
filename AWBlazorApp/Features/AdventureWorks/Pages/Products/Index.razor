@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="ProductDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />

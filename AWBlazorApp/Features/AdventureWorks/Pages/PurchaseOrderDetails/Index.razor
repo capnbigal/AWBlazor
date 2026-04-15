@@ -26,7 +26,7 @@
         <MudNumericField T="int?" @bind-Value="filterPurchaseOrderId" Label="PO id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="PurchaseOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single">
+    <MudDataGrid T="PurchaseOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #" />
             <PropertyColumn Property="x => x.PurchaseOrderDetailId" Title="Line #" />
@@ -66,7 +66,23 @@
         if (filterPurchaseOrderId.HasValue) query = query.Where(x => x.PurchaseOrderId == filterPurchaseOrderId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.PurchaseOrderId).ThenBy(x => x.PurchaseOrderDetailId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(PurchaseOrderDetailDto.PurchaseOrderId)       => sort.Descending ? query.OrderByDescending(x => x.PurchaseOrderId)       : query.OrderBy(x => x.PurchaseOrderId),
+            nameof(PurchaseOrderDetailDto.PurchaseOrderDetailId) => sort.Descending ? query.OrderByDescending(x => x.PurchaseOrderDetailId) : query.OrderBy(x => x.PurchaseOrderDetailId),
+            nameof(PurchaseOrderDetailDto.ProductId)             => sort.Descending ? query.OrderByDescending(x => x.ProductId)             : query.OrderBy(x => x.ProductId),
+            nameof(PurchaseOrderDetailDto.OrderQty)              => sort.Descending ? query.OrderByDescending(x => x.OrderQty)              : query.OrderBy(x => x.OrderQty),
+            nameof(PurchaseOrderDetailDto.UnitPrice)             => sort.Descending ? query.OrderByDescending(x => x.UnitPrice)             : query.OrderBy(x => x.UnitPrice),
+            nameof(PurchaseOrderDetailDto.LineTotal)             => sort.Descending ? query.OrderByDescending(x => x.LineTotal)             : query.OrderBy(x => x.LineTotal),
+            nameof(PurchaseOrderDetailDto.ReceivedQty)           => sort.Descending ? query.OrderByDescending(x => x.ReceivedQty)           : query.OrderBy(x => x.ReceivedQty),
+            nameof(PurchaseOrderDetailDto.StockedQty)            => sort.Descending ? query.OrderByDescending(x => x.StockedQty)            : query.OrderBy(x => x.StockedQty),
+            nameof(PurchaseOrderDetailDto.DueDate)               => sort.Descending ? query.OrderByDescending(x => x.DueDate)               : query.OrderBy(x => x.DueDate),
+            _                                                    => query.OrderBy(x => x.PurchaseOrderId).ThenBy(x => x.PurchaseOrderDetailId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<PurchaseOrderDetailDto> { Items = rows, TotalItems = total };
     }

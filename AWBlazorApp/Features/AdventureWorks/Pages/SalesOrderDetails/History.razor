@@ -28,7 +28,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderDetailAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="SalesOrderDetailAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
             <PropertyColumn Property="x => x.SalesOrderId" Title="Order" />
@@ -69,7 +69,22 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesOrderDetailAuditLogDto.ChangedDate)        => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)        : query.OrderBy(a => a.ChangedDate),
+            nameof(SalesOrderDetailAuditLogDto.SalesOrderId)       => sort.Descending ? query.OrderByDescending(a => a.SalesOrderId)       : query.OrderBy(a => a.SalesOrderId),
+            nameof(SalesOrderDetailAuditLogDto.SalesOrderDetailId) => sort.Descending ? query.OrderByDescending(a => a.SalesOrderDetailId) : query.OrderBy(a => a.SalesOrderDetailId),
+            nameof(SalesOrderDetailAuditLogDto.ChangedBy)          => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)          : query.OrderBy(a => a.ChangedBy),
+            nameof(SalesOrderDetailAuditLogDto.ProductId)          => sort.Descending ? query.OrderByDescending(a => a.ProductId)          : query.OrderBy(a => a.ProductId),
+            nameof(SalesOrderDetailAuditLogDto.OrderQty)           => sort.Descending ? query.OrderByDescending(a => a.OrderQty)           : query.OrderBy(a => a.OrderQty),
+            nameof(SalesOrderDetailAuditLogDto.LineTotal)          => sort.Descending ? query.OrderByDescending(a => a.LineTotal)          : query.OrderBy(a => a.LineTotal),
+            nameof(SalesOrderDetailAuditLogDto.ChangeSummary)      => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)      : query.OrderBy(a => a.ChangeSummary),
+            _                                                      => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<SalesOrderDetailAuditLogDto> { Items = rows, TotalItems = total };
     }
