@@ -71,29 +71,30 @@
 
 @if (editing is not null)
 {
+    var e = editing;
     <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
-        <TitleContent>@(editing.Id == 0 ? "New rule" : "Edit rule")</TitleContent>
+        <TitleContent>@(e.Id == 0 ? "New rule" : "Edit rule")</TitleContent>
         <DialogContent>
             <MudStack Spacing="3">
-                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined"
+                <MudTextField T="string" @bind-Value="e.Name" Label="Name" Variant="Variant.Outlined"
                               Required="true" MaxLength="100" Immediate="true" />
-                <MudSelect T="NotificationMetric" @bind-Value="editing.Metric" Label="Metric" Variant="Variant.Outlined">
+                <MudSelect T="NotificationMetric" @bind-Value="e.Metric" Label="Metric" Variant="Variant.Outlined">
                     @foreach (var m in Enum.GetValues<NotificationMetric>())
                     {
                         <MudSelectItem T="NotificationMetric" Value="@m">@NotificationRuleEvaluator.Label(m)</MudSelectItem>
                     }
                 </MudSelect>
                 <MudStack Row="true" Spacing="2">
-                    <MudSelect T="NotificationOperator" @bind-Value="editing.Operator" Label="Operator" Variant="Variant.Outlined" Style="max-width: 180px;">
+                    <MudSelect T="NotificationOperator" @bind-Value="e.Operator" Label="Operator" Variant="Variant.Outlined" Style="max-width: 180px;">
                         <MudSelectItem T="NotificationOperator" Value="NotificationOperator.GreaterThan">&gt; greater than</MudSelectItem>
                         <MudSelectItem T="NotificationOperator" Value="NotificationOperator.LessThan">&lt; less than</MudSelectItem>
                         <MudSelectItem T="NotificationOperator" Value="NotificationOperator.EqualTo">= equal to</MudSelectItem>
                     </MudSelect>
-                    <MudNumericField T="double" @bind-Value="editing.Threshold" Label="Threshold" Variant="Variant.Outlined" />
+                    <MudNumericField T="double" @bind-Value="e.Threshold" Label="Threshold" Variant="Variant.Outlined" />
                 </MudStack>
-                <MudNumericField T="int" @bind-Value="editing.CooldownMinutes" Label="Cooldown (minutes)"
+                <MudNumericField T="int" @bind-Value="e.CooldownMinutes" Label="Cooldown (minutes)"
                                  Variant="Variant.Outlined" Min="1" Max="10080" />
-                <MudSwitch T="bool" @bind-Value="editing.IsActive" Color="Color.Success" Label="Active" />
+                <MudSwitch T="bool" @bind-Value="e.IsActive" Color="Color.Success" Label="Active" />
             </MudStack>
         </DialogContent>
         <DialogActions>

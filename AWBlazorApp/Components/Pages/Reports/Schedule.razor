@@ -77,24 +77,25 @@
 
 @if (editing is not null)
 {
+    var e = editing;
     <MudDialog @bind-Visible="dialogOpen" Options="dialogOptions">
-        <TitleContent>@(editing.Id == 0 ? "New scheduled report" : "Edit scheduled report")</TitleContent>
+        <TitleContent>@(e.Id == 0 ? "New scheduled report" : "Edit scheduled report")</TitleContent>
         <DialogContent>
             <MudStack Spacing="3">
-                <MudTextField T="string" @bind-Value="editing.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
-                <MudSelect T="int" @bind-Value="editing.SavedQueryId" Label="Saved query" Variant="Variant.Outlined">
+                <MudTextField T="string" @bind-Value="e.Name" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="100" />
+                <MudSelect T="int" @bind-Value="e.SavedQueryId" Label="Saved query" Variant="Variant.Outlined">
                     @foreach (var q in savedQueries)
                     {
                         <MudSelectItem T="int" Value="@q.Id">@q.Name</MudSelectItem>
                     }
                 </MudSelect>
-                <MudTextField T="string" @bind-Value="editing.Cron" Label="Cron (Hangfire, 5 fields)"
+                <MudTextField T="string" @bind-Value="e.Cron" Label="Cron (Hangfire, 5 fields)"
                               Variant="Variant.Outlined" Required="true" MaxLength="100"
                               HelperText="Examples: 0 8 * * 1 (8am Mon) · 0 7 * * * (7am daily) · */15 * * * * (every 15 min)" />
-                <MudTextField T="string" @bind-Value="editing.Recipients" Label="Recipients (comma-separated)"
+                <MudTextField T="string" @bind-Value="e.Recipients" Label="Recipients (comma-separated)"
                               Variant="Variant.Outlined" Required="true" MaxLength="500"
                               HelperText="alice@example.com, bob@example.com" />
-                <MudSwitch T="bool" @bind-Value="editing.IsActive" Color="Color.Success" Label="Active" />
+                <MudSwitch T="bool" @bind-Value="e.IsActive" Color="Color.Success" Label="Active" />
             </MudStack>
         </DialogContent>
         <DialogActions>
