@@ -19,148 +19,80 @@
             @if (loaded)
             {
                 <MudGrid>
-                    <MudItem xs="6" sm="3">
+                    <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary"
                                  Value="@salesOrderCount.ToString("N0")" Label="Sales orders" />
                     </MudItem>
-                    <MudItem xs="6" sm="3">
+                    <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success"
                                  Value="@activeForecasts.ToString("N0")" Label="Active forecasts" />
                     </MudItem>
-                    <MudItem xs="6" sm="3">
+                    <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Construction" Color="Color.Warning"
                                  Value="@openWorkOrders.ToString("N0")" Label="Open work orders" />
                     </MudItem>
-                    <MudItem xs="6" sm="3">
+                    <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.AccountTree" Color="Color.Secondary"
                                  Value="@activeProcesses.ToString("N0")" Label="Active processes" />
                     </MudItem>
-                    <MudItem xs="6" sm="3">
-                        <KpiCard Icon="@Icons.Material.Filled.People" Color="Color.Info"
-                                 Value="@userCount.ToString("N0")" Label="Users" />
+                    <MudItem xs="6" sm="4" md="3">
+                        <KpiCard Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary"
+                                 Value="@productCount.ToString("N0")" Label="Products" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="3">
+                        <KpiCard Icon="@Icons.Material.Filled.Groups" Color="Color.Info"
+                                 Value="@employeeCount.ToString("N0")" Label="Employees" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="3">
+                        <KpiCard Icon="@Icons.Material.Filled.PeopleAlt" Color="Color.Success"
+                                 Value="@customerCount.ToString("N0")" Label="Customers" />
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="3">
+                        <KpiCard Icon="@Icons.Material.Filled.Person" Color="Color.Default"
+                                 Value="@userCount.ToString("N0")" Label="App users" />
                     </MudItem>
                 </MudGrid>
             }
 
-            <MudText Typo="Typo.h5">Analytics dashboards</MudText>
+            <MudText Typo="Typo.h5">Analytics & tools</MudText>
             <MudGrid>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="2" Class="mud-height-full home-feature-card">
-                        <MudCardHeader>
-                            <CardHeaderAvatar>
-                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
-                            </CardHeaderAvatar>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6">Sales</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Revenue, orders, territories</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardActions>
-                            <MudButton Href="analytics/sales" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="2" Class="mud-height-full home-feature-card">
-                        <MudCardHeader>
-                            <CardHeaderAvatar>
-                                <MudIcon Icon="@Icons.Material.Filled.Factory" Color="Color.Primary" Size="Size.Large" />
-                            </CardHeaderAvatar>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6">Production</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Work orders, scrap, throughput</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardActions>
-                            <MudButton Href="analytics/production" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="2" Class="mud-height-full home-feature-card">
-                        <MudCardHeader>
-                            <CardHeaderAvatar>
-                                <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Size="Size.Large" />
-                            </CardHeaderAvatar>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6">Human Resources</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Headcount, tenure, pay</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardActions>
-                            <MudButton Href="analytics/hr" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="2" Class="mud-height-full home-feature-card">
-                        <MudCardHeader>
-                            <CardHeaderAvatar>
-                                <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Warning" Size="Size.Large" />
-                            </CardHeaderAvatar>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6">Purchasing</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">POs, vendors, spend</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardActions>
-                            <MudButton Href="analytics/purchasing" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="2" Class="mud-height-full home-feature-card">
-                        <MudCardHeader>
-                            <CardHeaderAvatar>
-                                <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Info" Size="Size.Large" />
-                            </CardHeaderAvatar>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6">Forecasts</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Accuracy, methods, evaluations</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardActions>
-                            <MudButton Href="analytics/forecasts" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
+                @foreach (var card in featureCards)
+                {
+                    <MudItem xs="6" sm="6" md="3">
+                        <MudCard Elevation="2" Class="mud-height-full home-feature-card">
+                            <MudCardHeader>
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@card.Icon" Color="@card.Color" Size="Size.Large" />
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">@card.Title</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@card.Subtitle</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardActions>
+                                <MudButton Href="@card.Href" Color="Color.Primary" Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward">Open</MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
             </MudGrid>
 
             <MudText Typo="Typo.h5" Class="mt-2">Quick access</MudText>
             <MudGrid>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="1" Class="home-quick-card">
-                        <MudCardContent Class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary" Size="Size.Large" />
-                            <MudText Typo="Typo.subtitle1" Class="mt-2">Forecasts</MudText>
-                        </MudCardContent>
-                        <MudCardActions Class="justify-center">
-                            <MudButton Href="forecasts" Color="Color.Primary" Variant="Variant.Text">Manage</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="1" Class="home-quick-card">
-                        <MudCardContent Class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Info" Size="Size.Large" />
-                            <MudText Typo="Typo.subtitle1" Class="mt-2">Tool Slots</MudText>
-                        </MudCardContent>
-                        <MudCardActions Class="justify-center">
-                            <MudButton Href="tool-slots" Color="Color.Primary" Variant="Variant.Text">Manage</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudCard Elevation="1" Class="home-quick-card">
-                        <MudCardContent Class="d-flex flex-column align-center pa-4">
-                            <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Success" Size="Size.Large" />
-                            <MudText Typo="Typo.subtitle1" Class="mt-2">Database Explorer</MudText>
-                        </MudCardContent>
-                        <MudCardActions Class="justify-center">
-                            <MudButton Href="reports" Color="Color.Primary" Variant="Variant.Text">Explore</MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
+                @foreach (var q in quickLinks)
+                {
+                    <MudItem xs="6" sm="6" md="3">
+                        <MudCard Elevation="1" Class="home-quick-card">
+                            <MudCardContent Class="d-flex flex-column align-center pa-4">
+                                <MudIcon Icon="@q.Icon" Color="@q.Color" Size="Size.Large" />
+                                <MudText Typo="Typo.subtitle1" Class="mt-2">@q.Title</MudText>
+                            </MudCardContent>
+                            <MudCardActions Class="justify-center">
+                                <MudButton Href="@q.Href" Color="Color.Primary" Variant="Variant.Text">@q.Action</MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
             </MudGrid>
         </Authorized>
         <NotAuthorized>
@@ -208,6 +140,9 @@
     private int openWorkOrders;
     private int activeProcesses;
     private int userCount;
+    private int productCount;
+    private int employeeCount;
+    private int customerCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -219,6 +154,9 @@
             openWorkOrders = await db.WorkOrders.CountAsync(w => w.EndDate == null);
             activeProcesses = await db.Processes.CountAsync(p => p.DeletedDate == null && p.Status == Data.Entities.ProcessManagement.ProcessStatus.Active);
             userCount = await db.Users.CountAsync();
+            productCount = await db.Products.CountAsync();
+            employeeCount = await db.Employees.CountAsync();
+            customerCount = await db.Customers.CountAsync();
             loaded = true;
         }
         catch
@@ -226,4 +164,35 @@
             // Home page should never fail — swallow DB errors gracefully
         }
     }
+
+    // 8 analytics + tools cards. Tuned so desktop shows a clean 4x2 and mobile shows 2x4 without
+    // orphan rows. Icons chosen to give each card a distinct silhouette.
+    private static readonly FeatureCard[] featureCards =
+    [
+        new("Sales",            "Revenue, orders, territories",    "analytics/sales",       Icons.Material.Filled.AttachMoney,  Color.Success),
+        new("Production",       "Work orders, scrap, throughput",  "analytics/production",  Icons.Material.Filled.Factory,      Color.Primary),
+        new("Human Resources",  "Headcount, tenure, pay",          "analytics/hr",          Icons.Material.Filled.Groups,       Color.Secondary),
+        new("Purchasing",       "POs, vendors, spend",             "analytics/purchasing",  Icons.Material.Filled.ShoppingBag,  Color.Warning),
+        new("Forecasts",        "Accuracy, methods, evaluations",  "analytics/forecasts",   Icons.Material.Filled.Analytics,    Color.Info),
+        new("Geographic map",   "Customer locations by territory", "analytics/geo",         Icons.Material.Filled.Map,          Color.Error),
+        new("Product gallery",  "Browse product photos",           "gallery/products",      Icons.Material.Filled.Collections,  Color.Primary),
+        new("API explorer",     "Try live endpoints with your session", "api-explorer",     Icons.Material.Filled.Api,          Color.Info),
+    ];
+
+    // 8 quick-access tiles. All routes here are accessible to any authenticated user (no role
+    // gate) so the grid never has holes per-role.
+    private static readonly QuickLink[] quickLinks =
+    [
+        new("Forecasts",           "forecasts",         "Manage", Icons.Material.Filled.TrendingUp,       Color.Primary),
+        new("Processes",           "processes",         "Manage", Icons.Material.Filled.AccountTree,      Color.Secondary),
+        new("Tool Slots",          "tool-slots",        "Manage", Icons.Material.Filled.Build,            Color.Info),
+        new("Database Explorer",   "reports",           "Explore",Icons.Material.Filled.Assessment,       Color.Success),
+        new("User Guide",          "guide",             "Read",   Icons.Material.Filled.MenuBook,         Color.Warning),
+        new("Document Tree",       "documents/tree",    "Browse", Icons.Material.Filled.AccountTree,      Color.Primary),
+        new("My Activity",         "my-activity",       "View",   Icons.Material.Filled.Timeline,         Color.Info),
+        new("Notification Rules",  "notifications",     "Manage", Icons.Material.Filled.NotificationsActive, Color.Error),
+    ];
+
+    private sealed record FeatureCard(string Title, string Subtitle, string Href, string Icon, Color Color);
+    private sealed record QuickLink(string Title, string Href, string Action, string Icon, Color Color);
 }
