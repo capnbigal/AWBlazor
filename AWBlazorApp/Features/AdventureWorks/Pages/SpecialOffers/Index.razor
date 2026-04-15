@@ -1,0 +1,149 @@
+@page "/aw/special-offers"
+@attribute [Authorize]
+@using AWBlazorApp.Features.AdventureWorks.Domain
+@using AWBlazorApp.Features.AdventureWorks.Models
+@using AWBlazorApp.Features.AdventureWorks.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Special offers</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Special offers</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SpecialOffer</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/special-offers/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New special offer</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterDescription" Label="Description contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterCategory" Label="Category" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+        <Columns>
+            <HierarchyColumn T="SpecialOfferDto" />
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.Description" Title="Description" />
+            <PropertyColumn Property="x => x.DiscountPct" Title="Discount" Format="P2" />
+            <PropertyColumn Property="x => x.OfferType" Title="Type" />
+            <PropertyColumn Property="x => x.Category" Title="Category" />
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.MinQty" Title="Min" />
+            <PropertyColumn Property="x => x.MaxQty" Title="Max" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent>
+            <SpecialOfferExpandedRow OfferId="@context.Item.Id" />
+        </ChildRowContent>
+        <PagerContent><MudDataGridPager T="SpecialOfferDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<SpecialOfferDto> grid = null!;
+    private string? filterDescription;
+    private string? filterCategory;
+
+    private async Task<GridData<SpecialOfferDto>> LoadServerDataAsync(GridState<SpecialOfferDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SpecialOffers.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterDescription))
+        {
+            var needle = filterDescription.Trim();
+            query = query.Where(x => x.Description.Contains(needle));
+        }
+        if (!string.IsNullOrWhiteSpace(filterCategory))
+        {
+            var needle = filterCategory.Trim();
+            query = query.Where(x => x.Category == needle);
+        }
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SpecialOfferDto.Id)          => sort.Descending ? query.OrderByDescending(x => x.Id)          : query.OrderBy(x => x.Id),
+            nameof(SpecialOfferDto.Description) => sort.Descending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
+            nameof(SpecialOfferDto.DiscountPct) => sort.Descending ? query.OrderByDescending(x => x.DiscountPct) : query.OrderBy(x => x.DiscountPct),
+            nameof(SpecialOfferDto.StartDate)   => sort.Descending ? query.OrderByDescending(x => x.StartDate)   : query.OrderBy(x => x.StartDate),
+            nameof(SpecialOfferDto.EndDate)     => sort.Descending ? query.OrderByDescending(x => x.EndDate)     : query.OrderBy(x => x.EndDate),
+            _                                   => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<SpecialOfferDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<SpecialOfferDialog>("New special offer", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Special offer created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(SpecialOfferDto row)
+    {
+        var parameters = new DialogParameters<SpecialOfferDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<SpecialOfferDialog>($"Edit special offer #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Special offer updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(SpecialOfferDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete special offer?", $"Permanently delete special offer #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.SpecialOffers.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Special offer no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.SpecialOfferAuditLogs.Add(SpecialOfferAuditService.RecordDelete(entity, changedBy));
+        db.SpecialOffers.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Special offer deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(SpecialOfferDto row) => Navigation.NavigateTo($"aw/special-offers/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
