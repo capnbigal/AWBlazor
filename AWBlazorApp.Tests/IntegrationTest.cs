@@ -820,6 +820,45 @@ public class IntegrationTest
     }
 
     /// <summary>
+    /// Exercises every (Metric × GroupBy) combination supported by SavedQueryRunner against the
+    /// real SQL Server dev database. The failures we keep seeing in production
+    /// ("LINQ expression could not be translated") only fire at query execution, so the only
+    /// reliable guard is to actually run each combination end-to-end.
+    /// </summary>
+    [Test]
+    public async Task SavedQueryRunner_All_Metric_And_GroupBy_Combinations_Translate()
+    {
+        using var scope = factory.Services.CreateScope();
+        var runner = scope.ServiceProvider.GetRequiredService<AWBlazorApp.Features.Insights.Services.SavedQueryRunner>();
+
+        var window = (From: new DateTime(2007, 1, 1), To: new DateTime(2026, 1, 1));
+        var failures = new List<string>();
+
+        foreach (var metric in Enum.GetValues<AWBlazorApp.Features.Insights.Domain.QueryMetric>())
+        foreach (var groupBy in Enum.GetValues<AWBlazorApp.Features.Insights.Domain.QueryGroupBy>())
+        {
+            var q = new AWBlazorApp.Features.Insights.Domain.SavedQuery
+            {
+                Name = $"{metric}/{groupBy}",
+                Metric = metric,
+                GroupBy = groupBy,
+                FromDate = window.From,
+                ToDate = window.To,
+            };
+            try
+            {
+                _ = await runner.RunAsync(q);
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{metric}/{groupBy}: {ex.GetType().Name} — {ex.Message.Split('\n')[0]}");
+            }
+        }
+
+        Assert.That(failures, Is.Empty, "Failed combinations:\n  " + string.Join("\n  ", failures));
+    }
+
+    /// <summary>
     /// Resolves an <see cref="ApplicationDbContext"/> from the test factory's service provider
     /// so test setup code can read/write the AdventureWorks2022_dev schema directly.
     /// </summary>
