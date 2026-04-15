@@ -21,7 +21,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.OpenApi;
 using MudBlazor.Services;
 
-namespace AWBlazorApp.Startup;
+namespace AWBlazorApp.App.Extensions;
 
 /// <summary>
 /// Extension methods that register services in the DI container.

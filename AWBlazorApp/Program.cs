@@ -1,7 +1,9 @@
 using System.Globalization;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Startup;
+using AWBlazorApp.App.Extensions;
+using AWBlazorApp.App.Middleware;
+using AWBlazorApp.App.Routing;
 using Serilog;
 
 // Pin the process culture to en-US so currency/number formatters render "$" instead of

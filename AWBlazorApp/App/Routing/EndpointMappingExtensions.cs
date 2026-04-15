@@ -1,7 +1,10 @@
 using AWBlazorApp.Endpoints.AdventureWorks;
+using AWBlazorApp.Endpoints;
+using AWBlazorApp.Endpoints.AdventureWorks;
+using AWBlazorApp.Endpoints.Admin;
 using AWBlazorApp.Endpoints.Admin;
 
-namespace AWBlazorApp.Endpoints;
+namespace AWBlazorApp.App.Routing;
 
 public static class EndpointMappingExtensions
 {

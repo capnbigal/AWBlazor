@@ -1,4 +1,6 @@
 using AWBlazorApp.Components;
+using AWBlazorApp.App.Middleware;
+using AWBlazorApp.App.Routing;
 using AWBlazorApp.Endpoints.Admin;
 using AWBlazorApp.Services.Jobs;
 using AWBlazorApp.Services.Notifications;
@@ -10,7 +12,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-namespace AWBlazorApp.Startup;
+namespace AWBlazorApp.App.Extensions;
 
 /// <summary>
 /// Extension methods that configure the HTTP middleware pipeline and map endpoints.
@@ -90,7 +92,7 @@ public static class MiddlewarePipeline
 
     public static WebApplication MapApplicationEndpoints(this WebApplication app, IConfiguration configuration)
     {
-        app.MapRazorComponents<App>()
+        app.MapRazorComponents<AWBlazorApp.Components.App>()
             .AddInteractiveServerRenderMode();
 
         app.MapAdditionalIdentityEndpoints();

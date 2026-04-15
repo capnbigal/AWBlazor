@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Startup;
+namespace AWBlazorApp.App.Middleware;
 
 /// <summary>
 /// Adds standard security headers to every HTTP response.
