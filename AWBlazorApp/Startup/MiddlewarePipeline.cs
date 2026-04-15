@@ -3,6 +3,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Endpoints;
 using AWBlazorApp.Services;
 using Hangfire;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace AWBlazorApp.Startup;
@@ -169,6 +170,23 @@ public static class MiddlewarePipeline
                 "kpi-snapshot-job",
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Hourly());
+
+            // Re-register all active ReportSchedules with Hangfire — handles the case where the
+            // Hangfire job store was wiped but the ReportSchedules table still has rows.
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AWBlazorApp.Data.ApplicationDbContext>>();
+                var registry = scope.ServiceProvider.GetRequiredService<AWBlazorApp.Services.ReportScheduleRegistry>();
+                using var db = dbFactory.CreateDbContext();
+                foreach (var s in db.ReportSchedules.Where(s => s.IsActive).ToList())
+                {
+                    try { registry.Register(s); }
+                    catch (Exception ex)
+                    {
+                        app.Logger.LogWarning(ex, "Failed to re-register ReportSchedule {Id}", s.Id);
+                    }
+                }
+            }
 
             BackgroundJob.Enqueue<ApiKeyHashMigrationJob>(job => job.ExecuteAsync());
         }

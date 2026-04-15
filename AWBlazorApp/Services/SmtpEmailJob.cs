@@ -12,7 +12,17 @@ public sealed class SmtpEmailJob(IOptions<SmtpConfig> config, ILogger<SmtpEmailJ
     private readonly SmtpConfig _config = config.Value;
 
     [AutomaticRetry(Attempts = 3, DelaysInSeconds = new[] { 30, 120, 600 })]
-    public async Task SendAsync(string to, string? toName, string subject, string body, bool isHtml)
+    public Task SendAsync(string to, string? toName, string subject, string body, bool isHtml) =>
+        SendWithAttachmentAsync(to, toName, subject, body, isHtml, null, null);
+
+    /// <summary>
+    /// Variant that accepts a single in-memory attachment. attachmentBytes may be null to send
+    /// without — used by scheduled email reports to ship the rendered CSV alongside the body.
+    /// </summary>
+    [AutomaticRetry(Attempts = 3, DelaysInSeconds = new[] { 30, 120, 600 })]
+    public async Task SendWithAttachmentAsync(
+        string to, string? toName, string subject, string body, bool isHtml,
+        byte[]? attachmentBytes, string? attachmentName)
     {
         if (!_config.IsConfigured)
         {
@@ -46,7 +56,22 @@ public sealed class SmtpEmailJob(IOptions<SmtpConfig> config, ILogger<SmtpEmailJ
             msg.Bcc.Add(new MailAddress(_config.Bcc));
         }
 
-        logger.LogInformation("Sending email to {To} (subject: {Subject})", emailTo.Address, subject);
-        await client.SendMailAsync(msg);
+        Attachment? attachment = null;
+        if (attachmentBytes is { Length: > 0 } && !string.IsNullOrEmpty(attachmentName))
+        {
+            attachment = new Attachment(new MemoryStream(attachmentBytes), attachmentName);
+            msg.Attachments.Add(attachment);
+        }
+
+        try
+        {
+            logger.LogInformation("Sending email to {To} (subject: {Subject}, attachment: {Attachment})",
+                emailTo.Address, subject, attachmentName ?? "none");
+            await client.SendMailAsync(msg);
+        }
+        finally
+        {
+            attachment?.Dispose();
+        }
     }
 }
