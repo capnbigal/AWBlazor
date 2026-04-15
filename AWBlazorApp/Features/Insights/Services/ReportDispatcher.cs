@@ -1,9 +1,10 @@
 using System.Text;
-using AWBlazorApp.Services.Jobs;
+using AWBlazorApp.Infrastructure.Email;
+using AWBlazorApp.Infrastructure.Jobs;
 using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 

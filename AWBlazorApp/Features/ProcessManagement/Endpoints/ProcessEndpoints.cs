@@ -4,7 +4,7 @@ using Cronos;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.ProcessManagement.Domain;
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Models;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 

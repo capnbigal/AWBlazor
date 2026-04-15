@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Models;
 using AWBlazorApp.Features.AdventureWorks.Models;
 using AWBlazorApp.Features.AdventureWorks.Audit;
 using FluentValidation;

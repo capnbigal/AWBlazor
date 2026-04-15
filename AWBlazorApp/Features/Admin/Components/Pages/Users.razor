@@ -1,6 +1,6 @@
 @page "/admin/users"
 @attribute [Authorize(Roles = AppRoles.Admin)]
-@using AWBlazorApp.Models
+@using AWBlazorApp.Shared.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUser> UserManager
 @inject IDbContextFactory<ApplicationDbContext> DbFactory

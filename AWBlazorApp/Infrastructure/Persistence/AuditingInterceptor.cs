@@ -1,4 +1,4 @@
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

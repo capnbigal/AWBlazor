@@ -30,7 +30,7 @@ public static class CultureEndpoints
         return app;
     }
 
-    private static async Task<Ok<AWBlazorApp.Models.PagedResult<CultureDto>>> ListAsync(
+    private static async Task<Ok<AWBlazorApp.Shared.Models.PagedResult<CultureDto>>> ListAsync(
         ApplicationDbContext db, [FromQuery] int skip = 0, [FromQuery] int take = 50,
         [FromQuery] string? name = null, CancellationToken ct = default)
     {
@@ -39,7 +39,7 @@ public static class CultureEndpoints
         if (!string.IsNullOrWhiteSpace(name)) query = query.Where(x => x.Name.Contains(name));
         var total = await query.CountAsync(ct);
         var rows = await query.OrderBy(x => x.CultureId).Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new AWBlazorApp.Models.PagedResult<CultureDto>(rows, total, skip, take));
+        return TypedResults.Ok(new AWBlazorApp.Shared.Models.PagedResult<CultureDto>(rows, total, skip, take));
     }
 
     private static async Task<Results<Ok<CultureDto>, NotFound>> GetAsync(string id, ApplicationDbContext db, CancellationToken ct)

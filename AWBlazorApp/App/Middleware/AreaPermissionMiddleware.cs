@@ -2,7 +2,7 @@ using System.Security.Claims;
 using AWBlazorApp.Features.Admin.Services;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Services;
+using AWBlazorApp.Shared.Services;
 
 namespace AWBlazorApp.App.Middleware;
 

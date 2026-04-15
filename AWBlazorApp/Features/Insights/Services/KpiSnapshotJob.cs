@@ -2,7 +2,7 @@ using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Insights.Domain;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Insights.Services;

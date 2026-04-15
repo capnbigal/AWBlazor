@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AWBlazorApp.Features.Forecasting.Domain;

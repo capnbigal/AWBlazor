@@ -102,7 +102,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ApiKey", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ApiKey", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -147,7 +147,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ApiKeys");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Booking", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.Booking", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -214,7 +214,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Bookings");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Coupon", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.Coupon", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)
@@ -236,7 +236,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Coupons");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ToolSlotConfiguration", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ToolSlotConfiguration", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -444,7 +444,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.ApiKey", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.ApiKey", b =>
                 {
                     b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
                         .WithMany()
@@ -455,9 +455,9 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Booking", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.Booking", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.Entities.Coupon", "Coupon")
+                    b.HasOne("AWBlazorApp.Shared.Domain.Coupon", "Coupon")
                         .WithMany("Bookings")
                         .HasForeignKey("CouponId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -516,7 +516,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.Entities.Coupon", b =>
+            modelBuilder.Entity("AWBlazorApp.Shared.Domain.Coupon", b =>
                 {
                     b.Navigation("Bookings");
                 });

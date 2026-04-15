@@ -1,5 +1,5 @@
-using AWBlazorApp.Data.Entities;
-using AWBlazorApp.Data.Entities.Auth;
+using AWBlazorApp.Shared.Domain;
+using AWBlazorApp.Features.Identity.Domain;
 using Microsoft.AspNetCore.Identity;
 
 namespace AWBlazorApp.Data;

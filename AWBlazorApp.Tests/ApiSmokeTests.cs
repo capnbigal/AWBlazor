@@ -1,8 +1,8 @@
 using System.Net;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data;
-using AWBlazorApp.Data.Entities;
-using AWBlazorApp.Data.Entities.Auth;
+using AWBlazorApp.Shared.Domain;
+using AWBlazorApp.Features.Identity.Domain;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

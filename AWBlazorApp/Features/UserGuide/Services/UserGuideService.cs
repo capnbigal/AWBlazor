@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using Markdig;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;

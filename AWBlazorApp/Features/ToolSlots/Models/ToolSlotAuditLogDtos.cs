@@ -1,4 +1,4 @@
-using AWBlazorApp.Data.Entities;
+using AWBlazorApp.Shared.Domain;
 using AWBlazorApp.Features.ToolSlots.Domain;
 using AWBlazorApp.Features.ToolSlots.Models;
 

@@ -1,8 +1,8 @@
-using AWBlazorApp.Models;
+using AWBlazorApp.Shared.Models;
 using AWBlazorApp.Features.Forecasting.Models;
 using FluentValidation;
 
-namespace AWBlazorApp.Validators;
+namespace AWBlazorApp.Shared.Validators;
 
 public sealed class CreateForecastValidator : AbstractValidator<CreateForecastRequest>
 {
