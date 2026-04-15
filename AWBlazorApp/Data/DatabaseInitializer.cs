@@ -58,6 +58,10 @@ public static class DatabaseInitializer
         // ApplicationUser (e.g. missing FirstName/LastName/DisplayName/ProfileUrl).
         await PatchMissingColumnsAsync(db, logger, cancellationToken);
 
+        // Non-nullable columns that the generic patcher can't auto-add (because it only
+        // handles NULL columns). Add them explicitly with DEFAULTs.
+        await EnsureRequiredColumnsAsync(db, logger, cancellationToken);
+
         // Composite indexes that improve dashboard / per-user-history query performance. These
         // can't be added via a regular EF migration because the codebase uses runtime model
         // diffing (EnsureMissingTablesAsync) instead of full migrations — a generated migration
@@ -386,6 +390,42 @@ WHERE a.SpatialLocation IS NULL;";
     /// are missing are logged as errors — adding them blindly would either fail (no default)
     /// or insert a default value the user may not want, so we leave that to manual SQL.
     /// </summary>
+    /// <summary>
+    /// Idempotently adds specific NOT NULL columns that were introduced after their table was
+    /// first created. The generic patcher (<see cref="PatchMissingColumnsAsync"/>) only handles
+    /// NULL columns; anything NOT NULL needs an explicit DEFAULT so backfill works.
+    /// </summary>
+    private static async Task EnsureRequiredColumnsAsync(
+        ApplicationDbContext db, ILogger logger, CancellationToken cancellationToken)
+    {
+        // (schema, table, column, typeWithDefault)  — order matters only if later patches depend on earlier ones.
+        var patches = new[]
+        {
+            ("dbo", "SavedQueries", "IsKpi", "bit NOT NULL DEFAULT 0"),
+        };
+
+        foreach (var (schema, table, column, typeWithDefault) in patches)
+        {
+            try
+            {
+                var sql = $@"
+                    IF EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id
+                               WHERE s.name = '{schema}' AND t.name = '{table}')
+                    AND NOT EXISTS (SELECT 1 FROM sys.columns c JOIN sys.tables t ON t.object_id = c.object_id
+                                    JOIN sys.schemas s ON s.schema_id = t.schema_id
+                                    WHERE s.name = '{schema}' AND t.name = '{table}' AND c.name = '{column}')
+                    BEGIN
+                        ALTER TABLE [{schema}].[{table}] ADD [{column}] {typeWithDefault};
+                    END";
+                await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to ensure column [{Schema}].[{Table}].[{Column}]", schema, table, column);
+            }
+        }
+    }
+
     private static async Task PatchMissingColumnsAsync(
         ApplicationDbContext db, ILogger logger, CancellationToken cancellationToken)
     {
