@@ -38,7 +38,7 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="UnitMeasureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="UnitMeasureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
             <PropertyColumn Property="x => x.UnitMeasureCode" Title="Code" />

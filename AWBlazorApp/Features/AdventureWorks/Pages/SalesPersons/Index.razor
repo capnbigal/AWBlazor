@@ -27,7 +27,7 @@
         <FkSelect TValue="int" Value="@(filterTerritoryId ?? 0)" ValueChanged="@(v => { filterTerritoryId = v == 0 ? null : v; })" Label="Territory" Items="_territories" Clearable="true" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single">
+    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesPersonDto" />
             <PropertyColumn Property="x => x.Id" Title="Id" />
