@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using AWBlazorApp.Data.Entities.UserGuide;
+using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Features.UserGuide.Services;
 
 /// <summary>
 /// Loads user-guide articles from <c>_posts/*.md</c> at startup (singleton) and provides
@@ -35,7 +35,7 @@ public sealed class UserGuideService
     {
         _dbFactory = dbFactory;
 
-        var postsDir = Path.Combine(env.ContentRootPath, "_posts");
+        var postsDir = Path.Combine(env.ContentRootPath, "Features", "UserGuide", "Content", "_posts");
         if (!Directory.Exists(postsDir))
         {
             logger.LogWarning("_posts directory not found at {Path}", postsDir);

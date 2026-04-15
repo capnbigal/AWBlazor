@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using AWBlazorApp.Features.ToolSlots.Services;
+using AWBlazorApp.Features.ToolSlots.Domain;
+using AWBlazorApp.Features.ToolSlots.Models;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Models;
@@ -8,7 +11,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Endpoints;
+namespace AWBlazorApp.Features.ToolSlots.Endpoints;
 
 public static class ToolSlotConfigurationEndpoints
 {

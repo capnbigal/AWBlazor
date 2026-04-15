@@ -1,10 +1,11 @@
 using System.Text;
-using AWBlazorApp.Data.Entities.ToolSlots;
+using AWBlazorApp.Features.ToolSlots.Domain;
+using AWBlazorApp.Features.ToolSlots.Models;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities;
 
-namespace AWBlazorApp.Services;
+namespace AWBlazorApp.Features.ToolSlots.Services;
 
 /// <summary>
 /// Builds <see cref="ToolSlotAuditLog"/> rows for create/update/delete operations against

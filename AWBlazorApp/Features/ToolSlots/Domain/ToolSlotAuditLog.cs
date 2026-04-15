@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Data.Entities.ToolSlots;
+namespace AWBlazorApp.Features.ToolSlots.Domain;
 
 /// <summary>
 /// Records a single change to a <see cref="ToolSlotConfiguration"/>. Each row is a

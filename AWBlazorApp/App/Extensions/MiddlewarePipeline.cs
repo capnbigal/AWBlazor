@@ -1,4 +1,5 @@
 using AWBlazorApp.Components;
+using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.App.Middleware;
 using AWBlazorApp.App.Routing;
 using AWBlazorApp.Endpoints.Admin;

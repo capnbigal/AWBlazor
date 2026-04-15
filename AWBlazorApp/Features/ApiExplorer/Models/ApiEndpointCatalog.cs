@@ -1,4 +1,4 @@
-namespace AWBlazorApp.Models.ApiExplorer;
+namespace AWBlazorApp.Features.ApiExplorer.Models;
 
 /// <summary>
 /// Curated catalog of featured endpoints for the interactive API explorer page.

@@ -1,4 +1,5 @@
 using AWBlazorApp.Models;
+using AWBlazorApp.Features.ToolSlots.Models;
 using FluentValidation;
 
 namespace AWBlazorApp.Validators;

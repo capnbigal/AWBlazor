@@ -1,4 +1,5 @@
 using System.Net;
+using AWBlazorApp.Features.ToolSlots.Models;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Data.Entities.Auth;
 using System.Net.Http.Json;
