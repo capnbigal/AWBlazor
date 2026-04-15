@@ -72,6 +72,28 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     white-space: nowrap;
 }
 
+/* Page header toolbars (Title + spacer + "View history" / "New X" buttons) routinely
+   exceed mobile width across the 73 AdventureWorks CRUD pages. Allow these row-stacks
+   to wrap onto a second line on small screens, and keep each button's own label intact
+   on a single line so the icon + text stay together. */
+@media (max-width: 599.98px) {
+    .mud-stack-row:has(.mud-button) {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+
+    .mud-stack-row .mud-button {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* MudButton's inner label can also wrap awkwardly with long words like
+       "View history" / "New product subcategory". Keep them on one line. */
+    .mud-button .mud-button-label {
+        white-space: nowrap;
+    }
+}
+
 /* Fill the MudGrid row height so cards with/without a Trend row line up. */
 .kpi-card,
 .dashboard-skeleton {
