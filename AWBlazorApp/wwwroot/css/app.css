@@ -94,9 +94,21 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
 .home-feature-card .mud-card-header {
     flex: 1 1 auto;
     min-height: 96px;
+    min-width: 0;
 }
 
+/* Force the header content column to be shrinkable below intrinsic width so
+   long titles/subtitles ellipse instead of overflowing into adjacent cards
+   on narrow screens. */
+.home-feature-card .mud-card-header .mud-card-header-content {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.home-feature-card .mud-card-header .mud-card-header-content .mud-typography-h6,
 .home-feature-card .mud-card-header .mud-card-header-content .mud-typography-body2 {
+    display: block;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
