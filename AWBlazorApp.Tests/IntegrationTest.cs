@@ -859,6 +859,67 @@ public class IntegrationTest
     }
 
     /// <summary>
+    /// Smoke-tests every registered <see cref="AWBlazorApp.Features.Forecasting.Services.IForecastAlgorithm"/>
+    /// against a synthetic 24-month series. Catches missing DI registrations, runtime exceptions
+    /// (div-by-zero, log of non-positive, etc.), and obviously broken outputs (NaN, wrong length).
+    /// </summary>
+    [Test]
+    public void All_Forecast_Algorithms_Produce_Valid_Output()
+    {
+        using var scope = factory.Services.CreateScope();
+        var algorithms = scope.ServiceProvider
+            .GetRequiredService<IEnumerable<AWBlazorApp.Features.Forecasting.Services.IForecastAlgorithm>>()
+            .ToList();
+
+        // Synthetic series with an upward trend + mild seasonality + a couple of zeros to exercise Croston.
+        var rng = new Random(42);
+        var historical = Enumerable.Range(0, 24)
+            .Select(i =>
+            {
+                var trend = 100m + i * 5m;
+                var season = (decimal)Math.Sin(i * Math.PI / 6) * 10m;
+                var noise = (decimal)(rng.NextDouble() * 4 - 2);
+                var value = i is 7 or 13 ? 0m : Math.Max(0m, trend + season + noise);
+                return new AWBlazorApp.Features.Forecasting.Services.TimeSeriesPoint(
+                    new DateTime(2024, 1, 1).AddMonths(i), value);
+            })
+            .ToList();
+
+        var coveredMethods = new HashSet<AWBlazorApp.Features.Forecasting.Domain.ForecastMethod>();
+        var failures = new List<string>();
+
+        foreach (var alg in algorithms)
+        {
+            coveredMethods.Add(alg.Method);
+            try
+            {
+                var output = alg.Compute(historical, 6,
+                    AWBlazorApp.Features.Forecasting.Domain.ForecastGranularity.Monthly, null);
+
+                if (output.Count != 6)
+                    failures.Add($"{alg.Method}: expected 6 points, got {output.Count}");
+                else if (output.Any(p => p.Value < -1_000_000_000m || p.Value > 1_000_000_000m))
+                    failures.Add($"{alg.Method}: produced extreme value (out of [-1e9, 1e9])");
+                else if (output[0].PeriodDate != new DateTime(2026, 1, 1))
+                    failures.Add($"{alg.Method}: first forecast date was {output[0].PeriodDate:yyyy-MM-dd}, expected 2026-01-01");
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{alg.Method}: {ex.GetType().Name} — {ex.Message.Split('\n')[0]}");
+            }
+        }
+
+        // Every enum value should map to a registered implementation.
+        var missing = Enum.GetValues<AWBlazorApp.Features.Forecasting.Domain.ForecastMethod>()
+            .Where(m => !coveredMethods.Contains(m))
+            .ToList();
+        if (missing.Count > 0)
+            failures.Add($"No registered algorithm for: {string.Join(", ", missing)}");
+
+        Assert.That(failures, Is.Empty, "Forecast algorithm failures:\n  " + string.Join("\n  ", failures));
+    }
+
+    /// <summary>
     /// Resolves an <see cref="ApplicationDbContext"/> from the test factory's service provider
     /// so test setup code can read/write the AdventureWorks2022_dev schema directly.
     /// </summary>
