@@ -1,4 +1,5 @@
 using AWBlazorApp.Endpoints.AdventureWorks;
+using AWBlazorApp.Endpoints.Admin;
 
 namespace AWBlazorApp.Endpoints;
 
