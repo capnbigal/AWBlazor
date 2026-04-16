@@ -29,17 +29,33 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeeDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeeDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="EmployeeDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.LoginID" Title="Login" />
-            <PropertyColumn Property="x => x.JobTitle" Title="Job title" />
-            <PropertyColumn Property="x => x.MaritalStatus" Title="MS" />
-            <PropertyColumn Property="x => x.Gender" Title="G" />
-            <PropertyColumn Property="x => x.HireDate" Title="Hired" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.CurrentFlag" Title="Current" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.LoginID" Title="Login">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.LoginID)" Title="Login" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.JobTitle" Title="Job title">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.JobTitle)" Title="Job title" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MaritalStatus" Title="MS">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.MaritalStatus)" Title="MS" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Gender" Title="G">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.Gender)" Title="G" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.HireDate" Title="Hired" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.HireDate)" Title="Hired" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CurrentFlag" Title="Current">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.CurrentFlag)" Title="Current" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <FilterTemplate><ColumnFilterButton TEntity="Employee" PropertyName="@nameof(EmployeeDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -68,6 +84,7 @@
     private MudDataGrid<EmployeeDto> grid = null!;
     private string? filterJobTitle;
     private string? filterLoginId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<EmployeeDto>> LoadServerDataAsync(GridState<EmployeeDto> state, CancellationToken ct)
     {
@@ -75,6 +92,7 @@
         var query = db.Employees.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(filterJobTitle)) query = query.Where(x => x.JobTitle.Contains(filterJobTitle.Trim()));
         if (!string.IsNullOrWhiteSpace(filterLoginId)) query = query.Where(x => x.LoginID.Contains(filterLoginId.Trim()));
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

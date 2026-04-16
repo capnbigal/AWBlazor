@@ -26,11 +26,17 @@
         <MudTextField @bind-Value="filterContains" Label="Description contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductDescriptionDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductDescriptionDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.Description" Title="Description" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Description" Title="Description">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.Description)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -54,6 +60,7 @@
 @code {
     private MudDataGrid<ProductDescriptionDto> grid = null!;
     private string? filterContains;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductDescriptionDto>> LoadServerDataAsync(GridState<ProductDescriptionDto> state, CancellationToken ct)
     {
@@ -64,6 +71,7 @@
             var needle = filterContains.Trim();
             query = query.Where(x => x.Description.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

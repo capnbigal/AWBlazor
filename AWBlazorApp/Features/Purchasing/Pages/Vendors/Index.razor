@@ -29,16 +29,30 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="VendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="VendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="VendorDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.AccountNumber" Title="Account #" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.CreditRating" Title="Credit" />
-            <PropertyColumn Property="x => x.PreferredVendorStatus" Title="Preferred" />
-            <PropertyColumn Property="x => x.ActiveFlag" Title="Active" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CreditRating" Title="Credit">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.CreditRating)" Title="Credit" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PreferredVendorStatus" Title="Preferred">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.PreferredVendorStatus)" Title="Preferred" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ActiveFlag" Title="Active">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.ActiveFlag)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -67,6 +81,7 @@
     private MudDataGrid<VendorDto> grid = null!;
     private string? filterName;
     private string? filterAccountNumber;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<VendorDto>> LoadServerDataAsync(GridState<VendorDto> state, CancellationToken ct)
     {
@@ -74,6 +89,7 @@
         var query = db.Vendors.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(filterName)) query = query.Where(x => x.Name.Contains(filterName.Trim()));
         if (!string.IsNullOrWhiteSpace(filterAccountNumber)) query = query.Where(x => x.AccountNumber.Contains(filterAccountNumber.Trim()));
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

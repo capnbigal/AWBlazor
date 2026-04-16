@@ -1,0 +1,41 @@
+@*
+    Dropdown-style filter trigger shown inside a PropertyColumn's <FilterTemplate>. Renders a
+    filter icon; click opens ColumnFilterDialog with a searchable distinct-values list for
+    <TEntity>.<PropertyName>. Checked values are written into the shared ColumnFilterState; the
+    grid's OnChanged callback reloads server data when the dialog closes with applied changes.
+*@
+@typeparam TEntity where TEntity : class
+@inject IDialogService DialogService
+
+<MudTooltip Text="@(Hint)" Placement="Placement.Top">
+    <MudIconButton Icon="@FilterIcon"
+                   Size="Size.Small"
+                   Color="@(HasSelection ? Color.Primary : Color.Default)"
+                   OnClick="OpenAsync" />
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public string PropertyName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public ColumnFilterState State { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool HasSelection => State.HasSelection(PropertyName);
+    private string FilterIcon => HasSelection ? Icons.Material.Filled.FilterAlt : Icons.Material.Outlined.FilterAlt;
+    private string Hint => HasSelection ? $"Filter: {State.GetOrCreate(PropertyName).Count} value(s)" : "Filter";
+
+    private async Task OpenAsync()
+    {
+        var parameters = new DialogParameters<ColumnFilterDialog<TEntity>>
+        {
+            { x => x.PropertyName, PropertyName },
+            { x => x.Title, Title },
+            { x => x.State, State },
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ColumnFilterDialog<TEntity>>($"Filter: {Title}", parameters, options);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await OnChanged.InvokeAsync();
+    }
+}

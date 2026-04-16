@@ -26,12 +26,20 @@
         <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ProductModelId" Title="Model id" />
-            <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description id" />
-            <PropertyColumn Property="x => x.CultureId" Title="Culture" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ProductModelId" Title="Model id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ProductModelId)" Title="Model id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId)" Title="Description id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CultureId" Title="Culture">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.CultureId)" Title="Culture" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -50,12 +58,14 @@
 @code {
     private MudDataGrid<ProductModelProductDescriptionCultureDto> grid = null!;
     private int? filterProductModelId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductModelProductDescriptionCultureDto>> LoadServerDataAsync(GridState<ProductModelProductDescriptionCultureDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.ProductModelProductDescriptionCultures.AsNoTracking();
         if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

@@ -40,22 +40,36 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="SalesOrderHeaderDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.SalesOrderNumber" Title="Order #" />
-            <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.SalesOrderNumber" Title="Order #">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SalesOrderNumber)" Title="Order #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Status" Sortable="false">
                 <CellTemplate>
                     @{ var (label, color) = StatusHelper.SalesOrderStatus(context.Item.Status); }
                     <MudChip T="string" Size="Size.Small" Color="@color" Variant="Variant.Filled">@label</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.CustomerId" Title="Customer" />
-            <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2" />
-            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
+            <PropertyColumn Property="x => x.CustomerId" Title="Customer">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.CustomerId)" Title="Customer" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -84,6 +98,7 @@
     private MudDataGrid<SalesOrderHeaderDto> grid = null!;
     private int? filterCustomerId;
     private byte? filterStatus;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesOrderHeaderDto>> LoadServerDataAsync(GridState<SalesOrderHeaderDto> state, CancellationToken ct)
     {
@@ -91,6 +106,7 @@
         var query = db.SalesOrderHeaders.AsNoTracking();
         if (filterCustomerId.HasValue) query = query.Where(x => x.CustomerId == filterCustomerId.Value);
         if (filterStatus.HasValue) query = query.Where(x => x.Status == filterStatus.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

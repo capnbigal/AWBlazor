@@ -26,14 +26,26 @@
         <MudTextField @bind-Value="filterCartId" Label="Shopping cart id" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.ShoppingCartId" Title="Cart id" />
-            <PropertyColumn Property="x => x.ProductId" Title="Product" />
-            <PropertyColumn Property="x => x.Quantity" Title="Qty" />
-            <PropertyColumn Property="x => x.DateCreated" Title="Created" Format="yyyy-MM-dd HH:mm" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ShoppingCartId" Title="Cart id">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ShoppingCartId)" Title="Cart id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Quantity" Title="Qty">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DateCreated" Title="Created" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.DateCreated)" Title="Created" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -57,6 +69,7 @@
 @code {
     private MudDataGrid<ShoppingCartItemDto> grid = null!;
     private string? filterCartId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ShoppingCartItemDto>> LoadServerDataAsync(GridState<ShoppingCartItemDto> state, CancellationToken ct)
     {
@@ -67,6 +80,7 @@
             var needle = filterCartId.Trim();
             query = query.Where(x => x.ShoppingCartId == needle);
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

@@ -17,13 +17,22 @@
                  Hover="true"
                  Striped="true"
                  SortMode="SortMode.Single"
-                 RowsPerPage="25">
+                 RowsPerPage="25"
+                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.UserName" Title="User name" />
-            <PropertyColumn Property="x => x.Email" Title="Email" />
-            <PropertyColumn Property="x => x.DisplayName" Title="Display name" />
+            <PropertyColumn Property="x => x.UserName" Title="User name">
+                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.UserName)" Title="User name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Email" Title="Email">
+                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.Email)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DisplayName" Title="Display name">
+                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.DisplayName)" Title="Display name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <PropertyColumn Property="x => x.RolesText" Title="Roles" />
-            <PropertyColumn Property="x => x.EmailConfirmed" Title="Confirmed" />
+            <PropertyColumn Property="x => x.EmailConfirmed" Title="Confirmed">
+                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.EmailConfirmed)" Title="Confirmed" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent>
             <MudDataGridPager T="UserRow" />
@@ -41,10 +50,12 @@
         string RolesText);
 
     private MudDataGrid<UserRow> grid = null!;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<UserRow>> LoadServerDataAsync(GridState<UserRow> state, CancellationToken ct)
     {
         var query = UserManager.Users.AsNoTracking();
+        query = query.ApplyColumnFilters(columnFilters);
 
         var sort = state.SortDefinitions.FirstOrDefault();
         var ordered = sort?.SortBy switch
@@ -79,4 +90,6 @@
 
         return new GridData<UserRow> { Items = rows, TotalItems = total };
     }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
 }

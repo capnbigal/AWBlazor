@@ -36,19 +36,35 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="TransactionHistoryArchiveAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="TransactionHistoryArchiveAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.TransactionId" Title="Txn id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TransactionId" Title="Txn id">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.TransactionId)" Title="Txn id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.ProductId" Title="Product" />
-            <PropertyColumn Property="x => x.TransactionType" Title="Type" />
-            <PropertyColumn Property="x => x.Quantity" Title="Qty" />
-            <PropertyColumn Property="x => x.ActualCost" Title="Cost" Format="C2" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TransactionType" Title="Type">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.TransactionType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Quantity" Title="Qty">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ActualCost" Title="Cost" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.ActualCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistoryArchiveAuditLog" PropertyName="@nameof(TransactionHistoryArchiveAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="TransactionHistoryArchiveAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -61,6 +77,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<TransactionHistoryArchiveAuditLogDto>> LoadServerDataAsync(GridState<TransactionHistoryArchiveAuditLogDto> state, CancellationToken ct)
     {
@@ -75,6 +92,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

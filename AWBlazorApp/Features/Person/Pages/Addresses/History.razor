@@ -1,6 +1,7 @@
 @page "/aw/addresses/history"
 @page "/aw/addresses/history/{SlotId:int}"
 @attribute [Authorize]
+@using AWBlazorApp.Features.Person.Domain
 @using AWBlazorApp.Features.Person.Models
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -36,18 +37,32 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="AddressAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="AddressAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.AddressId" Title="Id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AddressId" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.AddressId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.AddressLine1" Title="Line 1" />
-            <PropertyColumn Property="x => x.City" Title="City" />
-            <PropertyColumn Property="x => x.PostalCode" Title="Postal" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AddressLine1" Title="Line 1">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.AddressLine1)" Title="Line 1" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.City" Title="City">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.City)" Title="City" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PostalCode" Title="Postal">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.PostalCode)" Title="Postal" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="AddressAuditLog" PropertyName="@nameof(AddressAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="AddressAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -60,6 +75,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<AddressAuditLogDto>> LoadServerDataAsync(GridState<AddressAuditLogDto> state, CancellationToken ct)
     {
@@ -74,6 +90,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

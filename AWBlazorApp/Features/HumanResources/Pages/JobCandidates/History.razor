@@ -1,6 +1,7 @@
 @page "/aw/job-candidates/history"
 @page "/aw/job-candidates/history/{SlotId:int}"
 @attribute [Authorize]
+@using AWBlazorApp.Features.HumanResources.Domain
 @using AWBlazorApp.Features.HumanResources.Models
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -36,16 +37,26 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="JobCandidateAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="JobCandidateAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.JobCandidateId" Title="Id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="JobCandidateAuditLog" PropertyName="@nameof(JobCandidateAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.JobCandidateId" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="JobCandidateAuditLog" PropertyName="@nameof(JobCandidateAuditLogDto.JobCandidateId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="JobCandidateAuditLog" PropertyName="@nameof(JobCandidateAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
+                <FilterTemplate><ColumnFilterButton TEntity="JobCandidateAuditLog" PropertyName="@nameof(JobCandidateAuditLogDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="JobCandidateAuditLog" PropertyName="@nameof(JobCandidateAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="JobCandidateAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -58,6 +69,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<JobCandidateAuditLogDto>> LoadServerDataAsync(GridState<JobCandidateAuditLogDto> state, CancellationToken ct)
     {
@@ -68,6 +80,7 @@
         if (scopedId.HasValue) query = query.Where(a => a.JobCandidateId == scopedId.Value);
         if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
         if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

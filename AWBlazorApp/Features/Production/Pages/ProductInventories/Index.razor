@@ -30,14 +30,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
-            <PropertyColumn Property="x => x.LocationId" Title="Location id" />
-            <PropertyColumn Property="x => x.Shelf" Title="Shelf" />
-            <PropertyColumn Property="x => x.Bin" Title="Bin" />
-            <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.LocationId" Title="Location id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.LocationId)" Title="Location id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Shelf" Title="Shelf">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Shelf)" Title="Shelf" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Bin" Title="Bin">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Bin)" Title="Bin" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Quantity" Title="Quantity">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Quantity)" Title="Quantity" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -61,6 +73,7 @@
     private int? filterProductId;
     private short? filterLocationId;
     private List<LookupItem<short>> _locations = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,6 +86,7 @@
         var query = db.ProductInventories.AsNoTracking();
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
         if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

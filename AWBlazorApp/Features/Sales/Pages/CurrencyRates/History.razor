@@ -36,19 +36,35 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="CurrencyRateAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CurrencyRateAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.CurrencyRateId" Title="Id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CurrencyRateId" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.CurrencyRateId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.CurrencyRateDate" Title="Rate date" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.FromCurrencyCode" Title="From" />
-            <PropertyColumn Property="x => x.ToCurrencyCode" Title="To" />
-            <PropertyColumn Property="x => x.AverageRate" Title="Avg" Format="N4" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CurrencyRateDate" Title="Rate date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.CurrencyRateDate)" Title="Rate date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FromCurrencyCode" Title="From">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.FromCurrencyCode)" Title="From" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ToCurrencyCode" Title="To">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.ToCurrencyCode)" Title="To" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AverageRate" Title="Avg" Format="N4">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.AverageRate)" Title="Avg" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRateAuditLog" PropertyName="@nameof(CurrencyRateAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="CurrencyRateAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -61,6 +77,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CurrencyRateAuditLogDto>> LoadServerDataAsync(GridState<CurrencyRateAuditLogDto> state, CancellationToken ct)
     {
@@ -75,6 +92,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

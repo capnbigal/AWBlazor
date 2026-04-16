@@ -29,19 +29,39 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="DocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="DocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.DocumentNode" Title="Node" />
-            <PropertyColumn Property="x => x.DocumentLevel" Title="Level" />
-            <PropertyColumn Property="x => x.Title" Title="Title" />
-            <PropertyColumn Property="x => x.FileName" Title="File" />
-            <PropertyColumn Property="x => x.FileExtension" Title="Ext" />
-            <PropertyColumn Property="x => x.Revision" Title="Rev" />
-            <PropertyColumn Property="x => x.Status" Title="Status" />
-            <PropertyColumn Property="x => x.Owner" Title="Owner" />
-            <PropertyColumn Property="x => x.FolderFlag" Title="Folder?" />
+            <PropertyColumn Property="x => x.DocumentNode" Title="Node">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.DocumentNode)" Title="Node" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DocumentLevel" Title="Level">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.DocumentLevel)" Title="Level" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Title" Title="Title">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FileName" Title="File">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.FileName)" Title="File" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FileExtension" Title="Ext">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.FileExtension)" Title="Ext" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Revision" Title="Rev">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.Revision)" Title="Rev" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Status" Title="Status">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.Status)" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Owner" Title="Owner">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.Owner)" Title="Owner" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FolderFlag" Title="Folder?">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.FolderFlag)" Title="Folder?" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <PropertyColumn Property="x => x.HasDocumentContent" Title="Has content?" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="Document" PropertyName="@nameof(DocumentDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -64,6 +84,7 @@
     private MudDataGrid<DocumentDto> grid = null!;
     private string? filterTitle;
     private int? filterOwner;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<DocumentDto>> LoadServerDataAsync(GridState<DocumentDto> state, CancellationToken ct)
     {
@@ -75,6 +96,7 @@
             query = query.Where(x => x.Title.Contains(t));
         }
         if (filterOwner.HasValue) query = query.Where(x => x.Owner == filterOwner.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

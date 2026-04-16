@@ -40,21 +40,37 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="CustomerAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CustomerAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.CustomerId" Title="Id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CustomerId" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.CustomerId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.AccountNumber" Title="Account #" />
-            <PropertyColumn Property="x => x.PersonId" Title="Person id" />
-            <PropertyColumn Property="x => x.StoreId" Title="Store id" />
-            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PersonId" Title="Person id">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StoreId" Title="Store id">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.StoreId)" Title="Store id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="CustomerAuditLog" PropertyName="@nameof(CustomerAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="CustomerAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -67,6 +83,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CustomerAuditLogDto>> LoadServerDataAsync(GridState<CustomerAuditLogDto> state, CancellationToken ct)
     {
@@ -81,6 +98,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

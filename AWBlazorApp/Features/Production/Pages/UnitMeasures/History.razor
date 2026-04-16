@@ -38,16 +38,26 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="UnitMeasureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="UnitMeasureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.UnitMeasureCode" Title="Code" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasureAuditLog" PropertyName="@nameof(UnitMeasureAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.UnitMeasureCode" Title="Code">
+                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasureAuditLog" PropertyName="@nameof(UnitMeasureAuditLogDto.UnitMeasureCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasureAuditLog" PropertyName="@nameof(UnitMeasureAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasureAuditLog" PropertyName="@nameof(UnitMeasureAuditLogDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasureAuditLog" PropertyName="@nameof(UnitMeasureAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="UnitMeasureAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -60,6 +70,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private string? filterCode;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<UnitMeasureAuditLogDto>> LoadServerDataAsync(GridState<UnitMeasureAuditLogDto> state, CancellationToken ct)
     {
@@ -74,6 +85,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

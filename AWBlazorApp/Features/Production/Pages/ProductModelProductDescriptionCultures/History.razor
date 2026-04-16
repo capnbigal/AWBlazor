@@ -29,17 +29,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductModelProductDescriptionCultureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductModelProductDescriptionCultureAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.ProductModelId" Title="Model" />
-            <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description" />
-            <PropertyColumn Property="x => x.CultureId" Title="Culture" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductModelId" Title="Model">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.ProductModelId)" Title="Model" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.ProductDescriptionId)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CultureId" Title="Culture">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.CultureId)" Title="Culture" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelProductDescriptionCultureAuditLog" PropertyName="@nameof(ProductModelProductDescriptionCultureAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="ProductModelProductDescriptionCultureAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -53,6 +65,7 @@
     private MudDataGrid<ProductModelProductDescriptionCultureAuditLogDto> grid = null!;
     private string? filterChangedBy;
     private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductModelProductDescriptionCultureAuditLogDto>> LoadServerDataAsync(GridState<ProductModelProductDescriptionCultureAuditLogDto> state, CancellationToken ct)
     {
@@ -68,6 +81,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

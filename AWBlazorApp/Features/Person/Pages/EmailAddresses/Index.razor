@@ -30,12 +30,20 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmailAddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmailAddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id" />
-            <PropertyColumn Property="x => x.EmailAddressId" Title="Email id" />
-            <PropertyColumn Property="x => x.EmailAddressValue" Title="Email" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id">
+                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EmailAddressId" Title="Email id">
+                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressId)" Title="Email id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EmailAddressValue" Title="Email">
+                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressValue)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -58,6 +66,7 @@
     private MudDataGrid<EmailAddressDto> grid = null!;
     private int? filterBusinessEntityId;
     private string? filterEmail;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<EmailAddressDto>> LoadServerDataAsync(GridState<EmailAddressDto> state, CancellationToken ct)
     {
@@ -69,6 +78,7 @@
             var n = filterEmail.Trim();
             query = query.Where(x => x.EmailAddressValue != null && x.EmailAddressValue.Contains(n));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

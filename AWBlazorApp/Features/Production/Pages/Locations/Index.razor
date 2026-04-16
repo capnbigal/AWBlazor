@@ -26,13 +26,23 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="LocationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="LocationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.CostRate" Title="Cost rate" Format="C" />
-            <PropertyColumn Property="x => x.Availability" Title="Availability" Format="0.00" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Location" PropertyName="@nameof(LocationDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="Location" PropertyName="@nameof(LocationDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CostRate" Title="Cost rate" Format="C">
+                <FilterTemplate><ColumnFilterButton TEntity="Location" PropertyName="@nameof(LocationDto.CostRate)" Title="Cost rate" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Availability" Title="Availability" Format="0.00">
+                <FilterTemplate><ColumnFilterButton TEntity="Location" PropertyName="@nameof(LocationDto.Availability)" Title="Availability" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="Location" PropertyName="@nameof(LocationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -56,6 +66,7 @@
 @code {
     private MudDataGrid<LocationDto> grid = null!;
     private string? filterName;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<LocationDto>> LoadServerDataAsync(GridState<LocationDto> state, CancellationToken ct)
     {
@@ -66,6 +77,7 @@
             var needle = filterName.Trim();
             query = query.Where(x => x.Name.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

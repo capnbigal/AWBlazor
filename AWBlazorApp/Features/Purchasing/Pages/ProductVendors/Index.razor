@@ -30,16 +30,32 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductVendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductVendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ProductId" Title="Product" />
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Vendor" />
-            <PropertyColumn Property="x => x.AverageLeadTime" Title="Lead time" />
-            <PropertyColumn Property="x => x.StandardPrice" Title="Std price" Format="C2" />
-            <PropertyColumn Property="x => x.MinOrderQty" Title="Min qty" />
-            <PropertyColumn Property="x => x.MaxOrderQty" Title="Max qty" />
-            <PropertyColumn Property="x => x.UnitMeasureCode" Title="UoM" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Vendor">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.BusinessEntityId)" Title="Vendor" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AverageLeadTime" Title="Lead time">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.AverageLeadTime)" Title="Lead time" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StandardPrice" Title="Std price" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.StandardPrice)" Title="Std price" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MinOrderQty" Title="Min qty">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.MinOrderQty)" Title="Min qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MaxOrderQty" Title="Max qty">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.MaxOrderQty)" Title="Max qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.UnitMeasureCode" Title="UoM">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.UnitMeasureCode)" Title="UoM" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -62,6 +78,7 @@
     private MudDataGrid<ProductVendorDto> grid = null!;
     private int? filterProductId;
     private int? filterBusinessEntityId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductVendorDto>> LoadServerDataAsync(GridState<ProductVendorDto> state, CancellationToken ct)
     {
@@ -69,6 +86,7 @@
         var query = db.ProductVendors.AsNoTracking();
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

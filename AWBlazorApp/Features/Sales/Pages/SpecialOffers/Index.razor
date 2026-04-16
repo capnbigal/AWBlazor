@@ -29,18 +29,36 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="SpecialOfferDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.Description" Title="Description" />
-            <PropertyColumn Property="x => x.DiscountPct" Title="Discount" Format="P2" />
-            <PropertyColumn Property="x => x.OfferType" Title="Type" />
-            <PropertyColumn Property="x => x.Category" Title="Category" />
-            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.MinQty" Title="Min" />
-            <PropertyColumn Property="x => x.MaxQty" Title="Max" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Description" Title="Description">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Description)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DiscountPct" Title="Discount" Format="P2">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.DiscountPct)" Title="Discount" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.OfferType" Title="Type">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.OfferType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Category" Title="Category">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Category)" Title="Category" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MinQty" Title="Min">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MinQty)" Title="Min" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MaxQty" Title="Max">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MaxQty)" Title="Max" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -68,6 +86,7 @@
     private MudDataGrid<SpecialOfferDto> grid = null!;
     private string? filterDescription;
     private string? filterCategory;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SpecialOfferDto>> LoadServerDataAsync(GridState<SpecialOfferDto> state, CancellationToken ct)
     {
@@ -83,6 +102,7 @@
             var needle = filterCategory.Trim();
             query = query.Where(x => x.Category == needle);
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

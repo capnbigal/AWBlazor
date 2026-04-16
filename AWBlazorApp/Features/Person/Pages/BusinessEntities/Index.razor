@@ -27,11 +27,17 @@
         it has no editable data of its own. Persons, Stores, and Vendors all share this ID.
     </MudText>
 
-    <MudDataGrid T="BusinessEntityDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="BusinessEntityDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.RowGuid" Title="Row GUID" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntity" PropertyName="@nameof(BusinessEntityDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.RowGuid" Title="Row GUID">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntity" PropertyName="@nameof(BusinessEntityDto.RowGuid)" Title="Row GUID" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntity" PropertyName="@nameof(BusinessEntityDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -49,11 +55,13 @@
 
 @code {
     private MudDataGrid<BusinessEntityDto> grid = null!;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<BusinessEntityDto>> LoadServerDataAsync(GridState<BusinessEntityDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.BusinessEntities.AsNoTracking();
+        query = query.ApplyColumnFilters(columnFilters);
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
@@ -66,6 +74,8 @@
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<BusinessEntityDto> { Items = rows, TotalItems = total };
     }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
 
     private async Task OpenCreateAsync()
     {
