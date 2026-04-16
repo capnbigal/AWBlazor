@@ -18,20 +18,20 @@
                  Striped="true"
                  SortMode="SortMode.Single"
                  RowsPerPage="25"
-                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
+                >
         <Columns>
             <PropertyColumn Property="x => x.UserName" Title="User name">
-                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.UserName)" Title="User name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ApplicationUser" PropertyName="@nameof(UserRow.UserName)" Title="User name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Email" Title="Email">
-                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.Email)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ApplicationUser" PropertyName="@nameof(UserRow.Email)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DisplayName" Title="Display name">
-                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.DisplayName)" Title="Display name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ApplicationUser" PropertyName="@nameof(UserRow.DisplayName)" Title="Display name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.RolesText" Title="Roles" />
             <PropertyColumn Property="x => x.EmailConfirmed" Title="Confirmed">
-                <FilterTemplate><ColumnFilterButton TEntity="ApplicationUser" PropertyName="@nameof(UserRow.EmailConfirmed)" Title="Confirmed" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ApplicationUser" PropertyName="@nameof(UserRow.EmailConfirmed)" Title="Confirmed" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent>

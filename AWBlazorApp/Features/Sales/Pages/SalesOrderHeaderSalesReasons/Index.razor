@@ -26,16 +26,16 @@
         <MudNumericField T="int?" @bind-Value="filterSalesOrderId" Label="Sales order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderHeaderSalesReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="SalesOrderHeaderSalesReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.SalesOrderId" Title="Sales order id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.SalesOrderId)" Title="Sales order id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.SalesOrderId)" Title="Sales order id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesReasonId" Title="Sales reason id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.SalesReasonId)" Title="Sales reason id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.SalesReasonId)" Title="Sales reason id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeaderSalesReason" PropertyName="@nameof(SalesOrderHeaderSalesReasonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

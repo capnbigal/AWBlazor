@@ -37,31 +37,31 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="PersonAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="PersonAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PersonId" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.PersonId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.PersonId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PersonType" Title="Type">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.FirstName" Title="First">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.FirstName)" Title="First" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.FirstName)" Title="First" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.LastName" Title="Last">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.LastName)" Title="Last" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.LastName)" Title="Last" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonAuditLog" PropertyName="@nameof(PersonAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="PersonAuditLogDto" /></PagerContent>

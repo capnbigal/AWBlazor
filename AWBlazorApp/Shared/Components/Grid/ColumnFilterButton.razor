@@ -1,18 +1,98 @@
 @*
-    Dropdown-style filter trigger shown inside a PropertyColumn's <FilterTemplate>. Renders a
-    filter icon; click opens ColumnFilterDialog with a searchable distinct-values list for
-    <TEntity>.<PropertyName>. Checked values are written into the shared ColumnFilterState; the
-    grid's OnChanged callback reloads server data when the dialog closes with applied changes.
+    Excel-style column filter popover. Rendered inside a PropertyColumn's <HeaderTemplate>
+    (via GridColumnHeader) so the filter icon is always visible next to the title. One click
+    on the icon toggles a popover anchored to the icon's bottom-left with a searchable
+    distinct-values checkbox list for <TEntity>.<PropertyName>.
+
+    The surrounding span stops the click from bubbling into the parent header cell's sort
+    handler. The transparent MudOverlay at page z-index catches outside-clicks to close the
+    popover; the popover itself sits above the overlay (z 1300 > 1299) so clicks inside the
+    filter UI are not intercepted.
+
+    On Apply the selection is written into the shared ColumnFilterState and OnChanged fires
+    so the parent grid reloads. Distinct values are loaded lazily on open, not on every
+    page render, so putting this component in every column header is cheap.
 *@
 @typeparam TEntity where TEntity : class
-@inject IDialogService DialogService
+@inject IDistinctValuesProvider Provider
 
-<MudTooltip Text="@(Hint)" Placement="Placement.Top">
-    <MudIconButton Icon="@FilterIcon"
-                   Size="Size.Small"
-                   Color="@(HasSelection ? Color.Primary : Color.Default)"
-                   OnClick="OpenAsync" />
-</MudTooltip>
+<span @onclick="Stop" @onclick:stopPropagation="true" style="display: inline-block;">
+    <MudTooltip Text="@Hint" Placement="Placement.Top">
+        <MudIconButton Icon="@FilterIcon"
+                       Size="Size.Small"
+                       Color="@(HasSelection ? Color.Primary : Color.Default)"
+                       OnClick="ToggleAsync" />
+    </MudTooltip>
+    <MudPopover Open="@_open"
+                AnchorOrigin="Origin.BottomLeft"
+                TransformOrigin="Origin.TopLeft"
+                Paper="false">
+        <MudPaper Elevation="8" Class="pa-3" Style="min-width: 280px; max-width: 360px;">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Filter: @Title</MudText>
+            <MudTextField T="string"
+                          @bind-Value="_search"
+                          @bind-Value:after="ReloadAsync"
+                          Placeholder="Search..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          DebounceInterval="300"
+                          Class="mb-2" />
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (_values.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No values match.</MudText>
+            }
+            else
+            {
+                <MudStack Row="true" Spacing="1" Class="mb-1">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="SelectAll">Select all</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="SelectNone">Select none</MudButton>
+                </MudStack>
+                @*
+                    Definite height (not max-height) so overflow-y: auto triggers regardless of
+                    surrounding flex/grid sizing. max-height inside a flex parent requires the
+                    parent to constrain height, which the popover host doesn't reliably do here.
+                *@
+                <div style="height: 260px; overflow-y: auto; overscroll-behavior: contain;">
+                    @foreach (var value in _values)
+                    {
+                        var label = value?.ToString() ?? "(null)";
+                        var key = KeyFor(value);
+                        <div>
+                            <MudCheckBox T="bool"
+                                         Value="@(_selection.Contains(key))"
+                                         ValueChanged="@(on => Toggle(value, on))"
+                                         Label="@label"
+                                         Dense="true" />
+                        </div>
+                    }
+                </div>
+                @if (_truncated)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                        Showing first @_values.Count — refine the search to narrow further.
+                    </MudText>
+                }
+            }
+            <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd" Class="mt-2">
+                <MudButton Size="Size.Small" OnClick="ClearAndApply">Clear</MudButton>
+                <MudButton Size="Size.Small" OnClick="Close">Cancel</MudButton>
+                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="Apply">Apply</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudPopover>
+</span>
+@*
+    No MudOverlay for outside-click closing: in MudBlazor 9 the overlay's stacking context
+    ends up on top of the popover in some layouts and intercepts both clicks and wheel
+    events inside the popover. Users close the popover explicitly via Apply / Cancel / Clear.
+*@
 
 @code {
     [Parameter, EditorRequired] public string PropertyName { get; set; } = string.Empty;
@@ -20,22 +100,84 @@
     [Parameter, EditorRequired] public ColumnFilterState State { get; set; } = null!;
     [Parameter] public EventCallback OnChanged { get; set; }
 
+    private const int PageSize = 200;
+
+    private bool _open;
+    private string? _search;
+    private bool _loading;
+    private bool _truncated;
+    private List<object?> _values = new();
+    private readonly HashSet<string> _selection = new(StringComparer.Ordinal);
+
     private bool HasSelection => State.HasSelection(PropertyName);
     private string FilterIcon => HasSelection ? Icons.Material.Filled.FilterAlt : Icons.Material.Outlined.FilterAlt;
     private string Hint => HasSelection ? $"Filter: {State.GetOrCreate(PropertyName).Count} value(s)" : "Filter";
 
-    private async Task OpenAsync()
+    private static void Stop() { }
+
+    private async Task ToggleAsync()
     {
-        var parameters = new DialogParameters<ColumnFilterDialog<TEntity>>
+        if (_open) { Close(); return; }
+        _open = true;
+        _selection.Clear();
+        foreach (var v in State.GetOrCreate(PropertyName))
+            _selection.Add(KeyFor(v));
+        await ReloadAsync();
+    }
+
+    private void Close()
+    {
+        _open = false;
+        _search = null;
+    }
+
+    private async Task ReloadAsync()
+    {
+        _loading = true;
+        try
         {
-            { x => x.PropertyName, PropertyName },
-            { x => x.Title, Title },
-            { x => x.State, State },
-        };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ColumnFilterDialog<TEntity>>($"Filter: {Title}", parameters, options);
-        var result = await dialog.Result;
-        if (result is { Canceled: false })
-            await OnChanged.InvokeAsync();
+            var fetched = await Provider.GetDistinctValuesAsync<TEntity>(PropertyName, _search, PageSize + 1, CancellationToken.None);
+            _truncated = fetched.Count > PageSize;
+            _values = fetched.Take(PageSize).ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string KeyFor(object? value) => value?.ToString() ?? "\0null\0";
+
+    private void Toggle(object? value, bool on)
+    {
+        var key = KeyFor(value);
+        if (on) _selection.Add(key);
+        else _selection.Remove(key);
+    }
+
+    private void SelectAll()
+    {
+        foreach (var v in _values) _selection.Add(KeyFor(v));
+    }
+
+    private void SelectNone() => _selection.Clear();
+
+    private async Task Apply()
+    {
+        var set = State.GetOrCreate(PropertyName);
+        set.Clear();
+        foreach (var v in _values)
+        {
+            if (_selection.Contains(KeyFor(v))) set.Add(v);
+        }
+        Close();
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task ClearAndApply()
+    {
+        State.Clear(PropertyName);
+        Close();
+        await OnChanged.InvokeAsync();
     }
 }

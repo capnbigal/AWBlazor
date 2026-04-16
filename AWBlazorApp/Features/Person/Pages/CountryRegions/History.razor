@@ -39,25 +39,25 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="CountryRegionAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="CountryRegionAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <FilterTemplate><ColumnFilterButton TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CountryRegionCode" Title="Code">
-                <FilterTemplate><ColumnFilterButton TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.CountryRegionCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.CountryRegionCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <FilterTemplate><ColumnFilterButton TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <FilterTemplate><ColumnFilterButton TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CountryRegionAuditLog" PropertyName="@nameof(CountryRegionAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="CountryRegionAuditLogDto" /></PagerContent>

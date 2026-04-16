@@ -30,19 +30,19 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmailAddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="EmailAddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id">
-                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EmailAddressId" Title="Email id">
-                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressId)" Title="Email id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressId)" Title="Email id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EmailAddressValue" Title="Email">
-                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressValue)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.EmailAddressValue)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmailAddress" PropertyName="@nameof(EmailAddressDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

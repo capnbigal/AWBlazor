@@ -30,11 +30,11 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PurchaseOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="PurchaseOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="PurchaseOrderHeaderDto" />
             <PropertyColumn Property="x => x.Id" Title="PO #">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.Id)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.Id)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Status" Sortable="false">
                 <CellTemplate>
@@ -43,22 +43,22 @@
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.VendorId" Title="Vendor">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.VendorId)" Title="Vendor" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.VendorId)" Title="Vendor" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EmployeeId" Title="Employee">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.EmployeeId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.EmployeeId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

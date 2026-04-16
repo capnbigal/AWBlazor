@@ -66,13 +66,13 @@
                  Striped="true"
                  SortMode="SortMode.Single"
                  RowsPerPage="25"
-                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
+                >
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ToolSlotConfigurationId" Title="Slot #">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ToolSlotConfigurationId)" Title="Slot #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ToolSlotConfigurationId)" Title="Slot #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate>
@@ -85,22 +85,22 @@
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Family" Title="Family">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.Family)" Title="Family" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.Family)" Title="Family" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.MtCode" Title="MT code">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.MtCode)" Title="MT code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.MtCode)" Title="MT code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Destination" Title="Destination">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.Destination)" Title="Destination" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.Destination)" Title="Destination" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.IsActive" Title="Active">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.IsActive)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.IsActive)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotAuditLog" PropertyName="@nameof(ToolSlotAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent>

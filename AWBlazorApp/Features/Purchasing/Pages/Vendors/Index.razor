@@ -29,29 +29,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="VendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="VendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="VendorDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CreditRating" Title="Credit">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.CreditRating)" Title="Credit" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.CreditRating)" Title="Credit" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PreferredVendorStatus" Title="Preferred">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.PreferredVendorStatus)" Title="Preferred" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.PreferredVendorStatus)" Title="Preferred" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ActiveFlag" Title="Active">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.ActiveFlag)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.ActiveFlag)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="Vendor" PropertyName="@nameof(VendorDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Vendor" PropertyName="@nameof(VendorDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

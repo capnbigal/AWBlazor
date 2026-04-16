@@ -29,28 +29,28 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="StateProvinceDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="StateProvinceDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StateProvinceCode" Title="Code">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.StateProvinceCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.StateProvinceCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CountryRegionCode" Title="Country">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TerritoryId" Title="Territory">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.TerritoryId)" Title="Territory" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.TerritoryId)" Title="Territory" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.IsOnlyStateProvinceFlag" Title="Only">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.IsOnlyStateProvinceFlag)" Title="Only" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.IsOnlyStateProvinceFlag)" Title="Only" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

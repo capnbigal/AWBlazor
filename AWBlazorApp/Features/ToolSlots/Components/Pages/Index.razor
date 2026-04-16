@@ -55,22 +55,22 @@
                  Striped="true"
                  SortMode="SortMode.Single"
                  RowsPerPage="25"
-                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
+                >
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Family" Title="Family">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Family)" Title="Family" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Family)" Title="Family" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.MtCode" Title="MT code">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.MtCode)" Title="MT code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.MtCode)" Title="MT code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Destination" Title="Destination">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Destination)" Title="Destination" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Destination)" Title="Destination" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.IsActive" Title="Active">
-                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.IsActive)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.IsActive)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

@@ -29,29 +29,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesTerritoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="SalesTerritoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesTerritoryDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CountryRegionCode" Title="Country">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.GroupName" Title="Group">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.GroupName)" Title="Group" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.GroupName)" Title="Group" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesYtd" Title="Sales YTD" Format="C">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesYtd)" Title="Sales YTD" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesYtd)" Title="Sales YTD" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesLastYear" Title="Sales last yr" Format="C">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesLastYear)" Title="Sales last yr" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesLastYear)" Title="Sales last yr" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

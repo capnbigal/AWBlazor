@@ -30,25 +30,25 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductId" Title="Product id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.LocationId" Title="Location id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.LocationId)" Title="Location id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.LocationId)" Title="Location id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Shelf" Title="Shelf">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Shelf)" Title="Shelf" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Shelf)" Title="Shelf" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Bin" Title="Bin">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Bin)" Title="Bin" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Bin)" Title="Bin" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Quantity" Title="Quantity">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Quantity)" Title="Quantity" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.Quantity)" Title="Quantity" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

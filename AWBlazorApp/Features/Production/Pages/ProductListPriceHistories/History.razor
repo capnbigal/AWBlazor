@@ -28,28 +28,28 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductListPriceHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductListPriceHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ListPrice)" Title="List price" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ListPrice)" Title="List price" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductListPriceHistoryAuditLog" PropertyName="@nameof(ProductListPriceHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="ProductListPriceHistoryAuditLogDto" /></PagerContent>

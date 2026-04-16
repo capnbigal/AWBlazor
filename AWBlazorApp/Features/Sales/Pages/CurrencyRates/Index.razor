@@ -29,25 +29,25 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CurrencyRateDate" Title="Date" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.CurrencyRateDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.CurrencyRateDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.FromCurrencyCode" Title="From">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.FromCurrencyCode)" Title="From" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.FromCurrencyCode)" Title="From" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ToCurrencyCode" Title="To">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.ToCurrencyCode)" Title="To" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.ToCurrencyCode)" Title="To" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AverageRate" Title="Average" Format="N4">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.AverageRate)" Title="Average" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.AverageRate)" Title="Average" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EndOfDayRate" Title="End-of-day" Format="N4">
-                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.EndOfDayRate)" Title="End-of-day" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.EndOfDayRate)" Title="End-of-day" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
