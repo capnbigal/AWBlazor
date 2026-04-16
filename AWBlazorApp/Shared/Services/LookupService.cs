@@ -9,11 +9,40 @@ namespace AWBlazorApp.Shared.Services;
 /// <summary>
 /// Centralized lookup provider for FK dropdown fields across all dialogs and filter panels.
 /// Singleton — uses <see cref="IDbContextFactory{TContext}"/> for DB access and
-/// <see cref="IMemoryCache"/> with 5-minute TTL for small-table lookups.
+/// <see cref="IMemoryCache"/> with 1-hour TTL for small-table lookups.
 /// </summary>
 public sealed class LookupService(IDbContextFactory<ApplicationDbContext> dbFactory, IMemoryCache cache)
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(1);
+
+    private static readonly string[] CacheKeys =
+    [
+        "lookup:AddressTypes",
+        "lookup:ContactTypes",
+        "lookup:CountryRegions",
+        "lookup:Cultures",
+        "lookup:Currencies",
+        "lookup:Departments",
+        "lookup:Locations",
+        "lookup:PhoneNumberTypes",
+        "lookup:ProductCategories",
+        "lookup:ProductSubcategories",
+        "lookup:ProductModels",
+        "lookup:SalesReasons",
+        "lookup:SalesTerritories",
+        "lookup:ScrapReasons",
+        "lookup:Shifts",
+        "lookup:ShipMethods",
+        "lookup:SpecialOffers",
+        "lookup:UnitMeasures",
+        "lookup:StateProvinces",
+    ];
+
+    public int ClearCache()
+    {
+        foreach (var key in CacheKeys) cache.Remove(key);
+        return CacheKeys.Length;
+    }
 
     // ── Small-table cached lookups (< ~200 rows, use FkSelect) ──────────────
 

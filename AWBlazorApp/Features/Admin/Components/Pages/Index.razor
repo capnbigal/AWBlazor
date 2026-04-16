@@ -4,9 +4,11 @@
 @using Microsoft.Extensions.Diagnostics.HealthChecks
 @using System.Data
 @using AWBlazorApp.Features.Admin.Services
+@using AWBlazorApp.Shared.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject HealthCheckService HealthCheckService
 @inject AdventureWorksDateShifter DateShifter
+@inject LookupService Lookups
 @inject ISnackbar Snackbar
 
 <PageTitle>Admin dashboard</PageTitle>
@@ -215,6 +217,26 @@
             <MudItem xs="12" sm="6" md="4">
                 <MudPaper Class="pa-4" Elevation="2">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Cached" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1">Clear lookup cache</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Evict the in-memory reference-data cache (address types, currencies, cultures,
+                        territories, etc.). Use after editing any of those tables directly — otherwise
+                        stale values will show in FK dropdowns for up to an hour.
+                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                   OnClick="ClearLookupCacheAsync">
+                            Clear cache
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Warning" />
                         <MudText Typo="Typo.subtitle1">Shift AdventureWorks dates</MudText>
                     </MudStack>
@@ -273,6 +295,13 @@
     // Date shift tool
     private bool shifting;
     private ShiftResult? lastShiftResult;
+
+    private Task ClearLookupCacheAsync()
+    {
+        var cleared = Lookups.ClearCache();
+        Snackbar.Add($"Lookup cache cleared ({cleared} entries).", Severity.Success);
+        return Task.CompletedTask;
+    }
 
     private async Task ShiftDatesAsync()
     {
