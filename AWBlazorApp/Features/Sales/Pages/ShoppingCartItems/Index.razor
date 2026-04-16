@@ -77,6 +77,7 @@
             nameof(ShoppingCartItemDto.ProductId)      => sort.Descending ? query.OrderByDescending(x => x.ProductId)      : query.OrderBy(x => x.ProductId),
             nameof(ShoppingCartItemDto.Quantity)       => sort.Descending ? query.OrderByDescending(x => x.Quantity)       : query.OrderBy(x => x.Quantity),
             nameof(ShoppingCartItemDto.DateCreated)    => sort.Descending ? query.OrderByDescending(x => x.DateCreated)    : query.OrderBy(x => x.DateCreated),
+            nameof(ShoppingCartItemDto.ModifiedDate)   => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)   : query.OrderBy(x => x.ModifiedDate),
             _                                          => query.OrderBy(x => x.Id),
         };
 

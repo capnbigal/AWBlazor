@@ -68,6 +68,7 @@
             nameof(SalesPersonQuotaHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
             nameof(SalesPersonQuotaHistoryDto.QuotaDate)        => sort.Descending ? query.OrderByDescending(x => x.QuotaDate)        : query.OrderBy(x => x.QuotaDate),
             nameof(SalesPersonQuotaHistoryDto.SalesQuota)       => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)       : query.OrderBy(x => x.SalesQuota),
+            nameof(SalesPersonQuotaHistoryDto.ModifiedDate)     => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)     : query.OrderBy(x => x.ModifiedDate),
             _                                                   => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.QuotaDate),
         };
 

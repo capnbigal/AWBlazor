@@ -79,8 +79,10 @@
         {
             nameof(SalesTaxRateDto.Id)              => sort.Descending ? query.OrderByDescending(x => x.Id)              : query.OrderBy(x => x.Id),
             nameof(SalesTaxRateDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(x => x.StateProvinceId) : query.OrderBy(x => x.StateProvinceId),
+            nameof(SalesTaxRateDto.TaxType)         => sort.Descending ? query.OrderByDescending(x => x.TaxType)         : query.OrderBy(x => x.TaxType),
             nameof(SalesTaxRateDto.TaxRate)         => sort.Descending ? query.OrderByDescending(x => x.TaxRate)         : query.OrderBy(x => x.TaxRate),
             nameof(SalesTaxRateDto.Name)            => sort.Descending ? query.OrderByDescending(x => x.Name)            : query.OrderBy(x => x.Name),
+            nameof(SalesTaxRateDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
             _                                       => query.OrderBy(x => x.Id),
         };
 

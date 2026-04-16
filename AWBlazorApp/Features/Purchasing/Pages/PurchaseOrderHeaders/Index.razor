@@ -84,10 +84,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(PurchaseOrderHeaderDto.Id)        => sort.Descending ? query.OrderByDescending(x => x.Id)        : query.OrderBy(x => x.Id),
-            nameof(PurchaseOrderHeaderDto.OrderDate) => sort.Descending ? query.OrderByDescending(x => x.OrderDate) : query.OrderBy(x => x.OrderDate),
-            nameof(PurchaseOrderHeaderDto.TotalDue)  => sort.Descending ? query.OrderByDescending(x => x.TotalDue)  : query.OrderBy(x => x.TotalDue),
-            _                                        => query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id),
+            nameof(PurchaseOrderHeaderDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+            nameof(PurchaseOrderHeaderDto.EmployeeId)   => sort.Descending ? query.OrderByDescending(x => x.EmployeeId)   : query.OrderBy(x => x.EmployeeId),
+            nameof(PurchaseOrderHeaderDto.VendorId)     => sort.Descending ? query.OrderByDescending(x => x.VendorId)     : query.OrderBy(x => x.VendorId),
+            nameof(PurchaseOrderHeaderDto.OrderDate)    => sort.Descending ? query.OrderByDescending(x => x.OrderDate)    : query.OrderBy(x => x.OrderDate),
+            nameof(PurchaseOrderHeaderDto.SubTotal)     => sort.Descending ? query.OrderByDescending(x => x.SubTotal)     : query.OrderBy(x => x.SubTotal),
+            nameof(PurchaseOrderHeaderDto.TotalDue)     => sort.Descending ? query.OrderByDescending(x => x.TotalDue)     : query.OrderBy(x => x.TotalDue),
+            nameof(PurchaseOrderHeaderDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _                                           => query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

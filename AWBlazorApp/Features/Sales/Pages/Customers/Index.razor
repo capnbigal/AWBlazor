@@ -91,6 +91,8 @@
         query = sort?.SortBy switch
         {
             nameof(CustomerDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(CustomerDto.PersonId)      => sort.Descending ? query.OrderByDescending(x => x.PersonId)      : query.OrderBy(x => x.PersonId),
+            nameof(CustomerDto.StoreId)       => sort.Descending ? query.OrderByDescending(x => x.StoreId)       : query.OrderBy(x => x.StoreId),
             nameof(CustomerDto.AccountNumber) => sort.Descending ? query.OrderByDescending(x => x.AccountNumber) : query.OrderBy(x => x.AccountNumber),
             nameof(CustomerDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
             nameof(CustomerDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),

@@ -87,11 +87,15 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(PersonDto.Id)         => sort.Descending ? query.OrderByDescending(x => x.Id)         : query.OrderBy(x => x.Id),
-            nameof(PersonDto.LastName)   => sort.Descending ? query.OrderByDescending(x => x.LastName)   : query.OrderBy(x => x.LastName),
-            nameof(PersonDto.FirstName)  => sort.Descending ? query.OrderByDescending(x => x.FirstName)  : query.OrderBy(x => x.FirstName),
-            nameof(PersonDto.PersonType) => sort.Descending ? query.OrderByDescending(x => x.PersonType) : query.OrderBy(x => x.PersonType),
-            _                            => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
+            nameof(PersonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+            nameof(PersonDto.LastName)     => sort.Descending ? query.OrderByDescending(x => x.LastName)     : query.OrderBy(x => x.LastName),
+            nameof(PersonDto.FirstName)    => sort.Descending ? query.OrderByDescending(x => x.FirstName)    : query.OrderBy(x => x.FirstName),
+            nameof(PersonDto.MiddleName)   => sort.Descending ? query.OrderByDescending(x => x.MiddleName)   : query.OrderBy(x => x.MiddleName),
+            nameof(PersonDto.Title)        => sort.Descending ? query.OrderByDescending(x => x.Title)        : query.OrderBy(x => x.Title),
+            nameof(PersonDto.Suffix)       => sort.Descending ? query.OrderByDescending(x => x.Suffix)       : query.OrderBy(x => x.Suffix),
+            nameof(PersonDto.PersonType)   => sort.Descending ? query.OrderByDescending(x => x.PersonType)   : query.OrderBy(x => x.PersonType),
+            nameof(PersonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _                              => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

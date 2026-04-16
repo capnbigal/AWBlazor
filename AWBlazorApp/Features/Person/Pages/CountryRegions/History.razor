@@ -83,6 +83,7 @@
             nameof(CountryRegionAuditLogDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(a => a.CountryRegionCode) : query.OrderBy(a => a.CountryRegionCode),
             nameof(CountryRegionAuditLogDto.ChangedBy)         => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)         : query.OrderBy(a => a.ChangedBy),
             nameof(CountryRegionAuditLogDto.Name)              => sort.Descending ? query.OrderByDescending(a => a.Name)              : query.OrderBy(a => a.Name),
+            nameof(CountryRegionAuditLogDto.ChangeSummary)     => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)     : query.OrderBy(a => a.ChangeSummary),
             _                                                  => query.OrderByDescending(a => a.ChangedDate),
         };
 

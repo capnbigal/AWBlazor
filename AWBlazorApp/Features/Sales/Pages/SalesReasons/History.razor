@@ -84,6 +84,8 @@
             nameof(SalesReasonAuditLogDto.SalesReasonId) => sort.Descending ? query.OrderByDescending(a => a.SalesReasonId) : query.OrderBy(a => a.SalesReasonId),
             nameof(SalesReasonAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
             nameof(SalesReasonAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(SalesReasonAuditLogDto.ReasonType)    => sort.Descending ? query.OrderByDescending(a => a.ReasonType)    : query.OrderBy(a => a.ReasonType),
+            nameof(SalesReasonAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
             _                                            => query.OrderByDescending(a => a.ChangedDate),
         };
 

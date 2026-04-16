@@ -71,7 +71,12 @@
         {
             nameof(TransactionHistoryArchiveDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
             nameof(TransactionHistoryArchiveDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(TransactionHistoryArchiveDto.ReferenceOrderId) => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderId) : query.OrderBy(x => x.ReferenceOrderId),
+            nameof(TransactionHistoryArchiveDto.ReferenceOrderLineId) => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderLineId) : query.OrderBy(x => x.ReferenceOrderLineId),
             nameof(TransactionHistoryArchiveDto.TransactionDate) => sort.Descending ? query.OrderByDescending(x => x.TransactionDate) : query.OrderBy(x => x.TransactionDate),
+            nameof(TransactionHistoryArchiveDto.TransactionType) => sort.Descending ? query.OrderByDescending(x => x.TransactionType) : query.OrderBy(x => x.TransactionType),
+            nameof(TransactionHistoryArchiveDto.Quantity) => sort.Descending ? query.OrderByDescending(x => x.Quantity) : query.OrderBy(x => x.Quantity),
+            nameof(TransactionHistoryArchiveDto.ActualCost) => sort.Descending ? query.OrderByDescending(x => x.ActualCost) : query.OrderBy(x => x.ActualCost),
             _ => query.OrderByDescending(x => x.Id),
         };
 

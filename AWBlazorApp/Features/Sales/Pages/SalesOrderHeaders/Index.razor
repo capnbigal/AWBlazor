@@ -96,11 +96,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(SalesOrderHeaderDto.Id)        => sort.Descending ? query.OrderByDescending(x => x.Id)        : query.OrderBy(x => x.Id),
-            nameof(SalesOrderHeaderDto.OrderDate)  => sort.Descending ? query.OrderByDescending(x => x.OrderDate)  : query.OrderBy(x => x.OrderDate),
-            nameof(SalesOrderHeaderDto.TotalDue)   => sort.Descending ? query.OrderByDescending(x => x.TotalDue)   : query.OrderBy(x => x.TotalDue),
-            nameof(SalesOrderHeaderDto.CustomerId) => sort.Descending ? query.OrderByDescending(x => x.CustomerId) : query.OrderBy(x => x.CustomerId),
-            _                                      => query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id),
+            nameof(SalesOrderHeaderDto.Id)                => sort.Descending ? query.OrderByDescending(x => x.Id)                : query.OrderBy(x => x.Id),
+            nameof(SalesOrderHeaderDto.SalesOrderNumber)  => sort.Descending ? query.OrderByDescending(x => x.SalesOrderNumber)  : query.OrderBy(x => x.SalesOrderNumber),
+            nameof(SalesOrderHeaderDto.OrderDate)         => sort.Descending ? query.OrderByDescending(x => x.OrderDate)         : query.OrderBy(x => x.OrderDate),
+            nameof(SalesOrderHeaderDto.SubTotal)          => sort.Descending ? query.OrderByDescending(x => x.SubTotal)          : query.OrderBy(x => x.SubTotal),
+            nameof(SalesOrderHeaderDto.TotalDue)          => sort.Descending ? query.OrderByDescending(x => x.TotalDue)          : query.OrderBy(x => x.TotalDue),
+            nameof(SalesOrderHeaderDto.CustomerId)        => sort.Descending ? query.OrderByDescending(x => x.CustomerId)        : query.OrderBy(x => x.CustomerId),
+            nameof(SalesOrderHeaderDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
+            _                                             => query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

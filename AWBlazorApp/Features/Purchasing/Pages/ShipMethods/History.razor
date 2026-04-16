@@ -81,11 +81,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(ShipMethodAuditLogDto.ChangedDate)  => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)  : query.OrderBy(a => a.ChangedDate),
-            nameof(ShipMethodAuditLogDto.ShipMethodId) => sort.Descending ? query.OrderByDescending(a => a.ShipMethodId) : query.OrderBy(a => a.ShipMethodId),
-            nameof(ShipMethodAuditLogDto.ChangedBy)    => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)    : query.OrderBy(a => a.ChangedBy),
-            nameof(ShipMethodAuditLogDto.Name)         => sort.Descending ? query.OrderByDescending(a => a.Name)         : query.OrderBy(a => a.Name),
-            _                                          => query.OrderByDescending(a => a.ChangedDate),
+            nameof(ShipMethodAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(ShipMethodAuditLogDto.ShipMethodId)  => sort.Descending ? query.OrderByDescending(a => a.ShipMethodId)  : query.OrderBy(a => a.ShipMethodId),
+            nameof(ShipMethodAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(ShipMethodAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(ShipMethodAuditLogDto.ShipBase)      => sort.Descending ? query.OrderByDescending(a => a.ShipBase)      : query.OrderBy(a => a.ShipBase),
+            nameof(ShipMethodAuditLogDto.ShipRate)      => sort.Descending ? query.OrderByDescending(a => a.ShipRate)      : query.OrderBy(a => a.ShipRate),
+            nameof(ShipMethodAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                           => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

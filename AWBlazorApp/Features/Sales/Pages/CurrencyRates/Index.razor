@@ -81,6 +81,10 @@
         {
             nameof(CurrencyRateDto.Id)               => sort.Descending ? query.OrderByDescending(x => x.Id)               : query.OrderBy(x => x.Id),
             nameof(CurrencyRateDto.CurrencyRateDate) => sort.Descending ? query.OrderByDescending(x => x.CurrencyRateDate) : query.OrderBy(x => x.CurrencyRateDate),
+            nameof(CurrencyRateDto.FromCurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.FromCurrencyCode) : query.OrderBy(x => x.FromCurrencyCode),
+            nameof(CurrencyRateDto.ToCurrencyCode)   => sort.Descending ? query.OrderByDescending(x => x.ToCurrencyCode)   : query.OrderBy(x => x.ToCurrencyCode),
+            nameof(CurrencyRateDto.AverageRate)      => sort.Descending ? query.OrderByDescending(x => x.AverageRate)      : query.OrderBy(x => x.AverageRate),
+            nameof(CurrencyRateDto.EndOfDayRate)     => sort.Descending ? query.OrderByDescending(x => x.EndOfDayRate)     : query.OrderBy(x => x.EndOfDayRate),
             _                                        => query.OrderByDescending(x => x.CurrencyRateDate),
         };
 

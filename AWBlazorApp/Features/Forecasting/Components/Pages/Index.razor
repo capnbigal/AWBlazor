@@ -108,11 +108,15 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(ForecastDefinitionDto.Name)       => sort.Descending ? query.OrderByDescending(f => f.Name)        : query.OrderBy(f => f.Name),
-            "DataSource"                              => sort.Descending ? query.OrderByDescending(f => f.DataSource)  : query.OrderBy(f => f.DataSource),
-            "Status"                                  => sort.Descending ? query.OrderByDescending(f => f.Status)      : query.OrderBy(f => f.Status),
-            nameof(ForecastDefinitionDto.CreatedDate) => sort.Descending ? query.OrderByDescending(f => f.CreatedDate) : query.OrderBy(f => f.CreatedDate),
-            _                                         => query.OrderByDescending(f => f.CreatedDate),
+            nameof(ForecastDefinitionDto.Name)           => sort.Descending ? query.OrderByDescending(f => f.Name)           : query.OrderBy(f => f.Name),
+            "DataSource"                                  => sort.Descending ? query.OrderByDescending(f => f.DataSource)     : query.OrderBy(f => f.DataSource),
+            "Method"                                      => sort.Descending ? query.OrderByDescending(f => f.Method)         : query.OrderBy(f => f.Method),
+            nameof(ForecastDefinitionDto.Granularity)     => sort.Descending ? query.OrderByDescending(f => f.Granularity)    : query.OrderBy(f => f.Granularity),
+            "Status"                                      => sort.Descending ? query.OrderByDescending(f => f.Status)         : query.OrderBy(f => f.Status),
+            nameof(ForecastDefinitionDto.LookbackMonths)  => sort.Descending ? query.OrderByDescending(f => f.LookbackMonths) : query.OrderBy(f => f.LookbackMonths),
+            nameof(ForecastDefinitionDto.HorizonPeriods)  => sort.Descending ? query.OrderByDescending(f => f.HorizonPeriods) : query.OrderBy(f => f.HorizonPeriods),
+            nameof(ForecastDefinitionDto.CreatedDate)     => sort.Descending ? query.OrderByDescending(f => f.CreatedDate)    : query.OrderBy(f => f.CreatedDate),
+            _                                             => query.OrderByDescending(f => f.CreatedDate),
         };
 
         var rows = await query

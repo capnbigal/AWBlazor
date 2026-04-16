@@ -72,11 +72,13 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(ProductReviewDto.Id)         => sort.Descending ? query.OrderByDescending(x => x.Id)         : query.OrderBy(x => x.Id),
-            nameof(ProductReviewDto.ProductId)  => sort.Descending ? query.OrderByDescending(x => x.ProductId)  : query.OrderBy(x => x.ProductId),
-            nameof(ProductReviewDto.Rating)     => sort.Descending ? query.OrderByDescending(x => x.Rating)     : query.OrderBy(x => x.Rating),
-            nameof(ProductReviewDto.ReviewDate) => sort.Descending ? query.OrderByDescending(x => x.ReviewDate) : query.OrderBy(x => x.ReviewDate),
-            _                                   => query.OrderByDescending(x => x.ReviewDate),
+            nameof(ProductReviewDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+            nameof(ProductReviewDto.ProductId)    => sort.Descending ? query.OrderByDescending(x => x.ProductId)    : query.OrderBy(x => x.ProductId),
+            nameof(ProductReviewDto.ReviewerName) => sort.Descending ? query.OrderByDescending(x => x.ReviewerName) : query.OrderBy(x => x.ReviewerName),
+            nameof(ProductReviewDto.EmailAddress) => sort.Descending ? query.OrderByDescending(x => x.EmailAddress) : query.OrderBy(x => x.EmailAddress),
+            nameof(ProductReviewDto.Rating)       => sort.Descending ? query.OrderByDescending(x => x.Rating)       : query.OrderBy(x => x.Rating),
+            nameof(ProductReviewDto.ReviewDate)   => sort.Descending ? query.OrderByDescending(x => x.ReviewDate)   : query.OrderBy(x => x.ReviewDate),
+            _                                     => query.OrderByDescending(x => x.ReviewDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

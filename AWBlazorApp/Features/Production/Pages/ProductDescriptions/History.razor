@@ -82,6 +82,8 @@
             nameof(ProductDescriptionAuditLogDto.ChangedDate)          => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)          : query.OrderBy(a => a.ChangedDate),
             nameof(ProductDescriptionAuditLogDto.ProductDescriptionId) => sort.Descending ? query.OrderByDescending(a => a.ProductDescriptionId) : query.OrderBy(a => a.ProductDescriptionId),
             nameof(ProductDescriptionAuditLogDto.ChangedBy)            => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)            : query.OrderBy(a => a.ChangedBy),
+            nameof(ProductDescriptionAuditLogDto.Description)          => sort.Descending ? query.OrderByDescending(a => a.Description)          : query.OrderBy(a => a.Description),
+            nameof(ProductDescriptionAuditLogDto.ChangeSummary)        => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)        : query.OrderBy(a => a.ChangeSummary),
             _                                                          => query.OrderByDescending(a => a.ChangedDate),
         };
 

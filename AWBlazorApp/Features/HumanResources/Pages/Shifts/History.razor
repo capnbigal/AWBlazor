@@ -85,11 +85,12 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(ShiftAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(ShiftAuditLogDto.ShiftId)     => sort.Descending ? query.OrderByDescending(a => a.ShiftId)     : query.OrderBy(a => a.ShiftId),
-            nameof(ShiftAuditLogDto.ChangedBy)   => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)   : query.OrderBy(a => a.ChangedBy),
-            nameof(ShiftAuditLogDto.Name)        => sort.Descending ? query.OrderByDescending(a => a.Name)        : query.OrderBy(a => a.Name),
-            _                                    => query.OrderByDescending(a => a.ChangedDate),
+            nameof(ShiftAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(ShiftAuditLogDto.ShiftId)       => sort.Descending ? query.OrderByDescending(a => a.ShiftId)       : query.OrderBy(a => a.ShiftId),
+            nameof(ShiftAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(ShiftAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(ShiftAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                      => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
