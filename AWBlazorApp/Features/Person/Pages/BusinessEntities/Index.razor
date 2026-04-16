@@ -59,6 +59,7 @@
         query = sort?.SortBy switch
         {
             nameof(BusinessEntityDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+            nameof(BusinessEntityDto.RowGuid)      => sort.Descending ? query.OrderByDescending(x => x.RowGuid)      : query.OrderBy(x => x.RowGuid),
             nameof(BusinessEntityDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
             _                                      => query.OrderBy(x => x.Id),
         };

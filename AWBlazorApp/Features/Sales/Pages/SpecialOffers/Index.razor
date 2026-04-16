@@ -91,8 +91,12 @@
             nameof(SpecialOfferDto.Id)          => sort.Descending ? query.OrderByDescending(x => x.Id)          : query.OrderBy(x => x.Id),
             nameof(SpecialOfferDto.Description) => sort.Descending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
             nameof(SpecialOfferDto.DiscountPct) => sort.Descending ? query.OrderByDescending(x => x.DiscountPct) : query.OrderBy(x => x.DiscountPct),
+            nameof(SpecialOfferDto.OfferType)   => sort.Descending ? query.OrderByDescending(x => x.OfferType)   : query.OrderBy(x => x.OfferType),
+            nameof(SpecialOfferDto.Category)    => sort.Descending ? query.OrderByDescending(x => x.Category)    : query.OrderBy(x => x.Category),
             nameof(SpecialOfferDto.StartDate)   => sort.Descending ? query.OrderByDescending(x => x.StartDate)   : query.OrderBy(x => x.StartDate),
             nameof(SpecialOfferDto.EndDate)     => sort.Descending ? query.OrderByDescending(x => x.EndDate)     : query.OrderBy(x => x.EndDate),
+            nameof(SpecialOfferDto.MinQty)      => sort.Descending ? query.OrderByDescending(x => x.MinQty)      : query.OrderBy(x => x.MinQty),
+            nameof(SpecialOfferDto.MaxQty)      => sort.Descending ? query.OrderByDescending(x => x.MaxQty)      : query.OrderBy(x => x.MaxQty),
             _                                   => query.OrderBy(x => x.Id),
         };
 

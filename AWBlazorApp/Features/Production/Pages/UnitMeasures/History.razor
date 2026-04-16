@@ -83,6 +83,7 @@
             nameof(UnitMeasureAuditLogDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(a => a.UnitMeasureCode) : query.OrderBy(a => a.UnitMeasureCode),
             nameof(UnitMeasureAuditLogDto.ChangedBy)       => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)       : query.OrderBy(a => a.ChangedBy),
             nameof(UnitMeasureAuditLogDto.Name)            => sort.Descending ? query.OrderByDescending(a => a.Name)            : query.OrderBy(a => a.Name),
+            nameof(UnitMeasureAuditLogDto.ChangeSummary)   => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)   : query.OrderBy(a => a.ChangeSummary),
             _                                              => query.OrderByDescending(a => a.ChangedDate),
         };
 

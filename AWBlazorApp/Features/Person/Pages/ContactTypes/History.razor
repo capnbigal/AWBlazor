@@ -87,6 +87,7 @@
             nameof(ContactTypeAuditLogDto.ContactTypeId) => sort.Descending ? query.OrderByDescending(a => a.ContactTypeId) : query.OrderBy(a => a.ContactTypeId),
             nameof(ContactTypeAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
             nameof(ContactTypeAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(ContactTypeAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
             _                                            => query.OrderByDescending(a => a.ChangedDate),
         };
 

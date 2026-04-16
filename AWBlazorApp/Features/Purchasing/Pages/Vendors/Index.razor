@@ -79,12 +79,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(VendorDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-            nameof(VendorDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
-            nameof(VendorDto.AccountNumber) => sort.Descending ? query.OrderByDescending(x => x.AccountNumber) : query.OrderBy(x => x.AccountNumber),
-            nameof(VendorDto.CreditRating)  => sort.Descending ? query.OrderByDescending(x => x.CreditRating)  : query.OrderBy(x => x.CreditRating),
-            nameof(VendorDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-            _                               => query.OrderBy(x => x.Id),
+            nameof(VendorDto.Id)                    => sort.Descending ? query.OrderByDescending(x => x.Id)                    : query.OrderBy(x => x.Id),
+            nameof(VendorDto.Name)                  => sort.Descending ? query.OrderByDescending(x => x.Name)                  : query.OrderBy(x => x.Name),
+            nameof(VendorDto.AccountNumber)         => sort.Descending ? query.OrderByDescending(x => x.AccountNumber)         : query.OrderBy(x => x.AccountNumber),
+            nameof(VendorDto.CreditRating)          => sort.Descending ? query.OrderByDescending(x => x.CreditRating)          : query.OrderBy(x => x.CreditRating),
+            nameof(VendorDto.PreferredVendorStatus) => sort.Descending ? query.OrderByDescending(x => x.PreferredVendorStatus) : query.OrderBy(x => x.PreferredVendorStatus),
+            nameof(VendorDto.ActiveFlag)            => sort.Descending ? query.OrderByDescending(x => x.ActiveFlag)            : query.OrderBy(x => x.ActiveFlag),
+            nameof(VendorDto.ModifiedDate)          => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)          : query.OrderBy(x => x.ModifiedDate),
+            _                                       => query.OrderBy(x => x.Id),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

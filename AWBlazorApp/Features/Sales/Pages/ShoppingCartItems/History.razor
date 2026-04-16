@@ -84,6 +84,10 @@
             nameof(ShoppingCartItemAuditLogDto.ChangedDate)        => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)        : query.OrderBy(a => a.ChangedDate),
             nameof(ShoppingCartItemAuditLogDto.ShoppingCartItemId) => sort.Descending ? query.OrderByDescending(a => a.ShoppingCartItemId) : query.OrderBy(a => a.ShoppingCartItemId),
             nameof(ShoppingCartItemAuditLogDto.ChangedBy)          => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)          : query.OrderBy(a => a.ChangedBy),
+            nameof(ShoppingCartItemAuditLogDto.ShoppingCartId)     => sort.Descending ? query.OrderByDescending(a => a.ShoppingCartId)     : query.OrderBy(a => a.ShoppingCartId),
+            nameof(ShoppingCartItemAuditLogDto.ProductId)          => sort.Descending ? query.OrderByDescending(a => a.ProductId)          : query.OrderBy(a => a.ProductId),
+            nameof(ShoppingCartItemAuditLogDto.Quantity)           => sort.Descending ? query.OrderByDescending(a => a.Quantity)           : query.OrderBy(a => a.Quantity),
+            nameof(ShoppingCartItemAuditLogDto.ChangeSummary)      => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)      : query.OrderBy(a => a.ChangeSummary),
             _                                                      => query.OrderByDescending(a => a.ChangedDate),
         };
 

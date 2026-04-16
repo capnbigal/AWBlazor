@@ -85,6 +85,7 @@
             nameof(PhoneNumberTypeAuditLogDto.PhoneNumberTypeId) => sort.Descending ? query.OrderByDescending(a => a.PhoneNumberTypeId) : query.OrderBy(a => a.PhoneNumberTypeId),
             nameof(PhoneNumberTypeAuditLogDto.ChangedBy)         => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)         : query.OrderBy(a => a.ChangedBy),
             nameof(PhoneNumberTypeAuditLogDto.Name)              => sort.Descending ? query.OrderByDescending(a => a.Name)              : query.OrderBy(a => a.Name),
+            nameof(PhoneNumberTypeAuditLogDto.ChangeSummary)     => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)     : query.OrderBy(a => a.ChangeSummary),
             _                                                    => query.OrderByDescending(a => a.ChangedDate),
         };
 

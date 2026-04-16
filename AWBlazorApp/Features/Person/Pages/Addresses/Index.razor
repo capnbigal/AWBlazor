@@ -81,9 +81,12 @@
         query = sort?.SortBy switch
         {
             nameof(AddressDto.Id)              => sort.Descending ? query.OrderByDescending(x => x.Id)              : query.OrderBy(x => x.Id),
+            nameof(AddressDto.AddressLine1)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine1)    : query.OrderBy(x => x.AddressLine1),
+            nameof(AddressDto.AddressLine2)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine2)    : query.OrderBy(x => x.AddressLine2),
             nameof(AddressDto.City)            => sort.Descending ? query.OrderByDescending(x => x.City)            : query.OrderBy(x => x.City),
-            nameof(AddressDto.PostalCode)      => sort.Descending ? query.OrderByDescending(x => x.PostalCode)      : query.OrderBy(x => x.PostalCode),
             nameof(AddressDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(x => x.StateProvinceId) : query.OrderBy(x => x.StateProvinceId),
+            nameof(AddressDto.PostalCode)      => sort.Descending ? query.OrderByDescending(x => x.PostalCode)      : query.OrderBy(x => x.PostalCode),
+            nameof(AddressDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
             _                                  => query.OrderBy(x => x.Id),
         };
 

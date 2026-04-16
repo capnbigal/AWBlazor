@@ -84,11 +84,13 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(DepartmentAuditLogDto.ChangedDate)  => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)  : query.OrderBy(a => a.ChangedDate),
-            nameof(DepartmentAuditLogDto.DepartmentId) => sort.Descending ? query.OrderByDescending(a => a.DepartmentId) : query.OrderBy(a => a.DepartmentId),
-            nameof(DepartmentAuditLogDto.ChangedBy)    => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)    : query.OrderBy(a => a.ChangedBy),
-            nameof(DepartmentAuditLogDto.Name)         => sort.Descending ? query.OrderByDescending(a => a.Name)         : query.OrderBy(a => a.Name),
-            _                                          => query.OrderByDescending(a => a.ChangedDate),
+            nameof(DepartmentAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(DepartmentAuditLogDto.DepartmentId)  => sort.Descending ? query.OrderByDescending(a => a.DepartmentId)  : query.OrderBy(a => a.DepartmentId),
+            nameof(DepartmentAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(DepartmentAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(DepartmentAuditLogDto.GroupName)     => sort.Descending ? query.OrderByDescending(a => a.GroupName)     : query.OrderBy(a => a.GroupName),
+            nameof(DepartmentAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                           => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

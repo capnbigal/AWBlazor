@@ -84,6 +84,10 @@
             nameof(SpecialOfferAuditLogDto.ChangedDate)    => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)    : query.OrderBy(a => a.ChangedDate),
             nameof(SpecialOfferAuditLogDto.SpecialOfferId) => sort.Descending ? query.OrderByDescending(a => a.SpecialOfferId) : query.OrderBy(a => a.SpecialOfferId),
             nameof(SpecialOfferAuditLogDto.ChangedBy)      => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)      : query.OrderBy(a => a.ChangedBy),
+            nameof(SpecialOfferAuditLogDto.Description)    => sort.Descending ? query.OrderByDescending(a => a.Description)    : query.OrderBy(a => a.Description),
+            nameof(SpecialOfferAuditLogDto.DiscountPct)    => sort.Descending ? query.OrderByDescending(a => a.DiscountPct)    : query.OrderBy(a => a.DiscountPct),
+            nameof(SpecialOfferAuditLogDto.OfferType)      => sort.Descending ? query.OrderByDescending(a => a.OfferType)      : query.OrderBy(a => a.OfferType),
+            nameof(SpecialOfferAuditLogDto.ChangeSummary)  => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)  : query.OrderBy(a => a.ChangeSummary),
             _                                              => query.OrderByDescending(a => a.ChangedDate),
         };
 

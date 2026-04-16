@@ -109,11 +109,13 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(ProcessDto.Name)        => sort.Descending ? query.OrderByDescending(p => p.Name)        : query.OrderBy(p => p.Name),
-            "Status"                        => sort.Descending ? query.OrderByDescending(p => p.Status)      : query.OrderBy(p => p.Status),
-            "IsRecurring"                   => sort.Descending ? query.OrderByDescending(p => p.IsRecurring) : query.OrderBy(p => p.IsRecurring),
-            nameof(ProcessDto.CreatedDate)  => sort.Descending ? query.OrderByDescending(p => p.CreatedDate) : query.OrderBy(p => p.CreatedDate),
-            _                               => query.OrderByDescending(p => p.CreatedDate),
+            nameof(ProcessDto.Name)          => sort.Descending ? query.OrderByDescending(p => p.Name)          : query.OrderBy(p => p.Name),
+            nameof(ProcessDto.DepartmentId)  => sort.Descending ? query.OrderByDescending(p => p.DepartmentId)  : query.OrderBy(p => p.DepartmentId),
+            "Status"                          => sort.Descending ? query.OrderByDescending(p => p.Status)       : query.OrderBy(p => p.Status),
+            "IsRecurring"                     => sort.Descending ? query.OrderByDescending(p => p.IsRecurring)  : query.OrderBy(p => p.IsRecurring),
+            nameof(ProcessDto.CronSchedule)  => sort.Descending ? query.OrderByDescending(p => p.CronSchedule)  : query.OrderBy(p => p.CronSchedule),
+            nameof(ProcessDto.CreatedDate)   => sort.Descending ? query.OrderByDescending(p => p.CreatedDate)   : query.OrderBy(p => p.CreatedDate),
+            _                                 => query.OrderByDescending(p => p.CreatedDate),
         };
 
         var rows = await query

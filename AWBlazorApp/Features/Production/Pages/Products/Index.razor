@@ -96,8 +96,13 @@
             nameof(ProductDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
             nameof(ProductDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
             nameof(ProductDto.ProductNumber) => sort.Descending ? query.OrderByDescending(x => x.ProductNumber) : query.OrderBy(x => x.ProductNumber),
+            nameof(ProductDto.Color)         => sort.Descending ? query.OrderByDescending(x => x.Color)         : query.OrderBy(x => x.Color),
+            nameof(ProductDto.Size)          => sort.Descending ? query.OrderByDescending(x => x.Size)          : query.OrderBy(x => x.Size),
+            nameof(ProductDto.Class)         => sort.Descending ? query.OrderByDescending(x => x.Class)         : query.OrderBy(x => x.Class),
+            nameof(ProductDto.ProductLine)   => sort.Descending ? query.OrderByDescending(x => x.ProductLine)   : query.OrderBy(x => x.ProductLine),
             nameof(ProductDto.ListPrice)     => sort.Descending ? query.OrderByDescending(x => x.ListPrice)     : query.OrderBy(x => x.ListPrice),
             nameof(ProductDto.StandardCost)  => sort.Descending ? query.OrderByDescending(x => x.StandardCost)  : query.OrderBy(x => x.StandardCost),
+            nameof(ProductDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
             _                                => query.OrderBy(x => x.Name),
         };
 

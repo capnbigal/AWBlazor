@@ -87,6 +87,7 @@
             nameof(ScrapReasonAuditLogDto.ScrapReasonId) => sort.Descending ? query.OrderByDescending(a => a.ScrapReasonId) : query.OrderBy(a => a.ScrapReasonId),
             nameof(ScrapReasonAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
             nameof(ScrapReasonAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(ScrapReasonAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
             _                                            => query.OrderByDescending(a => a.ChangedDate),
         };
 

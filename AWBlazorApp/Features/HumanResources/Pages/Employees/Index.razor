@@ -80,12 +80,15 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(EmployeeDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(EmployeeDto.LoginID)      => sort.Descending ? query.OrderByDescending(x => x.LoginID)      : query.OrderBy(x => x.LoginID),
-            nameof(EmployeeDto.JobTitle)     => sort.Descending ? query.OrderByDescending(x => x.JobTitle)     : query.OrderBy(x => x.JobTitle),
-            nameof(EmployeeDto.HireDate)     => sort.Descending ? query.OrderByDescending(x => x.HireDate)     : query.OrderBy(x => x.HireDate),
-            nameof(EmployeeDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                                => query.OrderBy(x => x.Id),
+            nameof(EmployeeDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(EmployeeDto.LoginID)       => sort.Descending ? query.OrderByDescending(x => x.LoginID)       : query.OrderBy(x => x.LoginID),
+            nameof(EmployeeDto.JobTitle)      => sort.Descending ? query.OrderByDescending(x => x.JobTitle)      : query.OrderBy(x => x.JobTitle),
+            nameof(EmployeeDto.MaritalStatus) => sort.Descending ? query.OrderByDescending(x => x.MaritalStatus) : query.OrderBy(x => x.MaritalStatus),
+            nameof(EmployeeDto.Gender)        => sort.Descending ? query.OrderByDescending(x => x.Gender)        : query.OrderBy(x => x.Gender),
+            nameof(EmployeeDto.HireDate)      => sort.Descending ? query.OrderByDescending(x => x.HireDate)      : query.OrderBy(x => x.HireDate),
+            nameof(EmployeeDto.CurrentFlag)   => sort.Descending ? query.OrderByDescending(x => x.CurrentFlag)   : query.OrderBy(x => x.CurrentFlag),
+            nameof(EmployeeDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+            _                                 => query.OrderBy(x => x.Id),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

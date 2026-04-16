@@ -79,11 +79,12 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(CultureAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(CultureAuditLogDto.CultureId)   => sort.Descending ? query.OrderByDescending(a => a.CultureId)   : query.OrderBy(a => a.CultureId),
-            nameof(CultureAuditLogDto.ChangedBy)   => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)   : query.OrderBy(a => a.ChangedBy),
-            nameof(CultureAuditLogDto.Name)        => sort.Descending ? query.OrderByDescending(a => a.Name)        : query.OrderBy(a => a.Name),
-            _                                      => query.OrderByDescending(a => a.ChangedDate),
+            nameof(CultureAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(CultureAuditLogDto.CultureId)     => sort.Descending ? query.OrderByDescending(a => a.CultureId)     : query.OrderBy(a => a.CultureId),
+            nameof(CultureAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(CultureAuditLogDto.Name)          => sort.Descending ? query.OrderByDescending(a => a.Name)          : query.OrderBy(a => a.Name),
+            nameof(CultureAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                        => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

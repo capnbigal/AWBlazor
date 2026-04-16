@@ -81,11 +81,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(StateProvinceAuditLogDto.ChangedDate)     => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)     : query.OrderBy(a => a.ChangedDate),
-            nameof(StateProvinceAuditLogDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(a => a.StateProvinceId) : query.OrderBy(a => a.StateProvinceId),
-            nameof(StateProvinceAuditLogDto.ChangedBy)       => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)       : query.OrderBy(a => a.ChangedBy),
-            nameof(StateProvinceAuditLogDto.Name)            => sort.Descending ? query.OrderByDescending(a => a.Name)            : query.OrderBy(a => a.Name),
-            _                                                => query.OrderByDescending(a => a.ChangedDate),
+            nameof(StateProvinceAuditLogDto.ChangedDate)       => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)       : query.OrderBy(a => a.ChangedDate),
+            nameof(StateProvinceAuditLogDto.StateProvinceId)   => sort.Descending ? query.OrderByDescending(a => a.StateProvinceId)   : query.OrderBy(a => a.StateProvinceId),
+            nameof(StateProvinceAuditLogDto.ChangedBy)         => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)         : query.OrderBy(a => a.ChangedBy),
+            nameof(StateProvinceAuditLogDto.Name)              => sort.Descending ? query.OrderByDescending(a => a.Name)              : query.OrderBy(a => a.Name),
+            nameof(StateProvinceAuditLogDto.StateProvinceCode) => sort.Descending ? query.OrderByDescending(a => a.StateProvinceCode) : query.OrderBy(a => a.StateProvinceCode),
+            nameof(StateProvinceAuditLogDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(a => a.CountryRegionCode) : query.OrderBy(a => a.CountryRegionCode),
+            nameof(StateProvinceAuditLogDto.ChangeSummary)     => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)     : query.OrderBy(a => a.ChangeSummary),
+            _                                                  => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

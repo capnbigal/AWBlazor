@@ -135,6 +135,7 @@
             nameof(ToolSlotAuditLogDto.MtCode)                   => sort.Descending ? query.OrderByDescending(a => a.MtCode)                   : query.OrderBy(a => a.MtCode),
             nameof(ToolSlotAuditLogDto.Destination)              => sort.Descending ? query.OrderByDescending(a => a.Destination)              : query.OrderBy(a => a.Destination),
             nameof(ToolSlotAuditLogDto.IsActive)                 => sort.Descending ? query.OrderByDescending(a => a.IsActive)                 : query.OrderBy(a => a.IsActive),
+            nameof(ToolSlotAuditLogDto.ChangeSummary)            => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)            : query.OrderBy(a => a.ChangeSummary),
             _                                                    => query.OrderByDescending(a => a.ChangedDate),
         };
 

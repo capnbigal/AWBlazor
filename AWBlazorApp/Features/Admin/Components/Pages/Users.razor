@@ -49,10 +49,11 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         var ordered = sort?.SortBy switch
         {
-            nameof(UserRow.UserName)    => sort.Descending ? query.OrderByDescending(u => u.UserName)    : query.OrderBy(u => u.UserName),
-            nameof(UserRow.Email)       => sort.Descending ? query.OrderByDescending(u => u.Email)       : query.OrderBy(u => u.Email),
-            nameof(UserRow.DisplayName) => sort.Descending ? query.OrderByDescending(u => u.DisplayName) : query.OrderBy(u => u.DisplayName),
-            _                           => query.OrderBy(u => u.UserName),
+            nameof(UserRow.UserName)       => sort.Descending ? query.OrderByDescending(u => u.UserName)       : query.OrderBy(u => u.UserName),
+            nameof(UserRow.Email)          => sort.Descending ? query.OrderByDescending(u => u.Email)          : query.OrderBy(u => u.Email),
+            nameof(UserRow.DisplayName)    => sort.Descending ? query.OrderByDescending(u => u.DisplayName)    : query.OrderBy(u => u.DisplayName),
+            nameof(UserRow.EmailConfirmed) => sort.Descending ? query.OrderByDescending(u => u.EmailConfirmed) : query.OrderBy(u => u.EmailConfirmed),
+            _                              => query.OrderBy(u => u.UserName),
         };
 
         var total = await ordered.CountAsync(ct);

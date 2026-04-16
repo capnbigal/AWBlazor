@@ -79,9 +79,14 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(WorkOrderAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(WorkOrderAuditLogDto.WorkOrderId) => sort.Descending ? query.OrderByDescending(a => a.WorkOrderId) : query.OrderBy(a => a.WorkOrderId),
-            _                                        => query.OrderByDescending(a => a.ChangedDate),
+            nameof(WorkOrderAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(WorkOrderAuditLogDto.WorkOrderId)   => sort.Descending ? query.OrderByDescending(a => a.WorkOrderId)   : query.OrderBy(a => a.WorkOrderId),
+            nameof(WorkOrderAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(WorkOrderAuditLogDto.ProductId)     => sort.Descending ? query.OrderByDescending(a => a.ProductId)     : query.OrderBy(a => a.ProductId),
+            nameof(WorkOrderAuditLogDto.OrderQty)      => sort.Descending ? query.OrderByDescending(a => a.OrderQty)      : query.OrderBy(a => a.OrderQty),
+            nameof(WorkOrderAuditLogDto.ScrappedQty)   => sort.Descending ? query.OrderByDescending(a => a.ScrappedQty)   : query.OrderBy(a => a.ScrappedQty),
+            nameof(WorkOrderAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                          => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

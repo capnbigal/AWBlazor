@@ -77,11 +77,16 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(WorkOrderDto.Id)        => sort.Descending ? query.OrderByDescending(x => x.Id)        : query.OrderBy(x => x.Id),
-            nameof(WorkOrderDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-            nameof(WorkOrderDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
-            nameof(WorkOrderDto.DueDate)   => sort.Descending ? query.OrderByDescending(x => x.DueDate)   : query.OrderBy(x => x.DueDate),
-            _                              => query.OrderByDescending(x => x.Id),
+            nameof(WorkOrderDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(WorkOrderDto.ProductId)     => sort.Descending ? query.OrderByDescending(x => x.ProductId)     : query.OrderBy(x => x.ProductId),
+            nameof(WorkOrderDto.OrderQty)      => sort.Descending ? query.OrderByDescending(x => x.OrderQty)      : query.OrderBy(x => x.OrderQty),
+            nameof(WorkOrderDto.StockedQty)    => sort.Descending ? query.OrderByDescending(x => x.StockedQty)    : query.OrderBy(x => x.StockedQty),
+            nameof(WorkOrderDto.ScrappedQty)   => sort.Descending ? query.OrderByDescending(x => x.ScrappedQty)   : query.OrderBy(x => x.ScrappedQty),
+            nameof(WorkOrderDto.StartDate)     => sort.Descending ? query.OrderByDescending(x => x.StartDate)     : query.OrderBy(x => x.StartDate),
+            nameof(WorkOrderDto.EndDate)       => sort.Descending ? query.OrderByDescending(x => x.EndDate)       : query.OrderBy(x => x.EndDate),
+            nameof(WorkOrderDto.DueDate)       => sort.Descending ? query.OrderByDescending(x => x.DueDate)       : query.OrderBy(x => x.DueDate),
+            nameof(WorkOrderDto.ScrapReasonId) => sort.Descending ? query.OrderByDescending(x => x.ScrapReasonId) : query.OrderBy(x => x.ScrapReasonId),
+            _                                  => query.OrderByDescending(x => x.Id),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);

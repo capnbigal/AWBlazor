@@ -86,10 +86,15 @@
         var sort = state.SortDefinitions.FirstOrDefault();
         query = sort?.SortBy switch
         {
-            nameof(CustomerAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(CustomerAuditLogDto.CustomerId)  => sort.Descending ? query.OrderByDescending(a => a.CustomerId)  : query.OrderBy(a => a.CustomerId),
-            nameof(CustomerAuditLogDto.ChangedBy)   => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)   : query.OrderBy(a => a.ChangedBy),
-            _                                       => query.OrderByDescending(a => a.ChangedDate),
+            nameof(CustomerAuditLogDto.ChangedDate)   => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)   : query.OrderBy(a => a.ChangedDate),
+            nameof(CustomerAuditLogDto.CustomerId)    => sort.Descending ? query.OrderByDescending(a => a.CustomerId)    : query.OrderBy(a => a.CustomerId),
+            nameof(CustomerAuditLogDto.ChangedBy)     => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)     : query.OrderBy(a => a.ChangedBy),
+            nameof(CustomerAuditLogDto.PersonId)      => sort.Descending ? query.OrderByDescending(a => a.PersonId)      : query.OrderBy(a => a.PersonId),
+            nameof(CustomerAuditLogDto.StoreId)       => sort.Descending ? query.OrderByDescending(a => a.StoreId)       : query.OrderBy(a => a.StoreId),
+            nameof(CustomerAuditLogDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(a => a.TerritoryId)   : query.OrderBy(a => a.TerritoryId),
+            nameof(CustomerAuditLogDto.AccountNumber) => sort.Descending ? query.OrderByDescending(a => a.AccountNumber) : query.OrderBy(a => a.AccountNumber),
+            nameof(CustomerAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _                                         => query.OrderByDescending(a => a.ChangedDate),
         };
 
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);

@@ -84,6 +84,8 @@
             nameof(SalesTaxRateAuditLogDto.SalesTaxRateId) => sort.Descending ? query.OrderByDescending(a => a.SalesTaxRateId) : query.OrderBy(a => a.SalesTaxRateId),
             nameof(SalesTaxRateAuditLogDto.ChangedBy)      => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)      : query.OrderBy(a => a.ChangedBy),
             nameof(SalesTaxRateAuditLogDto.Name)           => sort.Descending ? query.OrderByDescending(a => a.Name)           : query.OrderBy(a => a.Name),
+            nameof(SalesTaxRateAuditLogDto.TaxRate)        => sort.Descending ? query.OrderByDescending(a => a.TaxRate)        : query.OrderBy(a => a.TaxRate),
+            nameof(SalesTaxRateAuditLogDto.ChangeSummary)  => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)  : query.OrderBy(a => a.ChangeSummary),
             _                                              => query.OrderByDescending(a => a.ChangedDate),
         };
 
