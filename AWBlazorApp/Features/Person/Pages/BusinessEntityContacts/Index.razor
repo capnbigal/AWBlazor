@@ -59,8 +59,18 @@
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
 
         var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(BusinessEntityContactDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(BusinessEntityContactDto.PersonId) => sort.Descending ? query.OrderByDescending(x => x.PersonId) : query.OrderBy(x => x.PersonId),
+            nameof(BusinessEntityContactDto.ContactTypeId) => sort.Descending ? query.OrderByDescending(x => x.ContactTypeId) : query.OrderBy(x => x.ContactTypeId),
+            nameof(BusinessEntityContactDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.ContactTypeId).ThenBy(x => x.PersonId),
+        };
+
         var rows = await query
-            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.ContactTypeId).ThenBy(x => x.PersonId)
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<BusinessEntityContactDto> { Items = rows, TotalItems = total };
     }

@@ -63,7 +63,19 @@
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.ProductId).ThenByDescending(x => x.StartDate)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductListPriceHistoryDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(ProductListPriceHistoryDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
+            nameof(ProductListPriceHistoryDto.EndDate) => sort.Descending ? query.OrderByDescending(x => x.EndDate) : query.OrderBy(x => x.EndDate),
+            nameof(ProductListPriceHistoryDto.ListPrice) => sort.Descending ? query.OrderByDescending(x => x.ListPrice) : query.OrderBy(x => x.ListPrice),
+            nameof(ProductListPriceHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.ProductId).ThenByDescending(x => x.StartDate),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<ProductListPriceHistoryDto> { Items = rows, TotalItems = total };
     }

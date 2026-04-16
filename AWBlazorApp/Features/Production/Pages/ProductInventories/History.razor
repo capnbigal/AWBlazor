@@ -69,7 +69,22 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductInventoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(ProductInventoryAuditLogDto.ProductId) => sort.Descending ? query.OrderByDescending(a => a.ProductId) : query.OrderBy(a => a.ProductId),
+            nameof(ProductInventoryAuditLogDto.LocationId) => sort.Descending ? query.OrderByDescending(a => a.LocationId) : query.OrderBy(a => a.LocationId),
+            nameof(ProductInventoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(ProductInventoryAuditLogDto.Shelf) => sort.Descending ? query.OrderByDescending(a => a.Shelf) : query.OrderBy(a => a.Shelf),
+            nameof(ProductInventoryAuditLogDto.Bin) => sort.Descending ? query.OrderByDescending(a => a.Bin) : query.OrderBy(a => a.Bin),
+            nameof(ProductInventoryAuditLogDto.Quantity) => sort.Descending ? query.OrderByDescending(a => a.Quantity) : query.OrderBy(a => a.Quantity),
+            nameof(ProductInventoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<ProductInventoryAuditLogDto> { Items = rows, TotalItems = total };
     }

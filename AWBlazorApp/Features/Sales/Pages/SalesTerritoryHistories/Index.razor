@@ -68,7 +68,19 @@
         if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.StartDate)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesTerritoryHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(SalesTerritoryHistoryDto.TerritoryId) => sort.Descending ? query.OrderByDescending(x => x.TerritoryId) : query.OrderBy(x => x.TerritoryId),
+            nameof(SalesTerritoryHistoryDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
+            nameof(SalesTerritoryHistoryDto.EndDate) => sort.Descending ? query.OrderByDescending(x => x.EndDate) : query.OrderBy(x => x.EndDate),
+            nameof(SalesTerritoryHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.StartDate),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<SalesTerritoryHistoryDto> { Items = rows, TotalItems = total };
     }

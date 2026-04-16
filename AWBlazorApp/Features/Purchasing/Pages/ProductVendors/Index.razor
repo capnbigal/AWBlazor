@@ -71,7 +71,22 @@
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.BusinessEntityId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductVendorDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(ProductVendorDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(ProductVendorDto.AverageLeadTime) => sort.Descending ? query.OrderByDescending(x => x.AverageLeadTime) : query.OrderBy(x => x.AverageLeadTime),
+            nameof(ProductVendorDto.StandardPrice) => sort.Descending ? query.OrderByDescending(x => x.StandardPrice) : query.OrderBy(x => x.StandardPrice),
+            nameof(ProductVendorDto.MinOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MinOrderQty) : query.OrderBy(x => x.MinOrderQty),
+            nameof(ProductVendorDto.MaxOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MaxOrderQty) : query.OrderBy(x => x.MaxOrderQty),
+            nameof(ProductVendorDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(x => x.UnitMeasureCode) : query.OrderBy(x => x.UnitMeasureCode),
+            nameof(ProductVendorDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.BusinessEntityId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<ProductVendorDto> { Items = rows, TotalItems = total };
     }

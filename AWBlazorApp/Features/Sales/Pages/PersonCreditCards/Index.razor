@@ -58,7 +58,17 @@
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.CreditCardId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(PersonCreditCardDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(PersonCreditCardDto.CreditCardId) => sort.Descending ? query.OrderByDescending(x => x.CreditCardId) : query.OrderBy(x => x.CreditCardId),
+            nameof(PersonCreditCardDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.CreditCardId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<PersonCreditCardDto> { Items = rows, TotalItems = total };
     }

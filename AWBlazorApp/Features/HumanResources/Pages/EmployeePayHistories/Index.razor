@@ -63,7 +63,19 @@
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.RateChangeDate)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmployeePayHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(EmployeePayHistoryDto.RateChangeDate) => sort.Descending ? query.OrderByDescending(x => x.RateChangeDate) : query.OrderBy(x => x.RateChangeDate),
+            nameof(EmployeePayHistoryDto.Rate) => sort.Descending ? query.OrderByDescending(x => x.Rate) : query.OrderBy(x => x.Rate),
+            nameof(EmployeePayHistoryDto.PayFrequency) => sort.Descending ? query.OrderByDescending(x => x.PayFrequency) : query.OrderBy(x => x.PayFrequency),
+            nameof(EmployeePayHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.RateChangeDate),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<EmployeePayHistoryDto> { Items = rows, TotalItems = total };
     }

@@ -77,7 +77,25 @@
         if (filterOwner.HasValue) query = query.Where(x => x.Owner == filterOwner.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.DocumentNode)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(DocumentDto.DocumentNode) => sort.Descending ? query.OrderByDescending(x => x.DocumentNode) : query.OrderBy(x => x.DocumentNode),
+            nameof(DocumentDto.DocumentLevel) => sort.Descending ? query.OrderByDescending(x => x.DocumentLevel) : query.OrderBy(x => x.DocumentLevel),
+            nameof(DocumentDto.Title) => sort.Descending ? query.OrderByDescending(x => x.Title) : query.OrderBy(x => x.Title),
+            nameof(DocumentDto.FileName) => sort.Descending ? query.OrderByDescending(x => x.FileName) : query.OrderBy(x => x.FileName),
+            nameof(DocumentDto.FileExtension) => sort.Descending ? query.OrderByDescending(x => x.FileExtension) : query.OrderBy(x => x.FileExtension),
+            nameof(DocumentDto.Revision) => sort.Descending ? query.OrderByDescending(x => x.Revision) : query.OrderBy(x => x.Revision),
+            nameof(DocumentDto.Status) => sort.Descending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
+            nameof(DocumentDto.Owner) => sort.Descending ? query.OrderByDescending(x => x.Owner) : query.OrderBy(x => x.Owner),
+            nameof(DocumentDto.FolderFlag) => sort.Descending ? query.OrderByDescending(x => x.FolderFlag) : query.OrderBy(x => x.FolderFlag),
+            nameof(DocumentDto.HasDocumentContent) => sort.Descending ? query.OrderByDescending(x => x.DocumentContent != null && x.DocumentContent.Length > 0) : query.OrderBy(x => x.DocumentContent != null && x.DocumentContent.Length > 0),
+            nameof(DocumentDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.DocumentNode),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize)
             .Select(x => new DocumentDto(
                 x.DocumentNode.ToString()!, x.DocumentLevel, x.Title, x.Owner, x.FolderFlag,

@@ -70,8 +70,18 @@
         if (filterPhoneNumberTypeId.HasValue) query = query.Where(x => x.PhoneNumberTypeId == filterPhoneNumberTypeId.Value);
 
         var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(PersonPhoneDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(PersonPhoneDto.PhoneNumberTypeId) => sort.Descending ? query.OrderByDescending(x => x.PhoneNumberTypeId) : query.OrderBy(x => x.PhoneNumberTypeId),
+            nameof(PersonPhoneDto.PhoneNumber) => sort.Descending ? query.OrderByDescending(x => x.PhoneNumber) : query.OrderBy(x => x.PhoneNumber),
+            nameof(PersonPhoneDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.PhoneNumberTypeId).ThenBy(x => x.PhoneNumber),
+        };
+
         var rows = await query
-            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.PhoneNumberTypeId).ThenBy(x => x.PhoneNumber)
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<PersonPhoneDto> { Items = rows, TotalItems = total };
     }

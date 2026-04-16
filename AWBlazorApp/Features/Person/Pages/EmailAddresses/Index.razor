@@ -71,7 +71,18 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.EmailAddressId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmailAddressDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(EmailAddressDto.EmailAddressId) => sort.Descending ? query.OrderByDescending(x => x.EmailAddressId) : query.OrderBy(x => x.EmailAddressId),
+            nameof(EmailAddressDto.EmailAddressValue) => sort.Descending ? query.OrderByDescending(x => x.EmailAddressValue) : query.OrderBy(x => x.EmailAddressValue),
+            nameof(EmailAddressDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.EmailAddressId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<EmailAddressDto> { Items = rows, TotalItems = total };
     }

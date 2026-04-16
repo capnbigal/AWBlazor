@@ -57,7 +57,17 @@
         if (filterSalesOrderId.HasValue) query = query.Where(x => x.SalesOrderId == filterSalesOrderId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.SalesOrderId).ThenBy(x => x.SalesReasonId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesOrderHeaderSalesReasonDto.SalesOrderId) => sort.Descending ? query.OrderByDescending(x => x.SalesOrderId) : query.OrderBy(x => x.SalesOrderId),
+            nameof(SalesOrderHeaderSalesReasonDto.SalesReasonId) => sort.Descending ? query.OrderByDescending(x => x.SalesReasonId) : query.OrderBy(x => x.SalesReasonId),
+            nameof(SalesOrderHeaderSalesReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.SalesOrderId).ThenBy(x => x.SalesReasonId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<SalesOrderHeaderSalesReasonDto> { Items = rows, TotalItems = total };
     }

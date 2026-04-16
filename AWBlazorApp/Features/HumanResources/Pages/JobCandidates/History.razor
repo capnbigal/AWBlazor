@@ -70,7 +70,19 @@
         if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(JobCandidateAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(JobCandidateAuditLogDto.JobCandidateId) => sort.Descending ? query.OrderByDescending(a => a.JobCandidateId) : query.OrderBy(a => a.JobCandidateId),
+            nameof(JobCandidateAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(JobCandidateAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
+            nameof(JobCandidateAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<JobCandidateAuditLogDto> { Items = rows, TotalItems = total };
     }

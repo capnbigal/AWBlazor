@@ -73,7 +73,23 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(WorkOrderRoutingAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(WorkOrderRoutingAuditLogDto.WorkOrderId) => sort.Descending ? query.OrderByDescending(a => a.WorkOrderId) : query.OrderBy(a => a.WorkOrderId),
+            nameof(WorkOrderRoutingAuditLogDto.ProductId) => sort.Descending ? query.OrderByDescending(a => a.ProductId) : query.OrderBy(a => a.ProductId),
+            nameof(WorkOrderRoutingAuditLogDto.OperationSequence) => sort.Descending ? query.OrderByDescending(a => a.OperationSequence) : query.OrderBy(a => a.OperationSequence),
+            nameof(WorkOrderRoutingAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(WorkOrderRoutingAuditLogDto.LocationId) => sort.Descending ? query.OrderByDescending(a => a.LocationId) : query.OrderBy(a => a.LocationId),
+            nameof(WorkOrderRoutingAuditLogDto.PlannedCost) => sort.Descending ? query.OrderByDescending(a => a.PlannedCost) : query.OrderBy(a => a.PlannedCost),
+            nameof(WorkOrderRoutingAuditLogDto.ActualCost) => sort.Descending ? query.OrderByDescending(a => a.ActualCost) : query.OrderBy(a => a.ActualCost),
+            nameof(WorkOrderRoutingAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<WorkOrderRoutingAuditLogDto> { Items = rows, TotalItems = total };
     }
