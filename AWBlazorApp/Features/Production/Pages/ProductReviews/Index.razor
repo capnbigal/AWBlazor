@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -70,34 +70,44 @@
 
 @code {
     private MudDataGrid<ProductReviewDto> grid = null!;
+    private bool _loading = true;
     private int? filterProductId;
     private int? filterMinRating;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductReviewDto>> LoadServerDataAsync(GridState<ProductReviewDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductReviews.AsNoTracking();
-        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-        if (filterMinRating.HasValue) query = query.Where(x => x.Rating >= filterMinRating.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProductReviewDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(ProductReviewDto.ProductId)    => sort.Descending ? query.OrderByDescending(x => x.ProductId)    : query.OrderBy(x => x.ProductId),
-            nameof(ProductReviewDto.ReviewerName) => sort.Descending ? query.OrderByDescending(x => x.ReviewerName) : query.OrderBy(x => x.ReviewerName),
-            nameof(ProductReviewDto.EmailAddress) => sort.Descending ? query.OrderByDescending(x => x.EmailAddress) : query.OrderBy(x => x.EmailAddress),
-            nameof(ProductReviewDto.Rating)       => sort.Descending ? query.OrderByDescending(x => x.Rating)       : query.OrderBy(x => x.Rating),
-            nameof(ProductReviewDto.ReviewDate)   => sort.Descending ? query.OrderByDescending(x => x.ReviewDate)   : query.OrderBy(x => x.ReviewDate),
-            _                                     => query.OrderByDescending(x => x.ReviewDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductReviews.AsNoTracking();
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            if (filterMinRating.HasValue) query = query.Where(x => x.Rating >= filterMinRating.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ProductReviewDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductReviewDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(ProductReviewDto.ProductId)    => sort.Descending ? query.OrderByDescending(x => x.ProductId)    : query.OrderBy(x => x.ProductId),
+                nameof(ProductReviewDto.ReviewerName) => sort.Descending ? query.OrderByDescending(x => x.ReviewerName) : query.OrderBy(x => x.ReviewerName),
+                nameof(ProductReviewDto.EmailAddress) => sort.Descending ? query.OrderByDescending(x => x.EmailAddress) : query.OrderBy(x => x.EmailAddress),
+                nameof(ProductReviewDto.Rating)       => sort.Descending ? query.OrderByDescending(x => x.Rating)       : query.OrderBy(x => x.Rating),
+                nameof(ProductReviewDto.ReviewDate)   => sort.Descending ? query.OrderByDescending(x => x.ReviewDate)   : query.OrderBy(x => x.ReviewDate),
+                _                                     => query.OrderByDescending(x => x.ReviewDate),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductReviewDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

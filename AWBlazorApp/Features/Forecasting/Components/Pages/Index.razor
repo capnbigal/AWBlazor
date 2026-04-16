@@ -21,7 +21,7 @@
 
     <MudDataGrid T="ForecastDefinitionDto"
                  ServerData="LoadServerDataAsync"
-                 @ref="grid"
+                 @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary"
                  Dense="true"
                  Hover="true"
                  Striped="true"
@@ -101,6 +101,7 @@
 
 @code {
     private MudDataGrid<ForecastDefinitionDto> grid = null!;
+    private bool _loading = true;
     private readonly ColumnFilterState columnFilters = new();
 
     private static Color StatusColor(ForecastStatus status) => status switch
@@ -113,34 +114,43 @@
 
     private async Task<GridData<ForecastDefinitionDto>> LoadServerDataAsync(GridState<ForecastDefinitionDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ForecastDefinitions.AsNoTracking().Where(f => f.DeletedDate == null);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ForecastDefinitionDto.Name)           => sort.Descending ? query.OrderByDescending(f => f.Name)           : query.OrderBy(f => f.Name),
-            "DataSource"                                  => sort.Descending ? query.OrderByDescending(f => f.DataSource)     : query.OrderBy(f => f.DataSource),
-            "Method"                                      => sort.Descending ? query.OrderByDescending(f => f.Method)         : query.OrderBy(f => f.Method),
-            nameof(ForecastDefinitionDto.Granularity)     => sort.Descending ? query.OrderByDescending(f => f.Granularity)    : query.OrderBy(f => f.Granularity),
-            "Status"                                      => sort.Descending ? query.OrderByDescending(f => f.Status)         : query.OrderBy(f => f.Status),
-            nameof(ForecastDefinitionDto.LookbackMonths)  => sort.Descending ? query.OrderByDescending(f => f.LookbackMonths) : query.OrderBy(f => f.LookbackMonths),
-            nameof(ForecastDefinitionDto.HorizonPeriods)  => sort.Descending ? query.OrderByDescending(f => f.HorizonPeriods) : query.OrderBy(f => f.HorizonPeriods),
-            nameof(ForecastDefinitionDto.CreatedDate)     => sort.Descending ? query.OrderByDescending(f => f.CreatedDate)    : query.OrderBy(f => f.CreatedDate),
-            _                                             => query.OrderByDescending(f => f.CreatedDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ForecastDefinitions.AsNoTracking().Where(f => f.DeletedDate == null);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize)
-            .Take(state.PageSize)
-            .Select(f => f.ToDto())
-            .ToListAsync(ct);
+            var total = await query.CountAsync(ct);
 
-        return new GridData<ForecastDefinitionDto> { Items = rows, TotalItems = total };
-    }
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ForecastDefinitionDto.Name)           => sort.Descending ? query.OrderByDescending(f => f.Name)           : query.OrderBy(f => f.Name),
+                "DataSource"                                  => sort.Descending ? query.OrderByDescending(f => f.DataSource)     : query.OrderBy(f => f.DataSource),
+                "Method"                                      => sort.Descending ? query.OrderByDescending(f => f.Method)         : query.OrderBy(f => f.Method),
+                nameof(ForecastDefinitionDto.Granularity)     => sort.Descending ? query.OrderByDescending(f => f.Granularity)    : query.OrderBy(f => f.Granularity),
+                "Status"                                      => sort.Descending ? query.OrderByDescending(f => f.Status)         : query.OrderBy(f => f.Status),
+                nameof(ForecastDefinitionDto.LookbackMonths)  => sort.Descending ? query.OrderByDescending(f => f.LookbackMonths) : query.OrderBy(f => f.LookbackMonths),
+                nameof(ForecastDefinitionDto.HorizonPeriods)  => sort.Descending ? query.OrderByDescending(f => f.HorizonPeriods) : query.OrderBy(f => f.HorizonPeriods),
+                nameof(ForecastDefinitionDto.CreatedDate)     => sort.Descending ? query.OrderByDescending(f => f.CreatedDate)    : query.OrderBy(f => f.CreatedDate),
+                _                                             => query.OrderByDescending(f => f.CreatedDate),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize)
+                .Take(state.PageSize)
+                .Select(f => f.ToDto())
+                .ToListAsync(ct);
+
+            return new GridData<ForecastDefinitionDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

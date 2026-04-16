@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductVendorDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductVendorDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
                 <HeaderTemplate><GridColumnHeader TEntity="ProductVendor" PropertyName="@nameof(ProductVendorDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -76,38 +76,48 @@
 
 @code {
     private MudDataGrid<ProductVendorDto> grid = null!;
+    private bool _loading = true;
     private int? filterProductId;
     private int? filterBusinessEntityId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductVendorDto>> LoadServerDataAsync(GridState<ProductVendorDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductVendors.AsNoTracking();
-        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProductVendorDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-            nameof(ProductVendorDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-            nameof(ProductVendorDto.AverageLeadTime) => sort.Descending ? query.OrderByDescending(x => x.AverageLeadTime) : query.OrderBy(x => x.AverageLeadTime),
-            nameof(ProductVendorDto.StandardPrice) => sort.Descending ? query.OrderByDescending(x => x.StandardPrice) : query.OrderBy(x => x.StandardPrice),
-            nameof(ProductVendorDto.MinOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MinOrderQty) : query.OrderBy(x => x.MinOrderQty),
-            nameof(ProductVendorDto.MaxOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MaxOrderQty) : query.OrderBy(x => x.MaxOrderQty),
-            nameof(ProductVendorDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(x => x.UnitMeasureCode) : query.OrderBy(x => x.UnitMeasureCode),
-            nameof(ProductVendorDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.BusinessEntityId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductVendors.AsNoTracking();
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ProductVendorDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductVendorDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+                nameof(ProductVendorDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+                nameof(ProductVendorDto.AverageLeadTime) => sort.Descending ? query.OrderByDescending(x => x.AverageLeadTime) : query.OrderBy(x => x.AverageLeadTime),
+                nameof(ProductVendorDto.StandardPrice) => sort.Descending ? query.OrderByDescending(x => x.StandardPrice) : query.OrderBy(x => x.StandardPrice),
+                nameof(ProductVendorDto.MinOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MinOrderQty) : query.OrderBy(x => x.MinOrderQty),
+                nameof(ProductVendorDto.MaxOrderQty) => sort.Descending ? query.OrderByDescending(x => x.MaxOrderQty) : query.OrderBy(x => x.MaxOrderQty),
+                nameof(ProductVendorDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(x => x.UnitMeasureCode) : query.OrderBy(x => x.UnitMeasureCode),
+                nameof(ProductVendorDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.BusinessEntityId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductVendorDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

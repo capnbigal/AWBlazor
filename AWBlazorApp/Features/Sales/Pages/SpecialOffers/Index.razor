@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SpecialOfferDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
@@ -84,45 +84,55 @@
 
 @code {
     private MudDataGrid<SpecialOfferDto> grid = null!;
+    private bool _loading = true;
     private string? filterDescription;
     private string? filterCategory;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SpecialOfferDto>> LoadServerDataAsync(GridState<SpecialOfferDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SpecialOffers.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterDescription))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterDescription.Trim();
-            query = query.Where(x => x.Description.Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filterCategory))
-        {
-            var needle = filterCategory.Trim();
-            query = query.Where(x => x.Category == needle);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SpecialOffers.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterDescription))
+            {
+                var needle = filterDescription.Trim();
+                query = query.Where(x => x.Description.Contains(needle));
+            }
+            if (!string.IsNullOrWhiteSpace(filterCategory))
+            {
+                var needle = filterCategory.Trim();
+                query = query.Where(x => x.Category == needle);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(SpecialOfferDto.Id)          => sort.Descending ? query.OrderByDescending(x => x.Id)          : query.OrderBy(x => x.Id),
-            nameof(SpecialOfferDto.Description) => sort.Descending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
-            nameof(SpecialOfferDto.DiscountPct) => sort.Descending ? query.OrderByDescending(x => x.DiscountPct) : query.OrderBy(x => x.DiscountPct),
-            nameof(SpecialOfferDto.OfferType)   => sort.Descending ? query.OrderByDescending(x => x.OfferType)   : query.OrderBy(x => x.OfferType),
-            nameof(SpecialOfferDto.Category)    => sort.Descending ? query.OrderByDescending(x => x.Category)    : query.OrderBy(x => x.Category),
-            nameof(SpecialOfferDto.StartDate)   => sort.Descending ? query.OrderByDescending(x => x.StartDate)   : query.OrderBy(x => x.StartDate),
-            nameof(SpecialOfferDto.EndDate)     => sort.Descending ? query.OrderByDescending(x => x.EndDate)     : query.OrderBy(x => x.EndDate),
-            nameof(SpecialOfferDto.MinQty)      => sort.Descending ? query.OrderByDescending(x => x.MinQty)      : query.OrderBy(x => x.MinQty),
-            nameof(SpecialOfferDto.MaxQty)      => sort.Descending ? query.OrderByDescending(x => x.MaxQty)      : query.OrderBy(x => x.MaxQty),
-            _                                   => query.OrderBy(x => x.Id),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SpecialOfferDto.Id)          => sort.Descending ? query.OrderByDescending(x => x.Id)          : query.OrderBy(x => x.Id),
+                nameof(SpecialOfferDto.Description) => sort.Descending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
+                nameof(SpecialOfferDto.DiscountPct) => sort.Descending ? query.OrderByDescending(x => x.DiscountPct) : query.OrderBy(x => x.DiscountPct),
+                nameof(SpecialOfferDto.OfferType)   => sort.Descending ? query.OrderByDescending(x => x.OfferType)   : query.OrderBy(x => x.OfferType),
+                nameof(SpecialOfferDto.Category)    => sort.Descending ? query.OrderByDescending(x => x.Category)    : query.OrderBy(x => x.Category),
+                nameof(SpecialOfferDto.StartDate)   => sort.Descending ? query.OrderByDescending(x => x.StartDate)   : query.OrderBy(x => x.StartDate),
+                nameof(SpecialOfferDto.EndDate)     => sort.Descending ? query.OrderByDescending(x => x.EndDate)     : query.OrderBy(x => x.EndDate),
+                nameof(SpecialOfferDto.MinQty)      => sort.Descending ? query.OrderByDescending(x => x.MinQty)      : query.OrderBy(x => x.MinQty),
+                nameof(SpecialOfferDto.MaxQty)      => sort.Descending ? query.OrderByDescending(x => x.MaxQty)      : query.OrderBy(x => x.MaxQty),
+                _                                   => query.OrderBy(x => x.Id),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SpecialOfferDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SpecialOfferDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

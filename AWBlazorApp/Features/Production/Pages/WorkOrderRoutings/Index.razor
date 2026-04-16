@@ -26,7 +26,7 @@
         <MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.WorkOrderId" Title="Work order">
                 <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.WorkOrderId)" Title="Work order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -72,36 +72,46 @@
 
 @code {
     private MudDataGrid<WorkOrderRoutingDto> grid = null!;
+    private bool _loading = true;
     private int? filterWorkOrderId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<WorkOrderRoutingDto>> LoadServerDataAsync(GridState<WorkOrderRoutingDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.WorkOrderRoutings.AsNoTracking();
-        if (filterWorkOrderId.HasValue) query = query.Where(x => x.WorkOrderId == filterWorkOrderId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(WorkOrderRoutingDto.WorkOrderId) => sort.Descending ? query.OrderByDescending(x => x.WorkOrderId) : query.OrderBy(x => x.WorkOrderId),
-            nameof(WorkOrderRoutingDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-            nameof(WorkOrderRoutingDto.OperationSequence) => sort.Descending ? query.OrderByDescending(x => x.OperationSequence) : query.OrderBy(x => x.OperationSequence),
-            nameof(WorkOrderRoutingDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
-            nameof(WorkOrderRoutingDto.ScheduledStartDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledStartDate) : query.OrderBy(x => x.ScheduledStartDate),
-            nameof(WorkOrderRoutingDto.ScheduledEndDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledEndDate) : query.OrderBy(x => x.ScheduledEndDate),
-            nameof(WorkOrderRoutingDto.PlannedCost) => sort.Descending ? query.OrderByDescending(x => x.PlannedCost) : query.OrderBy(x => x.PlannedCost),
-            nameof(WorkOrderRoutingDto.ActualCost) => sort.Descending ? query.OrderByDescending(x => x.ActualCost) : query.OrderBy(x => x.ActualCost),
-            _ => query.OrderBy(x => x.WorkOrderId).ThenBy(x => x.ProductId).ThenBy(x => x.OperationSequence),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.WorkOrderRoutings.AsNoTracking();
+            if (filterWorkOrderId.HasValue) query = query.Where(x => x.WorkOrderId == filterWorkOrderId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<WorkOrderRoutingDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(WorkOrderRoutingDto.WorkOrderId) => sort.Descending ? query.OrderByDescending(x => x.WorkOrderId) : query.OrderBy(x => x.WorkOrderId),
+                nameof(WorkOrderRoutingDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+                nameof(WorkOrderRoutingDto.OperationSequence) => sort.Descending ? query.OrderByDescending(x => x.OperationSequence) : query.OrderBy(x => x.OperationSequence),
+                nameof(WorkOrderRoutingDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
+                nameof(WorkOrderRoutingDto.ScheduledStartDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledStartDate) : query.OrderBy(x => x.ScheduledStartDate),
+                nameof(WorkOrderRoutingDto.ScheduledEndDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledEndDate) : query.OrderBy(x => x.ScheduledEndDate),
+                nameof(WorkOrderRoutingDto.PlannedCost) => sort.Descending ? query.OrderByDescending(x => x.PlannedCost) : query.OrderBy(x => x.PlannedCost),
+                nameof(WorkOrderRoutingDto.ActualCost) => sort.Descending ? query.OrderByDescending(x => x.ActualCost) : query.OrderBy(x => x.ActualCost),
+                _ => query.OrderBy(x => x.WorkOrderId).ThenBy(x => x.ProductId).ThenBy(x => x.OperationSequence),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<WorkOrderRoutingDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

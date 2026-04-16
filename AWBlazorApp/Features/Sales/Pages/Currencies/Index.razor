@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="CurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.CurrencyCode" Title="Code">
                 <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.CurrencyCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -59,33 +59,43 @@
 
 @code {
     private MudDataGrid<CurrencyDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CurrencyDto>> LoadServerDataAsync(GridState<CurrencyDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Currencies.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Currencies.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
+                nameof(CurrencyDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+                nameof(CurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                => query.OrderBy(x => x.CurrencyCode),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CurrencyDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(CurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
-            nameof(CurrencyDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
-            nameof(CurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                                => query.OrderBy(x => x.CurrencyCode),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CurrencyDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

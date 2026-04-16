@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="UnitMeasureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="UnitMeasureDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.UnitMeasureCode" Title="Code">
                 <HeaderTemplate><GridColumnHeader TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.UnitMeasureCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -59,33 +59,43 @@
 
 @code {
     private MudDataGrid<UnitMeasureDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<UnitMeasureDto>> LoadServerDataAsync(GridState<UnitMeasureDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.UnitMeasures.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.UnitMeasures.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(UnitMeasureDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(x => x.UnitMeasureCode) : query.OrderBy(x => x.UnitMeasureCode),
+                nameof(UnitMeasureDto.Name)            => sort.Descending ? query.OrderByDescending(x => x.Name)            : query.OrderBy(x => x.Name),
+                nameof(UnitMeasureDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
+                _                                      => query.OrderBy(x => x.UnitMeasureCode),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<UnitMeasureDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(UnitMeasureDto.UnitMeasureCode) => sort.Descending ? query.OrderByDescending(x => x.UnitMeasureCode) : query.OrderBy(x => x.UnitMeasureCode),
-            nameof(UnitMeasureDto.Name)            => sort.Descending ? query.OrderByDescending(x => x.Name)            : query.OrderBy(x => x.Name),
-            nameof(UnitMeasureDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
-            _                                      => query.OrderBy(x => x.UnitMeasureCode),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<UnitMeasureDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

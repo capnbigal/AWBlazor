@@ -22,7 +22,7 @@
         </AuthorizeView>
     </MudStack>
 
-    <MudDataGrid T="ProductPhotoDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductPhotoDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -58,37 +58,47 @@
 
 @code {
     private MudDataGrid<ProductPhotoDto> grid = null!;
+    private bool _loading = true;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductPhotoDto>> LoadServerDataAsync(GridState<ProductPhotoDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductPhotos.AsNoTracking();
-        query = query.ApplyColumnFilters(columnFilters);
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProductPhotoDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
-            nameof(ProductPhotoDto.ThumbnailPhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.ThumbnailPhotoFileName) : query.OrderBy(x => x.ThumbnailPhotoFileName),
-            nameof(ProductPhotoDto.HasThumbnail) => sort.Descending ? query.OrderByDescending(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0) : query.OrderBy(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0),
-            nameof(ProductPhotoDto.LargePhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.LargePhotoFileName) : query.OrderBy(x => x.LargePhotoFileName),
-            nameof(ProductPhotoDto.HasLargePhoto) => sort.Descending ? query.OrderByDescending(x => x.LargePhoto != null && x.LargePhoto.Length > 0) : query.OrderBy(x => x.LargePhoto != null && x.LargePhoto.Length > 0),
-            nameof(ProductPhotoDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.Id),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductPhotos.AsNoTracking();
+            query = query.ApplyColumnFilters(columnFilters);
+            var total = await query.CountAsync(ct);
 
-        // Don't pull image bytes back — project to DTO inside the SQL projection.
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
-            .Select(x => new ProductPhotoDto(
-                x.Id, x.ThumbnailPhotoFileName, x.LargePhotoFileName,
-                x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0,
-                x.LargePhoto != null && x.LargePhoto.Length > 0,
-                x.ModifiedDate))
-            .ToListAsync(ct);
-        return new GridData<ProductPhotoDto> { Items = rows, TotalItems = total };
-    }
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductPhotoDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
+                nameof(ProductPhotoDto.ThumbnailPhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.ThumbnailPhotoFileName) : query.OrderBy(x => x.ThumbnailPhotoFileName),
+                nameof(ProductPhotoDto.HasThumbnail) => sort.Descending ? query.OrderByDescending(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0) : query.OrderBy(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0),
+                nameof(ProductPhotoDto.LargePhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.LargePhotoFileName) : query.OrderBy(x => x.LargePhotoFileName),
+                nameof(ProductPhotoDto.HasLargePhoto) => sort.Descending ? query.OrderByDescending(x => x.LargePhoto != null && x.LargePhoto.Length > 0) : query.OrderBy(x => x.LargePhoto != null && x.LargePhoto.Length > 0),
+                nameof(ProductPhotoDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.Id),
+            };
+
+            // Don't pull image bytes back — project to DTO inside the SQL projection.
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => new ProductPhotoDto(
+                    x.Id, x.ThumbnailPhotoFileName, x.LargePhotoFileName,
+                    x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0,
+                    x.LargePhoto != null && x.LargePhoto.Length > 0,
+                    x.ModifiedDate))
+                .ToListAsync(ct);
+            return new GridData<ProductPhotoDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

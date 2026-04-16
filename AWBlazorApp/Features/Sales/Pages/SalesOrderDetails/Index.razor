@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.SalesOrderId" Title="Order id">
                 <HeaderTemplate><GridColumnHeader TEntity="SalesOrderDetail" PropertyName="@nameof(SalesOrderDetailDto.SalesOrderId)" Title="Order id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -73,37 +73,47 @@
 
 @code {
     private MudDataGrid<SalesOrderDetailDto> grid = null!;
+    private bool _loading = true;
     private int? filterSalesOrderId;
     private int? filterProductId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesOrderDetailDto>> LoadServerDataAsync(GridState<SalesOrderDetailDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SalesOrderDetails.AsNoTracking();
-        if (filterSalesOrderId.HasValue) query = query.Where(x => x.SalesOrderId == filterSalesOrderId.Value);
-        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(SalesOrderDetailDto.SalesOrderId)       => sort.Descending ? query.OrderByDescending(x => x.SalesOrderId)       : query.OrderBy(x => x.SalesOrderId),
-            nameof(SalesOrderDetailDto.SalesOrderDetailId) => sort.Descending ? query.OrderByDescending(x => x.SalesOrderDetailId) : query.OrderBy(x => x.SalesOrderDetailId),
-            nameof(SalesOrderDetailDto.ProductId)          => sort.Descending ? query.OrderByDescending(x => x.ProductId)          : query.OrderBy(x => x.ProductId),
-            nameof(SalesOrderDetailDto.OrderQty)           => sort.Descending ? query.OrderByDescending(x => x.OrderQty)           : query.OrderBy(x => x.OrderQty),
-            nameof(SalesOrderDetailDto.UnitPrice)          => sort.Descending ? query.OrderByDescending(x => x.UnitPrice)          : query.OrderBy(x => x.UnitPrice),
-            nameof(SalesOrderDetailDto.LineTotal)          => sort.Descending ? query.OrderByDescending(x => x.LineTotal)          : query.OrderBy(x => x.LineTotal),
-            nameof(SalesOrderDetailDto.ModifiedDate)       => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)       : query.OrderBy(x => x.ModifiedDate),
-            _                                              => query.OrderBy(x => x.SalesOrderId).ThenBy(x => x.SalesOrderDetailId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SalesOrderDetails.AsNoTracking();
+            if (filterSalesOrderId.HasValue) query = query.Where(x => x.SalesOrderId == filterSalesOrderId.Value);
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SalesOrderDetailDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SalesOrderDetailDto.SalesOrderId)       => sort.Descending ? query.OrderByDescending(x => x.SalesOrderId)       : query.OrderBy(x => x.SalesOrderId),
+                nameof(SalesOrderDetailDto.SalesOrderDetailId) => sort.Descending ? query.OrderByDescending(x => x.SalesOrderDetailId) : query.OrderBy(x => x.SalesOrderDetailId),
+                nameof(SalesOrderDetailDto.ProductId)          => sort.Descending ? query.OrderByDescending(x => x.ProductId)          : query.OrderBy(x => x.ProductId),
+                nameof(SalesOrderDetailDto.OrderQty)           => sort.Descending ? query.OrderByDescending(x => x.OrderQty)           : query.OrderBy(x => x.OrderQty),
+                nameof(SalesOrderDetailDto.UnitPrice)          => sort.Descending ? query.OrderByDescending(x => x.UnitPrice)          : query.OrderBy(x => x.UnitPrice),
+                nameof(SalesOrderDetailDto.LineTotal)          => sort.Descending ? query.OrderByDescending(x => x.LineTotal)          : query.OrderBy(x => x.LineTotal),
+                nameof(SalesOrderDetailDto.ModifiedDate)       => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)       : query.OrderBy(x => x.ModifiedDate),
+                _                                              => query.OrderBy(x => x.SalesOrderId).ThenBy(x => x.SalesOrderDetailId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SalesOrderDetailDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

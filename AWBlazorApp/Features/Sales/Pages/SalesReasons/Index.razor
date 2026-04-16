@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="SalesReason" PropertyName="@nameof(SalesReasonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -65,40 +65,50 @@
 
 @code {
     private MudDataGrid<SalesReasonDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private string? filterReasonType;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesReasonDto>> LoadServerDataAsync(GridState<SalesReasonDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SalesReasons.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filterReasonType))
-        {
-            var needle = filterReasonType.Trim();
-            query = query.Where(x => x.ReasonType == needle);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SalesReasons.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            if (!string.IsNullOrWhiteSpace(filterReasonType))
+            {
+                var needle = filterReasonType.Trim();
+                query = query.Where(x => x.ReasonType == needle);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(SalesReasonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(SalesReasonDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
-            nameof(SalesReasonDto.ReasonType)   => sort.Descending ? query.OrderByDescending(x => x.ReasonType)   : query.OrderBy(x => x.ReasonType),
-            nameof(SalesReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                                   => query.OrderBy(x => x.Id),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SalesReasonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(SalesReasonDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+                nameof(SalesReasonDto.ReasonType)   => sort.Descending ? query.OrderByDescending(x => x.ReasonType)   : query.OrderBy(x => x.ReasonType),
+                nameof(SalesReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                   => query.OrderBy(x => x.Id),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SalesReasonDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SalesReasonDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

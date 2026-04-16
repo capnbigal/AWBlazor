@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterCartId" Label="Shopping cart id" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -68,36 +68,46 @@
 
 @code {
     private MudDataGrid<ShoppingCartItemDto> grid = null!;
+    private bool _loading = true;
     private string? filterCartId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ShoppingCartItemDto>> LoadServerDataAsync(GridState<ShoppingCartItemDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ShoppingCartItems.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterCartId))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterCartId.Trim();
-            query = query.Where(x => x.ShoppingCartId == needle);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ShoppingCartItems.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterCartId))
+            {
+                var needle = filterCartId.Trim();
+                query = query.Where(x => x.ShoppingCartId == needle);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ShoppingCartItemDto.Id)             => sort.Descending ? query.OrderByDescending(x => x.Id)             : query.OrderBy(x => x.Id),
+                nameof(ShoppingCartItemDto.ShoppingCartId) => sort.Descending ? query.OrderByDescending(x => x.ShoppingCartId) : query.OrderBy(x => x.ShoppingCartId),
+                nameof(ShoppingCartItemDto.ProductId)      => sort.Descending ? query.OrderByDescending(x => x.ProductId)      : query.OrderBy(x => x.ProductId),
+                nameof(ShoppingCartItemDto.Quantity)       => sort.Descending ? query.OrderByDescending(x => x.Quantity)       : query.OrderBy(x => x.Quantity),
+                nameof(ShoppingCartItemDto.DateCreated)    => sort.Descending ? query.OrderByDescending(x => x.DateCreated)    : query.OrderBy(x => x.DateCreated),
+                nameof(ShoppingCartItemDto.ModifiedDate)   => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)   : query.OrderBy(x => x.ModifiedDate),
+                _                                          => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ShoppingCartItemDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(ShoppingCartItemDto.Id)             => sort.Descending ? query.OrderByDescending(x => x.Id)             : query.OrderBy(x => x.Id),
-            nameof(ShoppingCartItemDto.ShoppingCartId) => sort.Descending ? query.OrderByDescending(x => x.ShoppingCartId) : query.OrderBy(x => x.ShoppingCartId),
-            nameof(ShoppingCartItemDto.ProductId)      => sort.Descending ? query.OrderByDescending(x => x.ProductId)      : query.OrderBy(x => x.ProductId),
-            nameof(ShoppingCartItemDto.Quantity)       => sort.Descending ? query.OrderByDescending(x => x.Quantity)       : query.OrderBy(x => x.Quantity),
-            nameof(ShoppingCartItemDto.DateCreated)    => sort.Descending ? query.OrderByDescending(x => x.DateCreated)    : query.OrderBy(x => x.DateCreated),
-            nameof(ShoppingCartItemDto.ModifiedDate)   => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)   : query.OrderBy(x => x.ModifiedDate),
-            _                                          => query.OrderBy(x => x.Id),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ShoppingCartItemDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

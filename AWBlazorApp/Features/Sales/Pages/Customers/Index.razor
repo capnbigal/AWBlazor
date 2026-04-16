@@ -35,7 +35,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="CustomerDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
@@ -84,6 +84,7 @@
 
 @code {
     private MudDataGrid<CustomerDto> grid = null!;
+    private bool _loading = true;
     private int? filterTerritoryId;
     private List<LookupItem<int>> _territories = [];
     private readonly ColumnFilterState columnFilters = new();
@@ -95,27 +96,36 @@
 
     private async Task<GridData<CustomerDto>> LoadServerDataAsync(GridState<CustomerDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Customers.AsNoTracking();
-        if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(CustomerDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-            nameof(CustomerDto.PersonId)      => sort.Descending ? query.OrderByDescending(x => x.PersonId)      : query.OrderBy(x => x.PersonId),
-            nameof(CustomerDto.StoreId)       => sort.Descending ? query.OrderByDescending(x => x.StoreId)       : query.OrderBy(x => x.StoreId),
-            nameof(CustomerDto.AccountNumber) => sort.Descending ? query.OrderByDescending(x => x.AccountNumber) : query.OrderBy(x => x.AccountNumber),
-            nameof(CustomerDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
-            nameof(CustomerDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-            _                                 => query.OrderBy(x => x.Id),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Customers.AsNoTracking();
+            if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CustomerDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CustomerDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+                nameof(CustomerDto.PersonId)      => sort.Descending ? query.OrderByDescending(x => x.PersonId)      : query.OrderBy(x => x.PersonId),
+                nameof(CustomerDto.StoreId)       => sort.Descending ? query.OrderByDescending(x => x.StoreId)       : query.OrderBy(x => x.StoreId),
+                nameof(CustomerDto.AccountNumber) => sort.Descending ? query.OrderByDescending(x => x.AccountNumber) : query.OrderBy(x => x.AccountNumber),
+                nameof(CustomerDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
+                nameof(CustomerDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+                _                                 => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CustomerDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="DocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="DocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.DocumentNode" Title="Node">
                 <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.DocumentNode)" Title="Node" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -82,51 +82,61 @@
 
 @code {
     private MudDataGrid<DocumentDto> grid = null!;
+    private bool _loading = true;
     private string? filterTitle;
     private int? filterOwner;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<DocumentDto>> LoadServerDataAsync(GridState<DocumentDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Documents.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterTitle))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var t = filterTitle.Trim();
-            query = query.Where(x => x.Title.Contains(t));
-        }
-        if (filterOwner.HasValue) query = query.Where(x => x.Owner == filterOwner.Value);
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Documents.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterTitle))
+            {
+                var t = filterTitle.Trim();
+                query = query.Where(x => x.Title.Contains(t));
+            }
+            if (filterOwner.HasValue) query = query.Where(x => x.Owner == filterOwner.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
+            var total = await query.CountAsync(ct);
 
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(DocumentDto.DocumentNode) => sort.Descending ? query.OrderByDescending(x => x.DocumentNode) : query.OrderBy(x => x.DocumentNode),
+                nameof(DocumentDto.DocumentLevel) => sort.Descending ? query.OrderByDescending(x => x.DocumentLevel) : query.OrderBy(x => x.DocumentLevel),
+                nameof(DocumentDto.Title) => sort.Descending ? query.OrderByDescending(x => x.Title) : query.OrderBy(x => x.Title),
+                nameof(DocumentDto.FileName) => sort.Descending ? query.OrderByDescending(x => x.FileName) : query.OrderBy(x => x.FileName),
+                nameof(DocumentDto.FileExtension) => sort.Descending ? query.OrderByDescending(x => x.FileExtension) : query.OrderBy(x => x.FileExtension),
+                nameof(DocumentDto.Revision) => sort.Descending ? query.OrderByDescending(x => x.Revision) : query.OrderBy(x => x.Revision),
+                nameof(DocumentDto.Status) => sort.Descending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
+                nameof(DocumentDto.Owner) => sort.Descending ? query.OrderByDescending(x => x.Owner) : query.OrderBy(x => x.Owner),
+                nameof(DocumentDto.FolderFlag) => sort.Descending ? query.OrderByDescending(x => x.FolderFlag) : query.OrderBy(x => x.FolderFlag),
+                nameof(DocumentDto.HasDocumentContent) => sort.Descending ? query.OrderByDescending(x => x.DocumentContent != null && x.DocumentContent.Length > 0) : query.OrderBy(x => x.DocumentContent != null && x.DocumentContent.Length > 0),
+                nameof(DocumentDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.DocumentNode),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => new DocumentDto(
+                    x.DocumentNode.ToString()!, x.DocumentLevel, x.Title, x.Owner, x.FolderFlag,
+                    x.FileName, x.FileExtension, x.Revision, x.ChangeNumber, x.Status,
+                    x.DocumentSummary, x.DocumentContent != null && x.DocumentContent.Length > 0,
+                    x.RowGuid, x.ModifiedDate))
+                .ToListAsync(ct);
+            return new GridData<DocumentDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(DocumentDto.DocumentNode) => sort.Descending ? query.OrderByDescending(x => x.DocumentNode) : query.OrderBy(x => x.DocumentNode),
-            nameof(DocumentDto.DocumentLevel) => sort.Descending ? query.OrderByDescending(x => x.DocumentLevel) : query.OrderBy(x => x.DocumentLevel),
-            nameof(DocumentDto.Title) => sort.Descending ? query.OrderByDescending(x => x.Title) : query.OrderBy(x => x.Title),
-            nameof(DocumentDto.FileName) => sort.Descending ? query.OrderByDescending(x => x.FileName) : query.OrderBy(x => x.FileName),
-            nameof(DocumentDto.FileExtension) => sort.Descending ? query.OrderByDescending(x => x.FileExtension) : query.OrderBy(x => x.FileExtension),
-            nameof(DocumentDto.Revision) => sort.Descending ? query.OrderByDescending(x => x.Revision) : query.OrderBy(x => x.Revision),
-            nameof(DocumentDto.Status) => sort.Descending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
-            nameof(DocumentDto.Owner) => sort.Descending ? query.OrderByDescending(x => x.Owner) : query.OrderBy(x => x.Owner),
-            nameof(DocumentDto.FolderFlag) => sort.Descending ? query.OrderByDescending(x => x.FolderFlag) : query.OrderBy(x => x.FolderFlag),
-            nameof(DocumentDto.HasDocumentContent) => sort.Descending ? query.OrderByDescending(x => x.DocumentContent != null && x.DocumentContent.Length > 0) : query.OrderBy(x => x.DocumentContent != null && x.DocumentContent.Length > 0),
-            nameof(DocumentDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.DocumentNode),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize)
-            .Select(x => new DocumentDto(
-                x.DocumentNode.ToString()!, x.DocumentLevel, x.Title, x.Owner, x.FolderFlag,
-                x.FileName, x.FileExtension, x.Revision, x.ChangeNumber, x.Status,
-                x.DocumentSummary, x.DocumentContent != null && x.DocumentContent.Length > 0,
-                x.RowGuid, x.ModifiedDate))
-            .ToListAsync(ct);
-        return new GridData<DocumentDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

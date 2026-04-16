@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SpecialOfferProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SpecialOfferProductDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.SpecialOfferId" Title="Special offer id">
                 <HeaderTemplate><GridColumnHeader TEntity="SpecialOfferProduct" PropertyName="@nameof(SpecialOfferProductDto.SpecialOfferId)" Title="Special offer id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -58,6 +58,7 @@
 
 @code {
     private MudDataGrid<SpecialOfferProductDto> grid = null!;
+    private bool _loading = true;
     private int? filterSpecialOfferId;
     private int? filterProductId;
     private List<LookupItem<int>> _specialOffers = [];
@@ -70,27 +71,36 @@
 
     private async Task<GridData<SpecialOfferProductDto>> LoadServerDataAsync(GridState<SpecialOfferProductDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SpecialOfferProducts.AsNoTracking();
-        if (filterSpecialOfferId.HasValue) query = query.Where(x => x.SpecialOfferId == filterSpecialOfferId.Value);
-        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(SpecialOfferProductDto.SpecialOfferId) => sort.Descending ? query.OrderByDescending(x => x.SpecialOfferId) : query.OrderBy(x => x.SpecialOfferId),
-            nameof(SpecialOfferProductDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-            nameof(SpecialOfferProductDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.SpecialOfferId).ThenBy(x => x.ProductId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SpecialOfferProducts.AsNoTracking();
+            if (filterSpecialOfferId.HasValue) query = query.Where(x => x.SpecialOfferId == filterSpecialOfferId.Value);
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SpecialOfferProductDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SpecialOfferProductDto.SpecialOfferId) => sort.Descending ? query.OrderByDescending(x => x.SpecialOfferId) : query.OrderBy(x => x.SpecialOfferId),
+                nameof(SpecialOfferProductDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+                nameof(SpecialOfferProductDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.SpecialOfferId).ThenBy(x => x.ProductId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SpecialOfferProductDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

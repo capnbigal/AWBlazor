@@ -27,7 +27,7 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Sales person" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="SalesPersonQuotaHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesPersonQuotaHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Sales person id">
                 <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.BusinessEntityId)" Title="Sales person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -61,30 +61,40 @@
 
 @code {
     private MudDataGrid<SalesPersonQuotaHistoryDto> grid = null!;
+    private bool _loading = true;
     private int? filterBusinessEntityId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesPersonQuotaHistoryDto>> LoadServerDataAsync(GridState<SalesPersonQuotaHistoryDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SalesPersonQuotaHistories.AsNoTracking();
-        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(SalesPersonQuotaHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-            nameof(SalesPersonQuotaHistoryDto.QuotaDate)        => sort.Descending ? query.OrderByDescending(x => x.QuotaDate)        : query.OrderBy(x => x.QuotaDate),
-            nameof(SalesPersonQuotaHistoryDto.SalesQuota)       => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)       : query.OrderBy(x => x.SalesQuota),
-            nameof(SalesPersonQuotaHistoryDto.ModifiedDate)     => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)     : query.OrderBy(x => x.ModifiedDate),
-            _                                                   => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.QuotaDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SalesPersonQuotaHistories.AsNoTracking();
+            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SalesPersonQuotaHistoryDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SalesPersonQuotaHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+                nameof(SalesPersonQuotaHistoryDto.QuotaDate)        => sort.Descending ? query.OrderByDescending(x => x.QuotaDate)        : query.OrderBy(x => x.QuotaDate),
+                nameof(SalesPersonQuotaHistoryDto.SalesQuota)       => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)       : query.OrderBy(x => x.SalesQuota),
+                nameof(SalesPersonQuotaHistoryDto.ModifiedDate)     => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)     : query.OrderBy(x => x.ModifiedDate),
+                _                                                   => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.QuotaDate),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SalesPersonQuotaHistoryDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

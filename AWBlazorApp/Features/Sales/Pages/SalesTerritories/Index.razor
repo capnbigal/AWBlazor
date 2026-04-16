@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesTerritoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesTerritoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesTerritoryDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
@@ -78,43 +78,53 @@
 
 @code {
     private MudDataGrid<SalesTerritoryDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private string? filterGroupName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesTerritoryDto>> LoadServerDataAsync(GridState<SalesTerritoryDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.SalesTerritories.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filterGroupName))
-        {
-            var needle = filterGroupName.Trim();
-            query = query.Where(x => x.GroupName == needle);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SalesTerritories.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            if (!string.IsNullOrWhiteSpace(filterGroupName))
+            {
+                var needle = filterGroupName.Trim();
+                query = query.Where(x => x.GroupName == needle);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(SalesTerritoryDto.Id)                => sort.Descending ? query.OrderByDescending(x => x.Id)                : query.OrderBy(x => x.Id),
-            nameof(SalesTerritoryDto.Name)              => sort.Descending ? query.OrderByDescending(x => x.Name)              : query.OrderBy(x => x.Name),
-            nameof(SalesTerritoryDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
-            nameof(SalesTerritoryDto.GroupName)         => sort.Descending ? query.OrderByDescending(x => x.GroupName)         : query.OrderBy(x => x.GroupName),
-            nameof(SalesTerritoryDto.SalesYtd)          => sort.Descending ? query.OrderByDescending(x => x.SalesYtd)          : query.OrderBy(x => x.SalesYtd),
-            nameof(SalesTerritoryDto.SalesLastYear)     => sort.Descending ? query.OrderByDescending(x => x.SalesLastYear)     : query.OrderBy(x => x.SalesLastYear),
-            nameof(SalesTerritoryDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
-            _                                           => query.OrderBy(x => x.Id),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SalesTerritoryDto.Id)                => sort.Descending ? query.OrderByDescending(x => x.Id)                : query.OrderBy(x => x.Id),
+                nameof(SalesTerritoryDto.Name)              => sort.Descending ? query.OrderByDescending(x => x.Name)              : query.OrderBy(x => x.Name),
+                nameof(SalesTerritoryDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
+                nameof(SalesTerritoryDto.GroupName)         => sort.Descending ? query.OrderByDescending(x => x.GroupName)         : query.OrderBy(x => x.GroupName),
+                nameof(SalesTerritoryDto.SalesYtd)          => sort.Descending ? query.OrderByDescending(x => x.SalesYtd)          : query.OrderBy(x => x.SalesYtd),
+                nameof(SalesTerritoryDto.SalesLastYear)     => sort.Descending ? query.OrderByDescending(x => x.SalesLastYear)     : query.OrderBy(x => x.SalesLastYear),
+                nameof(SalesTerritoryDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
+                _                                           => query.OrderBy(x => x.Id),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<SalesTerritoryDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SalesTerritoryDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

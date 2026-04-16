@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="AddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="AddressDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -72,43 +72,53 @@
 
 @code {
     private MudDataGrid<AddressDto> grid = null!;
+    private bool _loading = true;
     private string? filterCity;
     private string? filterPostalCode;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<AddressDto>> LoadServerDataAsync(GridState<AddressDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Addresses.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterCity))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var c = filterCity.Trim();
-            query = query.Where(x => x.City.Contains(c));
-        }
-        if (!string.IsNullOrWhiteSpace(filterPostalCode))
-        {
-            var p = filterPostalCode.Trim();
-            query = query.Where(x => x.PostalCode.StartsWith(p));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Addresses.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterCity))
+            {
+                var c = filterCity.Trim();
+                query = query.Where(x => x.City.Contains(c));
+            }
+            if (!string.IsNullOrWhiteSpace(filterPostalCode))
+            {
+                var p = filterPostalCode.Trim();
+                query = query.Where(x => x.PostalCode.StartsWith(p));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(AddressDto.Id)              => sort.Descending ? query.OrderByDescending(x => x.Id)              : query.OrderBy(x => x.Id),
-            nameof(AddressDto.AddressLine1)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine1)    : query.OrderBy(x => x.AddressLine1),
-            nameof(AddressDto.AddressLine2)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine2)    : query.OrderBy(x => x.AddressLine2),
-            nameof(AddressDto.City)            => sort.Descending ? query.OrderByDescending(x => x.City)            : query.OrderBy(x => x.City),
-            nameof(AddressDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(x => x.StateProvinceId) : query.OrderBy(x => x.StateProvinceId),
-            nameof(AddressDto.PostalCode)      => sort.Descending ? query.OrderByDescending(x => x.PostalCode)      : query.OrderBy(x => x.PostalCode),
-            nameof(AddressDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
-            _                                  => query.OrderBy(x => x.Id),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(AddressDto.Id)              => sort.Descending ? query.OrderByDescending(x => x.Id)              : query.OrderBy(x => x.Id),
+                nameof(AddressDto.AddressLine1)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine1)    : query.OrderBy(x => x.AddressLine1),
+                nameof(AddressDto.AddressLine2)    => sort.Descending ? query.OrderByDescending(x => x.AddressLine2)    : query.OrderBy(x => x.AddressLine2),
+                nameof(AddressDto.City)            => sort.Descending ? query.OrderByDescending(x => x.City)            : query.OrderBy(x => x.City),
+                nameof(AddressDto.StateProvinceId) => sort.Descending ? query.OrderByDescending(x => x.StateProvinceId) : query.OrderBy(x => x.StateProvinceId),
+                nameof(AddressDto.PostalCode)      => sort.Descending ? query.OrderByDescending(x => x.PostalCode)      : query.OrderBy(x => x.PostalCode),
+                nameof(AddressDto.ModifiedDate)    => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)    : query.OrderBy(x => x.ModifiedDate),
+                _                                  => query.OrderBy(x => x.Id),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<AddressDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<AddressDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 
