@@ -27,10 +27,14 @@
         allocates the next id; the Diagram column stays NULL on insert from this app.
     </MudText>
 
-    <MudDataGrid T="IllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="IllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Illustration" PropertyName="@nameof(IllustrationDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="Illustration" PropertyName="@nameof(IllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -48,11 +52,13 @@
 
 @code {
     private MudDataGrid<IllustrationDto> grid = null!;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<IllustrationDto>> LoadServerDataAsync(GridState<IllustrationDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.Illustrations.AsNoTracking();
+        query = query.ApplyColumnFilters(columnFilters);
         var total = await query.CountAsync(ct);
 
         var sort = state.SortDefinitions.FirstOrDefault();
@@ -66,6 +72,8 @@
         var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<IllustrationDto> { Items = rows, TotalItems = total };
     }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
 
     private async Task OpenCreateAsync()
     {

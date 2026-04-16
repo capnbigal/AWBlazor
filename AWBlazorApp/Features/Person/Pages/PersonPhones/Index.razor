@@ -30,12 +30,20 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id" />
-            <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type id" />
-            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type id">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumberTypeId)" Title="Type id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumber)" Title="Phone" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -56,6 +64,7 @@
     private int? filterBusinessEntityId;
     private int? filterPhoneNumberTypeId;
     private List<LookupItem<int>> _phoneNumberTypes = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,6 +77,7 @@
         var query = db.PersonPhones.AsNoTracking();
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
         if (filterPhoneNumberTypeId.HasValue) query = query.Where(x => x.PhoneNumberTypeId == filterPhoneNumberTypeId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

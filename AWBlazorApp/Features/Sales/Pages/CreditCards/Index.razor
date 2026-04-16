@@ -26,14 +26,26 @@
         <MudTextField @bind-Value="filterCardType" Label="Card type" Variant="Variant.Outlined" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="CreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.CardType" Title="Card type" />
-            <PropertyColumn Property="x => x.CardNumber" Title="Card number" />
-            <PropertyColumn Property="x => x.ExpMonth" Title="Exp month" />
-            <PropertyColumn Property="x => x.ExpYear" Title="Exp year" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CardType" Title="Card type">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.CardType)" Title="Card type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CardNumber" Title="Card number">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.CardNumber)" Title="Card number" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ExpMonth" Title="Exp month">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.ExpMonth)" Title="Exp month" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ExpYear" Title="Exp year">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.ExpYear)" Title="Exp year" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -55,12 +67,14 @@
 @code {
     private MudDataGrid<CreditCardDto> grid = null!;
     private string? filterCardType;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CreditCardDto>> LoadServerDataAsync(GridState<CreditCardDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.CreditCards.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(filterCardType)) query = query.Where(x => x.CardType == filterCardType.Trim());
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

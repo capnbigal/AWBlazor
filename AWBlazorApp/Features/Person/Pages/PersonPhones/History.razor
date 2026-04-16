@@ -1,5 +1,6 @@
 @page "/aw/person-phones/history"
 @attribute [Authorize]
+@using AWBlazorApp.Features.Person.Domain
 @using AWBlazorApp.Features.Person.Models
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -28,17 +29,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonPhoneAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PersonPhoneAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person" />
-            <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type" />
-            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.BusinessEntityId)" Title="Person" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.PhoneNumberTypeId)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.PhoneNumber)" Title="Phone" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonPhoneAuditLog" PropertyName="@nameof(PersonPhoneAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="PersonPhoneAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -51,6 +64,7 @@
 
     private MudDataGrid<PersonPhoneAuditLogDto> grid = null!;
     private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PersonPhoneAuditLogDto>> LoadServerDataAsync(GridState<PersonPhoneAuditLogDto> state, CancellationToken ct)
     {
@@ -61,6 +75,7 @@
         if (!string.IsNullOrWhiteSpace(PhoneNumber)) query = query.Where(a => a.PhoneNumber == PhoneNumber);
         if (PhoneNumberTypeId.HasValue) query = query.Where(a => a.PhoneNumberTypeId == PhoneNumberTypeId.Value);
         if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

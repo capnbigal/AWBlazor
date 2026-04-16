@@ -27,11 +27,17 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Business entity" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="PersonCreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PersonCreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id" />
-            <PropertyColumn Property="x => x.CreditCardId" Title="Credit card id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonCreditCard" PropertyName="@nameof(PersonCreditCardDto.BusinessEntityId)" Title="Business entity id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CreditCardId" Title="Credit card id">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonCreditCard" PropertyName="@nameof(PersonCreditCardDto.CreditCardId)" Title="Credit card id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonCreditCard" PropertyName="@nameof(PersonCreditCardDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -50,12 +56,14 @@
 @code {
     private MudDataGrid<PersonCreditCardDto> grid = null!;
     private int? filterBusinessEntityId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PersonCreditCardDto>> LoadServerDataAsync(GridState<PersonCreditCardDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.PersonCreditCards.AsNoTracking();
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

@@ -27,12 +27,20 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Business entity" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id" />
-            <PropertyColumn Property="x => x.PersonId" Title="Person id" />
-            <PropertyColumn Property="x => x.ContactTypeId" Title="Contact type id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.BusinessEntityId)" Title="Business entity id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PersonId" Title="Person id">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ContactTypeId" Title="Contact type id">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ContactTypeId)" Title="Contact type id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -51,12 +59,14 @@
 @code {
     private MudDataGrid<BusinessEntityContactDto> grid = null!;
     private int? filterBusinessEntityId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<BusinessEntityContactDto>> LoadServerDataAsync(GridState<BusinessEntityContactDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.BusinessEntityContacts.AsNoTracking();
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

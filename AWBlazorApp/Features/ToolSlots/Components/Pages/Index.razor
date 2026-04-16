@@ -54,13 +54,24 @@
                  Hover="true"
                  Striped="true"
                  SortMode="SortMode.Single"
-                 RowsPerPage="25">
+                 RowsPerPage="25"
+                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.Family" Title="Family" />
-            <PropertyColumn Property="x => x.MtCode" Title="MT code" />
-            <PropertyColumn Property="x => x.Destination" Title="Destination" />
-            <PropertyColumn Property="x => x.IsActive" Title="Active" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Family" Title="Family">
+                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Family)" Title="Family" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MtCode" Title="MT code">
+                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.MtCode)" Title="MT code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Destination" Title="Destination">
+                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.Destination)" Title="Destination" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.IsActive" Title="Active">
+                <FilterTemplate><ColumnFilterButton TEntity="ToolSlotConfiguration" PropertyName="@nameof(ToolSlotConfigurationDto.IsActive)" Title="Active" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -96,6 +107,7 @@
     private string? filterMtCode;
     private string? filterDestination;
     private bool? filterActive;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ToolSlotConfigurationDto>> LoadServerDataAsync(GridState<ToolSlotConfigurationDto> state, CancellationToken ct)
     {
@@ -106,6 +118,7 @@
         if (!string.IsNullOrWhiteSpace(filterMtCode))      query = query.Where(t => t.MtCode == filterMtCode);
         if (!string.IsNullOrWhiteSpace(filterDestination)) query = query.Where(t => t.Destination == filterDestination);
         if (filterActive.HasValue)                          query = query.Where(t => t.IsActive == filterActive.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

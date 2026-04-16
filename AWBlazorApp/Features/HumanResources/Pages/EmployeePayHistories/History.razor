@@ -1,5 +1,6 @@
 @page "/aw/employee-pay-histories/history"
 @attribute [Authorize]
+@using AWBlazorApp.Features.HumanResources.Domain
 @using AWBlazorApp.Features.HumanResources.Models
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -28,18 +29,32 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeePayHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeePayHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee" />
-            <PropertyColumn Property="x => x.RateChangeDate" Title="Rate date" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.RateChangeDate" Title="Rate date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.RateChangeDate)" Title="Rate date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.Rate" Title="Rate" Format="C2" />
-            <PropertyColumn Property="x => x.PayFrequency" Title="Freq" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Rate" Title="Rate" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.Rate)" Title="Rate" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PayFrequency" Title="Freq">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.PayFrequency)" Title="Freq" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="EmployeePayHistoryAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -52,6 +67,7 @@
     private MudDataGrid<EmployeePayHistoryAuditLogDto> grid = null!;
     private string? filterChangedBy;
     private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<EmployeePayHistoryAuditLogDto>> LoadServerDataAsync(GridState<EmployeePayHistoryAuditLogDto> state, CancellationToken ct)
     {
@@ -62,6 +78,7 @@
         if (RateChangeDate.HasValue) query = query.Where(a => a.RateChangeDate == RateChangeDate.Value);
         if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
         if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

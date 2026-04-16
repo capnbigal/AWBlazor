@@ -29,14 +29,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.CurrencyRateDate" Title="Date" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.FromCurrencyCode" Title="From" />
-            <PropertyColumn Property="x => x.ToCurrencyCode" Title="To" />
-            <PropertyColumn Property="x => x.AverageRate" Title="Average" Format="N4" />
-            <PropertyColumn Property="x => x.EndOfDayRate" Title="End-of-day" Format="N4" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CurrencyRateDate" Title="Date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.CurrencyRateDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FromCurrencyCode" Title="From">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.FromCurrencyCode)" Title="From" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ToCurrencyCode" Title="To">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.ToCurrencyCode)" Title="To" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AverageRate" Title="Average" Format="N4">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.AverageRate)" Title="Average" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EndOfDayRate" Title="End-of-day" Format="N4">
+                <FilterTemplate><ColumnFilterButton TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.EndOfDayRate)" Title="End-of-day" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -59,6 +71,7 @@
     private MudDataGrid<CurrencyRateDto> grid = null!;
     private string? filterFrom;
     private string? filterTo;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CurrencyRateDto>> LoadServerDataAsync(GridState<CurrencyRateDto> state, CancellationToken ct)
     {
@@ -74,6 +87,7 @@
             var t = filterTo.Trim();
             query = query.Where(x => x.ToCurrencyCode == t);
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

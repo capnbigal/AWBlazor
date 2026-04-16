@@ -29,15 +29,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="StateProvinceDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="StateProvinceDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.StateProvinceCode" Title="Code" />
-            <PropertyColumn Property="x => x.CountryRegionCode" Title="Country" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.TerritoryId" Title="Territory" />
-            <PropertyColumn Property="x => x.IsOnlyStateProvinceFlag" Title="Only" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StateProvinceCode" Title="Code">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.StateProvinceCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CountryRegionCode" Title="Country">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TerritoryId" Title="Territory">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.TerritoryId)" Title="Territory" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.IsOnlyStateProvinceFlag" Title="Only">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.IsOnlyStateProvinceFlag)" Title="Only" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="StateProvince" PropertyName="@nameof(StateProvinceDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -62,6 +76,7 @@
     private MudDataGrid<StateProvinceDto> grid = null!;
     private string? filterName;
     private string? filterCountryRegionCode;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<StateProvinceDto>> LoadServerDataAsync(GridState<StateProvinceDto> state, CancellationToken ct)
     {
@@ -77,6 +92,7 @@
             var needle = filterCountryRegionCode.Trim();
             query = query.Where(x => x.CountryRegionCode == needle);
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

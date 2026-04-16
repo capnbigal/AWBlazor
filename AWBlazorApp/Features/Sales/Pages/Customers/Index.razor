@@ -35,15 +35,27 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="CustomerDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.AccountNumber" Title="Account #" />
-            <PropertyColumn Property="x => x.PersonId" Title="Person id" />
-            <PropertyColumn Property="x => x.StoreId" Title="Store id" />
-            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PersonId" Title="Person id">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StoreId" Title="Store id">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.StoreId)" Title="Store id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -74,6 +86,7 @@
     private MudDataGrid<CustomerDto> grid = null!;
     private int? filterTerritoryId;
     private List<LookupItem<int>> _territories = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -85,6 +98,7 @@
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.Customers.AsNoTracking();
         if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

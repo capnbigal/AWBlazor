@@ -30,11 +30,17 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SpecialOfferProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SpecialOfferProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.SpecialOfferId" Title="Special offer id" />
-            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.SpecialOfferId" Title="Special offer id">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOfferProduct" PropertyName="@nameof(SpecialOfferProductDto.SpecialOfferId)" Title="Special offer id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOfferProduct" PropertyName="@nameof(SpecialOfferProductDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="SpecialOfferProduct" PropertyName="@nameof(SpecialOfferProductDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -55,6 +61,7 @@
     private int? filterSpecialOfferId;
     private int? filterProductId;
     private List<LookupItem<int>> _specialOffers = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -67,6 +74,7 @@
         var query = db.SpecialOfferProducts.AsNoTracking();
         if (filterSpecialOfferId.HasValue) query = query.Where(x => x.SpecialOfferId == filterSpecialOfferId.Value);
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

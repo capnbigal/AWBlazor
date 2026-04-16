@@ -36,19 +36,35 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="CreditCardAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CreditCardAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.CreditCardId" Title="Id" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CreditCardId" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.CreditCardId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.CardType" Title="Card type" />
-            <PropertyColumn Property="x => x.CardNumber" Title="Card number" />
-            <PropertyColumn Property="x => x.ExpMonth" Title="Exp month" />
-            <PropertyColumn Property="x => x.ExpYear" Title="Exp year" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CardType" Title="Card type">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.CardType)" Title="Card type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CardNumber" Title="Card number">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.CardNumber)" Title="Card number" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ExpMonth" Title="Exp month">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.ExpMonth)" Title="Exp month" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ExpYear" Title="Exp year">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.ExpYear)" Title="Exp year" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="CreditCardAuditLog" PropertyName="@nameof(CreditCardAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="CreditCardAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -61,6 +77,7 @@
     private string? filterChangedBy;
     private string? filterAction;
     private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CreditCardAuditLogDto>> LoadServerDataAsync(GridState<CreditCardAuditLogDto> state, CancellationToken ct)
     {
@@ -75,6 +92,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

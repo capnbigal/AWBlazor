@@ -3,6 +3,7 @@
 @using AWBlazorApp.Features.Person.Domain
 @using AWBlazorApp.Features.Person.Models
 @using AWBlazorApp.Features.Person.Audit
+@using PersonEntity = AWBlazorApp.Features.Person.Domain.Person
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -39,16 +40,32 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.PersonType" Title="Type" />
-            <PropertyColumn Property="x => x.Title" Title="Title" />
-            <PropertyColumn Property="x => x.FirstName" Title="First name" />
-            <PropertyColumn Property="x => x.MiddleName" Title="Middle" />
-            <PropertyColumn Property="x => x.LastName" Title="Last name" />
-            <PropertyColumn Property="x => x.Suffix" Title="Suffix" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PersonType" Title="Type">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Title" Title="Title">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FirstName" Title="First name">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.FirstName)" Title="First name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.MiddleName" Title="Middle">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.MiddleName)" Title="Middle" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.LastName" Title="Last name">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.LastName)" Title="Last name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Suffix" Title="Suffix">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Suffix)" Title="Suffix" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -71,6 +88,7 @@
     private MudDataGrid<PersonDto> grid = null!;
     private string? filterLastName;
     private string? filterPersonType;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PersonDto>> LoadServerDataAsync(GridState<PersonDto> state, CancellationToken ct)
     {
@@ -82,6 +100,7 @@
             query = query.Where(x => x.LastName.Contains(n));
         }
         if (!string.IsNullOrWhiteSpace(filterPersonType)) query = query.Where(x => x.PersonType == filterPersonType);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

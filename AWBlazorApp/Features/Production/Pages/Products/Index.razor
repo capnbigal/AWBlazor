@@ -30,19 +30,39 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
             <HierarchyColumn T="ProductDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.ProductNumber" Title="Number" />
-            <PropertyColumn Property="x => x.Color" Title="Color" />
-            <PropertyColumn Property="x => x.Size" Title="Size" />
-            <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2" />
-            <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2" />
-            <PropertyColumn Property="x => x.ProductLine" Title="Line" />
-            <PropertyColumn Property="x => x.Class" Title="Class" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductNumber" Title="Number">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ProductNumber)" Title="Number" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Color" Title="Color">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Color)" Title="Color" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Size" Title="Size">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Size)" Title="Size" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.StandardCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ListPrice)" Title="List price" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductLine" Title="Line">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ProductLine)" Title="Line" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Class" Title="Class">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Class)" Title="Class" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -72,6 +92,7 @@
     private string? filterName;
     private int? filterSubcategoryId;
     private List<LookupItem<int>> _subcategories = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,6 +109,7 @@
             query = query.Where(x => x.Name.Contains(n));
         }
         if (filterSubcategoryId.HasValue) query = query.Where(x => x.ProductSubcategoryId == filterSubcategoryId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

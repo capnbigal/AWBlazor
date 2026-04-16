@@ -29,14 +29,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesTaxRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesTaxRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.StateProvinceId" Title="State/prov" />
-            <PropertyColumn Property="x => x.TaxType" Title="Type" />
-            <PropertyColumn Property="x => x.TaxRate" Title="Rate" Format="F4" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StateProvinceId" Title="State/prov">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.StateProvinceId)" Title="State/prov" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TaxType" Title="Type">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.TaxType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TaxRate" Title="Rate" Format="F4">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.TaxRate)" Title="Rate" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesTaxRate" PropertyName="@nameof(SalesTaxRateDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -61,6 +73,7 @@
     private MudDataGrid<SalesTaxRateDto> grid = null!;
     private string? filterName;
     private int? filterStateProvinceId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesTaxRateDto>> LoadServerDataAsync(GridState<SalesTaxRateDto> state, CancellationToken ct)
     {
@@ -72,6 +85,7 @@
             query = query.Where(x => x.Name.Contains(needle));
         }
         if (filterStateProvinceId.HasValue) query = query.Where(x => x.StateProvinceId == filterStateProvinceId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();

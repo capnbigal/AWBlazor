@@ -32,17 +32,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesPersonQuotaHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="SalesPersonQuotaHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Sales person" />
-            <PropertyColumn Property="x => x.QuotaDate" Title="Quota date" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Sales person">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.BusinessEntityId)" Title="Sales person" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.QuotaDate" Title="Quota date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.QuotaDate)" Title="Quota date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="SalesPersonQuotaHistoryAuditLog" PropertyName="@nameof(SalesPersonQuotaHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="SalesPersonQuotaHistoryAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -55,6 +67,7 @@
     private MudDataGrid<SalesPersonQuotaHistoryAuditLogDto> grid = null!;
     private string? filterChangedBy;
     private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesPersonQuotaHistoryAuditLogDto>> LoadServerDataAsync(GridState<SalesPersonQuotaHistoryAuditLogDto> state, CancellationToken ct)
     {
@@ -73,6 +86,7 @@
             var needle = filterChangedBy.Trim();
             query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
         }
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

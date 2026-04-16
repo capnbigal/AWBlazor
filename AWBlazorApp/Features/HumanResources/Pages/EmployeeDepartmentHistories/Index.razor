@@ -30,14 +30,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee" />
-            <PropertyColumn Property="x => x.DepartmentId" Title="Dept" />
-            <PropertyColumn Property="x => x.ShiftId" Title="Shift" />
-            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DepartmentId" Title="Dept">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.DepartmentId)" Title="Dept" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ShiftId" Title="Shift">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ShiftId)" Title="Shift" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -61,6 +73,7 @@
     private int? filterBusinessEntityId;
     private short? filterDepartmentId;
     private List<LookupItem<short>> _departments = [];
+    private readonly ColumnFilterState columnFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,6 +86,7 @@
         var query = db.EmployeeDepartmentHistories.AsNoTracking();
         if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
         if (filterDepartmentId.HasValue) query = query.Where(x => x.DepartmentId == filterDepartmentId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

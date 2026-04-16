@@ -26,11 +26,17 @@
         <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductModelIllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductModelIllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ProductModelId" Title="Product model id" />
-            <PropertyColumn Property="x => x.IllustrationId" Title="Illustration id" />
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.ProductModelId" Title="Product model id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ProductModelId)" Title="Product model id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.IllustrationId" Title="Illustration id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.IllustrationId)" Title="Illustration id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -49,12 +55,14 @@
 @code {
     private MudDataGrid<ProductModelIllustrationDto> grid = null!;
     private int? filterProductModelId;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductModelIllustrationDto>> LoadServerDataAsync(GridState<ProductModelIllustrationDto> state, CancellationToken ct)
     {
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.ProductModelIllustrations.AsNoTracking();
         if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

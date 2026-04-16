@@ -28,17 +28,29 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PurchaseOrderDetailAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PurchaseOrderDetailAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #" />
-            <PropertyColumn Property="x => x.PurchaseOrderDetailId" Title="Line #" />
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.PurchaseOrderId)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.PurchaseOrderDetailId" Title="Line #">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.PurchaseOrderDetailId)" Title="Line #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.LineTotal" Title="Line total" Format="C2" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary" />
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.LineTotal" Title="Line total" Format="C2">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.LineTotal)" Title="Line total" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetailAuditLog" PropertyName="@nameof(PurchaseOrderDetailAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="PurchaseOrderDetailAuditLogDto" /></PagerContent>
     </MudDataGrid>
@@ -51,6 +63,7 @@
     private MudDataGrid<PurchaseOrderDetailAuditLogDto> grid = null!;
     private string? filterChangedBy;
     private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PurchaseOrderDetailAuditLogDto>> LoadServerDataAsync(GridState<PurchaseOrderDetailAuditLogDto> state, CancellationToken ct)
     {
@@ -61,6 +74,7 @@
         if (PurchaseOrderDetailId.HasValue) query = query.Where(a => a.PurchaseOrderDetailId == PurchaseOrderDetailId.Value);
         if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
         if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
 

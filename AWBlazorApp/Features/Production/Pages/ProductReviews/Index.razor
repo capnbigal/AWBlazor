@@ -30,14 +30,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id" />
-            <PropertyColumn Property="x => x.ProductId" Title="Product id" />
-            <PropertyColumn Property="x => x.ReviewerName" Title="Reviewer" />
-            <PropertyColumn Property="x => x.Rating" Title="Rating" />
-            <PropertyColumn Property="x => x.ReviewDate" Title="Date" Format="yyyy-MM-dd" />
-            <PropertyColumn Property="x => x.EmailAddress" Title="Email" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ReviewerName" Title="Reviewer">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewerName)" Title="Reviewer" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Rating" Title="Rating">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Rating)" Title="Rating" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ReviewDate" Title="Date" Format="yyyy-MM-dd">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EmailAddress" Title="Email">
+                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.EmailAddress)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+            </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
@@ -60,6 +72,7 @@
     private MudDataGrid<ProductReviewDto> grid = null!;
     private int? filterProductId;
     private int? filterMinRating;
+    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductReviewDto>> LoadServerDataAsync(GridState<ProductReviewDto> state, CancellationToken ct)
     {
@@ -67,6 +80,7 @@
         var query = db.ProductReviews.AsNoTracking();
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
         if (filterMinRating.HasValue) query = query.Where(x => x.Rating >= filterMinRating.Value);
+        query = query.ApplyColumnFilters(columnFilters);
 
         var total = await query.CountAsync(ct);
         var sort = state.SortDefinitions.FirstOrDefault();
