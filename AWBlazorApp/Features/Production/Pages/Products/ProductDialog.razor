@@ -60,24 +60,26 @@
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@createModel.ProductLine" ValueChanged="@((string? v) => createModel = createModel with { ProductLine = v })" Label="Product line" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("R")">R — Road</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Mountain</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("T")">T — Touring</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("S")">S — Standard</MudSelectItem>
+                            @foreach (var opt in ProductConstants.ProductLines)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@createModel.Class" ValueChanged="@((string? v) => createModel = createModel with { Class = v })" Label="Class" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("H")">H — High</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Medium</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("L")">L — Low</MudSelectItem>
+                            @foreach (var opt in ProductConstants.Classes)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@createModel.Style" ValueChanged="@((string? v) => createModel = createModel with { Style = v })" Label="Style" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("W")">W — Womens</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Mens</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("U")">U — Universal</MudSelectItem>
+                            @foreach (var opt in ProductConstants.Styles)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
@@ -143,24 +145,26 @@
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@updateModel.ProductLine" ValueChanged="@((string? v) => updateModel = updateModel with { ProductLine = v })" Label="Product line" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("R")">R — Road</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Mountain</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("T")">T — Touring</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("S")">S — Standard</MudSelectItem>
+                            @foreach (var opt in ProductConstants.ProductLines)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@updateModel.Class" ValueChanged="@((string? v) => updateModel = updateModel with { Class = v })" Label="Class" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("H")">H — High</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Medium</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("L")">L — Low</MudSelectItem>
+                            @foreach (var opt in ProductConstants.Classes)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
                         <MudSelect T="string?" Value="@updateModel.Style" ValueChanged="@((string? v) => updateModel = updateModel with { Style = v })" Label="Style" Variant="Variant.Outlined" Clearable="true">
-                            <MudSelectItem T="string?" Value="@("W")">W — Womens</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("M")">M — Mens</MudSelectItem>
-                            <MudSelectItem T="string?" Value="@("U")">U — Universal</MudSelectItem>
+                            @foreach (var opt in ProductConstants.Styles)
+                            {
+                                <MudSelectItem T="string?" Value="@opt.Code">@opt.Label</MudSelectItem>
+                            }
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="6" sm="3">
