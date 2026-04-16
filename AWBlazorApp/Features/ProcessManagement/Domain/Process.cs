@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using AWBlazorApp.Data;
 using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Features.HumanResources.Domain;
 
 namespace AWBlazorApp.Features.ProcessManagement.Domain;
 

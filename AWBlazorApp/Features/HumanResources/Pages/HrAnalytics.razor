@@ -1,0 +1,340 @@
+@page "/analytics/hr"
+@attribute [Authorize]
+@using AWBlazorApp.Features.HumanResources.Domain
+@using AWBlazorApp.Shared.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AnalyticsCacheService Cache
+
+<PageTitle>HR analytics</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">HR analytics</MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Loading HR data...</MudText>
+    }
+    else
+    {
+        @* ── KPI row ──────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Groups" Color="Color.Primary"
+                         Value="@totalEmployees.ToString("N0")" Label="Total employees" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.PersonOff" Color="Color.Warning"
+                         Value="@inactiveCount.ToString("N0")" Label="Inactive (CurrentFlag=0)" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.WorkHistory" Color="Color.Info"
+                         Value="@($"{avgTenureYears:N1} yrs")" Label="Avg tenure" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Payments" Color="Color.Success"
+                         Value="@avgPayRate.ToString("C2")" Label="Avg pay rate" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Cumulative headcount over time ───────────────────────────────── *@
+        <TimeSeriesChart Title="Cumulative hires over time"
+                         ChartType="ChartType.Line"
+                         Labels="@hireLabels"
+                         Series="@hireSeries"
+                         Periods="@(new[] { "24M", "All" })"
+                         ShowGranularity="false" />
+
+        <MudGrid>
+            @* ── Tenure distribution ──────────────────────────────────────── *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Tenure distribution</MudText>
+                    @if (tenureLabels.Length > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Bar"
+                                  ChartSeries="@tenureSeries"
+                                  XAxisLabels="@tenureLabels"
+                                  Width="100%" Height="280px" />
+                    }
+                </MudPaper>
+            </MudItem>
+
+            @* ── Gender split ─────────────────────────────────────────────── *@
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Gender distribution</MudText>
+                    @if (genderLabels.Length > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Pie"
+                                  InputData="@genderData"
+                                  InputLabels="@genderLabels"
+                                  Width="100%" Height="280px" />
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Compensation trend ───────────────────────────────────────────── *@
+        <TimeSeriesChart Title="Average pay rate over time"
+                         ChartType="ChartType.Line"
+                         Labels="@payLabels"
+                         Series="@paySeries"
+                         Periods="@(new[] { "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Department headcount ─────────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Current headcount by department</MudText>
+            @if (deptLabels.Length > 0)
+            {
+                <MudChart T="double" ChartType="ChartType.Bar"
+                          ChartSeries="@deptSeries"
+                          XAxisLabels="@deptLabels"
+                          Width="100%" Height="320px" />
+            }
+        </MudPaper>
+
+        @* ── Department growth over time ──────────────────────────────────── *@
+        <TimeSeriesChart Title="New department assignments per month"
+                         ChartType="ChartType.Bar"
+                         Labels="@deptGrowthLabels"
+                         Series="@deptGrowthSeries"
+                         Periods="@(new[] { "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Salaried vs hourly ───────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Salaried vs. hourly</MudText>
+                    <MudChart T="double" ChartType="ChartType.Pie"
+                              InputData="@salaryTypeData"
+                              InputLabels="@salaryTypeLabels"
+                              Width="100%" Height="240px" />
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">Marital status</MudText>
+                    <MudChart T="double" ChartType="ChartType.Pie"
+                              InputData="@maritalData"
+                              InputLabels="@maritalLabels"
+                              Width="100%" Height="240px" />
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+
+    // KPIs
+    private int totalEmployees;
+    private int inactiveCount;
+    private double avgTenureYears;
+    private decimal avgPayRate;
+
+    // Cumulative hires
+    private string[] hireLabels = [];
+    private List<ChartSeries<double>> hireSeries = [];
+
+    // Tenure distribution
+    private string[] tenureLabels = [];
+    private List<ChartSeries<double>> tenureSeries = [];
+
+    // Gender
+    private string[] genderLabels = [];
+    private double[] genderData = [];
+
+    // Compensation trend
+    private string[] payLabels = [];
+    private List<ChartSeries<double>> paySeries = [];
+
+    // Department headcount
+    private string[] deptLabels = [];
+    private List<ChartSeries<double>> deptSeries = [];
+
+    // Department growth
+    private string[] deptGrowthLabels = [];
+    private List<ChartSeries<double>> deptGrowthSeries = [];
+
+    // Salaried vs hourly
+    private string[] salaryTypeLabels = [];
+    private double[] salaryTypeData = [];
+
+    // Marital status
+    private string[] maritalLabels = [];
+    private double[] maritalData = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var data = await Cache.GetOrCreateAsync(Cache.Key("hr", "all"), LoadDataAsync);
+        totalEmployees = data.TotalEmployees;
+        inactiveCount = data.InactiveCount;
+        avgTenureYears = data.AvgTenureYears;
+        avgPayRate = data.AvgPayRate;
+        hireLabels = data.HireLabels;
+        hireSeries = data.HireSeries;
+        tenureLabels = data.TenureLabels;
+        tenureSeries = data.TenureSeries;
+        genderLabels = data.GenderLabels;
+        genderData = data.GenderData;
+        payLabels = data.PayLabels;
+        paySeries = data.PaySeries;
+        deptLabels = data.DeptLabels;
+        deptSeries = data.DeptSeries;
+        deptGrowthLabels = data.DeptGrowthLabels;
+        deptGrowthSeries = data.DeptGrowthSeries;
+        salaryTypeLabels = data.SalaryTypeLabels;
+        salaryTypeData = data.SalaryTypeData;
+        maritalLabels = data.MaritalLabels;
+        maritalData = data.MaritalData;
+        loading = false;
+    }
+
+    private async Task<HrData> LoadDataAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var result = new HrData();
+
+        var now = DateTime.UtcNow;
+
+        // ── KPIs (SQL-side aggregation) ──────────────────────────────────────
+        result.TotalEmployees = await db.Employees.CountAsync();
+        result.InactiveCount = await db.Employees.CountAsync(e => !e.CurrentFlag);
+
+        // Avg tenure requires date math relative to "now" — EF can translate DateDiffDay
+        result.AvgTenureYears = result.TotalEmployees > 0
+            ? await db.Employees.AverageAsync(e => (double)EF.Functions.DateDiffDay(e.HireDate, now) / 365.25)
+            : 0;
+
+        // Gender (SQL-side counts)
+        var maleCount = await db.Employees.CountAsync(e => e.Gender == "M");
+        var femaleCount = await db.Employees.CountAsync(e => e.Gender == "F");
+        result.GenderLabels = ["Male", "Female"];
+        result.GenderData = [(double)maleCount, (double)femaleCount];
+
+        // Salaried vs hourly (SQL-side counts)
+        var salaried = await db.Employees.CountAsync(e => e.SalariedFlag);
+        result.SalaryTypeLabels = ["Salaried", "Hourly"];
+        result.SalaryTypeData = [(double)salaried, (double)(result.TotalEmployees - salaried)];
+
+        // Marital status (SQL-side counts)
+        var single = await db.Employees.CountAsync(e => e.MaritalStatus == "S");
+        var married = await db.Employees.CountAsync(e => e.MaritalStatus == "M");
+        result.MaritalLabels = ["Single", "Married"];
+        result.MaritalData = [(double)single, (double)married];
+
+        // ── Cumulative hires (SQL GroupBy) ───────────────────────────────────
+        var hiresByMonth = await db.Employees.AsNoTracking()
+            .GroupBy(e => new { e.HireDate.Year, e.HireDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        var cumulativeLabels = new List<string>();
+        var cumulativeData = new List<double>();
+        double runningTotal = 0;
+        foreach (var g in hiresByMonth)
+        {
+            runningTotal += g.Count;
+            cumulativeLabels.Add($"{g.Year}-{g.Month:D2}");
+            cumulativeData.Add(runningTotal);
+        }
+        result.HireLabels = cumulativeLabels.ToArray();
+        result.HireSeries = [new ChartSeries<double> { Name = "Headcount", Data = cumulativeData.ToArray() }];
+
+        // ── Tenure distribution (in-memory — bucket logic not SQL-translatable) ──
+        var employees = await db.Employees.AsNoTracking().Select(e => e.HireDate).ToListAsync();
+        var buckets = new[] { "0-2 yrs", "2-5 yrs", "5-10 yrs", "10-15 yrs", "15-20 yrs", "20+ yrs" };
+        var bucketCounts = new double[buckets.Length];
+        foreach (var hireDate in employees)
+        {
+            var years = (now - hireDate).TotalDays / 365.25;
+            var idx = years switch
+            {
+                < 2 => 0,
+                < 5 => 1,
+                < 10 => 2,
+                < 15 => 3,
+                < 20 => 4,
+                _ => 5,
+            };
+            bucketCounts[idx]++;
+        }
+        result.TenureLabels = buckets;
+        result.TenureSeries = [new ChartSeries<double> { Name = "Employees", Data = bucketCounts }];
+
+        // ── Latest pay rate per employee (SQL — window function via GroupBy) ──
+        // EF can't do "TOP 1 per group" natively, so we pull latest pay per employee in-memory.
+        // But we only project the columns we need.
+        var payHistory = await db.EmployeePayHistories.AsNoTracking()
+            .Select(p => new { p.BusinessEntityId, p.RateChangeDate, p.Rate })
+            .ToListAsync();
+        var latestPay = payHistory
+            .GroupBy(p => p.BusinessEntityId)
+            .Select(g => g.OrderByDescending(p => p.RateChangeDate).First())
+            .ToList();
+        result.AvgPayRate = latestPay.Count > 0 ? latestPay.Average(p => p.Rate) : 0;
+
+        // ── Compensation trend (avg rate by month, SQL GroupBy) ──────────────
+        var payByMonth = await db.EmployeePayHistories.AsNoTracking()
+            .GroupBy(p => new { p.RateChangeDate.Year, p.RateChangeDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Avg = (double)g.Average(p => p.Rate) })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        result.PayLabels = payByMonth.Select(x => $"{x.Year}-{x.Month:D2}").ToArray();
+        result.PaySeries = [new ChartSeries<double> { Name = "Avg rate", Data = payByMonth.Select(x => x.Avg).ToArray() }];
+
+        // ── Current headcount by department (SQL GroupBy) ────────────────────
+        var departments = await db.Departments.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.Name);
+        var byDept = await db.EmployeeDepartmentHistories.AsNoTracking()
+            .Where(d => d.EndDate == null)
+            .GroupBy(d => d.DepartmentId)
+            .Select(g => new { DepartmentId = g.Key, Count = (double)g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToListAsync();
+
+        result.DeptLabels = byDept.Select(x => departments.GetValueOrDefault(x.DepartmentId, $"Dept {x.DepartmentId}")).ToArray();
+        result.DeptSeries = [new ChartSeries<double> { Name = "Employees", Data = byDept.Select(x => x.Count).ToArray() }];
+
+        // ── Department growth (new assignments per month, SQL GroupBy) ───────
+        var assignByMonth = await db.EmployeeDepartmentHistories.AsNoTracking()
+            .GroupBy(d => new { d.StartDate.Year, d.StartDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = (double)g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        result.DeptGrowthLabels = assignByMonth.Select(x => $"{x.Year}-{x.Month:D2}").ToArray();
+        result.DeptGrowthSeries = [new ChartSeries<double> { Name = "New assignments", Data = assignByMonth.Select(x => x.Count).ToArray() }];
+
+        return result;
+    }
+
+    private sealed class HrData
+    {
+        public int TotalEmployees { get; set; }
+        public int InactiveCount { get; set; }
+        public double AvgTenureYears { get; set; }
+        public decimal AvgPayRate { get; set; }
+        public string[] HireLabels { get; set; } = [];
+        public List<ChartSeries<double>> HireSeries { get; set; } = [];
+        public string[] TenureLabels { get; set; } = [];
+        public List<ChartSeries<double>> TenureSeries { get; set; } = [];
+        public string[] GenderLabels { get; set; } = [];
+        public double[] GenderData { get; set; } = [];
+        public string[] PayLabels { get; set; } = [];
+        public List<ChartSeries<double>> PaySeries { get; set; } = [];
+        public string[] DeptLabels { get; set; } = [];
+        public List<ChartSeries<double>> DeptSeries { get; set; } = [];
+        public string[] DeptGrowthLabels { get; set; } = [];
+        public List<ChartSeries<double>> DeptGrowthSeries { get; set; } = [];
+        public string[] SalaryTypeLabels { get; set; } = [];
+        public double[] SalaryTypeData { get; set; } = [];
+        public string[] MaritalLabels { get; set; } = [];
+        public double[] MaritalData { get; set; } = [];
+    }
+}
