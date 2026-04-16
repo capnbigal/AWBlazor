@@ -56,8 +56,21 @@
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.ProductPhotos.AsNoTracking();
         var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductPhotoDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
+            nameof(ProductPhotoDto.ThumbnailPhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.ThumbnailPhotoFileName) : query.OrderBy(x => x.ThumbnailPhotoFileName),
+            nameof(ProductPhotoDto.HasThumbnail) => sort.Descending ? query.OrderByDescending(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0) : query.OrderBy(x => x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0),
+            nameof(ProductPhotoDto.LargePhotoFileName) => sort.Descending ? query.OrderByDescending(x => x.LargePhotoFileName) : query.OrderBy(x => x.LargePhotoFileName),
+            nameof(ProductPhotoDto.HasLargePhoto) => sort.Descending ? query.OrderByDescending(x => x.LargePhoto != null && x.LargePhoto.Length > 0) : query.OrderBy(x => x.LargePhoto != null && x.LargePhoto.Length > 0),
+            nameof(ProductPhotoDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.Id),
+        };
+
         // Don't pull image bytes back — project to DTO inside the SQL projection.
-        var rows = await query.OrderBy(x => x.Id).Skip(state.Page * state.PageSize).Take(state.PageSize)
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
             .Select(x => new ProductPhotoDto(
                 x.Id, x.ThumbnailPhotoFileName, x.LargePhotoFileName,
                 x.ThumbNailPhoto != null && x.ThumbNailPhoto.Length > 0,

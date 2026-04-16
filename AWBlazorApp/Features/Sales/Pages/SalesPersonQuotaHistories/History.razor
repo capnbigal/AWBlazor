@@ -75,7 +75,20 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesPersonQuotaHistoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(SalesPersonQuotaHistoryAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
+            nameof(SalesPersonQuotaHistoryAuditLogDto.QuotaDate) => sort.Descending ? query.OrderByDescending(a => a.QuotaDate) : query.OrderBy(a => a.QuotaDate),
+            nameof(SalesPersonQuotaHistoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(SalesPersonQuotaHistoryAuditLogDto.SalesQuota) => sort.Descending ? query.OrderByDescending(a => a.SalesQuota) : query.OrderBy(a => a.SalesQuota),
+            nameof(SalesPersonQuotaHistoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<SalesPersonQuotaHistoryAuditLogDto> { Items = rows, TotalItems = total };
     }

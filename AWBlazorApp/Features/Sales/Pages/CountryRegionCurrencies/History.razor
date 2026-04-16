@@ -66,7 +66,19 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CountryRegionCurrencyAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(CountryRegionCurrencyAuditLogDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(a => a.CountryRegionCode) : query.OrderBy(a => a.CountryRegionCode),
+            nameof(CountryRegionCurrencyAuditLogDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(a => a.CurrencyCode) : query.OrderBy(a => a.CurrencyCode),
+            nameof(CountryRegionCurrencyAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(CountryRegionCurrencyAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<CountryRegionCurrencyAuditLogDto> { Items = rows, TotalItems = total };
     }

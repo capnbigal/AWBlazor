@@ -75,7 +75,20 @@
         if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.LocationId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductInventoryDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(ProductInventoryDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
+            nameof(ProductInventoryDto.Shelf) => sort.Descending ? query.OrderByDescending(x => x.Shelf) : query.OrderBy(x => x.Shelf),
+            nameof(ProductInventoryDto.Bin) => sort.Descending ? query.OrderByDescending(x => x.Bin) : query.OrderBy(x => x.Bin),
+            nameof(ProductInventoryDto.Quantity) => sort.Descending ? query.OrderByDescending(x => x.Quantity) : query.OrderBy(x => x.Quantity),
+            nameof(ProductInventoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.LocationId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<ProductInventoryDto> { Items = rows, TotalItems = total };
     }

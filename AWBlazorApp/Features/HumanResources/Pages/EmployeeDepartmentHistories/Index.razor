@@ -75,9 +75,20 @@
         if (filterDepartmentId.HasValue) query = query.Where(x => x.DepartmentId == filterDepartmentId.Value);
 
         var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmployeeDepartmentHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(EmployeeDepartmentHistoryDto.DepartmentId) => sort.Descending ? query.OrderByDescending(x => x.DepartmentId) : query.OrderBy(x => x.DepartmentId),
+            nameof(EmployeeDepartmentHistoryDto.ShiftId) => sort.Descending ? query.OrderByDescending(x => x.ShiftId) : query.OrderBy(x => x.ShiftId),
+            nameof(EmployeeDepartmentHistoryDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
+            nameof(EmployeeDepartmentHistoryDto.EndDate) => sort.Descending ? query.OrderByDescending(x => x.EndDate) : query.OrderBy(x => x.EndDate),
+            nameof(EmployeeDepartmentHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.DepartmentId).ThenBy(x => x.ShiftId).ThenByDescending(x => x.StartDate),
+        };
+
         var rows = await query
-            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.DepartmentId)
-            .ThenBy(x => x.ShiftId).ThenByDescending(x => x.StartDate)
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<EmployeeDepartmentHistoryDto> { Items = rows, TotalItems = total };
     }

@@ -253,11 +253,28 @@
             if (cols.Contains("MachineName")) selectCols.Add("[MachineName]");
             if (cols.Contains("LogEvent")) selectCols.Add("[LogEvent]");
 
+            // Whitelist-based ORDER BY. Raw SQL means we can't use parameterised column names,
+            // so map the MudBlazor SortBy property name to a known bracketed column. Anything
+            // outside the whitelist falls back to [Id] DESC.
+            var sort = state.SortDefinitions.FirstOrDefault();
+            var orderColumn = sort?.SortBy switch
+            {
+                nameof(RequestLogRow.TimeStamp)     => "[TimeStamp]",
+                nameof(RequestLogRow.RequestMethod) => cols.Contains("RequestMethod") ? "[RequestMethod]" : null,
+                nameof(RequestLogRow.RequestPath)   => cols.Contains("RequestPath")   ? "[RequestPath]"   : null,
+                nameof(RequestLogRow.UserName)      => cols.Contains("UserName")      ? "[UserName]"      : null,
+                nameof(RequestLogRow.RemoteIp)      => cols.Contains("RemoteIp")      ? "[RemoteIp]"      : null,
+                _                                   => null,
+            };
+            var orderBy = orderColumn is not null
+                ? $"{orderColumn} {(sort!.Descending ? "DESC" : "ASC")}"
+                : "[Id] DESC";
+
             var skip = state.Page * state.PageSize;
             var sql = $@"SELECT {string.Join(", ", selectCols)}
                          FROM dbo.RequestLogs
                          {whereClause}
-                         ORDER BY [Id] DESC
+                         ORDER BY {orderBy}
                          OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY";
 
             var rows = new List<RequestLogRow>();

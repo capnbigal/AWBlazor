@@ -54,7 +54,16 @@
         await using var db = await DbFactory.CreateDbContextAsync(ct);
         var query = db.Illustrations.AsNoTracking();
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.Id).Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(IllustrationDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
+            nameof(IllustrationDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<IllustrationDto> { Items = rows, TotalItems = total };
     }
 

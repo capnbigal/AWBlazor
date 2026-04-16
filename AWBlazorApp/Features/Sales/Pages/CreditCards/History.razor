@@ -77,7 +77,22 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CreditCardAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(CreditCardAuditLogDto.CreditCardId) => sort.Descending ? query.OrderByDescending(a => a.CreditCardId) : query.OrderBy(a => a.CreditCardId),
+            nameof(CreditCardAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(CreditCardAuditLogDto.CardType) => sort.Descending ? query.OrderByDescending(a => a.CardType) : query.OrderBy(a => a.CardType),
+            nameof(CreditCardAuditLogDto.CardNumber) => sort.Descending ? query.OrderByDescending(a => a.CardNumber) : query.OrderBy(a => a.CardNumber),
+            nameof(CreditCardAuditLogDto.ExpMonth) => sort.Descending ? query.OrderByDescending(a => a.ExpMonth) : query.OrderBy(a => a.ExpMonth),
+            nameof(CreditCardAuditLogDto.ExpYear) => sort.Descending ? query.OrderByDescending(a => a.ExpYear) : query.OrderBy(a => a.ExpYear),
+            nameof(CreditCardAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<CreditCardAuditLogDto> { Items = rows, TotalItems = total };
     }

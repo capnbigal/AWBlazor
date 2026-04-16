@@ -58,7 +58,17 @@
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.ProductId).ThenBy(x => x.DocumentNode)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductDocumentDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(ProductDocumentDto.DocumentNode) => sort.Descending ? query.OrderByDescending(x => x.DocumentNode) : query.OrderBy(x => x.DocumentNode),
+            nameof(ProductDocumentDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.DocumentNode),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize)
             .Select(x => new ProductDocumentDto(x.ProductId, x.DocumentNode.ToString()!, x.ModifiedDate))
             .ToListAsync(ct);

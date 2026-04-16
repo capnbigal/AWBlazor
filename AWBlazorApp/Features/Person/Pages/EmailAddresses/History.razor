@@ -67,7 +67,20 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmailAddressAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(EmailAddressAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
+            nameof(EmailAddressAuditLogDto.EmailAddressId) => sort.Descending ? query.OrderByDescending(a => a.EmailAddressId) : query.OrderBy(a => a.EmailAddressId),
+            nameof(EmailAddressAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(EmailAddressAuditLogDto.EmailAddressValue) => sort.Descending ? query.OrderByDescending(a => a.EmailAddressValue) : query.OrderBy(a => a.EmailAddressValue),
+            nameof(EmailAddressAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<EmailAddressAuditLogDto> { Items = rows, TotalItems = total };
     }

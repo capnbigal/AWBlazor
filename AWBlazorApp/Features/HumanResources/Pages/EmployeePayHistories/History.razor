@@ -64,7 +64,21 @@
         if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmployeePayHistoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(EmployeePayHistoryAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
+            nameof(EmployeePayHistoryAuditLogDto.RateChangeDate) => sort.Descending ? query.OrderByDescending(a => a.RateChangeDate) : query.OrderBy(a => a.RateChangeDate),
+            nameof(EmployeePayHistoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(EmployeePayHistoryAuditLogDto.Rate) => sort.Descending ? query.OrderByDescending(a => a.Rate) : query.OrderBy(a => a.Rate),
+            nameof(EmployeePayHistoryAuditLogDto.PayFrequency) => sort.Descending ? query.OrderByDescending(a => a.PayFrequency) : query.OrderBy(a => a.PayFrequency),
+            nameof(EmployeePayHistoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
         return new GridData<EmployeePayHistoryAuditLogDto> { Items = rows, TotalItems = total };
     }

@@ -69,7 +69,17 @@
         if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.SpecialOfferId).ThenBy(x => x.ProductId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SpecialOfferProductDto.SpecialOfferId) => sort.Descending ? query.OrderByDescending(x => x.SpecialOfferId) : query.OrderBy(x => x.SpecialOfferId),
+            nameof(SpecialOfferProductDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+            nameof(SpecialOfferProductDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.SpecialOfferId).ThenBy(x => x.ProductId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<SpecialOfferProductDto> { Items = rows, TotalItems = total };
     }

@@ -58,7 +58,18 @@
         if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.ProductModelId).ThenBy(x => x.ProductDescriptionId).ThenBy(x => x.CultureId)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductModelProductDescriptionCultureDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
+            nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId) => sort.Descending ? query.OrderByDescending(x => x.ProductDescriptionId) : query.OrderBy(x => x.ProductDescriptionId),
+            nameof(ProductModelProductDescriptionCultureDto.CultureId) => sort.Descending ? query.OrderByDescending(x => x.CultureId) : query.OrderBy(x => x.CultureId),
+            nameof(ProductModelProductDescriptionCultureDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.ProductDescriptionId).ThenBy(x => x.CultureId),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<ProductModelProductDescriptionCultureDto> { Items = rows, TotalItems = total };
     }

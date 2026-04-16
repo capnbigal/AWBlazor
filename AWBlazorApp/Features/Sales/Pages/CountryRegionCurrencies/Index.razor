@@ -61,7 +61,17 @@
         }
 
         var total = await query.CountAsync(ct);
-        var rows = await query.OrderBy(x => x.CountryRegionCode).ThenBy(x => x.CurrencyCode)
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(CountryRegionCurrencyDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
+            nameof(CountryRegionCurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
+            nameof(CountryRegionCurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.CountryRegionCode).ThenBy(x => x.CurrencyCode),
+        };
+
+        var rows = await query
             .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
         return new GridData<CountryRegionCurrencyDto> { Items = rows, TotalItems = total };
     }
