@@ -27,19 +27,19 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Business entity" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id">
-                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.BusinessEntityId)" Title="Business entity id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.BusinessEntityId)" Title="Business entity id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PersonId" Title="Person id">
-                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ContactTypeId" Title="Contact type id">
-                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ContactTypeId)" Title="Contact type id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ContactTypeId)" Title="Contact type id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

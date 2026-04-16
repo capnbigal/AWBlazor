@@ -26,19 +26,19 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="StoreDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="StoreDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="Store" PropertyName="@nameof(StoreDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Store" PropertyName="@nameof(StoreDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="Store" PropertyName="@nameof(StoreDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Store" PropertyName="@nameof(StoreDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesPersonId" Title="Sales person id">
-                <FilterTemplate><ColumnFilterButton TEntity="Store" PropertyName="@nameof(StoreDto.SalesPersonId)" Title="Sales person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Store" PropertyName="@nameof(StoreDto.SalesPersonId)" Title="Sales person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="Store" PropertyName="@nameof(StoreDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Store" PropertyName="@nameof(StoreDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

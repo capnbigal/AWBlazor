@@ -29,28 +29,28 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="AddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="AddressDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AddressLine1" Title="Line 1">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.AddressLine1)" Title="Line 1" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.AddressLine1)" Title="Line 1" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AddressLine2" Title="Line 2">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.AddressLine2)" Title="Line 2" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.AddressLine2)" Title="Line 2" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.City" Title="City">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.City)" Title="City" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.City)" Title="City" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StateProvinceId" Title="State id">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.StateProvinceId)" Title="State id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.StateProvinceId)" Title="State id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PostalCode" Title="Postal">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.PostalCode)" Title="Postal" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.PostalCode)" Title="Postal" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="Address" PropertyName="@nameof(AddressDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Address" PropertyName="@nameof(AddressDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

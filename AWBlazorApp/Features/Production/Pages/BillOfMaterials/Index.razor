@@ -26,31 +26,31 @@
         <MudNumericField T="int?" @bind-Value="filterComponentId" Label="Component id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="BillOfMaterialsDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="BillOfMaterialsDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductAssemblyId" Title="Assembly id">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.ProductAssemblyId)" Title="Assembly id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.ProductAssemblyId)" Title="Assembly id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ComponentId" Title="Component id">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.ComponentId)" Title="Component id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.ComponentId)" Title="Component id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.BomLevel" Title="Level">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.BomLevel)" Title="Level" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.BomLevel)" Title="Level" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PerAssemblyQty" Title="Qty/asm">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.PerAssemblyQty)" Title="Qty/asm" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.PerAssemblyQty)" Title="Qty/asm" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.UnitMeasureCode" Title="UoM">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.UnitMeasureCode)" Title="UoM" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.UnitMeasureCode)" Title="UoM" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterials" PropertyName="@nameof(BillOfMaterialsDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

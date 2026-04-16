@@ -30,19 +30,19 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.BusinessEntityId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type id">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumberTypeId)" Title="Type id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumberTypeId)" Title="Type id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PhoneNumber" Title="Phone">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumber)" Title="Phone" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.PhoneNumber)" Title="Phone" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonPhone" PropertyName="@nameof(PersonPhoneDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

@@ -26,25 +26,25 @@
         <MudTextField @bind-Value="filterCartId" Label="Shopping cart id" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ShoppingCartItemDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ShoppingCartId" Title="Cart id">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ShoppingCartId)" Title="Cart id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ShoppingCartId)" Title="Cart id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Quantity" Title="Qty">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DateCreated" Title="Created" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.DateCreated)" Title="Created" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.DateCreated)" Title="Created" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItem" PropertyName="@nameof(ShoppingCartItemDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

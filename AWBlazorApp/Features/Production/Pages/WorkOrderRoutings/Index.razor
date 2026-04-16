@@ -26,31 +26,31 @@
         <MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.WorkOrderId" Title="Work order">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.WorkOrderId)" Title="Work order" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.WorkOrderId)" Title="Work order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.OperationSequence" Title="Op seq">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.OperationSequence)" Title="Op seq" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.OperationSequence)" Title="Op seq" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.LocationId" Title="Location">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.LocationId)" Title="Location" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.LocationId)" Title="Location" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ScheduledStartDate" Title="Sched start" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledStartDate)" Title="Sched start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledStartDate)" Title="Sched start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ScheduledEndDate" Title="Sched end" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledEndDate)" Title="Sched end" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledEndDate)" Title="Sched end" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PlannedCost" Title="Planned cost" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.PlannedCost)" Title="Planned cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.PlannedCost)" Title="Planned cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ActualCost" Title="Actual cost" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ActualCost)" Title="Actual cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ActualCost)" Title="Actual cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

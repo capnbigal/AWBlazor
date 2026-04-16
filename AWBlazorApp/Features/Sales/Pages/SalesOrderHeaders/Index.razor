@@ -40,17 +40,17 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesOrderHeaderDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesOrderNumber" Title="Order #">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SalesOrderNumber)" Title="Order #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SalesOrderNumber)" Title="Order #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Status" Sortable="false">
                 <CellTemplate>
@@ -59,16 +59,16 @@
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.CustomerId" Title="Customer">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.CustomerId)" Title="Customer" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.CustomerId)" Title="Customer" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

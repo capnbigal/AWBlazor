@@ -1,0 +1,28 @@
+@*
+    Rendered inside a PropertyColumn's <HeaderTemplate>. Lays out the column title text
+    next to an Excel-style ColumnFilterButton that opens a distinct-values picker dialog.
+
+    Put inside HeaderTemplate (not FilterTemplate) so the filter icon is always visible in
+    the header — one click to open the dialog instead of burying the picker inside MudBlazor's
+    own filter popover.
+
+    The MudDataGrid header cell still owns the sort-on-click behaviour and the right-hand
+    sort-arrow / 3-dot menu; this component just replaces the plain title text.
+*@
+@typeparam TEntity where TEntity : class
+
+<span class="mud-data-grid-header-title-layout" style="display:inline-flex;align-items:center;gap:4px;">
+    <span>@Title</span>
+    <ColumnFilterButton TEntity="TEntity"
+                        PropertyName="@PropertyName"
+                        Title="@Title"
+                        State="State"
+                        OnChanged="OnChanged" />
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string PropertyName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public ColumnFilterState State { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

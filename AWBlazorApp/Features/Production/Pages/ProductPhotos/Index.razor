@@ -22,21 +22,21 @@
         </AuthorizeView>
     </MudStack>
 
-    <MudDataGrid T="ProductPhotoDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductPhotoDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ThumbnailPhotoFileName" Title="Thumbnail file">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.ThumbnailPhotoFileName)" Title="Thumbnail file" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.ThumbnailPhotoFileName)" Title="Thumbnail file" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.HasThumbnail" Title="Has thumb?" />
             <PropertyColumn Property="x => x.LargePhotoFileName" Title="Large file">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.LargePhotoFileName)" Title="Large file" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.LargePhotoFileName)" Title="Large file" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.HasLargePhoto" Title="Has large?" />
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductPhoto" PropertyName="@nameof(ProductPhotoDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

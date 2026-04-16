@@ -61,7 +61,13 @@ public sealed class DistinctValuesProvider(IDbContextFactory<ApplicationDbContex
         // Materialise. Search filter is applied client-side (after DISTINCT) because building a
         // SQL substring filter on non-string columns is awkward; DISTINCT already caps the
         // cardinality and the take limit bounds the rest.
-        var takeMethod = typeof(Queryable).GetMethod(nameof(Queryable.Take), new[] { typeof(IQueryable<>).MakeGenericType(property.PropertyType), typeof(int) })!
+        // Use the GetMethods/.First pattern (same as Select/Distinct/OrderBy above) because
+        // GetMethod(name, Type[]) can't match open generic signatures like Take<TSource>(IQueryable<TSource>, int);
+        // it also needs to disambiguate from the .NET 6+ Take(IQueryable<T>, Range) overload.
+        var takeMethod = typeof(Queryable).GetMethods()
+            .First(m => m.Name == nameof(Queryable.Take)
+                && m.GetParameters().Length == 2
+                && m.GetParameters()[1].ParameterType == typeof(int))
             .MakeGenericMethod(property.PropertyType);
         projected = (IQueryable)takeMethod.Invoke(null, new object[] { projected, Math.Max(take, 1) * 4 })!;
 

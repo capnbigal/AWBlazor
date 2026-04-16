@@ -36,31 +36,31 @@
         </MudPaper>
     }
 
-    <MudDataGrid T="BillOfMaterialsAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="BillOfMaterialsAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.BillOfMaterialsId" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.BillOfMaterialsId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.BillOfMaterialsId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Action" Sortable="false">
                 <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductAssemblyId" Title="Assembly">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ProductAssemblyId)" Title="Assembly" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ProductAssemblyId)" Title="Assembly" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ComponentId" Title="Component">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ComponentId)" Title="Component" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ComponentId)" Title="Component" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PerAssemblyQty" Title="Qty/asm">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.PerAssemblyQty)" Title="Qty/asm" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.PerAssemblyQty)" Title="Qty/asm" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <FilterTemplate><ColumnFilterButton TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="BillOfMaterialsAuditLog" PropertyName="@nameof(BillOfMaterialsAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="BillOfMaterialsAuditLogDto" /></PagerContent>

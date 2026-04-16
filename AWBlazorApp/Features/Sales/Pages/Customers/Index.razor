@@ -35,26 +35,26 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="CustomerDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.AccountNumber)" Title="Account #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PersonId" Title="Person id">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.PersonId)" Title="Person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StoreId" Title="Store id">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.StoreId)" Title="Store id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.StoreId)" Title="Store id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TerritoryId" Title="Territory id">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
-                <FilterTemplate><ColumnFilterButton TEntity="Customer" PropertyName="@nameof(CustomerDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

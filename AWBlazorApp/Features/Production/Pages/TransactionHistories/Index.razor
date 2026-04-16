@@ -27,31 +27,31 @@
         <FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="TransactionHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="TransactionHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ReferenceOrderId" Title="Ref order">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ReferenceOrderId)" Title="Ref order" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ReferenceOrderId)" Title="Ref order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ReferenceOrderLineId" Title="Ref line">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ReferenceOrderLineId)" Title="Ref line" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ReferenceOrderLineId)" Title="Ref line" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TransactionDate" Title="Date" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.TransactionDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.TransactionDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TransactionType" Title="Type">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.TransactionType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.TransactionType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Quantity" Title="Qty">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ActualCost" Title="Cost" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ActualCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistory" PropertyName="@nameof(TransactionHistoryDto.ActualCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

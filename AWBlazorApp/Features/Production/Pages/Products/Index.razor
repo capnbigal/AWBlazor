@@ -30,38 +30,38 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="ProductDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Id" PropertyName="@nameof(ProductDto.Id)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Name" PropertyName="@nameof(ProductDto.Name)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductNumber" Title="Number">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ProductNumber)" Title="Number" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Number" PropertyName="@nameof(ProductDto.ProductNumber)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Color" Title="Color">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Color)" Title="Color" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Color" PropertyName="@nameof(ProductDto.Color)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Size" Title="Size">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Size)" Title="Size" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Size" PropertyName="@nameof(ProductDto.Size)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.StandardCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Cost" PropertyName="@nameof(ProductDto.StandardCost)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ListPrice)" Title="List price" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="List price" PropertyName="@nameof(ProductDto.ListPrice)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductLine" Title="Line">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ProductLine)" Title="Line" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Line" PropertyName="@nameof(ProductDto.ProductLine)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Class" Title="Class">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.Class)" Title="Class" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Class" PropertyName="@nameof(ProductDto.Class)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
-                <FilterTemplate><ColumnFilterButton TEntity="Product" PropertyName="@nameof(ProductDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Modified" PropertyName="@nameof(ProductDto.ModifiedDate)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

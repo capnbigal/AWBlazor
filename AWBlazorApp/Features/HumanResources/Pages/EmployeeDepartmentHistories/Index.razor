@@ -30,25 +30,25 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DepartmentId" Title="Dept">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.DepartmentId)" Title="Dept" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.DepartmentId)" Title="Dept" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ShiftId" Title="Shift">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ShiftId)" Title="Shift" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ShiftId)" Title="Shift" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

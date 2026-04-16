@@ -27,32 +27,32 @@
         <FkSelect TValue="int" Value="@(filterTerritoryId ?? 0)" ValueChanged="@(v => { filterTerritoryId = v == 0 ? null : v; })" Label="Territory" Items="_territories" Clearable="true" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesPersonDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.TerritoryId" Title="Territory id">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Bonus" Title="Bonus" Format="C0">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Bonus)" Title="Bonus" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Bonus)" Title="Bonus" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.CommissionPct" Title="Commission %" Format="P2">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.CommissionPct)" Title="Commission %" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.CommissionPct)" Title="Commission %" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesYtd" Title="YTD" Format="C0">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesYtd)" Title="YTD" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesYtd)" Title="YTD" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesLastYear" Title="Last year" Format="C0">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesLastYear)" Title="Last year" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesLastYear)" Title="Last year" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

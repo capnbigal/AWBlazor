@@ -26,17 +26,17 @@
                  Striped="true"
                  SortMode="SortMode.Single"
                  RowsPerPage="25"
-                 FilterMode="DataGridFilterMode.ColumnFilterMenu">
+                >
         <Columns>
             <HierarchyColumn T="ProcessDto" />
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="Process" PropertyName="@nameof(ProcessDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="@nameof(ProcessDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DepartmentId" Title="Department ID">
-                <FilterTemplate><ColumnFilterButton TEntity="Process" PropertyName="@nameof(ProcessDto.DepartmentId)" Title="Department ID" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="@nameof(ProcessDto.DepartmentId)" Title="Department ID" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Recurring" SortLabel="IsRecurring">
-                <FilterTemplate><ColumnFilterButton TEntity="Process" PropertyName="IsRecurring" Title="Recurring" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="IsRecurring" Title="Recurring" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.IsRecurring ? Color.Success : Color.Default)" Size="Size.Small">
                         @(context.Item.IsRecurring ? "Yes" : "No")
@@ -44,10 +44,10 @@
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.CronSchedule" Title="Cron schedule">
-                <FilterTemplate><ColumnFilterButton TEntity="Process" PropertyName="@nameof(ProcessDto.CronSchedule)" Title="Cron schedule" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="@nameof(ProcessDto.CronSchedule)" Title="Cron schedule" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Status" SortLabel="Status">
-                <FilterTemplate><ColumnFilterButton TEntity="Process" PropertyName="Status" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="Status" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">
                         @context.Item.Status

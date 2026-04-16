@@ -30,25 +30,25 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ReviewerName" Title="Reviewer">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewerName)" Title="Reviewer" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewerName)" Title="Reviewer" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Rating" Title="Rating">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Rating)" Title="Rating" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Rating)" Title="Rating" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ReviewDate" Title="Date" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EmailAddress" Title="Email">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.EmailAddress)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.EmailAddress)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

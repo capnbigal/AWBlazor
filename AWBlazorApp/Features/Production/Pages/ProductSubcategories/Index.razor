@@ -29,19 +29,19 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductSubcategoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductSubcategoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductCategoryId" Title="Category id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.ProductCategoryId)" Title="Category id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.ProductCategoryId)" Title="Category id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductSubcategory" PropertyName="@nameof(ProductSubcategoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

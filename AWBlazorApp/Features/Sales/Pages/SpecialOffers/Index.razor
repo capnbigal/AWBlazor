@@ -29,35 +29,35 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="SpecialOfferDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SpecialOfferDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Description" Title="Description">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Description)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Description)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DiscountPct" Title="Discount" Format="P2">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.DiscountPct)" Title="Discount" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.DiscountPct)" Title="Discount" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.OfferType" Title="Type">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.OfferType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.OfferType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Category" Title="Category">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Category)" Title="Category" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.Category)" Title="Category" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.MinQty" Title="Min">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MinQty)" Title="Min" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MinQty)" Title="Min" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.MaxQty" Title="Max">
-                <FilterTemplate><ColumnFilterButton TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MaxQty)" Title="Max" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="SpecialOffer" PropertyName="@nameof(SpecialOfferDto.MaxQty)" Title="Max" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

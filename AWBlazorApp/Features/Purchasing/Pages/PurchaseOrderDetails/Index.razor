@@ -26,34 +26,34 @@
         <MudNumericField T="int?" @bind-Value="filterPurchaseOrderId" Label="PO id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="PurchaseOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="PurchaseOrderDetailDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.PurchaseOrderId)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.PurchaseOrderId)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PurchaseOrderDetailId" Title="Line #">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.PurchaseOrderDetailId)" Title="Line #" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.PurchaseOrderDetailId)" Title="Line #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.OrderQty" Title="Qty">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.OrderQty)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.OrderQty)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.UnitPrice" Title="Unit price" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.UnitPrice)" Title="Unit price" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.UnitPrice)" Title="Unit price" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.LineTotal" Title="Line total" Format="C2">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.LineTotal)" Title="Line total" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.LineTotal)" Title="Line total" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ReceivedQty" Title="Received">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.ReceivedQty)" Title="Received" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.ReceivedQty)" Title="Received" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.StockedQty" Title="Stocked">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.StockedQty)" Title="Stocked" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.StockedQty)" Title="Stocked" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DueDate" Title="Due" Format="yyyy-MM-dd">
-                <FilterTemplate><ColumnFilterButton TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.DueDate)" Title="Due" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderDetail" PropertyName="@nameof(PurchaseOrderDetailDto.DueDate)" Title="Due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

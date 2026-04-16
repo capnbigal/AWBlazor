@@ -26,16 +26,16 @@
         <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductModelIllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="ProductModelIllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductModelId" Title="Product model id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ProductModelId)" Title="Product model id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ProductModelId)" Title="Product model id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.IllustrationId" Title="Illustration id">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.IllustrationId)" Title="Illustration id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.IllustrationId)" Title="Illustration id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

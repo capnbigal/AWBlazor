@@ -40,31 +40,31 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.PersonType" Title="Type">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Title" Title="Title">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.FirstName" Title="First name">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.FirstName)" Title="First name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.FirstName)" Title="First name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.MiddleName" Title="Middle">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.MiddleName)" Title="Middle" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.MiddleName)" Title="Middle" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.LastName" Title="Last name">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.LastName)" Title="Last name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.LastName)" Title="Last name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Suffix" Title="Suffix">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Suffix)" Title="Suffix" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Suffix)" Title="Suffix" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="PersonEntity" PropertyName="@nameof(PersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

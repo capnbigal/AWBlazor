@@ -26,16 +26,16 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="UnitMeasureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25" FilterMode="DataGridFilterMode.ColumnFilterMenu">
+    <MudDataGrid T="UnitMeasureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.UnitMeasureCode" Title="Code">
-                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.UnitMeasureCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.UnitMeasureCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
-                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <FilterTemplate><ColumnFilterButton TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></FilterTemplate>
+                <HeaderTemplate><GridColumnHeader TEntity="UnitMeasure" PropertyName="@nameof(UnitMeasureDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
