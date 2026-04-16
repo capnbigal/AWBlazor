@@ -66,9 +66,9 @@
                                     </MudText>
                                 </div>
                                 <MudSpacer />
-                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small"
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" aria-label="Move up" Size="Size.Small"
                                                Disabled="@(idx == 0)" OnClick="@(() => MoveAsync(card, -1))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small"
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" aria-label="Move down" Size="Size.Small"
                                                Disabled="@(idx == items.Count - 1)" OnClick="@(() => MoveAsync(card, 1))" />
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
                                     <MudMenuItem OnClick="@(() => ResizeAsync(card, 3))">Quarter width</MudMenuItem>

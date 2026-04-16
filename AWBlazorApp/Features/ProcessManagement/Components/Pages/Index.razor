@@ -63,21 +63,21 @@
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
                         <MudTooltip Text="Trigger execution">
-                            <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch"
+                            <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" aria-label="Launch"
                                            Size="Size.Small"
                                            Color="Color.Primary"
                                            OnClick="@(() => TriggerAsync(context.Item))" />
                         </MudTooltip>
                         <MudTooltip Text="Timeline">
-                            <MudIconButton Icon="@Icons.Material.Filled.Timeline"
+                            <MudIconButton Icon="@Icons.Material.Filled.Timeline" aria-label="View timeline"
                                            Size="Size.Small"
                                            Color="Color.Info"
                                            OnClick="@(() => Navigation.NavigateTo($"processes/{context.Item.Id}/timeline"))" />
                         </MudTooltip>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit"
                                        Size="Size.Small"
                                        OnClick="@(() => OpenEditAsync(context.Item))" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
                                        OnClick="@(() => DeleteAsync(context.Item))" />

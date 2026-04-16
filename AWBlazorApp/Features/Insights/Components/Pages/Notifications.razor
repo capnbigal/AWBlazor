@@ -59,9 +59,9 @@
                 <MudTd>@(context.LastValue?.ToString("N0") ?? "—")</MudTd>
                 <MudTd>@(context.LastTriggeredDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudTd>
                 <MudTd>
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small"
                                    OnClick="@(() => OpenEditAsync(context))" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error"
                                    OnClick="@(() => DeleteAsync(context))" />
                 </MudTd>
             </RowTemplate>

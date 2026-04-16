@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/cultures"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/cultures"))" />
         <MudText Typo="Typo.h4">@(string.IsNullOrEmpty(Code) ? "Culture history" : $"History for culture {Code}")</MudText>
         <MudSpacer />
         @if (!string.IsNullOrEmpty(Code))

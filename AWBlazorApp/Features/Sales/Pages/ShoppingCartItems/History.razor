@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/shopping-cart-items"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/shopping-cart-items"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Shopping cart item history" : $"History for cart item #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)

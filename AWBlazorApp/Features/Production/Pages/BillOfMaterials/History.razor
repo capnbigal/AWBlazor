@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/bill-of-materials"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/bill-of-materials"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Bill of materials history" : $"History for BOM row #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)

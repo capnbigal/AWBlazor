@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/work-orders"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/work-orders"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Work order history" : $"History for work order #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)

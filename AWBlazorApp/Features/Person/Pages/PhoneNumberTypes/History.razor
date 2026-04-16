@@ -10,7 +10,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/phone-number-types"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/phone-number-types"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Phone number type history" : $"History for phone type #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)
