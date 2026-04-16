@@ -1,12 +1,14 @@
-using AWBlazorApp.Features.AdventureWorks.Endpoints;
+using AWBlazorApp.Features.Sales.Endpoints;
+using AWBlazorApp.Features.Production.Endpoints;
+using AWBlazorApp.Features.HumanResources.Endpoints;
+using AWBlazorApp.Features.Purchasing.Endpoints;
+using AWBlazorApp.Features.Person.Endpoints;
 using AWBlazorApp.Features.Forecasting.Endpoints;
 using AWBlazorApp.Features.ProcessManagement.Endpoints;
 using AWBlazorApp.Features.ToolSlots.Endpoints;
 using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Shared.Endpoints;
-using AWBlazorApp.Features.AdventureWorks.Endpoints;
-using AWBlazorApp.Features.Admin.Endpoints;
 using AWBlazorApp.Features.Admin.Endpoints;
 
 namespace AWBlazorApp.App.Routing;

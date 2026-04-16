@@ -1,0 +1,135 @@
+@page "/aw/product-subcategories"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Models
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Product subcategories</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product subcategories</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductSubcategory</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-subcategories/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New subcategory</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterCategoryId" Label="Category id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="ProductSubcategoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.ProductCategoryId" Title="Category id" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductSubcategoryDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductSubcategoryDto> grid = null!;
+    private string? filterName;
+    private int? filterCategoryId;
+
+    private async Task<GridData<ProductSubcategoryDto>> LoadServerDataAsync(GridState<ProductSubcategoryDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ProductSubcategories.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterName))
+        {
+            var needle = filterName.Trim();
+            query = query.Where(x => x.Name.Contains(needle));
+        }
+        if (filterCategoryId.HasValue) query = query.Where(x => x.ProductCategoryId == filterCategoryId.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ProductSubcategoryDto.Id)                => sort.Descending ? query.OrderByDescending(x => x.Id)                : query.OrderBy(x => x.Id),
+            nameof(ProductSubcategoryDto.ProductCategoryId) => sort.Descending ? query.OrderByDescending(x => x.ProductCategoryId) : query.OrderBy(x => x.ProductCategoryId),
+            nameof(ProductSubcategoryDto.Name)              => sort.Descending ? query.OrderByDescending(x => x.Name)              : query.OrderBy(x => x.Name),
+            nameof(ProductSubcategoryDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
+            _                                               => query.OrderBy(x => x.Id),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<ProductSubcategoryDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductSubcategoryDialog>("New subcategory", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Subcategory created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductSubcategoryDto row)
+    {
+        var parameters = new DialogParameters<ProductSubcategoryDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductSubcategoryDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Subcategory updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductSubcategoryDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete subcategory?", $"Permanently delete subcategory #{row.Id} \"{row.Name}\"?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductSubcategories.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Subcategory no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductSubcategoryAuditLogs.Add(ProductSubcategoryAuditService.RecordDelete(entity, changedBy));
+        db.ProductSubcategories.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Subcategory deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductSubcategoryDto row) => Navigation.NavigateTo($"aw/product-subcategories/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

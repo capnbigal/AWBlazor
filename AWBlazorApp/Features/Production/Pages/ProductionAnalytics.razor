@@ -1,0 +1,328 @@
+@page "/analytics/production"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Shared.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AnalyticsCacheService Cache
+
+<PageTitle>Production analytics</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Production analytics</MudText>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Loading production data...</MudText>
+    }
+    else
+    {
+        @* ── KPI row ──────────────────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Construction" Color="Color.Primary"
+                         Value="@totalWorkOrders.ToString("N0")" Label="Total work orders" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"
+                         Value="@($"{completedPct:N1}%")" Label="Completion rate" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Warning" Color="Color.Error"
+                         Value="@($"{overallScrapRate:N2}%")" Label="Scrap rate"
+                         Trend="@scrapTrend" TrendDirection="@scrapTrendDir" />
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <KpiCard Icon="@Icons.Material.Filled.Timer" Color="Color.Info"
+                         Value="@($"{avgDurationDays:N1} days")" Label="Avg manufacturing time" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Work order volume over time ──────────────────────────────────── *@
+        <TimeSeriesChart Title="Work orders by month (started / completed / overdue)"
+                         ChartType="ChartType.Bar"
+                         Labels="@woLabels"
+                         Series="@woSeries"
+                         Periods="@(new[] { "12M", "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Scrap rate trend ─────────────────────────────────────────────── *@
+        <TimeSeriesChart Title="Monthly scrap rate (%)"
+                         ChartType="ChartType.Line"
+                         Labels="@scrapLabels"
+                         Series="@scrapSeries"
+                         Periods="@(new[] { "12M", "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Manufacturing throughput ─────────────────────────────────────── *@
+        <TimeSeriesChart Title="Average manufacturing duration (days) by month"
+                         ChartType="ChartType.Line"
+                         Labels="@throughputLabels"
+                         Series="@throughputSeries"
+                         Periods="@(new[] { "12M", "24M", "All" })"
+                         ShowGranularity="false" />
+
+        @* ── Product lifecycle ────────────────────────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Product lifecycle overview</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Elevation="0">
+                        <MudText Typo="Typo.h3" Color="Color.Success">@activeProducts</MudText>
+                        <MudText Typo="Typo.subtitle2">Currently selling</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">SellStartDate set, SellEndDate null</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Elevation="0">
+                        <MudText Typo="Typo.h3" Color="Color.Warning">@discontinuedProducts</MudText>
+                        <MudText Typo="Typo.subtitle2">Discontinued</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">DiscontinuedDate is set</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Elevation="0">
+                        <MudText Typo="Typo.h3" Color="Color.Default">@endedProducts</MudText>
+                        <MudText Typo="Typo.subtitle2">Sales ended</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">SellEndDate set, not discontinued</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @* ── Top 10 products by work order volume ─────────────────────────── *@
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Top 10 products by work order quantity</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th style="text-align:right">Orders</th>
+                        <th style="text-align:right">Total qty</th>
+                        <th style="text-align:right">Scrapped</th>
+                        <th>Scrap %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var rank = 0; }
+                    @foreach (var p in topWoProducts)
+                    {
+                        rank++;
+                        <tr>
+                            <td>@rank</td>
+                            <td><strong>@p.Name</strong></td>
+                            <td style="text-align:right">@p.OrderCount.ToString("N0")</td>
+                            <td style="text-align:right">@p.TotalQty.ToString("N0")</td>
+                            <td style="text-align:right">@p.ScrappedQty.ToString("N0")</td>
+                            <td style="min-width:120px">
+                                <MudProgressLinear Value="@p.ScrapPct" Color="@(p.ScrapPct > 5 ? Color.Error : Color.Success)" Rounded="true" Size="Size.Small" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+
+    // KPIs
+    private int totalWorkOrders;
+    private double completedPct;
+    private double overallScrapRate;
+    private double avgDurationDays;
+    private string scrapTrend = "";
+    private TrendDirection scrapTrendDir;
+
+    // Work order volume
+    private string[] woLabels = [];
+    private List<ChartSeries<double>> woSeries = [];
+
+    // Scrap rate trend
+    private string[] scrapLabels = [];
+    private List<ChartSeries<double>> scrapSeries = [];
+
+    // Throughput
+    private string[] throughputLabels = [];
+    private List<ChartSeries<double>> throughputSeries = [];
+
+    // Product lifecycle
+    private int activeProducts;
+    private int discontinuedProducts;
+    private int endedProducts;
+
+    // Top products by WO
+    private List<WoProduct> topWoProducts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var data = await Cache.GetOrCreateAsync(Cache.Key("production", "all"), LoadDataAsync);
+        totalWorkOrders = data.TotalWorkOrders;
+        completedPct = data.CompletedPct;
+        overallScrapRate = data.OverallScrapRate;
+        avgDurationDays = data.AvgDurationDays;
+        scrapTrend = data.ScrapTrend;
+        scrapTrendDir = data.ScrapTrendDir;
+        woLabels = data.WoLabels;
+        woSeries = data.WoSeries;
+        scrapLabels = data.ScrapLabels;
+        scrapSeries = data.ScrapSeries;
+        throughputLabels = data.ThroughputLabels;
+        throughputSeries = data.ThroughputSeries;
+        activeProducts = data.ActiveProducts;
+        discontinuedProducts = data.DiscontinuedProducts;
+        endedProducts = data.EndedProducts;
+        topWoProducts = data.TopWoProducts;
+        loading = false;
+    }
+
+    private async Task<ProductionData> LoadDataAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var result = new ProductionData();
+
+        // ── KPIs (SQL-side aggregation) ──────────────────────────────────────
+        result.TotalWorkOrders = await db.WorkOrders.CountAsync();
+        var completedCount = await db.WorkOrders.CountAsync(w => w.EndDate != null);
+        result.CompletedPct = result.TotalWorkOrders > 0
+            ? (double)completedCount / result.TotalWorkOrders * 100 : 0;
+
+        var totalQty = await db.WorkOrders.SumAsync(w => (long)w.OrderQty);
+        var totalScrapped = await db.WorkOrders.SumAsync(w => (long)w.ScrappedQty);
+        result.OverallScrapRate = totalQty > 0 ? (double)totalScrapped / totalQty * 100 : 0;
+
+        result.AvgDurationDays = await db.WorkOrders
+            .Where(w => w.EndDate != null)
+            .AverageAsync(w => (double)EF.Functions.DateDiffDay(w.StartDate, w.EndDate!.Value));
+
+        // Scrap trend: last 12mo vs prior 12mo (SQL-side)
+        var maxDate = await db.WorkOrders.MaxAsync(w => w.StartDate);
+        var cut12 = maxDate.AddMonths(-12);
+        var cut24 = maxDate.AddMonths(-24);
+
+        var recentQty = await db.WorkOrders.Where(w => w.StartDate > cut12).SumAsync(w => (long)w.OrderQty);
+        var recentScrapped = await db.WorkOrders.Where(w => w.StartDate > cut12).SumAsync(w => (long)w.ScrappedQty);
+        var priorQty = await db.WorkOrders.Where(w => w.StartDate > cut24 && w.StartDate <= cut12).SumAsync(w => (long)w.OrderQty);
+        var priorScrapped = await db.WorkOrders.Where(w => w.StartDate > cut24 && w.StartDate <= cut12).SumAsync(w => (long)w.ScrappedQty);
+
+        var recentScrap = recentQty > 0 ? (double)recentScrapped / recentQty * 100 : 0;
+        var priorScrap = priorQty > 0 ? (double)priorScrapped / priorQty * 100 : 0;
+        if (priorScrap > 0)
+        {
+            var diff = recentScrap - priorScrap;
+            result.ScrapTrend = $"{diff:+0.00;-0.00}pp vs prior 12mo";
+            result.ScrapTrendDir = diff <= 0 ? TrendDirection.Up : TrendDirection.Down;
+        }
+
+        // ── Work order volume by month (SQL GroupBy) ─────────────────────────
+        var startedByMonth = await db.WorkOrders.AsNoTracking()
+            .GroupBy(w => new { w.StartDate.Year, w.StartDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = (double)g.Count() })
+            .ToListAsync();
+        var startedDict = startedByMonth.ToDictionary(x => $"{x.Year}-{x.Month:D2}", x => x.Count);
+
+        var completedByMonth = await db.WorkOrders.AsNoTracking()
+            .Where(w => w.EndDate != null)
+            .GroupBy(w => new { w.EndDate!.Value.Year, w.EndDate.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = (double)g.Count() })
+            .ToListAsync();
+        var completedDict = completedByMonth.ToDictionary(x => $"{x.Year}-{x.Month:D2}", x => x.Count);
+
+        var overdueByMonth = await db.WorkOrders.AsNoTracking()
+            .Where(w => w.EndDate == null || w.EndDate > w.DueDate)
+            .GroupBy(w => new { w.DueDate.Year, w.DueDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = (double)g.Count() })
+            .ToListAsync();
+        var overdueDict = overdueByMonth.ToDictionary(x => $"{x.Year}-{x.Month:D2}", x => x.Count);
+
+        var allMonths = startedDict.Keys.Union(completedDict.Keys).Union(overdueDict.Keys).OrderBy(k => k).ToArray();
+        result.WoLabels = allMonths;
+        result.WoSeries =
+        [
+            new ChartSeries<double> { Name = "Started", Data = allMonths.Select(m => startedDict.GetValueOrDefault(m)).ToArray() },
+            new ChartSeries<double> { Name = "Completed", Data = allMonths.Select(m => completedDict.GetValueOrDefault(m)).ToArray() },
+            new ChartSeries<double> { Name = "Overdue", Data = allMonths.Select(m => overdueDict.GetValueOrDefault(m)).ToArray() },
+        ];
+
+        // ── Scrap rate trend (monthly, SQL GroupBy) ──────────────────────────
+        var scrapByMonth = await db.WorkOrders.AsNoTracking()
+            .GroupBy(w => new { w.StartDate.Year, w.StartDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Qty = g.Sum(w => (long)w.OrderQty), Scrapped = g.Sum(w => (long)w.ScrappedQty) })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        result.ScrapLabels = scrapByMonth.Select(x => $"{x.Year}-{x.Month:D2}").ToArray();
+        result.ScrapSeries = [new ChartSeries<double> { Name = "Scrap %", Data = scrapByMonth.Select(x => x.Qty > 0 ? (double)x.Scrapped / x.Qty * 100 : 0).ToArray() }];
+
+        // ── Manufacturing throughput (avg days by month, SQL GroupBy) ────────
+        var durationByMonth = await db.WorkOrders.AsNoTracking()
+            .Where(w => w.EndDate != null)
+            .GroupBy(w => new { w.EndDate!.Value.Year, w.EndDate.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Avg = g.Average(w => (double)EF.Functions.DateDiffDay(w.StartDate, w.EndDate!.Value)) })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        result.ThroughputLabels = durationByMonth.Select(x => $"{x.Year}-{x.Month:D2}").ToArray();
+        result.ThroughputSeries = [new ChartSeries<double> { Name = "Avg days", Data = durationByMonth.Select(x => x.Avg).ToArray() }];
+
+        // ── Product lifecycle (SQL-side counts) ──────────────────────────────
+        result.ActiveProducts = await db.Products.CountAsync(p => p.SellEndDate == null && p.DiscontinuedDate == null);
+        result.DiscontinuedProducts = await db.Products.CountAsync(p => p.DiscontinuedDate != null);
+        result.EndedProducts = await db.Products.CountAsync(p => p.SellEndDate != null && p.DiscontinuedDate == null);
+
+        // ── Top products by WO (SQL GroupBy) ─────────────────────────────────
+        var productNames = await db.Products.AsNoTracking()
+            .Select(p => new { p.Id, p.Name })
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var topWoData = await db.WorkOrders.AsNoTracking()
+            .GroupBy(w => w.ProductId)
+            .Select(g => new { ProductId = g.Key, OrderCount = g.Count(), TotalQty = g.Sum(w => (long)w.OrderQty), ScrappedQty = g.Sum(w => (long)w.ScrappedQty) })
+            .OrderByDescending(x => x.TotalQty)
+            .Take(10)
+            .ToListAsync();
+
+        result.TopWoProducts = topWoData.Select(x => new WoProduct
+        {
+            Name = productNames.GetValueOrDefault(x.ProductId, $"Product {x.ProductId}"),
+            OrderCount = x.OrderCount,
+            TotalQty = x.TotalQty,
+            ScrappedQty = x.ScrappedQty,
+            ScrapPct = x.TotalQty > 0 ? (double)x.ScrappedQty / x.TotalQty * 100 : 0,
+        }).ToList();
+
+        return result;
+    }
+
+    private sealed class ProductionData
+    {
+        public int TotalWorkOrders { get; set; }
+        public double CompletedPct { get; set; }
+        public double OverallScrapRate { get; set; }
+        public double AvgDurationDays { get; set; }
+        public string ScrapTrend { get; set; } = "";
+        public TrendDirection ScrapTrendDir { get; set; }
+        public string[] WoLabels { get; set; } = [];
+        public List<ChartSeries<double>> WoSeries { get; set; } = [];
+        public string[] ScrapLabels { get; set; } = [];
+        public List<ChartSeries<double>> ScrapSeries { get; set; } = [];
+        public string[] ThroughputLabels { get; set; } = [];
+        public List<ChartSeries<double>> ThroughputSeries { get; set; } = [];
+        public int ActiveProducts { get; set; }
+        public int DiscontinuedProducts { get; set; }
+        public int EndedProducts { get; set; }
+        public List<WoProduct> TopWoProducts { get; set; } = [];
+    }
+
+    private sealed class WoProduct
+    {
+        public string Name { get; init; } = "";
+        public int OrderCount { get; init; }
+        public long TotalQty { get; init; }
+        public long ScrappedQty { get; init; }
+        public double ScrapPct { get; init; }
+    }
+}

@@ -3,6 +3,9 @@ namespace AWBlazorApp.Shared.Models;
 /// <summary>Standard response from POST/PATCH endpoints that mutate a single record.</summary>
 public sealed record IdResponse(object Id);
 
+/// <summary>Response from POST/PATCH endpoints whose entity has a string-typed primary key.</summary>
+public sealed record StringIdResponse(string Id);
+
 /// <summary>
 /// Response from POST/PATCH endpoints whose entity has a composite primary key. The
 /// <c>Key</c> dictionary carries each key column as a name/value pair so the caller can

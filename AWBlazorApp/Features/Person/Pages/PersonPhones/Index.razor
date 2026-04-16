@@ -1,0 +1,122 @@
+@page "/aw/person-phones"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Person.Domain
+@using AWBlazorApp.Features.Person.Models
+@using AWBlazorApp.Features.Person.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Person phones</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Person phones</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Person.PersonPhone · 3-column composite PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/person-phones/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New phone</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Person" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><FkSelect TValue="int" Value="@(filterPhoneNumberTypeId ?? 0)" ValueChanged="@(v => { filterPhoneNumberTypeId = v == 0 ? null : v; })" Label="Phone number type" Items="_phoneNumberTypes" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="PersonPhoneDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Person id" />
+            <PropertyColumn Property="x => x.PhoneNumberTypeId" Title="Type id" />
+            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="PersonPhoneDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<PersonPhoneDto> grid = null!;
+    private int? filterBusinessEntityId;
+    private int? filterPhoneNumberTypeId;
+    private List<LookupItem<int>> _phoneNumberTypes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _phoneNumberTypes = await Lookup.GetPhoneNumberTypesAsync();
+    }
+
+    private async Task<GridData<PersonPhoneDto>> LoadServerDataAsync(GridState<PersonPhoneDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.PersonPhones.AsNoTracking();
+        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        if (filterPhoneNumberTypeId.HasValue) query = query.Where(x => x.PhoneNumberTypeId == filterPhoneNumberTypeId.Value);
+
+        var total = await query.CountAsync(ct);
+        var rows = await query
+            .OrderBy(x => x.BusinessEntityId).ThenBy(x => x.PhoneNumberTypeId).ThenBy(x => x.PhoneNumber)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<PersonPhoneDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<PersonPhoneDialog>("New phone", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Phone created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(PersonPhoneDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete phone?", $"Permanently delete phone ({row.BusinessEntityId}, {row.PhoneNumber}, {row.PhoneNumberTypeId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.PersonPhones.FirstOrDefaultAsync(t =>
+            t.BusinessEntityId == row.BusinessEntityId
+            && t.PhoneNumber == row.PhoneNumber
+            && t.PhoneNumberTypeId == row.PhoneNumberTypeId);
+        if (entity is null) { Snackbar.Add("Phone no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordDelete(entity, changedBy));
+        db.PersonPhones.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Phone deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(PersonPhoneDto row)
+        => Navigation.NavigateTo($"aw/person-phones/history?businessEntityId={row.BusinessEntityId}&phoneNumber={Uri.EscapeDataString(row.PhoneNumber)}&phoneNumberTypeId={row.PhoneNumberTypeId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

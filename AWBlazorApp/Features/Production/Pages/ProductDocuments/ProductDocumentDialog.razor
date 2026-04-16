@@ -1,0 +1,82 @@
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Models
+@using AWBlazorApp.Features.Production.Audit
+@using AWBlazorApp.Shared.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductDocumentRequest> CreateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">Link a product to a document</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@createModel.DocumentNode" ValueChanged="@((string? v) => createModel = createModel with { DocumentNode = v })" Label="Document node (e.g. /1/)" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm form = null!;
+    private CreateProductDocumentRequest createModel = new();
+    private bool saving;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+
+            var node = HierarchyId.Parse(createModel.DocumentNode!);
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (await db.ProductDocuments.AnyAsync(x =>
+                    x.ProductId == createModel.ProductId && x.DocumentNode == node))
+            {
+                Snackbar.Add("Link already exists.", Severity.Error);
+                return;
+            }
+
+            var changedBy = await GetCurrentUserNameAsync();
+            var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.ProductDocuments.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+            {
+                Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                return;
+            }
+            db.ProductDocumentAuditLogs.Add(ProductDocumentAuditService.RecordCreate(entity, changedBy));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

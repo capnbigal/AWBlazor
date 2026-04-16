@@ -1,0 +1,72 @@
+@using AWBlazorApp.Features.Purchasing.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else if (lineItems.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="my-2">No line items found.</MudAlert>
+}
+else
+{
+    <div class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Line items — @lineItems.Count item(s), total: @lineItems.Sum(x => x.LineTotal).ToString("C2")</MudText>
+        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+            <thead>
+                <tr><th>Detail #</th><th>Product</th><th>Due date</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit price</th><th style="text-align:right">Line total</th><th style="text-align:right">Received</th><th style="text-align:right">Rejected</th><th style="text-align:right">Stocked</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var li in lineItems)
+                {
+                    <tr><td>@li.DetailId</td><td><MudLink Href="aw/products" Color="Color.Primary">@li.ProductName</MudLink></td><td>@li.DueDate.ToString("yyyy-MM-dd")</td><td style="text-align:right">@li.OrderQty</td><td style="text-align:right">@li.UnitPrice.ToString("C2")</td><td style="text-align:right"><strong>@li.LineTotal.ToString("C2")</strong></td><td style="text-align:right">@li.ReceivedQty.ToString("N1")</td><td style="text-align:right">@li.RejectedQty.ToString("N1")</td><td style="text-align:right">@li.StockedQty.ToString("N1")</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </div>
+}
+
+@code {
+    [Parameter] public int PurchaseOrderId { get; set; }
+
+    private bool loading = true;
+    private List<LineItemRow> lineItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var products = await db.Products.AsNoTracking().Select(p => new { p.Id, p.Name }).ToDictionaryAsync(p => p.Id, p => p.Name);
+        var details = await db.PurchaseOrderDetails.AsNoTracking()
+            .Where(d => d.PurchaseOrderId == PurchaseOrderId)
+            .OrderBy(d => d.PurchaseOrderDetailId)
+            .ToListAsync();
+
+        lineItems = details.Select(d => new LineItemRow
+        {
+            DetailId = d.PurchaseOrderDetailId,
+            ProductName = products.GetValueOrDefault(d.ProductId, $"Product {d.ProductId}"),
+            DueDate = d.DueDate,
+            OrderQty = d.OrderQty,
+            UnitPrice = d.UnitPrice,
+            LineTotal = d.LineTotal,
+            ReceivedQty = d.ReceivedQty,
+            RejectedQty = d.RejectedQty,
+            StockedQty = d.StockedQty,
+        }).ToList();
+        loading = false;
+    }
+
+    private sealed class LineItemRow
+    {
+        public int DetailId { get; init; }
+        public string ProductName { get; init; } = "";
+        public DateTime DueDate { get; init; }
+        public short OrderQty { get; init; }
+        public decimal UnitPrice { get; init; }
+        public decimal LineTotal { get; init; }
+        public decimal ReceivedQty { get; init; }
+        public decimal RejectedQty { get; init; }
+        public decimal StockedQty { get; init; }
+    }
+}

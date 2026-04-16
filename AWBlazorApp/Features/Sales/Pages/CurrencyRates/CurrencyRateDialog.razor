@@ -1,0 +1,157 @@
+@using AWBlazorApp.Features.Sales.Domain
+@using AWBlazorApp.Features.Sales.Models
+@using AWBlazorApp.Features.Sales.Audit
+@using AWBlazorApp.Shared.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateCurrencyRateRequest> CreateValidator
+@inject MudFormValidator<UpdateCurrencyRateRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create currency rate" : $"Edit rate #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudDatePicker Date="@createModel.CurrencyRateDate" DateChanged="@((DateTime? v) => createModel = createModel with { CurrencyRateDate = v ?? DateTime.UtcNow.Date })" Label="Rate date" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="string" Value="@createModel.FromCurrencyCode" ValueChanged="@((string v) => createModel = createModel with { FromCurrencyCode = v })" Label="From currency" Required="true" Items="_currencies" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="string" Value="@createModel.ToCurrencyCode" ValueChanged="@((string v) => createModel = createModel with { ToCurrencyCode = v })" Label="To currency" Required="true" Items="_currencies" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal" Value="@createModel.AverageRate" ValueChanged="@((decimal v) => createModel = createModel with { AverageRate = v })" Label="Average rate" Variant="Variant.Outlined" Required="true" Step="0.0001M" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal" Value="@createModel.EndOfDayRate" ValueChanged="@((decimal v) => createModel = createModel with { EndOfDayRate = v })" Label="End-of-day rate" Variant="Variant.Outlined" Required="true" Step="0.0001M" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudDatePicker Date="@updateModel.CurrencyRateDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { CurrencyRateDate = v })" Label="Rate date" Variant="Variant.Outlined" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="string?" Value="@updateModel.FromCurrencyCode" ValueChanged="@((string? v) => updateModel = updateModel with { FromCurrencyCode = v })" Label="From currency" Clearable="true" Items="_currenciesNullable" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="string?" Value="@updateModel.ToCurrencyCode" ValueChanged="@((string? v) => updateModel = updateModel with { ToCurrencyCode = v })" Label="To currency" Clearable="true" Items="_currenciesNullable" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal?" Value="@updateModel.AverageRate" ValueChanged="@((decimal? v) => updateModel = updateModel with { AverageRate = v })" Label="Average rate" Variant="Variant.Outlined" Clearable="true" Step="0.0001M" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal?" Value="@updateModel.EndOfDayRate" ValueChanged="@((decimal? v) => updateModel = updateModel with { EndOfDayRate = v })" Label="End-of-day rate" Variant="Variant.Outlined" Clearable="true" Step="0.0001M" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CurrencyRateDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateCurrencyRateRequest createModel = new() { CurrencyRateDate = DateTime.UtcNow.Date };
+    private UpdateCurrencyRateRequest updateModel = new();
+    private bool saving;
+    private List<LookupItem<string>> _currencies = [];
+    private List<LookupItem<string?>> _currenciesNullable = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currencies = await Lookup.GetCurrenciesAsync();
+        _currenciesNullable = _currencies.Select(x => new LookupItem<string?>(x.Id, x.DisplayText)).ToList();
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateCurrencyRateRequest
+            {
+                CurrencyRateDate = Model.CurrencyRateDate,
+                FromCurrencyCode = Model.FromCurrencyCode,
+                ToCurrencyCode = Model.ToCurrencyCode,
+                AverageRate = Model.AverageRate,
+                EndOfDayRate = Model.EndOfDayRate,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.CurrencyRates.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.CurrencyRates.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = CurrencyRateAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

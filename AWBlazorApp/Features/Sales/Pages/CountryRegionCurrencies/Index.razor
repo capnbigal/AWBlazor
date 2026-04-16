@@ -1,0 +1,110 @@
+@page "/aw/country-region-currencies"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Sales.Domain
+@using AWBlazorApp.Features.Sales.Models
+@using AWBlazorApp.Features.Sales.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Country ↔ currency</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Country ↔ currency</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.CountryRegionCurrency · composite PK (CountryRegionCode, CurrencyCode)</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/country-region-currencies/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudTextField @bind-Value="filterCountry" Label="Country code" Variant="Variant.Outlined" MaxLength="3" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="CountryRegionCurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.CountryRegionCode" Title="Country code" />
+            <PropertyColumn Property="x => x.CurrencyCode" Title="Currency code" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="CountryRegionCurrencyDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<CountryRegionCurrencyDto> grid = null!;
+    private string? filterCountry;
+
+    private async Task<GridData<CountryRegionCurrencyDto>> LoadServerDataAsync(GridState<CountryRegionCurrencyDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.CountryRegionCurrencies.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterCountry))
+        {
+            var c = filterCountry.Trim();
+            query = query.Where(x => x.CountryRegionCode == c);
+        }
+
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.CountryRegionCode).ThenBy(x => x.CurrencyCode)
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<CountryRegionCurrencyDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<CountryRegionCurrencyDialog>("Link a currency to a country", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(CountryRegionCurrencyDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete link?", $"Permanently delete link ({row.CountryRegionCode}, {row.CurrencyCode})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.CountryRegionCurrencies
+            .FirstOrDefaultAsync(t => t.CountryRegionCode == row.CountryRegionCode && t.CurrencyCode == row.CurrencyCode);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.CountryRegionCurrencyAuditLogs.Add(CountryRegionCurrencyAuditService.RecordDelete(entity, changedBy));
+        db.CountryRegionCurrencies.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Link deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(CountryRegionCurrencyDto row)
+        => Navigation.NavigateTo($"aw/country-region-currencies/history?countryRegionCode={row.CountryRegionCode}&currencyCode={row.CurrencyCode}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -34,13 +34,13 @@ public sealed class SavedQueryRunner(IDbContextFactory<ApplicationDbContext> dbF
     {
         return q.Metric switch
         {
-            QueryMetric.SalesOrderCount        => await db.SalesOrderHeaders.Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate)).CountAsync(ct),
-            QueryMetric.TotalSalesRevenue      => (double)await db.SalesOrderHeaders.Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate)).SumAsync(o => o.TotalDue, ct),
-            QueryMetric.AverageOrderValue      => (double)await db.SalesOrderHeaders.Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate)).AverageAsync(o => o.TotalDue, ct),
+            QueryMetric.SalesOrderCount        => await db.SalesOrderHeaders.Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate)).CountAsync(ct),
+            QueryMetric.TotalSalesRevenue      => (double)await db.SalesOrderHeaders.Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate)).SumAsync(o => o.TotalDue, ct),
+            QueryMetric.AverageOrderValue      => (double)await db.SalesOrderHeaders.Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate)).AverageAsync(o => o.TotalDue, ct),
             QueryMetric.OpenWorkOrderCount     => await db.WorkOrders.CountAsync(w => w.EndDate == null, ct),
-            QueryMetric.WorkOrderCount         => await db.WorkOrders.Where(DateFilter<Features.AdventureWorks.Domain.WorkOrder>(q, w => w.StartDate)).CountAsync(ct),
-            QueryMetric.PurchaseOrderCount     => await db.PurchaseOrderHeaders.Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate)).CountAsync(ct),
-            QueryMetric.TotalPurchaseSpend     => (double)await db.PurchaseOrderHeaders.Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate)).SumAsync(p => p.TotalDue, ct),
+            QueryMetric.WorkOrderCount         => await db.WorkOrders.Where(DateFilter<Features.Production.Domain.WorkOrder>(q, w => w.StartDate)).CountAsync(ct),
+            QueryMetric.PurchaseOrderCount     => await db.PurchaseOrderHeaders.Where(DateFilter<Features.Purchasing.Domain.PurchaseOrderHeader>(q, p => p.OrderDate)).CountAsync(ct),
+            QueryMetric.TotalPurchaseSpend     => (double)await db.PurchaseOrderHeaders.Where(DateFilter<Features.Purchasing.Domain.PurchaseOrderHeader>(q, p => p.OrderDate)).SumAsync(p => p.TotalDue, ct),
             QueryMetric.ActiveForecastCount    => await db.ForecastDefinitions.CountAsync(f => f.DeletedDate == null && f.Status == ForecastStatus.Active, ct),
             QueryMetric.ActiveProcessCount     => await db.Processes.CountAsync(p => p.DeletedDate == null && p.Status == ProcessStatus.Active, ct),
             QueryMetric.RegisteredUserCount    => await db.Users.CountAsync(ct),
@@ -57,38 +57,38 @@ public sealed class SavedQueryRunner(IDbContextFactory<ApplicationDbContext> dbF
         return q.Metric switch
         {
             QueryMetric.SalesOrderCount => ToBuckets(await db.SalesOrderHeaders
-                .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, g))
+                .Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate))
+                .GroupBy(IntBucketSelector<Features.Sales.Domain.SalesOrderHeader>(o => o.OrderDate, g))
                 .Select(grp => new BucketRow(grp.Key, grp.Count()))
                 .ToListAsync(ct), g),
 
             QueryMetric.TotalSalesRevenue => ToBuckets(await db.SalesOrderHeaders
-                .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, g))
+                .Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate))
+                .GroupBy(IntBucketSelector<Features.Sales.Domain.SalesOrderHeader>(o => o.OrderDate, g))
                 .Select(grp => new BucketRow(grp.Key, (double)grp.Sum(x => x.TotalDue)))
                 .ToListAsync(ct), g),
 
             QueryMetric.AverageOrderValue => ToBuckets(await db.SalesOrderHeaders
-                .Where(DateFilter<Features.AdventureWorks.Domain.SalesOrderHeader>(q, o => o.OrderDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.SalesOrderHeader>(o => o.OrderDate, g))
+                .Where(DateFilter<Features.Sales.Domain.SalesOrderHeader>(q, o => o.OrderDate))
+                .GroupBy(IntBucketSelector<Features.Sales.Domain.SalesOrderHeader>(o => o.OrderDate, g))
                 .Select(grp => new BucketRow(grp.Key, (double)grp.Average(x => x.TotalDue)))
                 .ToListAsync(ct), g),
 
             QueryMetric.WorkOrderCount => ToBuckets(await db.WorkOrders
-                .Where(DateFilter<Features.AdventureWorks.Domain.WorkOrder>(q, w => w.StartDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.WorkOrder>(w => w.StartDate, g))
+                .Where(DateFilter<Features.Production.Domain.WorkOrder>(q, w => w.StartDate))
+                .GroupBy(IntBucketSelector<Features.Production.Domain.WorkOrder>(w => w.StartDate, g))
                 .Select(grp => new BucketRow(grp.Key, grp.Count()))
                 .ToListAsync(ct), g),
 
             QueryMetric.PurchaseOrderCount => ToBuckets(await db.PurchaseOrderHeaders
-                .Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.PurchaseOrderHeader>(p => p.OrderDate, g))
+                .Where(DateFilter<Features.Purchasing.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
+                .GroupBy(IntBucketSelector<Features.Purchasing.Domain.PurchaseOrderHeader>(p => p.OrderDate, g))
                 .Select(grp => new BucketRow(grp.Key, grp.Count()))
                 .ToListAsync(ct), g),
 
             QueryMetric.TotalPurchaseSpend => ToBuckets(await db.PurchaseOrderHeaders
-                .Where(DateFilter<Features.AdventureWorks.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
-                .GroupBy(IntBucketSelector<Features.AdventureWorks.Domain.PurchaseOrderHeader>(p => p.OrderDate, g))
+                .Where(DateFilter<Features.Purchasing.Domain.PurchaseOrderHeader>(q, p => p.OrderDate))
+                .GroupBy(IntBucketSelector<Features.Purchasing.Domain.PurchaseOrderHeader>(p => p.OrderDate, g))
                 .Select(grp => new BucketRow(grp.Key, (double)grp.Sum(x => x.TotalDue)))
                 .ToListAsync(ct), g),
 
