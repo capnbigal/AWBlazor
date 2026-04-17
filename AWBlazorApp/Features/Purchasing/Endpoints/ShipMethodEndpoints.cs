@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Purchasing.Models;
 using AWBlazorApp.Features.Purchasing.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Purchasing.Domain;
+using AWBlazorApp.Features.Purchasing.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +20,26 @@ public static class ShipMethodEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListShipMethods").WithSummary("List Purchasing.ShipMethod rows.");
-        group.MapGet("/{id:int}", GetAsync).WithName("GetShipMethod");
-        group.MapPost("/", CreateAsync).WithName("CreateShipMethod")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateShipMethod")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteShipMethod")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-        group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListShipMethodHistory");
+
+        group.MapIntIdCrud<ShipMethod, ShipMethodDto, CreateShipMethodRequest, UpdateShipMethodRequest, ShipMethodAuditLog, ShipMethodAuditLogDto, ShipMethodAuditService.Snapshot, int>(
+            entityName: "ShipMethod",
+            routePrefix: "/api/aw/ship-methods",
+            entitySet: db => db.ShipMethods,
+            auditSet: db => db.ShipMethodAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.ShipMethodId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: ShipMethodAuditService.CaptureSnapshot,
+            recordCreate: ShipMethodAuditService.RecordCreate,
+            recordUpdate: ShipMethodAuditService.RecordUpdate,
+            recordDelete: ShipMethodAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
         return app;
     }
 
@@ -41,67 +53,5 @@ public static class ShipMethodEndpoints
         var total = await query.CountAsync(ct);
         var rows = await query.OrderBy(x => x.Id).Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
         return TypedResults.Ok(new PagedResult<ShipMethodDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<ShipMethodDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.ShipMethods.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateShipMethodRequest request, IValidator<CreateShipMethodRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ShipMethods.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-        return TypedResults.Created($"/api/aw/ship-methods/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id, UpdateShipMethodRequest request, IValidator<UpdateShipMethodRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.ShipMethods.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = ShipMethodAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.ShipMethods.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.ShipMethods.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<ShipMethodAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.ShipMethodAuditLogs.AsNoTracking()
-            .Where(a => a.ShipMethodId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }

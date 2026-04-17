@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Sales.Models;
 using AWBlazorApp.Features.Sales.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Sales.Domain;
+using AWBlazorApp.Features.Sales.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +20,26 @@ public static class SalesOrderHeaderEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListSalesOrderHeaders").WithSummary("List Sales.SalesOrderHeader rows.");
-        group.MapGet("/{id:int}", GetAsync).WithName("GetSalesOrderHeader");
-        group.MapPost("/", CreateAsync).WithName("CreateSalesOrderHeader")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateSalesOrderHeader")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteSalesOrderHeader")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-        group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListSalesOrderHeaderHistory");
+
+        group.MapIntIdCrud<SalesOrderHeader, SalesOrderHeaderDto, CreateSalesOrderHeaderRequest, UpdateSalesOrderHeaderRequest, SalesOrderHeaderAuditLog, SalesOrderHeaderAuditLogDto, SalesOrderHeaderAuditService.Snapshot, int>(
+            entityName: "SalesOrderHeader",
+            routePrefix: "/api/aw/sales-order-headers",
+            entitySet: db => db.SalesOrderHeaders,
+            auditSet: db => db.SalesOrderHeaderAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.SalesOrderId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: SalesOrderHeaderAuditService.CaptureSnapshot,
+            recordCreate: SalesOrderHeaderAuditService.RecordCreate,
+            recordUpdate: SalesOrderHeaderAuditService.RecordUpdate,
+            recordDelete: SalesOrderHeaderAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
         return app;
     }
 
@@ -44,69 +56,5 @@ public static class SalesOrderHeaderEndpoints
         var rows = await query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id)
             .Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
         return TypedResults.Ok(new PagedResult<SalesOrderHeaderDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<SalesOrderHeaderDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.SalesOrderHeaders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateSalesOrderHeaderRequest request, IValidator<CreateSalesOrderHeaderRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.SalesOrderHeaders.Add(entity);
-        await db.SaveChangesAsync(ct);
-        // Re-query to pick up computed SalesOrderNumber and TotalDue.
-        var reloaded = await db.SalesOrderHeaders.AsNoTracking().FirstAsync(x => x.Id == entity.Id, ct);
-        db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordCreate(reloaded, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-        return TypedResults.Created($"/api/aw/sales-order-headers/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id, UpdateSalesOrderHeaderRequest request, IValidator<UpdateSalesOrderHeaderRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.SalesOrderHeaders.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = SalesOrderHeaderAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.SalesOrderHeaders.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.SalesOrderHeaderAuditLogs.Add(SalesOrderHeaderAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.SalesOrderHeaders.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<SalesOrderHeaderAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.SalesOrderHeaderAuditLogs.AsNoTracking()
-            .Where(a => a.SalesOrderId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }
