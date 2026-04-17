@@ -69,6 +69,7 @@
                         <MudChart T="double" ChartType="ChartType.Pie"
                                   InputData="@genderData"
                                   InputLabels="@genderLabels"
+                                  ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
                 </MudPaper>
@@ -91,6 +92,7 @@
                 <MudChart T="double" ChartType="ChartType.Bar"
                           ChartSeries="@deptSeries"
                           XAxisLabels="@deptLabels"
+                          ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="100%" Height="320px" />
             }
         </MudPaper>
@@ -111,6 +113,7 @@
                     <MudChart T="double" ChartType="ChartType.Pie"
                               InputData="@salaryTypeData"
                               InputLabels="@salaryTypeLabels"
+                              ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                               Width="100%" Height="240px" />
                 </MudPaper>
             </MudItem>
@@ -120,6 +123,7 @@
                     <MudChart T="double" ChartType="ChartType.Pie"
                               InputData="@maritalData"
                               InputLabels="@maritalLabels"
+                              ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                               Width="100%" Height="240px" />
                 </MudPaper>
             </MudItem>

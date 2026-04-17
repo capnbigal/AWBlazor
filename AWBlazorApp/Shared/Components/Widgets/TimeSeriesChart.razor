@@ -106,12 +106,15 @@
                 return ChartOptions;
 
             // Use chart-type-specific options so YAxisFormat / YAxisToStringFunc take effect.
+            // Seed ChartPalette with the app-wide blue/slate scale so auto-assigned series
+            // colors stay on-brand instead of falling back to MudBlazor's rainbow default.
+            var palette = AWBlazorApp.Shared.Theming.ChartPalettes.BlueScale;
             return ChartType switch
             {
-                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
-                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
-                ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc },
-                _                    => new ChartOptions(),
+                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
+                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
+                ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
+                _                    => new ChartOptions            { ChartPalette = palette },
             };
         }
     }

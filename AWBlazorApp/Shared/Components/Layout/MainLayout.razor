@@ -4,7 +4,7 @@
 @inject IJSRuntime JS
 @inject PersistentComponentState AppState
 
-<MudThemeProvider @rendermode="InteractiveServer" @bind-IsDarkMode="_isDarkMode" />
+<MudThemeProvider @rendermode="InteractiveServer" @bind-IsDarkMode="_isDarkMode" Theme="@AWBlazorApp.Shared.Theming.AppTheme.Default" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
