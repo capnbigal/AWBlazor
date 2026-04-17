@@ -49,7 +49,7 @@
 
     <MudDataGrid T="ToolSlotConfigurationDto"
                  ServerData="LoadServerDataAsync"
-                 @ref="grid"
+                 @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary"
                  Dense="true"
                  Hover="true"
                  Striped="true"
@@ -103,6 +103,7 @@
 
 @code {
     private MudDataGrid<ToolSlotConfigurationDto> grid = null!;
+    private bool _loading = true;
     private string? filterFamily;
     private string? filterMtCode;
     private string? filterDestination;
@@ -111,36 +112,45 @@
 
     private async Task<GridData<ToolSlotConfigurationDto>> LoadServerDataAsync(GridState<ToolSlotConfigurationDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ToolSlotConfigurations.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(filterFamily))      query = query.Where(t => t.Family == filterFamily);
-        if (!string.IsNullOrWhiteSpace(filterMtCode))      query = query.Where(t => t.MtCode == filterMtCode);
-        if (!string.IsNullOrWhiteSpace(filterDestination)) query = query.Where(t => t.Destination == filterDestination);
-        if (filterActive.HasValue)                          query = query.Where(t => t.IsActive == filterActive.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ToolSlotConfigurationDto.Id)          => sort.Descending ? query.OrderByDescending(t => t.Id)          : query.OrderBy(t => t.Id),
-            nameof(ToolSlotConfigurationDto.Family)      => sort.Descending ? query.OrderByDescending(t => t.Family)      : query.OrderBy(t => t.Family),
-            nameof(ToolSlotConfigurationDto.MtCode)      => sort.Descending ? query.OrderByDescending(t => t.MtCode)      : query.OrderBy(t => t.MtCode),
-            nameof(ToolSlotConfigurationDto.Destination) => sort.Descending ? query.OrderByDescending(t => t.Destination) : query.OrderBy(t => t.Destination),
-            nameof(ToolSlotConfigurationDto.IsActive)    => sort.Descending ? query.OrderByDescending(t => t.IsActive)    : query.OrderBy(t => t.IsActive),
-            _                                            => query.OrderBy(t => t.Id),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ToolSlotConfigurations.AsNoTracking();
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize)
-            .Take(state.PageSize)
-            .Select(t => t.ToDto())
-            .ToListAsync(ct);
+            if (!string.IsNullOrWhiteSpace(filterFamily))      query = query.Where(t => t.Family == filterFamily);
+            if (!string.IsNullOrWhiteSpace(filterMtCode))      query = query.Where(t => t.MtCode == filterMtCode);
+            if (!string.IsNullOrWhiteSpace(filterDestination)) query = query.Where(t => t.Destination == filterDestination);
+            if (filterActive.HasValue)                          query = query.Where(t => t.IsActive == filterActive.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        return new GridData<ToolSlotConfigurationDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ToolSlotConfigurationDto.Id)          => sort.Descending ? query.OrderByDescending(t => t.Id)          : query.OrderBy(t => t.Id),
+                nameof(ToolSlotConfigurationDto.Family)      => sort.Descending ? query.OrderByDescending(t => t.Family)      : query.OrderBy(t => t.Family),
+                nameof(ToolSlotConfigurationDto.MtCode)      => sort.Descending ? query.OrderByDescending(t => t.MtCode)      : query.OrderBy(t => t.MtCode),
+                nameof(ToolSlotConfigurationDto.Destination) => sort.Descending ? query.OrderByDescending(t => t.Destination) : query.OrderBy(t => t.Destination),
+                nameof(ToolSlotConfigurationDto.IsActive)    => sort.Descending ? query.OrderByDescending(t => t.IsActive)    : query.OrderBy(t => t.IsActive),
+                _                                            => query.OrderBy(t => t.Id),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize)
+                .Take(state.PageSize)
+                .Select(t => t.ToDto())
+                .ToListAsync(ct);
+
+            return new GridData<ToolSlotConfigurationDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

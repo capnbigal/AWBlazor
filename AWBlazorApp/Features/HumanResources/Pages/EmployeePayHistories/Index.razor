@@ -27,7 +27,7 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Employee" Clearable="true" SearchFunc="@(q => Lookup.SearchEmployeesAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="EmployeePayHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeePayHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
                 <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistory" PropertyName="@nameof(EmployeePayHistoryDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -64,33 +64,43 @@
 
 @code {
     private MudDataGrid<EmployeePayHistoryDto> grid = null!;
+    private bool _loading = true;
     private int? filterBusinessEntityId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<EmployeePayHistoryDto>> LoadServerDataAsync(GridState<EmployeePayHistoryDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.EmployeePayHistories.AsNoTracking();
-        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(EmployeePayHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-            nameof(EmployeePayHistoryDto.RateChangeDate) => sort.Descending ? query.OrderByDescending(x => x.RateChangeDate) : query.OrderBy(x => x.RateChangeDate),
-            nameof(EmployeePayHistoryDto.Rate) => sort.Descending ? query.OrderByDescending(x => x.Rate) : query.OrderBy(x => x.Rate),
-            nameof(EmployeePayHistoryDto.PayFrequency) => sort.Descending ? query.OrderByDescending(x => x.PayFrequency) : query.OrderBy(x => x.PayFrequency),
-            nameof(EmployeePayHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.RateChangeDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.EmployeePayHistories.AsNoTracking();
+            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<EmployeePayHistoryDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(EmployeePayHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+                nameof(EmployeePayHistoryDto.RateChangeDate) => sort.Descending ? query.OrderByDescending(x => x.RateChangeDate) : query.OrderBy(x => x.RateChangeDate),
+                nameof(EmployeePayHistoryDto.Rate) => sort.Descending ? query.OrderByDescending(x => x.Rate) : query.OrderBy(x => x.Rate),
+                nameof(EmployeePayHistoryDto.PayFrequency) => sort.Descending ? query.OrderByDescending(x => x.PayFrequency) : query.OrderBy(x => x.PayFrequency),
+                nameof(EmployeePayHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.RateChangeDate),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<EmployeePayHistoryDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

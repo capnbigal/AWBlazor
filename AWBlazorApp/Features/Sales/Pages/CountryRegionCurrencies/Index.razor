@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterCountry" Label="Country code" Variant="Variant.Outlined" MaxLength="3" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="CountryRegionCurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CountryRegionCurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.CountryRegionCode" Title="Country code">
                 <HeaderTemplate><GridColumnHeader TEntity="CountryRegionCurrency" PropertyName="@nameof(CountryRegionCurrencyDto.CountryRegionCode)" Title="Country code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -54,35 +54,45 @@
 
 @code {
     private MudDataGrid<CountryRegionCurrencyDto> grid = null!;
+    private bool _loading = true;
     private string? filterCountry;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CountryRegionCurrencyDto>> LoadServerDataAsync(GridState<CountryRegionCurrencyDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.CountryRegionCurrencies.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterCountry))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var c = filterCountry.Trim();
-            query = query.Where(x => x.CountryRegionCode == c);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.CountryRegionCurrencies.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterCountry))
+            {
+                var c = filterCountry.Trim();
+                query = query.Where(x => x.CountryRegionCode == c);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
+            var total = await query.CountAsync(ct);
 
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CountryRegionCurrencyDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
+                nameof(CountryRegionCurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
+                nameof(CountryRegionCurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.CountryRegionCode).ThenBy(x => x.CurrencyCode),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CountryRegionCurrencyDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(CountryRegionCurrencyDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
-            nameof(CountryRegionCurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
-            nameof(CountryRegionCurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.CountryRegionCode).ThenBy(x => x.CurrencyCode),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CountryRegionCurrencyDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

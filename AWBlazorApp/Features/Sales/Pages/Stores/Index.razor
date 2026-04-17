@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="StoreDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="StoreDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="Store" PropertyName="@nameof(StoreDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -60,30 +60,40 @@
 
 @code {
     private MudDataGrid<StoreDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<StoreDto>> LoadServerDataAsync(GridState<StoreDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Stores.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName)) { var n = filterName.Trim(); query = query.Where(x => x.Name.Contains(n)); }
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(StoreDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-            nameof(StoreDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
-            nameof(StoreDto.SalesPersonId) => sort.Descending ? query.OrderByDescending(x => x.SalesPersonId) : query.OrderBy(x => x.SalesPersonId),
-            nameof(StoreDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-            _                              => query.OrderBy(x => x.Name),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Stores.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName)) { var n = filterName.Trim(); query = query.Where(x => x.Name.Contains(n)); }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<StoreDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(StoreDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+                nameof(StoreDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
+                nameof(StoreDto.SalesPersonId) => sort.Descending ? query.OrderByDescending(x => x.SalesPersonId) : query.OrderBy(x => x.SalesPersonId),
+                nameof(StoreDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+                _                              => query.OrderBy(x => x.Name),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<StoreDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

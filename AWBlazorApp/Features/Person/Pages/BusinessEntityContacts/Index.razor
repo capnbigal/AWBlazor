@@ -27,7 +27,7 @@
         <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Business entity" Clearable="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" OnSelectionChanged="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="BusinessEntityContactDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity id">
                 <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContact" PropertyName="@nameof(BusinessEntityContactDto.BusinessEntityId)" Title="Business entity id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -58,32 +58,42 @@
 
 @code {
     private MudDataGrid<BusinessEntityContactDto> grid = null!;
+    private bool _loading = true;
     private int? filterBusinessEntityId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<BusinessEntityContactDto>> LoadServerDataAsync(GridState<BusinessEntityContactDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.BusinessEntityContacts.AsNoTracking();
-        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(BusinessEntityContactDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-            nameof(BusinessEntityContactDto.PersonId) => sort.Descending ? query.OrderByDescending(x => x.PersonId) : query.OrderBy(x => x.PersonId),
-            nameof(BusinessEntityContactDto.ContactTypeId) => sort.Descending ? query.OrderByDescending(x => x.ContactTypeId) : query.OrderBy(x => x.ContactTypeId),
-            nameof(BusinessEntityContactDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.ContactTypeId).ThenBy(x => x.PersonId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.BusinessEntityContacts.AsNoTracking();
+            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<BusinessEntityContactDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(BusinessEntityContactDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+                nameof(BusinessEntityContactDto.PersonId) => sort.Descending ? query.OrderByDescending(x => x.PersonId) : query.OrderBy(x => x.PersonId),
+                nameof(BusinessEntityContactDto.ContactTypeId) => sort.Descending ? query.OrderByDescending(x => x.ContactTypeId) : query.OrderBy(x => x.ContactTypeId),
+                nameof(BusinessEntityContactDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.ContactTypeId).ThenBy(x => x.PersonId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<BusinessEntityContactDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

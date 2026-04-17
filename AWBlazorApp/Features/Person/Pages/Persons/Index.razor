@@ -40,7 +40,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -86,40 +86,50 @@
 
 @code {
     private MudDataGrid<PersonDto> grid = null!;
+    private bool _loading = true;
     private string? filterLastName;
     private string? filterPersonType;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PersonDto>> LoadServerDataAsync(GridState<PersonDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Persons.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterLastName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var n = filterLastName.Trim();
-            query = query.Where(x => x.LastName.Contains(n));
-        }
-        if (!string.IsNullOrWhiteSpace(filterPersonType)) query = query.Where(x => x.PersonType == filterPersonType);
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Persons.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterLastName))
+            {
+                var n = filterLastName.Trim();
+                query = query.Where(x => x.LastName.Contains(n));
+            }
+            if (!string.IsNullOrWhiteSpace(filterPersonType)) query = query.Where(x => x.PersonType == filterPersonType);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(PersonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(PersonDto.LastName)     => sort.Descending ? query.OrderByDescending(x => x.LastName)     : query.OrderBy(x => x.LastName),
+                nameof(PersonDto.FirstName)    => sort.Descending ? query.OrderByDescending(x => x.FirstName)    : query.OrderBy(x => x.FirstName),
+                nameof(PersonDto.MiddleName)   => sort.Descending ? query.OrderByDescending(x => x.MiddleName)   : query.OrderBy(x => x.MiddleName),
+                nameof(PersonDto.Title)        => sort.Descending ? query.OrderByDescending(x => x.Title)        : query.OrderBy(x => x.Title),
+                nameof(PersonDto.Suffix)       => sort.Descending ? query.OrderByDescending(x => x.Suffix)       : query.OrderBy(x => x.Suffix),
+                nameof(PersonDto.PersonType)   => sort.Descending ? query.OrderByDescending(x => x.PersonType)   : query.OrderBy(x => x.PersonType),
+                nameof(PersonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                              => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<PersonDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(PersonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(PersonDto.LastName)     => sort.Descending ? query.OrderByDescending(x => x.LastName)     : query.OrderBy(x => x.LastName),
-            nameof(PersonDto.FirstName)    => sort.Descending ? query.OrderByDescending(x => x.FirstName)    : query.OrderBy(x => x.FirstName),
-            nameof(PersonDto.MiddleName)   => sort.Descending ? query.OrderByDescending(x => x.MiddleName)   : query.OrderBy(x => x.MiddleName),
-            nameof(PersonDto.Title)        => sort.Descending ? query.OrderByDescending(x => x.Title)        : query.OrderBy(x => x.Title),
-            nameof(PersonDto.Suffix)       => sort.Descending ? query.OrderByDescending(x => x.Suffix)       : query.OrderBy(x => x.Suffix),
-            nameof(PersonDto.PersonType)   => sort.Descending ? query.OrderByDescending(x => x.PersonType)   : query.OrderBy(x => x.PersonType),
-            nameof(PersonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                              => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<PersonDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

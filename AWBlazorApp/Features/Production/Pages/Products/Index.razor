@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="ProductDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
@@ -89,6 +89,7 @@
 
 @code {
     private MudDataGrid<ProductDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private int? filterSubcategoryId;
     private List<LookupItem<int>> _subcategories = [];
@@ -101,36 +102,45 @@
 
     private async Task<GridData<ProductDto>> LoadServerDataAsync(GridState<ProductDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Products.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var n = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(n));
-        }
-        if (filterSubcategoryId.HasValue) query = query.Where(x => x.ProductSubcategoryId == filterSubcategoryId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Products.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var n = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(n));
+            }
+            if (filterSubcategoryId.HasValue) query = query.Where(x => x.ProductSubcategoryId == filterSubcategoryId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+                nameof(ProductDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
+                nameof(ProductDto.ProductNumber) => sort.Descending ? query.OrderByDescending(x => x.ProductNumber) : query.OrderBy(x => x.ProductNumber),
+                nameof(ProductDto.Color)         => sort.Descending ? query.OrderByDescending(x => x.Color)         : query.OrderBy(x => x.Color),
+                nameof(ProductDto.Size)          => sort.Descending ? query.OrderByDescending(x => x.Size)          : query.OrderBy(x => x.Size),
+                nameof(ProductDto.Class)         => sort.Descending ? query.OrderByDescending(x => x.Class)         : query.OrderBy(x => x.Class),
+                nameof(ProductDto.ProductLine)   => sort.Descending ? query.OrderByDescending(x => x.ProductLine)   : query.OrderBy(x => x.ProductLine),
+                nameof(ProductDto.ListPrice)     => sort.Descending ? query.OrderByDescending(x => x.ListPrice)     : query.OrderBy(x => x.ListPrice),
+                nameof(ProductDto.StandardCost)  => sort.Descending ? query.OrderByDescending(x => x.StandardCost)  : query.OrderBy(x => x.StandardCost),
+                nameof(ProductDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+                _                                => query.OrderBy(x => x.Name),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(ProductDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-            nameof(ProductDto.Name)          => sort.Descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
-            nameof(ProductDto.ProductNumber) => sort.Descending ? query.OrderByDescending(x => x.ProductNumber) : query.OrderBy(x => x.ProductNumber),
-            nameof(ProductDto.Color)         => sort.Descending ? query.OrderByDescending(x => x.Color)         : query.OrderBy(x => x.Color),
-            nameof(ProductDto.Size)          => sort.Descending ? query.OrderByDescending(x => x.Size)          : query.OrderBy(x => x.Size),
-            nameof(ProductDto.Class)         => sort.Descending ? query.OrderByDescending(x => x.Class)         : query.OrderBy(x => x.Class),
-            nameof(ProductDto.ProductLine)   => sort.Descending ? query.OrderByDescending(x => x.ProductLine)   : query.OrderBy(x => x.ProductLine),
-            nameof(ProductDto.ListPrice)     => sort.Descending ? query.OrderByDescending(x => x.ListPrice)     : query.OrderBy(x => x.ListPrice),
-            nameof(ProductDto.StandardCost)  => sort.Descending ? query.OrderByDescending(x => x.StandardCost)  : query.OrderBy(x => x.StandardCost),
-            nameof(ProductDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-            _                                => query.OrderBy(x => x.Name),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ProductDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

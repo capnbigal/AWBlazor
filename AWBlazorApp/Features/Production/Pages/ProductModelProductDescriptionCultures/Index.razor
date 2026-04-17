@@ -26,7 +26,7 @@
         <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductModelId" Title="Model id">
                 <HeaderTemplate><GridColumnHeader TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ProductModelId)" Title="Model id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -57,32 +57,42 @@
 
 @code {
     private MudDataGrid<ProductModelProductDescriptionCultureDto> grid = null!;
+    private bool _loading = true;
     private int? filterProductModelId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductModelProductDescriptionCultureDto>> LoadServerDataAsync(GridState<ProductModelProductDescriptionCultureDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductModelProductDescriptionCultures.AsNoTracking();
-        if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProductModelProductDescriptionCultureDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
-            nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId) => sort.Descending ? query.OrderByDescending(x => x.ProductDescriptionId) : query.OrderBy(x => x.ProductDescriptionId),
-            nameof(ProductModelProductDescriptionCultureDto.CultureId) => sort.Descending ? query.OrderByDescending(x => x.CultureId) : query.OrderBy(x => x.CultureId),
-            nameof(ProductModelProductDescriptionCultureDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.ProductDescriptionId).ThenBy(x => x.CultureId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductModelProductDescriptionCultures.AsNoTracking();
+            if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ProductModelProductDescriptionCultureDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductModelProductDescriptionCultureDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
+                nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId) => sort.Descending ? query.OrderByDescending(x => x.ProductDescriptionId) : query.OrderBy(x => x.ProductDescriptionId),
+                nameof(ProductModelProductDescriptionCultureDto.CultureId) => sort.Descending ? query.OrderByDescending(x => x.CultureId) : query.OrderBy(x => x.CultureId),
+                nameof(ProductModelProductDescriptionCultureDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.ProductDescriptionId).ThenBy(x => x.CultureId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductModelProductDescriptionCultureDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

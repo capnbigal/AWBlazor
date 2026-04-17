@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CountryRegionDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CountryRegionDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.CountryRegionCode" Title="Code">
                 <HeaderTemplate><GridColumnHeader TEntity="CountryRegion" PropertyName="@nameof(CountryRegionDto.CountryRegionCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -62,39 +62,49 @@
 
 @code {
     private MudDataGrid<CountryRegionDto> grid = null!;
+    private bool _loading = true;
     private string? filterCode;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CountryRegionDto>> LoadServerDataAsync(GridState<CountryRegionDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.CountryRegions.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterCode))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterCode.Trim();
-            query = query.Where(x => x.CountryRegionCode == needle);
-        }
-        if (!string.IsNullOrWhiteSpace(filterName))
-        {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.CountryRegions.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterCode))
+            {
+                var needle = filterCode.Trim();
+                query = query.Where(x => x.CountryRegionCode == needle);
+            }
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(CountryRegionDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
-            nameof(CountryRegionDto.Name)              => sort.Descending ? query.OrderByDescending(x => x.Name)              : query.OrderBy(x => x.Name),
-            nameof(CountryRegionDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
-            _                                          => query.OrderBy(x => x.CountryRegionCode),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CountryRegionDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(x => x.CountryRegionCode) : query.OrderBy(x => x.CountryRegionCode),
+                nameof(CountryRegionDto.Name)              => sort.Descending ? query.OrderByDescending(x => x.Name)              : query.OrderBy(x => x.Name),
+                nameof(CountryRegionDto.ModifiedDate)      => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)      : query.OrderBy(x => x.ModifiedDate),
+                _                                          => query.OrderBy(x => x.CountryRegionCode),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CountryRegionDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CountryRegionDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

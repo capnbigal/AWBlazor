@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CurrencyRateDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="CurrencyRate" PropertyName="@nameof(CurrencyRateDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -69,42 +69,52 @@
 
 @code {
     private MudDataGrid<CurrencyRateDto> grid = null!;
+    private bool _loading = true;
     private string? filterFrom;
     private string? filterTo;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CurrencyRateDto>> LoadServerDataAsync(GridState<CurrencyRateDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.CurrencyRates.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterFrom))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var f = filterFrom.Trim();
-            query = query.Where(x => x.FromCurrencyCode == f);
-        }
-        if (!string.IsNullOrWhiteSpace(filterTo))
-        {
-            var t = filterTo.Trim();
-            query = query.Where(x => x.ToCurrencyCode == t);
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.CurrencyRates.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterFrom))
+            {
+                var f = filterFrom.Trim();
+                query = query.Where(x => x.FromCurrencyCode == f);
+            }
+            if (!string.IsNullOrWhiteSpace(filterTo))
+            {
+                var t = filterTo.Trim();
+                query = query.Where(x => x.ToCurrencyCode == t);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(CurrencyRateDto.Id)               => sort.Descending ? query.OrderByDescending(x => x.Id)               : query.OrderBy(x => x.Id),
-            nameof(CurrencyRateDto.CurrencyRateDate) => sort.Descending ? query.OrderByDescending(x => x.CurrencyRateDate) : query.OrderBy(x => x.CurrencyRateDate),
-            nameof(CurrencyRateDto.FromCurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.FromCurrencyCode) : query.OrderBy(x => x.FromCurrencyCode),
-            nameof(CurrencyRateDto.ToCurrencyCode)   => sort.Descending ? query.OrderByDescending(x => x.ToCurrencyCode)   : query.OrderBy(x => x.ToCurrencyCode),
-            nameof(CurrencyRateDto.AverageRate)      => sort.Descending ? query.OrderByDescending(x => x.AverageRate)      : query.OrderBy(x => x.AverageRate),
-            nameof(CurrencyRateDto.EndOfDayRate)     => sort.Descending ? query.OrderByDescending(x => x.EndOfDayRate)     : query.OrderBy(x => x.EndOfDayRate),
-            _                                        => query.OrderByDescending(x => x.CurrencyRateDate),
-        };
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CurrencyRateDto.Id)               => sort.Descending ? query.OrderByDescending(x => x.Id)               : query.OrderBy(x => x.Id),
+                nameof(CurrencyRateDto.CurrencyRateDate) => sort.Descending ? query.OrderByDescending(x => x.CurrencyRateDate) : query.OrderBy(x => x.CurrencyRateDate),
+                nameof(CurrencyRateDto.FromCurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.FromCurrencyCode) : query.OrderBy(x => x.FromCurrencyCode),
+                nameof(CurrencyRateDto.ToCurrencyCode)   => sort.Descending ? query.OrderByDescending(x => x.ToCurrencyCode)   : query.OrderBy(x => x.ToCurrencyCode),
+                nameof(CurrencyRateDto.AverageRate)      => sort.Descending ? query.OrderByDescending(x => x.AverageRate)      : query.OrderBy(x => x.AverageRate),
+                nameof(CurrencyRateDto.EndOfDayRate)     => sort.Descending ? query.OrderByDescending(x => x.EndOfDayRate)     : query.OrderBy(x => x.EndOfDayRate),
+                _                                        => query.OrderByDescending(x => x.CurrencyRateDate),
+            };
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CurrencyRateDto> { Items = rows, TotalItems = total };
-    }
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CurrencyRateDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

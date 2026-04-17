@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ProductInventoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.ProductId" Title="Product id">
                 <HeaderTemplate><GridColumnHeader TEntity="ProductInventory" PropertyName="@nameof(ProductInventoryDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -70,6 +70,7 @@
 
 @code {
     private MudDataGrid<ProductInventoryDto> grid = null!;
+    private bool _loading = true;
     private int? filterProductId;
     private short? filterLocationId;
     private List<LookupItem<short>> _locations = [];
@@ -82,30 +83,39 @@
 
     private async Task<GridData<ProductInventoryDto>> LoadServerDataAsync(GridState<ProductInventoryDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductInventories.AsNoTracking();
-        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-        if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProductInventoryDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-            nameof(ProductInventoryDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
-            nameof(ProductInventoryDto.Shelf) => sort.Descending ? query.OrderByDescending(x => x.Shelf) : query.OrderBy(x => x.Shelf),
-            nameof(ProductInventoryDto.Bin) => sort.Descending ? query.OrderByDescending(x => x.Bin) : query.OrderBy(x => x.Bin),
-            nameof(ProductInventoryDto.Quantity) => sort.Descending ? query.OrderByDescending(x => x.Quantity) : query.OrderBy(x => x.Quantity),
-            nameof(ProductInventoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.LocationId),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductInventories.AsNoTracking();
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ProductInventoryDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductInventoryDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
+                nameof(ProductInventoryDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
+                nameof(ProductInventoryDto.Shelf) => sort.Descending ? query.OrderByDescending(x => x.Shelf) : query.OrderBy(x => x.Shelf),
+                nameof(ProductInventoryDto.Bin) => sort.Descending ? query.OrderByDescending(x => x.Bin) : query.OrderBy(x => x.Bin),
+                nameof(ProductInventoryDto.Quantity) => sort.Descending ? query.OrderByDescending(x => x.Quantity) : query.OrderBy(x => x.Quantity),
+                nameof(ProductInventoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.ProductId).ThenBy(x => x.LocationId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductInventoryDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

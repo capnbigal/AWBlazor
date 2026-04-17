@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterCardType" Label="Card type" Variant="Variant.Outlined" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="CreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="CreditCardDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="CreditCard" PropertyName="@nameof(CreditCardDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -66,32 +66,42 @@
 
 @code {
     private MudDataGrid<CreditCardDto> grid = null!;
+    private bool _loading = true;
     private string? filterCardType;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CreditCardDto>> LoadServerDataAsync(GridState<CreditCardDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.CreditCards.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterCardType)) query = query.Where(x => x.CardType == filterCardType.Trim());
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(CreditCardDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(CreditCardDto.CardType)     => sort.Descending ? query.OrderByDescending(x => x.CardType)     : query.OrderBy(x => x.CardType),
-            nameof(CreditCardDto.CardNumber)   => sort.Descending ? query.OrderByDescending(x => x.CardNumber)   : query.OrderBy(x => x.CardNumber),
-            nameof(CreditCardDto.ExpMonth)     => sort.Descending ? query.OrderByDescending(x => x.ExpMonth)     : query.OrderBy(x => x.ExpMonth),
-            nameof(CreditCardDto.ExpYear)      => sort.Descending ? query.OrderByDescending(x => x.ExpYear)      : query.OrderBy(x => x.ExpYear),
-            nameof(CreditCardDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                                  => query.OrderBy(x => x.Id),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.CreditCards.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterCardType)) query = query.Where(x => x.CardType == filterCardType.Trim());
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<CreditCardDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(CreditCardDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(CreditCardDto.CardType)     => sort.Descending ? query.OrderByDescending(x => x.CardType)     : query.OrderBy(x => x.CardType),
+                nameof(CreditCardDto.CardNumber)   => sort.Descending ? query.OrderByDescending(x => x.CardNumber)   : query.OrderBy(x => x.CardNumber),
+                nameof(CreditCardDto.ExpMonth)     => sort.Descending ? query.OrderByDescending(x => x.ExpMonth)     : query.OrderBy(x => x.ExpMonth),
+                nameof(CreditCardDto.ExpYear)      => sort.Descending ? query.OrderByDescending(x => x.ExpYear)      : query.OrderBy(x => x.ExpYear),
+                nameof(CreditCardDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                  => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CreditCardDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

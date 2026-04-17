@@ -26,7 +26,7 @@
         <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
     </MudPaper>
 
-    <MudDataGrid T="ScrapReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="ScrapReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id">
                 <HeaderTemplate><GridColumnHeader TEntity="ScrapReason" PropertyName="@nameof(ScrapReasonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -59,33 +59,43 @@
 
 @code {
     private MudDataGrid<ScrapReasonDto> grid = null!;
+    private bool _loading = true;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ScrapReasonDto>> LoadServerDataAsync(GridState<ScrapReasonDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ScrapReasons.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterName))
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            var needle = filterName.Trim();
-            query = query.Where(x => x.Name.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ScrapReasons.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ScrapReasonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(ScrapReasonDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+                nameof(ScrapReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                   => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ScrapReasonDto> { Items = rows, TotalItems = total };
+            }
+        finally
         {
-            nameof(ScrapReasonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-            nameof(ScrapReasonDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
-            nameof(ScrapReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _                                   => query.OrderBy(x => x.Id),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<ScrapReasonDto> { Items = rows, TotalItems = total };
-    }
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

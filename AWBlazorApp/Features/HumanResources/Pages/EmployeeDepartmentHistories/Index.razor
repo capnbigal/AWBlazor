@@ -30,7 +30,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeeDepartmentHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
                 <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistory" PropertyName="@nameof(EmployeeDepartmentHistoryDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
@@ -70,6 +70,7 @@
 
 @code {
     private MudDataGrid<EmployeeDepartmentHistoryDto> grid = null!;
+    private bool _loading = true;
     private int? filterBusinessEntityId;
     private short? filterDepartmentId;
     private List<LookupItem<short>> _departments = [];
@@ -82,30 +83,39 @@
 
     private async Task<GridData<EmployeeDepartmentHistoryDto>> LoadServerDataAsync(GridState<EmployeeDepartmentHistoryDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.EmployeeDepartmentHistories.AsNoTracking();
-        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-        if (filterDepartmentId.HasValue) query = query.Where(x => x.DepartmentId == filterDepartmentId.Value);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(EmployeeDepartmentHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-            nameof(EmployeeDepartmentHistoryDto.DepartmentId) => sort.Descending ? query.OrderByDescending(x => x.DepartmentId) : query.OrderBy(x => x.DepartmentId),
-            nameof(EmployeeDepartmentHistoryDto.ShiftId) => sort.Descending ? query.OrderByDescending(x => x.ShiftId) : query.OrderBy(x => x.ShiftId),
-            nameof(EmployeeDepartmentHistoryDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
-            nameof(EmployeeDepartmentHistoryDto.EndDate) => sort.Descending ? query.OrderByDescending(x => x.EndDate) : query.OrderBy(x => x.EndDate),
-            nameof(EmployeeDepartmentHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-            _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.DepartmentId).ThenBy(x => x.ShiftId).ThenByDescending(x => x.StartDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.EmployeeDepartmentHistories.AsNoTracking();
+            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+            if (filterDepartmentId.HasValue) query = query.Where(x => x.DepartmentId == filterDepartmentId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<EmployeeDepartmentHistoryDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(EmployeeDepartmentHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+                nameof(EmployeeDepartmentHistoryDto.DepartmentId) => sort.Descending ? query.OrderByDescending(x => x.DepartmentId) : query.OrderBy(x => x.DepartmentId),
+                nameof(EmployeeDepartmentHistoryDto.ShiftId) => sort.Descending ? query.OrderByDescending(x => x.ShiftId) : query.OrderBy(x => x.ShiftId),
+                nameof(EmployeeDepartmentHistoryDto.StartDate) => sort.Descending ? query.OrderByDescending(x => x.StartDate) : query.OrderBy(x => x.StartDate),
+                nameof(EmployeeDepartmentHistoryDto.EndDate) => sort.Descending ? query.OrderByDescending(x => x.EndDate) : query.OrderBy(x => x.EndDate),
+                nameof(EmployeeDepartmentHistoryDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.BusinessEntityId).ThenBy(x => x.DepartmentId).ThenBy(x => x.ShiftId).ThenByDescending(x => x.StartDate),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<EmployeeDepartmentHistoryDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

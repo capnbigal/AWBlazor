@@ -29,7 +29,7 @@
         </MudGrid>
     </MudPaper>
 
-    <MudDataGrid T="EmployeeDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+    <MudDataGrid T="EmployeeDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="EmployeeDto" />
             <PropertyColumn Property="x => x.Id" Title="Id">
@@ -82,36 +82,46 @@
 
 @code {
     private MudDataGrid<EmployeeDto> grid = null!;
+    private bool _loading = true;
     private string? filterJobTitle;
     private string? filterLoginId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<EmployeeDto>> LoadServerDataAsync(GridState<EmployeeDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Employees.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(filterJobTitle)) query = query.Where(x => x.JobTitle.Contains(filterJobTitle.Trim()));
-        if (!string.IsNullOrWhiteSpace(filterLoginId)) query = query.Where(x => x.LoginID.Contains(filterLoginId.Trim()));
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(EmployeeDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-            nameof(EmployeeDto.LoginID)       => sort.Descending ? query.OrderByDescending(x => x.LoginID)       : query.OrderBy(x => x.LoginID),
-            nameof(EmployeeDto.JobTitle)      => sort.Descending ? query.OrderByDescending(x => x.JobTitle)      : query.OrderBy(x => x.JobTitle),
-            nameof(EmployeeDto.MaritalStatus) => sort.Descending ? query.OrderByDescending(x => x.MaritalStatus) : query.OrderBy(x => x.MaritalStatus),
-            nameof(EmployeeDto.Gender)        => sort.Descending ? query.OrderByDescending(x => x.Gender)        : query.OrderBy(x => x.Gender),
-            nameof(EmployeeDto.HireDate)      => sort.Descending ? query.OrderByDescending(x => x.HireDate)      : query.OrderBy(x => x.HireDate),
-            nameof(EmployeeDto.CurrentFlag)   => sort.Descending ? query.OrderByDescending(x => x.CurrentFlag)   : query.OrderBy(x => x.CurrentFlag),
-            nameof(EmployeeDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-            _                                 => query.OrderBy(x => x.Id),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Employees.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterJobTitle)) query = query.Where(x => x.JobTitle.Contains(filterJobTitle.Trim()));
+            if (!string.IsNullOrWhiteSpace(filterLoginId)) query = query.Where(x => x.LoginID.Contains(filterLoginId.Trim()));
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-        return new GridData<EmployeeDto> { Items = rows, TotalItems = total };
-    }
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(EmployeeDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+                nameof(EmployeeDto.LoginID)       => sort.Descending ? query.OrderByDescending(x => x.LoginID)       : query.OrderBy(x => x.LoginID),
+                nameof(EmployeeDto.JobTitle)      => sort.Descending ? query.OrderByDescending(x => x.JobTitle)      : query.OrderBy(x => x.JobTitle),
+                nameof(EmployeeDto.MaritalStatus) => sort.Descending ? query.OrderByDescending(x => x.MaritalStatus) : query.OrderBy(x => x.MaritalStatus),
+                nameof(EmployeeDto.Gender)        => sort.Descending ? query.OrderByDescending(x => x.Gender)        : query.OrderBy(x => x.Gender),
+                nameof(EmployeeDto.HireDate)      => sort.Descending ? query.OrderByDescending(x => x.HireDate)      : query.OrderBy(x => x.HireDate),
+                nameof(EmployeeDto.CurrentFlag)   => sort.Descending ? query.OrderByDescending(x => x.CurrentFlag)   : query.OrderBy(x => x.CurrentFlag),
+                nameof(EmployeeDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+                _                                 => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<EmployeeDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 

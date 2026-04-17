@@ -20,7 +20,7 @@
 
     <MudDataGrid T="ProcessDto"
                  ServerData="LoadServerDataAsync"
-                 @ref="grid"
+                 @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary"
                  Dense="true"
                  Hover="true"
                  Striped="true"
@@ -99,6 +99,7 @@
 
 @code {
     private MudDataGrid<ProcessDto> grid = null!;
+    private bool _loading = true;
     private readonly ColumnFilterState columnFilters = new();
 
     private static Color StatusColor(ProcessStatus status) => status switch
@@ -111,32 +112,41 @@
 
     private async Task<GridData<ProcessDto>> LoadServerDataAsync(GridState<ProcessDto> state, CancellationToken ct)
     {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.Processes.AsNoTracking().Where(p => p.DeletedDate == null);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
         {
-            nameof(ProcessDto.Name)          => sort.Descending ? query.OrderByDescending(p => p.Name)          : query.OrderBy(p => p.Name),
-            nameof(ProcessDto.DepartmentId)  => sort.Descending ? query.OrderByDescending(p => p.DepartmentId)  : query.OrderBy(p => p.DepartmentId),
-            "Status"                          => sort.Descending ? query.OrderByDescending(p => p.Status)       : query.OrderBy(p => p.Status),
-            "IsRecurring"                     => sort.Descending ? query.OrderByDescending(p => p.IsRecurring)  : query.OrderBy(p => p.IsRecurring),
-            nameof(ProcessDto.CronSchedule)  => sort.Descending ? query.OrderByDescending(p => p.CronSchedule)  : query.OrderBy(p => p.CronSchedule),
-            nameof(ProcessDto.CreatedDate)   => sort.Descending ? query.OrderByDescending(p => p.CreatedDate)   : query.OrderBy(p => p.CreatedDate),
-            _                                 => query.OrderByDescending(p => p.CreatedDate),
-        };
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Processes.AsNoTracking().Where(p => p.DeletedDate == null);
+            query = query.ApplyColumnFilters(columnFilters);
 
-        var rows = await query
-            .Skip(state.Page * state.PageSize)
-            .Take(state.PageSize)
-            .Select(p => p.ToDto())
-            .ToListAsync(ct);
+            var total = await query.CountAsync(ct);
 
-        return new GridData<ProcessDto> { Items = rows, TotalItems = total };
-    }
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProcessDto.Name)          => sort.Descending ? query.OrderByDescending(p => p.Name)          : query.OrderBy(p => p.Name),
+                nameof(ProcessDto.DepartmentId)  => sort.Descending ? query.OrderByDescending(p => p.DepartmentId)  : query.OrderBy(p => p.DepartmentId),
+                "Status"                          => sort.Descending ? query.OrderByDescending(p => p.Status)       : query.OrderBy(p => p.Status),
+                "IsRecurring"                     => sort.Descending ? query.OrderByDescending(p => p.IsRecurring)  : query.OrderBy(p => p.IsRecurring),
+                nameof(ProcessDto.CronSchedule)  => sort.Descending ? query.OrderByDescending(p => p.CronSchedule)  : query.OrderBy(p => p.CronSchedule),
+                nameof(ProcessDto.CreatedDate)   => sort.Descending ? query.OrderByDescending(p => p.CreatedDate)   : query.OrderBy(p => p.CreatedDate),
+                _                                 => query.OrderByDescending(p => p.CreatedDate),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize)
+                .Take(state.PageSize)
+                .Select(p => p.ToDto())
+                .ToListAsync(ct);
+
+            return new GridData<ProcessDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 
