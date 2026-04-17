@@ -103,6 +103,7 @@
                         <MudChart T="double" ChartType="ChartType.Donut"
                                   InputData="@vendorConcentrationData"
                                   InputLabels="@vendorConcentrationLabels"
+                                  ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
                 </MudPaper>
@@ -117,6 +118,7 @@
                         <MudChart T="double" ChartType="ChartType.Pie"
                                   InputData="@statusData"
                                   InputLabels="@statusLabels"
+                                  ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
                 </MudPaper>
