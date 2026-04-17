@@ -93,6 +93,17 @@ public static class PermissionAreaMapping
         ("/api/admin", PermissionArea.Admin),
         ("/api/permissions", PermissionArea.Admin),
         ("/api/processes", PermissionArea.Processes),
+
+        // Enterprise master data
+        ("/api/organizations", PermissionArea.Enterprise),
+        ("/api/org-units", PermissionArea.Enterprise),
+        ("/api/stations", PermissionArea.Enterprise),
+        ("/api/assets", PermissionArea.Enterprise),
+        ("/api/cost-centers", PermissionArea.Enterprise),
+        ("/api/product-lines", PermissionArea.Enterprise),
+
+        // Advanced inventory (populated in Phase B)
+        ("/api/inventory", PermissionArea.Inventory),
     ];
 
     /// <summary>

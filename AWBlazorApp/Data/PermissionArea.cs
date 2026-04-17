@@ -21,4 +21,6 @@ public enum PermissionArea
     Admin = 103,
     UserGuide = 104,
     Processes = 105,
+    Enterprise = 106,
+    Inventory = 107,
 }

@@ -1,0 +1,87 @@
+@using AWBlazorApp.Features.Enterprise.Domain
+@using AWBlazorApp.Features.HumanResources.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Location</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Org unit path: <code>@(orgUnitPath ?? "—")</code></MudText>
+                    <MudText Typo="Typo.body2">Kind: <strong>@kind</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Operator</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Business Entity #: <strong>@(operatorBeId?.ToString() ?? "unassigned")</strong></MudText>
+                    @if (operatorName is not null) { <MudText Typo="Typo.body2">Name: <strong>@operatorName</strong></MudText> }
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Installed asset</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    @if (assetId is not null)
+                    {
+                        <MudText Typo="Typo.body2">Tag: <strong>@assetTag</strong></MudText>
+                        <MudText Typo="Typo.body2">Name: <strong>@assetName</strong></MudText>
+                        <MudLink Href="@($"enterprise/assets?id={assetId}")">Open asset</MudLink>
+                    }
+                    else { <MudText Typo="Typo.body2"><em>No machine — manual station</em></MudText> }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [Parameter] public int StationId { get; set; }
+
+    private bool loading = true;
+    private string? orgUnitPath;
+    private StationKind kind;
+    private int? operatorBeId;
+    private string? operatorName;
+    private int? assetId;
+    private string? assetTag;
+    private string? assetName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var station = await db.Stations.AsNoTracking().FirstOrDefaultAsync(s => s.Id == StationId);
+        if (station is not null)
+        {
+            kind = station.StationKind;
+            operatorBeId = station.OperatorBusinessEntityId;
+            assetId = station.AssetId;
+
+            orgUnitPath = await db.OrgUnits.AsNoTracking()
+                .Where(u => u.Id == station.OrgUnitId).Select(u => u.Path).FirstOrDefaultAsync();
+
+            if (station.OperatorBusinessEntityId is not null)
+            {
+                // Employee.Id and Person.Id both map to the underlying BusinessEntityID column.
+                operatorName = await db.Persons.AsNoTracking()
+                    .Where(p => p.Id == station.OperatorBusinessEntityId.Value)
+                    .Select(p => p.FirstName + " " + p.LastName)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (station.AssetId is not null)
+            {
+                var asset = await db.Assets.AsNoTracking()
+                    .Where(a => a.Id == station.AssetId.Value)
+                    .Select(a => new { a.AssetTag, a.Name }).FirstOrDefaultAsync();
+                if (asset is not null) { assetTag = asset.AssetTag; assetName = asset.Name; }
+            }
+        }
+        loading = false;
+    }
+}

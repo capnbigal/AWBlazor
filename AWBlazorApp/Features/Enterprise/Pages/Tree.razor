@@ -1,0 +1,186 @@
+@page "/enterprise/tree"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Enterprise.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Org tree explorer</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Org tree explorer</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Organization → Plant → Division → Department → Subdepartment → Team → Area → Station</MudText>
+        <MudSpacer />
+        <MudSwitch T="bool" @bind-Value="showStations" Label="Show stations" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="showAssets" Label="Show assets" Color="Color.Primary" />
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudTextField @bind-Value="filter" Placeholder="Filter by name, code, or path..." Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" />
+    </MudPaper>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Info" />
+    }
+    else if (organizations.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No organizations found. <MudLink Href="enterprise/organizations">Create one</MudLink> to get started.</MudAlert>
+    }
+    else
+    {
+        <MudPaper Class="pa-2" Elevation="1">
+            @foreach (var org in organizations)
+            {
+                <div class="enterprise-tree-org">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="pa-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6">@org.Code</MudText>
+                        <MudText Typo="Typo.body2">@org.Name</MudText>
+                        @if (org.IsPrimary) { <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">Primary</MudChip> }
+                        @if (!org.IsActive) { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">Inactive</MudChip> }
+                        <MudSpacer />
+                        <MudLink Href="@($"enterprise/organizations")" Color="Color.Primary">Manage</MudLink>
+                    </MudStack>
+
+                    @{ var roots = unitsByOrg.GetValueOrDefault(org.Id, []).Where(u => u.ParentOrgUnitId is null).ToList(); }
+                    @if (roots.Count == 0)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pa-2 pl-6"><em>No org units yet.</em> <MudLink Href="@($"enterprise/org-units")">Add one</MudLink></MudText>
+                    }
+                    else
+                    {
+                        <div class="enterprise-tree-children">
+                            @foreach (var root in roots)
+                            {
+                                @RenderUnit(root, 1)
+                            }
+                        </div>
+                    }
+                </div>
+                <MudDivider Class="my-2" />
+            }
+        </MudPaper>
+    }
+</MudStack>
+
+<style>
+    .enterprise-tree-children { padding-left: 1.5rem; border-left: 2px solid var(--mud-palette-lines-default); margin-left: 0.5rem; }
+    .enterprise-tree-unit { padding: 0.25rem 0.5rem; border-radius: 4px; }
+    .enterprise-tree-unit:hover { background: var(--mud-palette-action-default-hover); }
+    .enterprise-tree-leaf { padding: 0.2rem 0.5rem; font-size: 0.85em; color: var(--mud-palette-text-secondary); }
+</style>
+
+@code {
+    private bool loading = true;
+    private bool showStations = true;
+    private bool showAssets = false;
+    private string filter = "";
+    private List<OrgDto> organizations = [];
+    private Dictionary<int, List<UnitDto>> unitsByOrg = new();
+    private Dictionary<int, List<UnitDto>> unitsByParent = new();
+    private Dictionary<int, List<StationDto>> stationsByUnit = new();
+    private Dictionary<int, List<AssetDto>> assetsByUnit = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        organizations = await db.Organizations.AsNoTracking().OrderByDescending(o => o.IsPrimary).ThenBy(o => o.Code)
+            .Select(o => new OrgDto(o.Id, o.Code, o.Name, o.IsPrimary, o.IsActive)).ToListAsync();
+
+        var allUnits = await db.OrgUnits.AsNoTracking().OrderBy(u => u.Path)
+            .Select(u => new UnitDto(u.Id, u.OrganizationId, u.ParentOrgUnitId, u.Kind, u.Code, u.Name, u.Path, u.IsActive))
+            .ToListAsync();
+        unitsByOrg = allUnits.GroupBy(u => u.OrganizationId).ToDictionary(g => g.Key, g => g.ToList());
+        unitsByParent = allUnits.Where(u => u.ParentOrgUnitId.HasValue)
+            .GroupBy(u => u.ParentOrgUnitId!.Value).ToDictionary(g => g.Key, g => g.ToList());
+
+        var allStations = await db.Stations.AsNoTracking()
+            .Select(s => new StationDto(s.Id, s.OrgUnitId, s.Code, s.Name, s.StationKind, s.IsActive))
+            .ToListAsync();
+        stationsByUnit = allStations.GroupBy(s => s.OrgUnitId).ToDictionary(g => g.Key, g => g.ToList());
+
+        var allAssets = await db.Assets.AsNoTracking().Where(a => a.OrgUnitId != null)
+            .Select(a => new AssetDto(a.Id, a.OrgUnitId!.Value, a.AssetTag, a.Name, a.AssetType, a.Status))
+            .ToListAsync();
+        assetsByUnit = allAssets.GroupBy(a => a.OrgUnitId).ToDictionary(g => g.Key, g => g.ToList());
+
+        loading = false;
+    }
+
+    private RenderFragment RenderUnit(UnitDto unit, int depth) => @<text>
+        @if (MatchesFilter(unit))
+        {
+            <div class="enterprise-tree-unit">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@KindIcon(unit.Kind)" Color="@(unit.IsActive ? Color.Default : Color.Warning)" Size="Size.Small" />
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@unit.Kind</MudChip>
+                    <MudText Typo="Typo.body2"><strong>@unit.Code</strong> — @unit.Name</MudText>
+                    @if (!unit.IsActive) { <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">Inactive</MudChip> }
+                    <MudSpacer />
+                    <MudLink Href="@($"enterprise/org-units")" Color="Color.Primary" Typo="Typo.caption">Edit</MudLink>
+                </MudStack>
+
+                @if (showStations && stationsByUnit.TryGetValue(unit.Id, out var stations))
+                {
+                    @foreach (var s in stations)
+                    {
+                        <div class="enterprise-tree-leaf">
+                            <MudIcon Icon="@Icons.Material.Filled.Engineering" Size="Size.Small" Style="vertical-align:middle" />
+                            <strong>@s.Code</strong> — @s.Name <span>(@s.StationKind)</span>
+                            @if (!s.IsActive) { <span style="color:var(--mud-palette-warning)"> · inactive</span> }
+                        </div>
+                    }
+                }
+                @if (showAssets && assetsByUnit.TryGetValue(unit.Id, out var assets))
+                {
+                    @foreach (var a in assets)
+                    {
+                        <div class="enterprise-tree-leaf">
+                            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Style="vertical-align:middle" />
+                            <strong>@a.AssetTag</strong> — @a.Name <span>(@a.AssetType · @a.Status)</span>
+                        </div>
+                    }
+                }
+
+                @{ var children = unitsByParent.GetValueOrDefault(unit.Id, []); }
+                @if (children.Count > 0)
+                {
+                    <div class="enterprise-tree-children">
+                        @foreach (var child in children) { @RenderUnit(child, depth + 1) }
+                    </div>
+                }
+            </div>
+        }
+    </text>;
+
+    private bool MatchesFilter(UnitDto unit)
+    {
+        if (string.IsNullOrWhiteSpace(filter)) return true;
+        var f = filter.Trim();
+        if (unit.Name.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
+        if (unit.Code.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
+        if (unit.Path.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
+        // If any descendant matches, show this ancestor too.
+        var descendants = unitsByParent.GetValueOrDefault(unit.Id, []);
+        return descendants.Any(MatchesFilter);
+    }
+
+    private static string KindIcon(OrgUnitKind k) => k switch
+    {
+        OrgUnitKind.Plant         => Icons.Material.Filled.Factory,
+        OrgUnitKind.Division      => Icons.Material.Filled.Apartment,
+        OrgUnitKind.Department    => Icons.Material.Filled.Business,
+        OrgUnitKind.Subdepartment => Icons.Material.Filled.CorporateFare,
+        OrgUnitKind.Team          => Icons.Material.Filled.Groups,
+        OrgUnitKind.Area          => Icons.Material.Filled.Map,
+        _                         => Icons.Material.Filled.Hub,
+    };
+
+    private record OrgDto(int Id, string Code, string Name, bool IsPrimary, bool IsActive);
+    private record UnitDto(int Id, int OrganizationId, int? ParentOrgUnitId, OrgUnitKind Kind, string Code, string Name, string Path, bool IsActive);
+    private record StationDto(int Id, int OrgUnitId, string Code, string Name, StationKind StationKind, bool IsActive);
+    private record AssetDto(int Id, int OrgUnitId, string AssetTag, string Name, AssetType AssetType, AssetStatus Status);
+}

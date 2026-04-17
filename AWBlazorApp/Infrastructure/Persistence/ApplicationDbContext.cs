@@ -12,6 +12,7 @@ using AWBlazorApp.Features.Identity.Domain;
 using AWBlazorApp.Features.Forecasting.Domain;
 using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
+using AWBlazorApp.Features.Enterprise.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -219,6 +220,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     // Batch 9 audit logs.
     public DbSet<DocumentAuditLog> DocumentAuditLogs => Set<DocumentAuditLog>();
     public DbSet<ProductDocumentAuditLog> ProductDocumentAuditLogs => Set<ProductDocumentAuditLog>();
+
+    // Batch 10 — Enterprise master data (org.* schema, EF-managed). Entities and their audit logs.
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrgUnit> OrgUnits => Set<OrgUnit>();
+    public DbSet<Station> Stations => Set<Station>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<CostCenter> CostCenters => Set<CostCenter>();
+    public DbSet<ProductLine> ProductLines => Set<ProductLine>();
+    public DbSet<OrganizationAuditLog> OrganizationAuditLogs => Set<OrganizationAuditLog>();
+    public DbSet<OrgUnitAuditLog> OrgUnitAuditLogs => Set<OrgUnitAuditLog>();
+    public DbSet<StationAuditLog> StationAuditLogs => Set<StationAuditLog>();
+    public DbSet<AssetAuditLog> AssetAuditLogs => Set<AssetAuditLog>();
+    public DbSet<CostCenterAuditLog> CostCenterAuditLogs => Set<CostCenterAuditLog>();
+    public DbSet<ProductLineAuditLog> ProductLineAuditLogs => Set<ProductLineAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -887,6 +902,114 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.ToTable("ProductDocumentAuditLogs");
             b.HasIndex(x => new { x.ProductId, x.DocumentNode });
+            b.HasIndex(x => x.ChangedDate);
+        });
+
+        // --- Enterprise master data (org schema) ---
+        builder.Entity<Organization>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            // Filtered unique index — exactly one row may be marked IsPrimary.
+            b.HasIndex(x => x.IsPrimary).IsUnique().HasFilter("[IsPrimary] = 1");
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.ParentOrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<OrgUnit>(b =>
+        {
+            b.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
+            b.HasIndex(x => x.ParentOrgUnitId);
+            b.HasIndex(x => x.Path);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.ParentOrgUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<CostCenter>().WithMany().HasForeignKey(x => x.CostCenterId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<Station>(b =>
+        {
+            b.HasIndex(x => new { x.OrgUnitId, x.Code }).IsUnique();
+            b.HasIndex(x => x.OperatorBusinessEntityId);
+            b.HasIndex(x => x.AssetId);
+            b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.OrgUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.StationKind).HasConversion<byte>();
+        });
+
+        builder.Entity<Asset>(b =>
+        {
+            b.HasIndex(x => x.AssetTag).IsUnique();
+            b.HasIndex(x => x.OrganizationId);
+            b.HasIndex(x => x.OrgUnitId);
+            b.HasIndex(x => x.Status);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.OrgUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<Asset>().WithMany().HasForeignKey(x => x.ParentAssetId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.AssetType).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<CostCenter>(b =>
+        {
+            b.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ProductLine>(b =>
+        {
+            b.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Enterprise audit logs — all live in dbo with the standard (entity Id + ChangedDate) indexes.
+        builder.Entity<OrganizationAuditLog>(b =>
+        {
+            b.ToTable("OrganizationAuditLogs");
+            b.HasIndex(x => x.OrganizationId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<OrgUnitAuditLog>(b =>
+        {
+            b.ToTable("OrgUnitAuditLogs");
+            b.HasIndex(x => x.OrgUnitId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+        builder.Entity<StationAuditLog>(b =>
+        {
+            b.ToTable("StationAuditLogs");
+            b.HasIndex(x => x.StationId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.StationKind).HasConversion<byte>();
+        });
+        builder.Entity<AssetAuditLog>(b =>
+        {
+            b.ToTable("AssetAuditLogs");
+            b.HasIndex(x => x.AssetId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.AssetType).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<CostCenterAuditLog>(b =>
+        {
+            b.ToTable("CostCenterAuditLogs");
+            b.HasIndex(x => x.CostCenterId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<ProductLineAuditLog>(b =>
+        {
+            b.ToTable("ProductLineAuditLogs");
+            b.HasIndex(x => x.ProductLineId);
             b.HasIndex(x => x.ChangedDate);
         });
     }
