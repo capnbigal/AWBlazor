@@ -13,6 +13,11 @@
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+-- sqlcmd connects with QUOTED_IDENTIFIER OFF by default, but the filtered index on
+-- Organization.IsPrimary (and any future SET-sensitive index/view) needs it ON.
+-- Same for ANSI_NULLS.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 
 IF SCHEMA_ID(N'org') IS NULL EXEC(N'CREATE SCHEMA [org];');
 
