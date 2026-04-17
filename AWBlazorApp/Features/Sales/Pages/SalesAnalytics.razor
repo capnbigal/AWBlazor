@@ -71,6 +71,12 @@
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
+                    else
+                    {
+                        <EmptyChartState Icon="@Icons.Material.Outlined.PieChart"
+                                         Message="No revenue by territory yet."
+                                         Hint="Orders need a TerritoryId assigned to show up here." />
+                    }
                 </MudPaper>
             </MudItem>
 
@@ -85,6 +91,11 @@
                                   InputLabels="@channelLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
+                    }
+                    else
+                    {
+                        <EmptyChartState Icon="@Icons.Material.Outlined.PieChart"
+                                         Message="No orders in the current data set." />
                     }
                 </MudPaper>
             </MudItem>
@@ -124,16 +135,14 @@
         </MudPaper>
 
         @* ── Quota vs. actual per salesperson ───────────────────────────────── *@
-        @if (quotaLabels.Length > 0)
-        {
-            <TimeSeriesChart Title="Quota vs. actual revenue (by quarter)"
-                             ChartType="ChartType.Bar"
-                             Labels="@quotaLabels"
-                             Series="@quotaSeries"
-                             Periods="@(new[] { "12M", "All" })"
-                             ShowGranularity="false"
-                             YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
-        }
+        @* TimeSeriesChart has its own empty-state fallback, so no outer guard needed. *@
+        <TimeSeriesChart Title="Quota vs. actual revenue (by quarter)"
+                         ChartType="ChartType.Bar"
+                         Labels="@quotaLabels"
+                         Series="@quotaSeries"
+                         Periods="@(new[] { "12M", "All" })"
+                         ShowGranularity="false"
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
     }
 </MudStack>
 

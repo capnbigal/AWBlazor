@@ -127,17 +127,23 @@
         </MudPaper>
 
         @* ── Requests by HTTP method ─────────────────────────────────────── *@
-        @if (methodLabels.Length > 0)
-        {
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-3">Requests by HTTP method</MudText>
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Requests by HTTP method</MudText>
+            @if (methodLabels.Length > 0)
+            {
                 <MudChart T="double" ChartType="ChartType.Pie"
                           InputData="@methodData"
                           InputLabels="@methodLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="300px" Height="300px" />
-            </MudPaper>
-        }
+            }
+            else
+            {
+                <EmptyChartState Icon="@Icons.Material.Outlined.PieChart"
+                                 Message="No requests logged for the selected window."
+                                 Height="300px" />
+            }
+        </MudPaper>
 
         @* ── Recent errors (last 10) ─────────────────────────────────────── *@
         <MudPaper Class="pa-4" Elevation="2">

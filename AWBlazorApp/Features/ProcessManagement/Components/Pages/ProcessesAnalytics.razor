@@ -38,15 +38,21 @@
         </MudGrid>
 
         @* -- Execution volume by month ---------------------------------------- *@
-        @if (data.VolumeLabels.Length > 0)
-        {
-            <TimeSeriesChart Title="Execution volume by month"
-                             ChartType="ChartType.Bar"
-                             Labels="@data.VolumeLabels"
-                             Series="@data.VolumeSeries"
-                             Periods="@(new[] { "6M", "12M", "All" })"
-                             ShowGranularity="false" />
-        }
+        @* TimeSeriesChart carries its own empty-state fallback, so no outer guard. *@
+        <TimeSeriesChart Title="Execution volume by month"
+                         ChartType="ChartType.Bar"
+                         Labels="@data.VolumeLabels"
+                         Series="@data.VolumeSeries"
+                         Periods="@(new[] { "6M", "12M", "All" })"
+                         ShowGranularity="false" />
+
+        @* -- Completion vs. overdue trend ------------------------------------- *@
+        <TimeSeriesChart Title="Completed vs. overdue executions per month"
+                         ChartType="ChartType.Line"
+                         Labels="@data.OutcomeLabels"
+                         Series="@data.OutcomeSeries"
+                         Periods="@(new[] { "6M", "12M", "All" })"
+                         ShowGranularity="false" />
 
         @* -- Top processes by execution count --------------------------------- *@
         @if (data.TopProcesses.Count > 0)
@@ -78,17 +84,23 @@
         }
 
         @* -- Status distribution pie chart ------------------------------------ *@
-        @if (data.StatusLabels.Length > 0)
-        {
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-3">Execution status distribution</MudText>
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Execution status distribution</MudText>
+            @if (data.StatusLabels.Length > 0)
+            {
                 <MudChart T="double" ChartType="ChartType.Pie"
                           InputData="@data.StatusData"
                           InputLabels="@data.StatusLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="320px" Height="320px" />
-            </MudPaper>
-        }
+            }
+            else
+            {
+                <EmptyChartState Icon="@Icons.Material.Outlined.PieChart"
+                                 Message="No executions recorded yet."
+                                 Height="320px" />
+            }
+        </MudPaper>
     }
 </MudStack>
 
@@ -126,7 +138,7 @@
         var totalResolved = completedCount + overdueCount;
         result.OnTimeRate = totalResolved > 0 ? (double)completedCount / totalResolved * 100 : 100;
 
-        // Execution volume by month
+        // Execution volume by month — single series, just a total count.
         var monthlyVolume = await db.ProcessExecutions.AsNoTracking()
             .GroupBy(e => new { e.ExecutionDate.Year, e.ExecutionDate.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
@@ -139,6 +151,30 @@
             result.VolumeSeries =
             [
                 new ChartSeries<double> { Name = "Executions", Data = monthlyVolume.Select(g => (double)g.Count).ToArray() },
+            ];
+        }
+
+        // Completion-vs-overdue trend — same monthly grouping, broken out by status so the
+        // on-time-rate KPI at the top has a time-series view to accompany it.
+        var monthlyOutcome = await db.ProcessExecutions.AsNoTracking()
+            .GroupBy(e => new { e.ExecutionDate.Year, e.ExecutionDate.Month })
+            .Select(g => new
+            {
+                g.Key.Year,
+                g.Key.Month,
+                Completed = g.Count(e => e.Status == ProcessExecutionStatus.Completed),
+                Overdue = g.Count(e => e.Status == ProcessExecutionStatus.Overdue),
+            })
+            .OrderBy(g => g.Year).ThenBy(g => g.Month)
+            .ToListAsync();
+
+        if (monthlyOutcome.Count > 0)
+        {
+            result.OutcomeLabels = monthlyOutcome.Select(g => $"{g.Year}-{g.Month:D2}").ToArray();
+            result.OutcomeSeries =
+            [
+                new ChartSeries<double> { Name = "Completed", Data = monthlyOutcome.Select(g => (double)g.Completed).ToArray() },
+                new ChartSeries<double> { Name = "Overdue",   Data = monthlyOutcome.Select(g => (double)g.Overdue).ToArray() },
             ];
         }
 
@@ -183,6 +219,8 @@
         public int OverdueCount { get; set; }
         public string[] VolumeLabels { get; set; } = [];
         public List<ChartSeries<double>> VolumeSeries { get; set; } = [];
+        public string[] OutcomeLabels { get; set; } = [];
+        public List<ChartSeries<double>> OutcomeSeries { get; set; } = [];
         public List<TopProcessRow> TopProcesses { get; set; } = [];
         public string[] StatusLabels { get; set; } = [];
         public double[] StatusData { get; set; } = [];

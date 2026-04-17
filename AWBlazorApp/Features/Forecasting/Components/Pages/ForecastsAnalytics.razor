@@ -37,23 +37,41 @@
             </MudItem>
         </MudGrid>
 
+        @* ── Accuracy trend over time ───────────────────────────────────────── *@
+        @* TimeSeriesChart has its own empty-state fallback. Lower variance = more accurate. *@
+        <TimeSeriesChart Title="Forecast accuracy trend (lower |variance %| is better)"
+                         ChartType="ChartType.Line"
+                         Labels="@data.AccuracyTrendLabels"
+                         Series="@data.AccuracyTrendSeries"
+                         Periods="@(new[] { "6M", "12M", "All" })"
+                         ShowGranularity="false"
+                         YAxisFormat="N1" />
+
         @* ── Accuracy by method ─────────────────────────────────────────────── *@
-        @if (data.AccuracyByMethodLabels.Length > 0)
-        {
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-3">Forecast accuracy by method</MudText>
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Forecast accuracy by method</MudText>
+            @if (data.AccuracyByMethodLabels.Length > 0)
+            {
                 <MudChart T="double" ChartType="ChartType.Bar"
                           ChartSeries="@data.AccuracyByMethodSeries"
                           XAxisLabels="@data.AccuracyByMethodLabels"
+                          ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="100%" Height="320px" />
-            </MudPaper>
-        }
+            }
+            else
+            {
+                <EmptyChartState Icon="@Icons.Material.Outlined.BarChart"
+                                 Message="No evaluated forecast points yet."
+                                 Hint="Accuracy appears here once the Hangfire forecast-evaluation job runs."
+                                 Height="320px" />
+            }
+        </MudPaper>
 
         @* ── Recently evaluated ─────────────────────────────────────────────── *@
-        @if (data.RecentlyEvaluated.Count > 0)
-        {
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-3">Recently evaluated</MudText>
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Recently evaluated</MudText>
+            @if (data.RecentlyEvaluated.Count > 0)
+            {
                 <MudSimpleTable Dense="true" Hover="true" Striped="true">
                     <thead>
                         <tr>
@@ -81,14 +99,20 @@
                         }
                     </tbody>
                 </MudSimpleTable>
-            </MudPaper>
-        }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                    No forecast points have been evaluated yet. Check back after the nightly evaluation job runs.
+                </MudAlert>
+            }
+        </MudPaper>
 
         @* ── Upcoming evaluations ───────────────────────────────────────────── *@
-        @if (data.UpcomingPoints.Count > 0)
-        {
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-3">Upcoming evaluations</MudText>
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Upcoming evaluations</MudText>
+            @if (data.UpcomingPoints.Count > 0)
+            {
                 <MudSimpleTable Dense="true" Hover="true" Striped="true">
                     <thead>
                         <tr>
@@ -110,8 +134,14 @@
                         }
                     </tbody>
                 </MudSimpleTable>
-            </MudPaper>
-        }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                    Nothing scheduled to evaluate in the next 90 days.
+                </MudAlert>
+            }
+        </MudPaper>
     }
 </MudStack>
 
@@ -173,6 +203,29 @@
             ];
         }
 
+        // Accuracy trend over time — group evaluated points by the month they cover (not the
+        // month they were evaluated in; otherwise a backfill run shows up as one big spike).
+        var trend = await db.ForecastDataPoints.AsNoTracking()
+            .Where(dp => dp.ActualValue != null && dp.VariancePercent != null)
+            .GroupBy(dp => new { dp.PeriodDate.Year, dp.PeriodDate.Month })
+            .Select(g => new
+            {
+                g.Key.Year,
+                g.Key.Month,
+                AvgAbsVariance = g.Average(dp => (double)(dp.VariancePercent!.Value < 0 ? -dp.VariancePercent.Value : dp.VariancePercent.Value)),
+            })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        if (trend.Count > 0)
+        {
+            result.AccuracyTrendLabels = trend.Select(t => $"{t.Year}-{t.Month:D2}").ToArray();
+            result.AccuracyTrendSeries =
+            [
+                new ChartSeries<double> { Name = "Avg |Variance %|", Data = trend.Select(t => Math.Round(t.AvgAbsVariance, 2)).ToArray() },
+            ];
+        }
+
         // Recently evaluated (last 15)
         result.RecentlyEvaluated = await db.ForecastDataPoints.AsNoTracking()
             .Where(dp => dp.ActualValue != null)
@@ -224,6 +277,8 @@
         public int TotalEvaluated { get; set; }
         public string[] AccuracyByMethodLabels { get; set; } = [];
         public List<ChartSeries<double>> AccuracyByMethodSeries { get; set; } = [];
+        public string[] AccuracyTrendLabels { get; set; } = [];
+        public List<ChartSeries<double>> AccuracyTrendSeries { get; set; } = [];
         public List<EvaluatedRow> RecentlyEvaluated { get; set; } = [];
         public List<UpcomingRow> UpcomingPoints { get; set; } = [];
     }

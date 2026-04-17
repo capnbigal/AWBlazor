@@ -57,6 +57,11 @@
                                   XAxisLabels="@tenureLabels"
                                   Width="100%" Height="280px" />
                     }
+                    else
+                    {
+                        <EmptyChartState Icon="@Icons.Material.Outlined.BarChart"
+                                         Message="No tenure data available." />
+                    }
                 </MudPaper>
             </MudItem>
 
@@ -71,6 +76,11 @@
                                   InputLabels="@genderLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
+                    }
+                    else
+                    {
+                        <EmptyChartState Icon="@Icons.Material.Outlined.PieChart"
+                                         Message="No gender data on file." />
                     }
                 </MudPaper>
             </MudItem>
@@ -94,6 +104,12 @@
                           XAxisLabels="@deptLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="100%" Height="320px" />
+            }
+            else
+            {
+                <EmptyChartState Icon="@Icons.Material.Outlined.BarChart"
+                                 Message="No active department assignments."
+                                 Height="320px" />
             }
         </MudPaper>
 
