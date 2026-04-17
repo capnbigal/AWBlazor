@@ -225,6 +225,12 @@ WHERE a.SpatialLocation IS NULL;";
         // then EnsureMissingTablesAsync creates the new org.* tables (with indexes + FKs from the
         // design-time model). Either path produces the same final schema.
         ("_AddEnterpriseMasterData",    "DashboardItems"),
+        // 2026-04 — AddAdvancedInventory: creates inv.InventoryLocation/InventoryItem/Lot/
+        // SerialUnit/InventoryBalance/InventoryTransactionType/InventoryTransaction/
+        // InventoryAdjustment/InventoryTransactionOutbox/InventoryTransactionQueue and five
+        // master-data audit log tables. Marker table is InventoryItem — if it already exists
+        // someone ran the migration out of band; otherwise the migration lands cleanly.
+        ("_AddAdvancedInventory",       "InventoryItem"),
     ];
 
     /// <summary>
@@ -671,6 +677,7 @@ WHERE a.SpatialLocation IS NULL;";
     private static async Task SeedReferenceDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
     {
         await SeedPrimaryOrganizationAsync(db, cancellationToken);
+        await SeedInventoryTransactionTypesAsync(db, cancellationToken);
     }
 
     /// <summary>
@@ -692,6 +699,64 @@ WHERE a.SpatialLocation IS NULL;";
             ModifiedDate = DateTime.UtcNow,
         };
         db.Organizations.Add(primary);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds the 20 canonical <c>inv.InventoryTransactionType</c> rows on first boot. Skips any
+    /// code already present so manual edits to individual rows (e.g. flipping EmitsJson for a
+    /// specific integration) survive the next startup.
+    /// </summary>
+    private static async Task SeedInventoryTransactionTypesAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        // (Id, Code, Name, Sign, RequiresApproval, EmitsJson)
+        // Sign = balance arithmetic: +1 = inflow, -1 = outflow, 0 = paired (two legs) or absolute.
+        // RequiresApproval: loss/gain events that need a signer.
+        // EmitsJson: downstream consumers care — anything that crosses the four-walls boundary.
+        var seeds = new (int Id, string Code, string Name, sbyte Sign, bool RequiresApproval, bool EmitsJson)[]
+        {
+            ( 1, "RECEIPT",      "Goods receipt",                +1, false, true  ),
+            ( 2, "PUTAWAY",      "Putaway to bin",               +1, false, false ),
+            ( 3, "PICK",         "Pick to staging",              -1, false, false ),
+            ( 4, "PACK",         "Pack for shipment",            -1, false, false ),
+            ( 5, "SHIP",         "Ship to customer",             -1, false, true  ),
+            ( 6, "ADJUST_INC",   "Adjustment — increase",        +1, true,  false ),
+            ( 7, "ADJUST_DEC",   "Adjustment — decrease",        -1, true,  false ),
+            ( 8, "MOVE",         "Move between locations",        0, false, false ),
+            ( 9, "SCRAP",        "Scrap / write-off",            -1, true,  false ),
+            (10, "RETURN_CUST",  "Customer return",              +1, false, true  ),
+            (11, "RETURN_VEND",  "Return to vendor",             -1, false, true  ),
+            (12, "COUNT",        "Physical count (absolute)",     0, false, false ),
+            (13, "CYCLE_COUNT",  "Cycle count (absolute)",        0, false, false ),
+            (14, "WIP_ISSUE",    "Issue to work order",          -1, false, false ),
+            (15, "WIP_RECEIPT",  "Receipt from work order",      +1, false, false ),
+            (16, "ASSEMBLY",     "Assembly build",               +1, false, false ),
+            (17, "DISASSEMBLY",  "Disassembly / teardown",       -1, false, false ),
+            (18, "TRANSFER_OUT", "Transfer out (inter-org)",     -1, false, true  ),
+            (19, "TRANSFER_IN",  "Transfer in (inter-org)",      +1, false, true  ),
+            (20, "REWORK",       "Rework loop",                   0, false, false ),
+        };
+
+        var existingCodes = await db.InventoryTransactionTypes.AsNoTracking()
+            .Select(t => t.Code).ToListAsync(ct);
+        var existing = new HashSet<string>(existingCodes, StringComparer.OrdinalIgnoreCase);
+
+        var toAdd = seeds
+            .Where(s => !existing.Contains(s.Code))
+            .Select(s => new Features.Inventory.Domain.InventoryTransactionType
+            {
+                Id = s.Id,
+                Code = s.Code,
+                Name = s.Name,
+                Sign = s.Sign,
+                RequiresApproval = s.RequiresApproval,
+                EmitsJson = s.EmitsJson,
+                IsActive = true,
+            })
+            .ToList();
+
+        if (toAdd.Count == 0) return;
+        db.InventoryTransactionTypes.AddRange(toAdd);
         await db.SaveChangesAsync(ct);
     }
 }

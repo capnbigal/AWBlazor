@@ -119,6 +119,15 @@ public static class EndpointMappingExtensions
         app.MapCostCenterEndpoints();
         app.MapProductLineEndpoints();
 
+        // Batch 11 — Advanced inventory (inv schema). Transaction writes go through IInventoryService.
+        AWBlazorApp.Features.Inventory.Endpoints.InventoryItemEndpoints.MapInventoryItemEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.InventoryLocationEndpoints.MapInventoryLocationEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.LotEndpoints.MapLotEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.SerialUnitEndpoints.MapSerialUnitEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.InventoryTransactionEndpoints.MapInventoryTransactionEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.InventoryAdjustmentEndpoints.MapInventoryAdjustmentEndpoints(app);
+        AWBlazorApp.Features.Inventory.Endpoints.InventoryReadOnlyEndpoints.MapInventoryReadOnlyEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

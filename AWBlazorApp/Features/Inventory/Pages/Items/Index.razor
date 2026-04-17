@@ -1,0 +1,113 @@
+@page "/inventory/items"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Inventory items</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Inventory items</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">inv.InventoryItem — metadata layer over Production.Product</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New item</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="InventoryItemDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.ProductId" Title="ProductId" />
+            <TemplateColumn Title="Lots" Sortable="false"><CellTemplate>@(context.Item.TracksLot ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Serials" Sortable="false"><CellTemplate>@(context.Item.TracksSerial ? "✓" : "")</CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.DefaultLocationId" Title="Default loc" />
+            <PropertyColumn Property="x => x.MinQty" Title="Min" Format="N2" />
+            <PropertyColumn Property="x => x.MaxQty" Title="Max" Format="N2" />
+            <PropertyColumn Property="x => x.ReorderPoint" Title="Reorder at" Format="N2" />
+            <PropertyColumn Property="x => x.ReorderQty" Title="Reorder qty" Format="N2" />
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="InventoryItemDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New inventory item</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newItem.ProductId" Label="ProductId" Required="true" Variant="Variant.Outlined" />
+            <MudCheckBox T="bool" @bind-Value="newItem.TracksLot" Label="Tracks lot" />
+            <MudCheckBox T="bool" @bind-Value="newItem.TracksSerial" Label="Tracks serial" />
+            <MudNumericField T="int?" @bind-Value="newItem.DefaultLocationId" Label="Default location id" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newItem.MinQty" Label="MinQty" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newItem.MaxQty" Label="MaxQty" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newItem.ReorderPoint" Label="Reorder point" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newItem.ReorderQty" Label="Reorder qty" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<InventoryItemDto> grid = null!;
+    private bool _loading = true;
+    private bool dialogOpen;
+    private bool saving;
+    private CreateInventoryItemRequest newItem = new();
+
+    private async Task<GridData<InventoryItemDto>> LoadAsync(GridState<InventoryItemDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.InventoryItems.AsNoTracking();
+            var total = await query.CountAsync(ct);
+            var rows = await query.OrderBy(x => x.ProductId)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<InventoryItemDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OpenCreateAsync()
+    {
+        newItem = new CreateInventoryItemRequest();
+        dialogOpen = true;
+    }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = newItem.ToEntity();
+            var by = await GetUserNameAsync();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.InventoryItems.Add(entity);
+            await db.SaveChangesAsync();
+            db.InventoryItemAuditLogs.Add(InventoryItemAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            Snackbar.Add("Item created.", Severity.Success);
+            dialogOpen = false;
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

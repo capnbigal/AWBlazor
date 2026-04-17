@@ -102,8 +102,17 @@ public static class PermissionAreaMapping
         ("/api/cost-centers", PermissionArea.Enterprise),
         ("/api/product-lines", PermissionArea.Enterprise),
 
-        // Advanced inventory (populated in Phase B)
-        ("/api/inventory", PermissionArea.Inventory),
+        // Advanced inventory (Phase B)
+        ("/api/inventory-items", PermissionArea.Inventory),
+        ("/api/inventory-locations", PermissionArea.Inventory),
+        ("/api/lots", PermissionArea.Inventory),
+        ("/api/serial-units", PermissionArea.Inventory),
+        ("/api/inventory-balances", PermissionArea.Inventory),
+        ("/api/inventory-transactions", PermissionArea.Inventory),
+        ("/api/inventory-transaction-types", PermissionArea.Inventory),
+        ("/api/inventory-adjustments", PermissionArea.Inventory),
+        ("/api/inventory-outbox", PermissionArea.Inventory),
+        ("/api/inventory-queue", PermissionArea.Inventory),
     ];
 
     /// <summary>

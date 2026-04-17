@@ -181,6 +181,11 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Hourly());
 
+            RecurringJob.AddOrUpdate<AWBlazorApp.Features.Inventory.Services.InventoryOutboxEmitterJob>(
+                "inventory-outbox-emitter",
+                job => job.ExecuteAsync(),
+                "*/1 * * * *"); // every minute — cheap poll; only does work when outbox has Pending rows
+
             // Note: ReportSchedule recurring jobs are registered by the /reports/schedule page
             // whenever a user saves or toggles a schedule. Hangfire's own SQL storage persists
             // them across restarts, so there's no need to re-register at startup. An earlier
