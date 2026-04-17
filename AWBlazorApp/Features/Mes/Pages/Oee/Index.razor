@@ -1,0 +1,141 @@
+@page "/mes/oee"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>OEE rollup</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">OEE rollup</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Availability × Performance × Quality by station — computed live from mes.* events</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudDatePicker @bind-Date="filterFrom" Label="From" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="filterTo" Label="To" Variant="Variant.Outlined" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="LoadAsync">Refresh</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (rows.Count == 0)
+    {
+        <EmptyChartState Icon="@Icons.Material.Outlined.Speed"
+                         Message="No completed runs in the selected window."
+                         Hint="Try widening the date range." />
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+            <thead>
+                <tr>
+                    <th>Station</th>
+                    <th style="text-align:right">Runs</th>
+                    <th style="text-align:right">Planned qty</th>
+                    <th style="text-align:right">Produced</th>
+                    <th style="text-align:right">Scrapped</th>
+                    <th style="text-align:right">Downtime</th>
+                    <th style="text-align:right">Availability</th>
+                    <th style="text-align:right">Performance</th>
+                    <th style="text-align:right">Quality</th>
+                    <th style="text-align:right">OEE</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows.OrderByDescending(r => r.Oee))
+                {
+                    <tr>
+                        <td><strong>@row.StationId</strong></td>
+                        <td style="text-align:right">@row.CompletedRuns</td>
+                        <td style="text-align:right">@row.PlannedQuantity.ToString("N2")</td>
+                        <td style="text-align:right">@row.ProducedQuantity.ToString("N2")</td>
+                        <td style="text-align:right">@row.ScrappedQuantity.ToString("N2")</td>
+                        <td style="text-align:right">@row.DowntimeMinutes.ToString("N0") min</td>
+                        <td style="text-align:right"><MudText Color="@Grade(row.Availability)">@row.Availability.ToString("P1")</MudText></td>
+                        <td style="text-align:right"><MudText Color="@Grade(row.Performance)">@row.Performance.ToString("P1")</MudText></td>
+                        <td style="text-align:right"><MudText Color="@Grade(row.Quality)">@row.Quality.ToString("P1")</MudText></td>
+                        <td style="text-align:right"><MudText Color="@Grade(row.Oee)"><strong>@row.Oee.ToString("P1")</strong></MudText></td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">Performance uses Produced ÷ Planned; Quality uses Produced ÷ (Produced + Scrapped); Availability uses (Window − Downtime) ÷ Window.</MudText>
+    }
+</MudStack>
+
+@code {
+    private record OeeRow(int StationId, int CompletedRuns, decimal PlannedQuantity, decimal ProducedQuantity,
+        decimal ScrappedQuantity, double DowntimeMinutes, double Availability, double Performance, double Quality, double Oee);
+
+    private bool loading = true;
+    private DateTime? filterFrom = DateTime.Today.AddDays(-30);
+    private DateTime? filterTo = DateTime.Today.AddDays(1);
+    private List<OeeRow> rows = [];
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        StateHasChanged();
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var from = filterFrom ?? DateTime.Today.AddDays(-30);
+            var to = filterTo ?? DateTime.Today.AddDays(1);
+
+            // Group completed runs by station within the window.
+            var runGroups = await db.ProductionRuns.AsNoTracking()
+                .Where(r => r.Status == ProductionRunStatus.Completed
+                            && r.StationId != null
+                            && r.ActualEndAt >= from && r.ActualEndAt < to)
+                .GroupBy(r => r.StationId!.Value)
+                .Select(g => new
+                {
+                    StationId = g.Key,
+                    Count = g.Count(),
+                    Planned = g.Sum(r => r.QuantityPlanned),
+                    Produced = g.Sum(r => r.QuantityProduced),
+                    Scrapped = g.Sum(r => r.QuantityScrapped),
+                })
+                .ToListAsync();
+
+            if (runGroups.Count == 0) { rows = []; return; }
+
+            var stationIds = runGroups.Select(g => g.StationId).ToList();
+
+            // Downtime per station in the window — only events with EndAt set.
+            var downtime = await db.DowntimeEvents.AsNoTracking()
+                .Where(d => stationIds.Contains(d.StationId) && d.EndAt != null && d.StartAt >= from && d.StartAt < to)
+                .ToListAsync();
+            var downtimeByStation = downtime
+                .GroupBy(d => d.StationId)
+                .ToDictionary(g => g.Key, g => g.Sum(d => (d.EndAt!.Value - d.StartAt).TotalMinutes));
+
+            var windowMinutes = (to - from).TotalMinutes;
+            rows = runGroups.Select(g =>
+            {
+                var downMin = downtimeByStation.GetValueOrDefault(g.StationId, 0d);
+                var availability = windowMinutes > 0 ? Math.Max(0, (windowMinutes - downMin) / windowMinutes) : 0;
+                var performance = g.Planned > 0 ? (double)(g.Produced / g.Planned) : 0;
+                var totalOut = g.Produced + g.Scrapped;
+                var quality = totalOut > 0 ? (double)(g.Produced / totalOut) : 0;
+                var oee = availability * performance * quality;
+                return new OeeRow(g.StationId, g.Count, g.Planned, g.Produced, g.Scrapped, downMin,
+                    availability, performance, quality, oee);
+            }).ToList();
+        }
+        finally { loading = false; StateHasChanged(); }
+    }
+
+    private static Color Grade(double value) => value switch
+    {
+        >= 0.85 => Color.Success,
+        >= 0.60 => Color.Warning,
+        _       => Color.Error,
+    };
+}

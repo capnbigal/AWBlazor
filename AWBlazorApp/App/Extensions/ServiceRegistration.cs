@@ -150,6 +150,8 @@ public static class ServiceRegistration
         services.AddScoped<AWBlazorApp.Features.Inventory.Services.IInventoryService, AWBlazorApp.Features.Inventory.Services.InventoryService>();
         services.AddSingleton<AWBlazorApp.Features.Inventory.Services.IInventoryOutboxPublisher, AWBlazorApp.Features.Inventory.Services.LoggingInventoryOutboxPublisher>();
         services.AddScoped<AWBlazorApp.Features.Logistics.Services.ILogisticsPostingService, AWBlazorApp.Features.Logistics.Services.LogisticsPostingService>();
+        services.AddScoped<AWBlazorApp.Features.Mes.Services.IProductionRunService, AWBlazorApp.Features.Mes.Services.ProductionRunService>();
+        services.AddScoped<AWBlazorApp.Features.Mes.Services.IWorkInstructionRevisionService, AWBlazorApp.Features.Mes.Services.WorkInstructionRevisionService>();
 
         var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
         var smtpHost = configuration["Smtp:Host"];

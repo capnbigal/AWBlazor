@@ -235,6 +235,10 @@ WHERE a.SpatialLocation IS NULL;";
         // ShipmentLine/StockTransfer/StockTransferLine + six audit log tables. Marker is
         // GoodsReceipt (pure lgx product, nothing fabricates it at runtime).
         ("_AddLogistics",               "GoodsReceipt"),
+        // 2026-04 — AddMes: creates mes.ProductionRun/RunOperation/OperatorClockEvent/
+        // DowntimeEvent/DowntimeReason/WorkInstruction/Revision/Step + six audit logs.
+        // Marker is ProductionRun (pure mes product).
+        ("_AddMesModule",               "ProductionRun"),
     ];
 
     /// <summary>
@@ -682,6 +686,7 @@ WHERE a.SpatialLocation IS NULL;";
     {
         await SeedPrimaryOrganizationAsync(db, cancellationToken);
         await SeedInventoryTransactionTypesAsync(db, cancellationToken);
+        await SeedDowntimeReasonsAsync(db, cancellationToken);
     }
 
     /// <summary>
@@ -761,6 +766,52 @@ WHERE a.SpatialLocation IS NULL;";
 
         if (toAdd.Count == 0) return;
         db.InventoryTransactionTypes.AddRange(toAdd);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds the 15 canonical <c>mes.DowntimeReason</c> codes on first boot. Skips any code
+    /// already present so user edits to a specific row's name/description survive restarts.
+    /// </summary>
+    private static async Task SeedDowntimeReasonsAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        var seeds = new (string Code, string Name, string? Description)[]
+        {
+            ("SETUP",              "Setup / changeover",       "Job changeover, fixturing, machine warm-up."),
+            ("MATERIAL",           "Material shortage",        "Out of stock at the line; awaiting kitting / replenishment."),
+            ("MACHINE_FAULT",      "Machine fault",            "Equipment failure halting the run; see maintenance work order."),
+            ("OPERATOR_BREAK",     "Operator break",           "Scheduled meal / rest break."),
+            ("QUALITY_HOLD",       "Quality hold",             "Awaiting inspector sign-off after defect / NCR."),
+            ("CHANGEOVER",         "Product changeover",       "Switching to a different SKU."),
+            ("CLEANING",           "Cleaning / sanitation",    "Sanitation cycle between runs."),
+            ("MAINT_SCHEDULED",    "Maintenance — scheduled",  "Planned PM service window."),
+            ("MAINT_UNSCHEDULED",  "Maintenance — unscheduled","Unplanned repair, including post-failure recovery."),
+            ("POWER",              "Power / utility outage",   "Loss of electrical, compressed air, water, etc."),
+            ("TOOLING",            "Tooling change",           "Tool wear-out replacement, indexing."),
+            ("WAIT_QC",            "Waiting for QC",           "First-piece or in-process inspection backlog."),
+            ("WAIT_MATERIAL",      "Waiting for material",     "Upstream operation behind schedule."),
+            ("MEETING",            "Meeting / training",       "Crew briefing, safety stand-down, training session."),
+            ("OTHER",              "Other",                    "Catch-all when no other code fits."),
+        };
+
+        var existingCodes = await db.DowntimeReasons.AsNoTracking()
+            .Select(r => r.Code).ToListAsync(ct);
+        var existing = new HashSet<string>(existingCodes, StringComparer.OrdinalIgnoreCase);
+
+        var toAdd = seeds
+            .Where(s => !existing.Contains(s.Code))
+            .Select(s => new Features.Mes.Domain.DowntimeReason
+            {
+                Code = s.Code,
+                Name = s.Name,
+                Description = s.Description,
+                IsActive = true,
+                ModifiedDate = DateTime.UtcNow,
+            })
+            .ToList();
+
+        if (toAdd.Count == 0) return;
+        db.DowntimeReasons.AddRange(toAdd);
         await db.SaveChangesAsync(ct);
     }
 }

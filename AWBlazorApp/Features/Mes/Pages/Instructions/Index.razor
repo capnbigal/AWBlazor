@@ -1,0 +1,102 @@
+@page "/mes/instructions"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Work instructions</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Work instructions</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">mes.WorkInstruction — versioned content keyed by WorkOrderRouting step</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New instruction</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="WorkInstructionDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id" />
+            <PropertyColumn Property="x => x.WorkOrderRoutingId" Title="Routing id" />
+            <PropertyColumn Property="x => x.Title" Title="Title" />
+            <PropertyColumn Property="x => x.ActiveRevisionId" Title="Active rev" />
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"mes/instructions/{context.Item.Id}"))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="WorkInstructionDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New work instruction</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newWi.WorkOrderRoutingId" Label="WorkOrderRoutingId" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newWi.Title" Label="Title" Required="true" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<WorkInstructionDto> grid = null!;
+    private bool _loading = true;
+    private bool dialogOpen, saving;
+    private CreateWorkInstructionRequest newWi = new();
+
+    private async Task<GridData<WorkInstructionDto>> LoadAsync(GridState<WorkInstructionDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.WorkInstructions.AsNoTracking();
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderBy(w => w.Title)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(w => w.ToDto()).ToListAsync(ct);
+            return new GridData<WorkInstructionDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OpenCreate() { newWi = new CreateWorkInstructionRequest(); dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = newWi.ToEntity();
+            var by = await GetUserNameAsync();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.WorkInstructions.Add(entity);
+            await db.SaveChangesAsync();
+            db.WorkInstructionAuditLogs.Add(WorkInstructionAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            Snackbar.Add("Created.", Severity.Success);
+            dialogOpen = false;
+            Navigation.NavigateTo($"mes/instructions/{entity.Id}");
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

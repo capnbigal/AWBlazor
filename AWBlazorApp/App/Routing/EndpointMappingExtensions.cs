@@ -133,6 +133,13 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Logistics.Endpoints.ShipmentEndpoints.MapShipmentEndpoints(app);
         AWBlazorApp.Features.Logistics.Endpoints.StockTransferEndpoints.MapStockTransferEndpoints(app);
 
+        // Batch 13 — MES (mes schema). Production-run completion writes WIP_ISSUE/WIP_RECEIPT via IInventoryService.
+        AWBlazorApp.Features.Mes.Endpoints.ProductionRunEndpoints.MapProductionRunEndpoints(app);
+        AWBlazorApp.Features.Mes.Endpoints.ShopFloorEndpoints.MapOperatorClockEventEndpoints(app);
+        AWBlazorApp.Features.Mes.Endpoints.ShopFloorEndpoints.MapDowntimeEventEndpoints(app);
+        AWBlazorApp.Features.Mes.Endpoints.ShopFloorEndpoints.MapDowntimeReasonEndpoints(app);
+        AWBlazorApp.Features.Mes.Endpoints.WorkInstructionEndpoints.MapWorkInstructionEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

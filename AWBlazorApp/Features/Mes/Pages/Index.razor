@@ -1,0 +1,88 @@
+@page "/mes"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Production execution</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Production execution</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Runs, downtime, operator clock-ins — OEE rolls up live from the event tables</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Value="@inProgressRuns.ToString("N0")" Label="Runs in progress" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Pause" Color="Color.Warning" Value="@pausedRuns.ToString("N0")" Label="Runs paused" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" Value="@completedToday.ToString("N0")" Label="Completed today" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ReportProblem" Color="Color.Error" Value="@openDowntime.ToString("N0")" Label="Open downtime events" /></MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Runs</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Start, pause, resume, complete production runs</MudText>
+                    </MudStack>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/runs">Open</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Timer" Color="Color.Warning" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Downtime</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Track reasons and durations against OEE</MudText>
+                    </MudStack>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/downtime">Open</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Info" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Work instructions</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Versioned content keyed to WorkOrderRouting steps</MudText>
+                    </MudStack>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/instructions">Open</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Success" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">OEE rollup</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Live Availability × Performance × Quality by station</MudText>
+                    </MudStack>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Analytics" Href="mes/oee">Open</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int inProgressRuns, pausedRuns, completedToday, openDowntime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var todayStart = DateTime.UtcNow.Date;
+        inProgressRuns = await db.ProductionRuns.CountAsync(r => r.Status == ProductionRunStatus.InProgress);
+        pausedRuns = await db.ProductionRuns.CountAsync(r => r.Status == ProductionRunStatus.Paused);
+        completedToday = await db.ProductionRuns.CountAsync(r => r.Status == ProductionRunStatus.Completed && r.ActualEndAt >= todayStart);
+        openDowntime = await db.DowntimeEvents.CountAsync(d => d.EndAt == null);
+    }
+}
