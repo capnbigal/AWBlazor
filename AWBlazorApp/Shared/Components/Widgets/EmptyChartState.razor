@@ -1,0 +1,29 @@
+@* Fallback block for charts that have no data to render. Drop-in replacement for the
+   bare-MudPaper-with-a-title-and-nothing-else pattern that was leaving the UI looking
+   broken on empty result sets. Pass Height to match the sibling chart's height so the
+   grid row doesn't collapse when one side is empty and the other is populated. *@
+
+<div class="empty-chart-state" style="@($"min-height: {Height}; display: flex; align-items: center; justify-content: center; padding: 16px;")">
+    <MudStack AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Secondary" />
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">@Message</MudText>
+        @if (!string.IsNullOrEmpty(Hint))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">@Hint</MudText>
+        }
+    </MudStack>
+</div>
+
+@code {
+    /// <summary>Primary message. Defaults to the standard "No data for the selected period." line.</summary>
+    [Parameter] public string Message { get; set; } = "No data for the selected period.";
+
+    /// <summary>Optional secondary hint — e.g. "Try a wider date range." Shows under the message.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>Icon rendered above the message. Default is a neutral chart-outline glyph.</summary>
+    [Parameter] public string Icon { get; set; } = Icons.Material.Outlined.StackedLineChart;
+
+    /// <summary>Minimum height so the empty state occupies roughly the same vertical space the chart would.</summary>
+    [Parameter] public string Height { get; set; } = "280px";
+}
