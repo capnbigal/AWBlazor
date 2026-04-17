@@ -231,6 +231,10 @@ WHERE a.SpatialLocation IS NULL;";
         // master-data audit log tables. Marker table is InventoryItem — if it already exists
         // someone ran the migration out of band; otherwise the migration lands cleanly.
         ("_AddAdvancedInventory",       "InventoryItem"),
+        // 2026-04 — AddLogistics: creates lgx.GoodsReceipt/GoodsReceiptLine/Shipment/
+        // ShipmentLine/StockTransfer/StockTransferLine + six audit log tables. Marker is
+        // GoodsReceipt (pure lgx product, nothing fabricates it at runtime).
+        ("_AddLogistics",               "GoodsReceipt"),
     ];
 
     /// <summary>

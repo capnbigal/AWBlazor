@@ -14,6 +14,7 @@ using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
 using AWBlazorApp.Features.Inventory.Domain;
+using AWBlazorApp.Features.Logistics.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -254,6 +255,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<LotAuditLog> LotAuditLogs => Set<LotAuditLog>();
     public DbSet<SerialUnitAuditLog> SerialUnitAuditLogs => Set<SerialUnitAuditLog>();
     public DbSet<InventoryAdjustmentAuditLog> InventoryAdjustmentAuditLogs => Set<InventoryAdjustmentAuditLog>();
+
+    // Batch 12 — Logistics (lgx.* schema). Inbound receipts, outbound shipments, and
+    // inter-location/inter-org stock transfers. Posting each writes inv.InventoryTransaction
+    // rows through IInventoryService so the ledger stays the single source of truth.
+    public DbSet<GoodsReceipt> GoodsReceipts => Set<GoodsReceipt>();
+    public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
+    public DbSet<StockTransferLine> StockTransferLines => Set<StockTransferLine>();
+    public DbSet<GoodsReceiptAuditLog> GoodsReceiptAuditLogs => Set<GoodsReceiptAuditLog>();
+    public DbSet<GoodsReceiptLineAuditLog> GoodsReceiptLineAuditLogs => Set<GoodsReceiptLineAuditLog>();
+    public DbSet<ShipmentAuditLog> ShipmentAuditLogs => Set<ShipmentAuditLog>();
+    public DbSet<ShipmentLineAuditLog> ShipmentLineAuditLogs => Set<ShipmentLineAuditLog>();
+    public DbSet<StockTransferAuditLog> StockTransferAuditLogs => Set<StockTransferAuditLog>();
+    public DbSet<StockTransferLineAuditLog> StockTransferLineAuditLogs => Set<StockTransferLineAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1204,6 +1221,140 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => x.ChangedDate);
             b.Property(x => x.ReasonCode).HasConversion<byte>();
             b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        // --- Logistics (lgx schema) ---
+        builder.Entity<GoodsReceipt>(b =>
+        {
+            b.HasIndex(x => x.ReceiptNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.PurchaseOrderId);
+            b.HasIndex(x => x.ReceivedLocationId);
+            b.HasIndex(x => x.ReceivedAt).IsDescending();
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.ReceivedLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<GoodsReceiptLine>(b =>
+        {
+            b.HasIndex(x => x.GoodsReceiptId);
+            b.HasIndex(x => x.PurchaseOrderDetailId);
+            b.HasIndex(x => x.InventoryItemId);
+            b.HasOne<GoodsReceipt>().WithMany().HasForeignKey(x => x.GoodsReceiptId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.PostedTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Shipment>(b =>
+        {
+            b.HasIndex(x => x.ShipmentNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.SalesOrderId);
+            b.HasIndex(x => x.ShippedFromLocationId);
+            b.HasIndex(x => x.ShippedAt).IsDescending();
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.ShippedFromLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<ShipmentLine>(b =>
+        {
+            b.HasIndex(x => x.ShipmentId);
+            b.HasIndex(x => x.SalesOrderDetailId);
+            b.HasIndex(x => x.InventoryItemId);
+            b.HasOne<Shipment>().WithMany().HasForeignKey(x => x.ShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<SerialUnit>().WithMany().HasForeignKey(x => x.SerialUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.PostedTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<StockTransfer>(b =>
+        {
+            b.HasIndex(x => x.TransferNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.FromLocationId);
+            b.HasIndex(x => x.ToLocationId);
+            b.HasIndex(x => x.CorrelationId);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.FromLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.ToLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.FromOrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.ToOrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<StockTransferLine>(b =>
+        {
+            b.HasIndex(x => x.StockTransferId);
+            b.HasIndex(x => x.InventoryItemId);
+            b.HasOne<StockTransfer>().WithMany().HasForeignKey(x => x.StockTransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<SerialUnit>().WithMany().HasForeignKey(x => x.SerialUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.FromTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.ToTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Audit logs — dbo.
+        builder.Entity<GoodsReceiptAuditLog>(b =>
+        {
+            b.ToTable("GoodsReceiptAuditLogs");
+            b.HasIndex(x => x.GoodsReceiptId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<GoodsReceiptLineAuditLog>(b =>
+        {
+            b.ToTable("GoodsReceiptLineAuditLogs");
+            b.HasIndex(x => x.GoodsReceiptLineId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<ShipmentAuditLog>(b =>
+        {
+            b.ToTable("ShipmentAuditLogs");
+            b.HasIndex(x => x.ShipmentId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<ShipmentLineAuditLog>(b =>
+        {
+            b.ToTable("ShipmentLineAuditLogs");
+            b.HasIndex(x => x.ShipmentLineId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<StockTransferAuditLog>(b =>
+        {
+            b.ToTable("StockTransferAuditLogs");
+            b.HasIndex(x => x.StockTransferId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<StockTransferLineAuditLog>(b =>
+        {
+            b.ToTable("StockTransferLineAuditLogs");
+            b.HasIndex(x => x.StockTransferLineId);
+            b.HasIndex(x => x.ChangedDate);
         });
     }
 }

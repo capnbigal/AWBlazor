@@ -113,6 +113,11 @@ public static class PermissionAreaMapping
         ("/api/inventory-adjustments", PermissionArea.Inventory),
         ("/api/inventory-outbox", PermissionArea.Inventory),
         ("/api/inventory-queue", PermissionArea.Inventory),
+
+        // Logistics (Module M3)
+        ("/api/goods-receipts", PermissionArea.Logistics),
+        ("/api/shipments", PermissionArea.Logistics),
+        ("/api/stock-transfers", PermissionArea.Logistics),
     ];
 
     /// <summary>

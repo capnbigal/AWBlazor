@@ -1,0 +1,86 @@
+@page "/logistics"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Logistics</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Logistics</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Receipts, shipments, transfers — every post writes inv.* ledger rows</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Goods receipts</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Inbound from POs and ad-hoc</MudText>
+                    </MudStack>
+                </MudStack>
+                <MudStack Row="true" Spacing="3" Class="mt-3">
+                    <MudChip T="string" Variant="Variant.Outlined">Drafts: @receiptDraftCount</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Posted (30d): @receiptPosted30Count</MudChip>
+                </MudStack>
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Inbox" Href="logistics/receipts">Open</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Outbox" Color="Color.Primary" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Shipments</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Outbound to customers</MudText>
+                    </MudStack>
+                </MudStack>
+                <MudStack Row="true" Spacing="3" Class="mt-3">
+                    <MudChip T="string" Variant="Variant.Outlined">In progress: @shipmentInProgress</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Shipped (30d): @shipmentShipped30</MudChip>
+                </MudStack>
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.LocalShipping" Href="logistics/shipments">Open</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.SyncAlt" Color="Color.Primary" Size="Size.Large" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Stock transfers</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Inter-location, inter-org</MudText>
+                    </MudStack>
+                </MudStack>
+                <MudStack Row="true" Spacing="3" Class="mt-3">
+                    <MudChip T="string" Variant="Variant.Outlined">In transit: @transferInTransit</MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Completed (30d): @transferCompleted30</MudChip>
+                </MudStack>
+                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SwapHoriz" Href="logistics/transfers">Open</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int receiptDraftCount, receiptPosted30Count;
+    private int shipmentInProgress, shipmentShipped30;
+    private int transferInTransit, transferCompleted30;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var since30 = DateTime.UtcNow.AddDays(-30);
+
+        receiptDraftCount = await db.GoodsReceipts.CountAsync(r => r.Status == GoodsReceiptStatus.Draft);
+        receiptPosted30Count = await db.GoodsReceipts.CountAsync(r => r.Status == GoodsReceiptStatus.Posted && r.PostedAt >= since30);
+
+        shipmentInProgress = await db.Shipments.CountAsync(s => s.Status == ShipmentStatus.Draft || s.Status == ShipmentStatus.Picked || s.Status == ShipmentStatus.Packed);
+        shipmentShipped30 = await db.Shipments.CountAsync(s => s.ShippedAt >= since30);
+
+        transferInTransit = await db.StockTransfers.CountAsync(t => t.Status == StockTransferStatus.InTransit);
+        transferCompleted30 = await db.StockTransfers.CountAsync(t => t.Status == StockTransferStatus.Completed && t.CompletedAt >= since30);
+    }
+}
