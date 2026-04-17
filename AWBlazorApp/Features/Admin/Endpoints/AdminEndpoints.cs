@@ -1,6 +1,7 @@
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Models;
+using AWBlazorApp.Shared.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,16 @@ public static class AdminEndpoints
         .WithName("GetAdminData")
         .WithSummary("Dashboard counts for the admin landing page.");
 
+        group.MapPost("/clear-lookup-cache", Ok<ClearLookupCacheResponse> (LookupService lookups) =>
+        {
+            var cleared = lookups.ClearCache();
+            return TypedResults.Ok(new ClearLookupCacheResponse(cleared));
+        })
+        .WithName("ClearLookupCache")
+        .WithSummary("Evict cached reference-data lookups so the next request reloads from the database.");
+
         return app;
     }
 }
+
+public sealed record ClearLookupCacheResponse(int EntriesCleared);
