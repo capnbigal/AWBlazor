@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Production.Models;
 using AWBlazorApp.Features.Production.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Production.Domain;
+using AWBlazorApp.Features.Production.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +20,26 @@ public static class ProductDescriptionEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListProductDescriptions").WithSummary("List Production.ProductDescription rows.");
-        group.MapGet("/{id:int}", GetAsync).WithName("GetProductDescription");
-        group.MapPost("/", CreateAsync).WithName("CreateProductDescription")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateProductDescription")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteProductDescription")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-        group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListProductDescriptionHistory");
+
+        group.MapIntIdCrud<ProductDescription, ProductDescriptionDto, CreateProductDescriptionRequest, UpdateProductDescriptionRequest, ProductDescriptionAuditLog, ProductDescriptionAuditLogDto, ProductDescriptionAuditService.Snapshot, int>(
+            entityName: "ProductDescription",
+            routePrefix: "/api/aw/product-descriptions",
+            entitySet: db => db.ProductDescriptions,
+            auditSet: db => db.ProductDescriptionAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.ProductDescriptionId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: ProductDescriptionAuditService.CaptureSnapshot,
+            recordCreate: ProductDescriptionAuditService.RecordCreate,
+            recordUpdate: ProductDescriptionAuditService.RecordUpdate,
+            recordDelete: ProductDescriptionAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
         return app;
     }
 
@@ -41,67 +53,5 @@ public static class ProductDescriptionEndpoints
         var total = await query.CountAsync(ct);
         var rows = await query.OrderBy(x => x.Id).Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
         return TypedResults.Ok(new PagedResult<ProductDescriptionDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<ProductDescriptionDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.ProductDescriptions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateProductDescriptionRequest request, IValidator<CreateProductDescriptionRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductDescriptions.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-        return TypedResults.Created($"/api/aw/product-descriptions/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id, UpdateProductDescriptionRequest request, IValidator<UpdateProductDescriptionRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.ProductDescriptions.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = ProductDescriptionAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.ProductDescriptions.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.ProductDescriptions.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<ProductDescriptionAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.ProductDescriptionAuditLogs.AsNoTracking()
-            .Where(a => a.ProductDescriptionId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }

@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Sales.Models;
 using AWBlazorApp.Features.Sales.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Sales.Domain;
+using AWBlazorApp.Features.Sales.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +20,26 @@ public static class CurrencyRateEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListCurrencyRates").WithSummary("List Sales.CurrencyRate rows.");
-        group.MapGet("/{id:int}", GetAsync).WithName("GetCurrencyRate");
-        group.MapPost("/", CreateAsync).WithName("CreateCurrencyRate")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateCurrencyRate")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteCurrencyRate")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-        group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListCurrencyRateHistory");
+
+        group.MapIntIdCrud<CurrencyRate, CurrencyRateDto, CreateCurrencyRateRequest, UpdateCurrencyRateRequest, CurrencyRateAuditLog, CurrencyRateAuditLogDto, CurrencyRateAuditService.Snapshot, int>(
+            entityName: "CurrencyRate",
+            routePrefix: "/api/aw/currency-rates",
+            entitySet: db => db.CurrencyRates,
+            auditSet: db => db.CurrencyRateAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.CurrencyRateId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: CurrencyRateAuditService.CaptureSnapshot,
+            recordCreate: CurrencyRateAuditService.RecordCreate,
+            recordUpdate: CurrencyRateAuditService.RecordUpdate,
+            recordDelete: CurrencyRateAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
         return app;
     }
 
@@ -44,67 +56,5 @@ public static class CurrencyRateEndpoints
         var rows = await query.OrderByDescending(x => x.CurrencyRateDate).ThenBy(x => x.Id)
             .Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
         return TypedResults.Ok(new PagedResult<CurrencyRateDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<CurrencyRateDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.CurrencyRates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateCurrencyRateRequest request, IValidator<CreateCurrencyRateRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.CurrencyRates.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-        return TypedResults.Created($"/api/aw/currency-rates/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id, UpdateCurrencyRateRequest request, IValidator<UpdateCurrencyRateRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.CurrencyRates.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = CurrencyRateAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.CurrencyRates.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.CurrencyRateAuditLogs.Add(CurrencyRateAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.CurrencyRates.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<CurrencyRateAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.CurrencyRateAuditLogs.AsNoTracking()
-            .Where(a => a.CurrencyRateId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }

@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Person.Models;
 using AWBlazorApp.Features.Person.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Person.Domain;
+using AWBlazorApp.Features.Person.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,28 +23,24 @@ public static class AddressTypeEndpoints
             .WithName("ListAddressTypes")
             .WithSummary("List AdventureWorks Person.AddressType rows.");
 
-        group.MapGet("/{id:int}", GetAsync)
-            .WithName("GetAddressType")
-            .WithSummary("Get a single AddressType by id.");
-
-        group.MapPost("/", CreateAsync)
-            .WithName("CreateAddressType")
-            .WithSummary("Create a new AddressType. Requires Employee role.")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-
-        group.MapPatch("/{id:int}", UpdateAsync)
-            .WithName("UpdateAddressType")
-            .WithSummary("Update an AddressType. Requires Employee role.")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-
-        group.MapDelete("/{id:int}", DeleteAsync)
-            .WithName("DeleteAddressType")
-            .WithSummary("Delete an AddressType. Requires Manager role.")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-
-        group.MapGet("/{id:int}/history", HistoryAsync)
-            .WithName("ListAddressTypeHistory")
-            .WithSummary("List audit-history rows for a single AddressType id.");
+        group.MapIntIdCrud<AddressType, AddressTypeDto, CreateAddressTypeRequest, UpdateAddressTypeRequest, AddressTypeAuditLog, AddressTypeAuditLogDto, AddressTypeAuditService.Snapshot, int>(
+            entityName: "AddressType",
+            routePrefix: "/api/aw/address-types",
+            entitySet: db => db.AddressTypes,
+            auditSet: db => db.AddressTypeAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.AddressTypeId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: AddressTypeAuditService.CaptureSnapshot,
+            recordCreate: AddressTypeAuditService.RecordCreate,
+            recordUpdate: AddressTypeAuditService.RecordUpdate,
+            recordDelete: AddressTypeAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
 
         return app;
     }
@@ -67,79 +63,5 @@ public static class AddressTypeEndpoints
             .ToListAsync(ct);
 
         return TypedResults.Ok(new PagedResult<AddressTypeDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<AddressTypeDto>, NotFound>> GetAsync(
-        int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.AddressTypes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateAddressTypeRequest request,
-        IValidator<CreateAddressTypeRequest> validator,
-        ApplicationDbContext db,
-        ClaimsPrincipal user,
-        CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.AddressTypes.Add(entity);
-        await db.SaveChangesAsync(ct);
-
-        db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-
-        return TypedResults.Created($"/api/aw/address-types/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id,
-        UpdateAddressTypeRequest request,
-        IValidator<UpdateAddressTypeRequest> validator,
-        ApplicationDbContext db,
-        ClaimsPrincipal user,
-        CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.AddressTypes.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = AddressTypeAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.AddressTypes.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.AddressTypes.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<AddressTypeAuditLogDto>>> HistoryAsync(
-        int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.AddressTypeAuditLogs.AsNoTracking()
-            .Where(a => a.AddressTypeId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }

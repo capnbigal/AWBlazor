@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.Production.Models;
 using AWBlazorApp.Features.Production.Audit;
-using FluentValidation;
+using AWBlazorApp.Features.Production.Domain;
+using AWBlazorApp.Features.Production.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +20,26 @@ public static class ProductPhotoEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListProductPhotos").WithSummary("List Production.ProductPhoto rows. Image bytes are not exposed.");
-        group.MapGet("/{id:int}", GetAsync).WithName("GetProductPhoto");
-        group.MapPost("/", CreateAsync).WithName("CreateProductPhoto")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateProductPhoto")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
-        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteProductPhoto")
-            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
-        group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListProductPhotoHistory");
+
+        group.MapIntIdCrud<ProductPhoto, ProductPhotoDto, CreateProductPhotoRequest, UpdateProductPhotoRequest, ProductPhotoAuditLog, ProductPhotoAuditLogDto, ProductPhotoAuditService.Snapshot, int>(
+            entityName: "ProductPhoto",
+            routePrefix: "/api/aw/product-photos",
+            entitySet: db => db.ProductPhotos,
+            auditSet: db => db.ProductPhotoAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.ProductPhotoId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: ProductPhotoAuditService.CaptureSnapshot,
+            recordCreate: ProductPhotoAuditService.RecordCreate,
+            recordUpdate: ProductPhotoAuditService.RecordUpdate,
+            recordDelete: ProductPhotoAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
         return app;
     }
 
@@ -47,67 +59,5 @@ public static class ProductPhotoEndpoints
                 x.ModifiedDate))
             .ToListAsync(ct);
         return TypedResults.Ok(new PagedResult<ProductPhotoDto>(rows, total, skip, take));
-    }
-
-    private static async Task<Results<Ok<ProductPhotoDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var row = await db.ProductPhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
-    }
-
-    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
-        CreateProductPhotoRequest request, IValidator<CreateProductPhotoRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductPhotos.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductPhotoAuditLogs.Add(ProductPhotoAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
-        return TypedResults.Created($"/api/aw/product-photos/{entity.Id}", new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
-        int id, UpdateProductPhotoRequest request, IValidator<UpdateProductPhotoRequest> validator,
-        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var v = await validator.ValidateAsync(request, ct);
-        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
-
-        var entity = await db.ProductPhotos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        var before = ProductPhotoAuditService.CaptureSnapshot(entity);
-        request.ApplyTo(entity);
-        db.ProductPhotoAuditLogs.Add(ProductPhotoAuditService.RecordUpdate(before, entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        return TypedResults.Ok(new IdResponse(entity.Id));
-    }
-
-    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
-        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
-    {
-        var entity = await db.ProductPhotos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (entity is null) return TypedResults.NotFound();
-
-        db.ProductPhotoAuditLogs.Add(ProductPhotoAuditService.RecordDelete(entity, user.Identity?.Name));
-        db.ProductPhotos.Remove(entity);
-        await db.SaveChangesAsync(ct);
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<Ok<List<ProductPhotoAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
-    {
-        var rows = await db.ProductPhotoAuditLogs.AsNoTracking()
-            .Where(a => a.ProductPhotoId == id)
-            .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
-            .ToListAsync(ct);
-        return TypedResults.Ok(rows);
     }
 }
