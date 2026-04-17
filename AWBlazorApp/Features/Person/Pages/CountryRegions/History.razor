@@ -10,7 +10,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/country-regions"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/country-regions"))" />
         <MudText Typo="Typo.h4">@(string.IsNullOrEmpty(Code) ? "Country / region history" : $"History for {Code}")</MudText>
         <MudSpacer />
         @if (!string.IsNullOrEmpty(Code))

@@ -56,9 +56,9 @@
                                 </MudText>
                             </CardHeaderContent>
                             <CardHeaderActions>
-                                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" OnClick="@(() => RunAsync(q))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEdit(q))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(q))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" aria-label="Run" Color="Color.Primary" OnClick="@(() => RunAsync(q))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" OnClick="@(() => OpenEdit(q))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Color="Color.Error" OnClick="@(() => DeleteAsync(q))" />
                             </CardHeaderActions>
                         </MudCardHeader>
                         <MudCardContent>

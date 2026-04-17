@@ -43,13 +43,13 @@
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
                         <MudTooltip Text="History">
-                            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
                         </MudTooltip>
                         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
                         </AuthorizeView>
                         <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
                         </AuthorizeView>
                     </MudStack>
                 </CellTemplate>

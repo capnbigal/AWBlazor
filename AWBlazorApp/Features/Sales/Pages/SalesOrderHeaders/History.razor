@@ -11,7 +11,7 @@
     <MudBreadcrumbs Items="_breadcrumbs" Class="mb-2" />
 
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/sales-order-headers"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/sales-order-headers"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Sales order history" : $"History for order #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)

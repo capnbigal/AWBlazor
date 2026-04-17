@@ -41,8 +41,8 @@
             </MudItem>
             <MudItem xs="12" sm="3" Class="d-flex align-center">
                 <MudCheckBox T="bool?" @bind-Value="filterActive" Label="Active only" TriState="true" />
-                <MudIconButton Icon="@Icons.Material.Filled.FilterAlt" OnClick="ApplyFilter" />
-                <MudIconButton Icon="@Icons.Material.Filled.Clear" OnClick="ClearFilter" />
+                <MudIconButton Icon="@Icons.Material.Filled.FilterAlt" aria-label="Filter" OnClick="ApplyFilter" />
+                <MudIconButton Icon="@Icons.Material.Filled.Clear" aria-label="Clear" OnClick="ClearFilter" />
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -76,17 +76,17 @@
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
                         <MudTooltip Text="History">
-                            <MudIconButton Icon="@Icons.Material.Filled.History"
+                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history"
                                            Size="Size.Small"
                                            OnClick="@(() => OpenHistory(context.Item))" />
                         </MudTooltip>
                         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit"
                                            Size="Size.Small"
                                            OnClick="@(() => OpenEditAsync(context.Item))" />
                         </AuthorizeView>
                         <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
                                            OnClick="@(() => DeleteAsync(context.Item))" />

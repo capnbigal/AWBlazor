@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/ship-methods"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/ship-methods"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "Ship method history" : $"History for ship method #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)

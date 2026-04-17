@@ -9,7 +9,7 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/purchase-order-headers"))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/purchase-order-headers"))" />
         <MudText Typo="Typo.h4">@(SlotId is null ? "PO header history" : $"History for PO #{SlotId}")</MudText>
         <MudSpacer />
         @if (SlotId is not null)
