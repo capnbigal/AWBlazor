@@ -128,6 +128,11 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Inventory.Endpoints.InventoryAdjustmentEndpoints.MapInventoryAdjustmentEndpoints(app);
         AWBlazorApp.Features.Inventory.Endpoints.InventoryReadOnlyEndpoints.MapInventoryReadOnlyEndpoints(app);
 
+        // Batch 12 — Logistics (lgx schema). Post workflows wire into IInventoryService.
+        AWBlazorApp.Features.Logistics.Endpoints.GoodsReceiptEndpoints.MapGoodsReceiptEndpoints(app);
+        AWBlazorApp.Features.Logistics.Endpoints.ShipmentEndpoints.MapShipmentEndpoints(app);
+        AWBlazorApp.Features.Logistics.Endpoints.StockTransferEndpoints.MapStockTransferEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

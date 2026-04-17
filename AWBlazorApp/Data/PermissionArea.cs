@@ -23,4 +23,5 @@ public enum PermissionArea
     Processes = 105,
     Enterprise = 106,
     Inventory = 107,
+    Logistics = 108,
 }

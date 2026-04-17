@@ -1,0 +1,195 @@
+@page "/logistics/transfers/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ILogisticsPostingService PostingService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Transfer @header?.TransferNumber</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("logistics/transfers"))" />
+            <MudText Typo="Typo.h5">@header.TransferNumber</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@header.Status</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"logistics/transfers/history?id={Id}")">History</MudButton>
+            @if (header.Status is StockTransferStatus.Draft or StockTransferStatus.InTransit)
+            {
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.SyncAlt" OnClick="PostAsync" Disabled="posting">@(posting ? "Posting..." : "Complete (writes paired ledger)")</MudButton>
+                </AuthorizeView>
+            }
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="From location" Variant="Variant.Text">@header.FromLocationId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="To location" Variant="Variant.Text">@header.ToLocationId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="From org" Variant="Variant.Text">@(header.FromOrganizationId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="To org" Variant="Variant.Text">@(header.ToOrganizationId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Initiated" Variant="Variant.Text">@header.InitiatedAt.ToString("yyyy-MM-dd HH:mm")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Completed" Variant="Variant.Text">@(header.CompletedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Correlation id" Variant="Variant.Text">@(header.CorrelationId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Posted by" Variant="Variant.Text">@(header.PostedByUserId ?? "—")</MudField></MudItem>
+                <MudItem xs="12"><MudField Label="Notes" Variant="Variant.Text">@(header.Notes ?? "—")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Lines (@lines.Count)</MudText>
+                <MudSpacer />
+                @if (header.Status is StockTransferStatus.Draft or StockTransferStatus.InTransit)
+                {
+                    <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddLine">Add line</MudButton>
+                    </AuthorizeView>
+                }
+            </MudStack>
+            @if (lines.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No lines yet. Add at least one before posting.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="mt-2">
+                    <thead>
+                        <tr><th>#</th><th>Item</th><th style="text-align:right">Qty</th><th>UoM</th><th>Lot</th><th>Serial</th><th>From tx</th><th>To tx</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in lines)
+                        {
+                            <tr>
+                                <td>@line.Id</td>
+                                <td>@line.InventoryItemId</td>
+                                <td style="text-align:right">@line.Quantity.ToString("N4")</td>
+                                <td>@line.UnitMeasureCode</td>
+                                <td>@(line.LotId?.ToString() ?? "—")</td>
+                                <td>@(line.SerialUnitId?.ToString() ?? "—")</td>
+                                <td>@(line.FromTransactionId?.ToString() ?? "—")</td>
+                                <td>@(line.ToTransactionId?.ToString() ?? "—")</td>
+                                <td>
+                                    @if (header.Status is StockTransferStatus.Draft or StockTransferStatus.InTransit)
+                                    {
+                                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteLineAsync(line.Id))" />
+                                        </AuthorizeView>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="lineDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New line</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newLine.InventoryItemId" Label="InventoryItemId" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newLine.Quantity" Label="Quantity" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newLine.UnitMeasureCode" Label="UoM" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newLine.LotId" Label="LotId (optional)" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newLine.SerialUnitId" Label="SerialUnitId (optional)" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => lineDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddLineAsync" Disabled="addingLine">@(addingLine ? "Adding..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private StockTransferDto? header;
+    private List<StockTransferLineDto> lines = [];
+    private bool posting;
+    private bool lineDialogOpen, addingLine;
+    private CreateStockTransferLineRequest newLine = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.StockTransfers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        header = entity?.ToDto();
+        lines = await db.StockTransferLines.AsNoTracking().Where(l => l.StockTransferId == Id)
+            .OrderBy(l => l.Id).Select(l => l.ToDto()).ToListAsync();
+    }
+
+    private async Task PostAsync()
+    {
+        posting = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var result = await PostingService.PostTransferAsync(Id, by, CancellationToken.None);
+            Snackbar.Add($"Completed: {result.LinesPosted} lines, {result.TransactionIds.Count} ledger rows (paired).", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Post failed: {ex.Message}", Severity.Error); }
+        finally { posting = false; }
+    }
+
+    private void OpenAddLine() { newLine = new CreateStockTransferLineRequest { StockTransferId = Id, UnitMeasureCode = "EA", Quantity = 1 }; lineDialogOpen = true; }
+
+    private async Task AddLineAsync()
+    {
+        addingLine = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newLine.StockTransferId = Id;
+            var entity = newLine.ToEntity();
+            var by = await GetUserNameAsync();
+            db.StockTransferLines.Add(entity);
+            await db.SaveChangesAsync();
+            db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add("Line added.", Severity.Success);
+            lineDialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add line failed: {ex.Message}", Severity.Error); }
+        finally { addingLine = false; }
+    }
+
+    private async Task DeleteLineAsync(int lineId)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.StockTransferLines.FirstOrDefaultAsync(x => x.Id == lineId);
+        if (entity is null) return;
+        var by = await GetUserNameAsync();
+        db.StockTransferLines.Remove(entity);
+        db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordDelete(entity, by));
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private static Color StatusColor(StockTransferStatus s) => s switch
+    {
+        StockTransferStatus.Draft => Color.Default,
+        StockTransferStatus.InTransit => Color.Info,
+        StockTransferStatus.Completed => Color.Success,
+        StockTransferStatus.Cancelled => Color.Error,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
