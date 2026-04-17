@@ -1,0 +1,48 @@
+@using AWBlazorApp.Features.Enterprise.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Scope</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Organization: <strong>@(orgCode ?? "—")</strong></MudText>
+                    @if (!string.IsNullOrWhiteSpace(description))
+                    { <MudText Typo="Typo.body2">Description: @description</MudText> }
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Future links</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary"><em>Product → product-line linkage ships with Phase E (engineering).</em></MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [Parameter] public int ProductLineId { get; set; }
+
+    private bool loading = true;
+    private string? orgCode;
+    private string? description;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var pl = await db.ProductLines.AsNoTracking().FirstOrDefaultAsync(p => p.Id == ProductLineId);
+        if (pl is not null)
+        {
+            description = pl.Description;
+            orgCode = await db.Organizations.AsNoTracking().Where(o => o.Id == pl.OrganizationId).Select(o => o.Code).FirstOrDefaultAsync();
+        }
+        loading = false;
+    }
+}

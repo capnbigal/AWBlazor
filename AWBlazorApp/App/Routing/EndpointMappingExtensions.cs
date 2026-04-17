@@ -10,6 +10,7 @@ using AWBlazorApp.Features.Gallery.Endpoints;
 using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Shared.Endpoints;
 using AWBlazorApp.Features.Admin.Endpoints;
+using AWBlazorApp.Features.Enterprise.Endpoints;
 
 namespace AWBlazorApp.App.Routing;
 
@@ -109,6 +110,14 @@ public static class EndpointMappingExtensions
         // Batch 9 — Production: Document + ProductDocument (hierarchyid PK support).
         app.MapDocumentEndpoints();
         app.MapProductDocumentEndpoints();
+
+        // Batch 10 — Enterprise master data (org schema, EF-managed).
+        app.MapOrganizationEndpoints();
+        app.MapOrgUnitEndpoints();
+        app.MapStationEndpoints();
+        app.MapAssetEndpoints();
+        app.MapCostCenterEndpoints();
+        app.MapProductLineEndpoints();
 
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();

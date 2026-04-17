@@ -1,0 +1,64 @@
+using AWBlazorApp.Data;
+using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Endpoints;
+using AWBlazorApp.Shared.Models;
+using AWBlazorApp.Features.Enterprise.Audit;
+using AWBlazorApp.Features.Enterprise.Domain;
+using AWBlazorApp.Features.Enterprise.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace AWBlazorApp.Features.Enterprise.Endpoints;
+
+public static class ProductLineEndpoints
+{
+    public static IEndpointRouteBuilder MapProductLineEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/product-lines")
+            .WithTags("ProductLines")
+            .RequireAuthorization("ApiOrCookie");
+
+        group.MapGet("/", ListAsync).WithName("ListProductLines").WithSummary("List org.ProductLine rows.");
+
+        group.MapIntIdCrud<ProductLine, ProductLineDto, CreateProductLineRequest, UpdateProductLineRequest, ProductLineAuditLog, ProductLineAuditLogDto, ProductLineAuditService.Snapshot, int>(
+            entityName: "ProductLine",
+            routePrefix: "/api/product-lines",
+            entitySet: db => db.ProductLines,
+            auditSet: db => db.ProductLineAuditLogs,
+            idSelector: e => e.Id,
+            auditIdSelector: a => a.ProductLineId,
+            auditChangedDateSelector: a => a.ChangedDate,
+            auditPrimaryKeySelector: a => a.Id,
+            getId: e => e.Id,
+            toDto: e => e.ToDto(),
+            toEntity: r => r.ToEntity(),
+            applyUpdate: (r, e) => r.ApplyTo(e),
+            captureSnapshot: ProductLineAuditService.CaptureSnapshot,
+            recordCreate: ProductLineAuditService.RecordCreate,
+            recordUpdate: ProductLineAuditService.RecordUpdate,
+            recordDelete: ProductLineAuditService.RecordDelete,
+            auditToDto: a => a.ToDto());
+
+        return app;
+    }
+
+    private static async Task<Ok<PagedResult<ProductLineDto>>> ListAsync(
+        ApplicationDbContext db,
+        [FromQuery] int skip = 0, [FromQuery] int take = 50,
+        [FromQuery] int? organizationId = null, [FromQuery] string? code = null,
+        [FromQuery] string? name = null, [FromQuery] bool? isActive = null,
+        CancellationToken ct = default)
+    {
+        take = Math.Clamp(take, 1, 1000);
+        var query = db.ProductLines.AsNoTracking();
+        if (organizationId.HasValue) query = query.Where(x => x.OrganizationId == organizationId.Value);
+        if (!string.IsNullOrWhiteSpace(code)) query = query.Where(x => x.Code.Contains(code));
+        if (!string.IsNullOrWhiteSpace(name)) query = query.Where(x => x.Name.Contains(name));
+        if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
+        var total = await query.CountAsync(ct);
+        var rows = await query.OrderBy(x => x.Code)
+            .Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<ProductLineDto>(rows, total, skip, take));
+    }
+}

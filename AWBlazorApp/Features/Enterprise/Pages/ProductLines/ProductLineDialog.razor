@@ -1,0 +1,120 @@
+@using AWBlazorApp.Features.Enterprise.Domain
+@using AWBlazorApp.Features.Enterprise.Models
+@using AWBlazorApp.Features.Enterprise.Audit
+@using AWBlazorApp.Shared.Validators
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductLineRequest> CreateValidator
+@inject MudFormValidator<UpdateProductLineRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create product line" : $"Edit product line #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudSelect T="int" Value="@createModel.OrganizationId" ValueChanged="@((int v) => createModel = createModel with { OrganizationId = v })" Label="Organization" Variant="Variant.Outlined" Required="true">
+                            @foreach (var o in orgs) { <MudSelectItem T="int" Value="@o.Id">@o.Code — @o.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Code" ValueChanged="@((string? v) => createModel = createModel with { Code = v })" Label="Code" Variant="Variant.Outlined" Required="true" MaxLength="32" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="200" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@createModel.Description" ValueChanged="@((string? v) => createModel = createModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Lines="3" MaxLength="2000" /></MudItem>
+                    <MudItem xs="12"><MudSwitch T="bool" Value="@createModel.IsActive" ValueChanged="@((bool v) => createModel = createModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Code" ValueChanged="@((string? v) => updateModel = updateModel with { Code = v })" Label="Code" Variant="Variant.Outlined" MaxLength="32" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" MaxLength="200" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@updateModel.Description" ValueChanged="@((string? v) => updateModel = updateModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Lines="3" MaxLength="2000" /></MudItem>
+                    <MudItem xs="12"><MudSwitch T="bool" Value="@(updateModel.IsActive ?? true)" ValueChanged="@((bool v) => updateModel = updateModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProductLineDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateProductLineRequest createModel = new();
+    private UpdateProductLineRequest updateModel = new();
+    private bool saving;
+    private List<OrganizationDto> orgs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        orgs = await db.Organizations.AsNoTracking().Where(o => o.IsActive).OrderBy(o => o.Code).Select(o => o.ToDto()).ToListAsync();
+        if (Model is not null)
+        {
+            updateModel = new UpdateProductLineRequest
+            {
+                Code = Model.Code, Name = Model.Name, Description = Model.Description, IsActive = Model.IsActive,
+            };
+        }
+        else if (orgs.Count > 0)
+        {
+            var primary = orgs.FirstOrDefault(o => o.IsPrimary) ?? orgs[0];
+            createModel = createModel with { OrganizationId = primary.Id };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var by = await GetCurrentUserNameAsync();
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.ProductLines.Add(entity);
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                db.ProductLineAuditLogs.Add(ProductLineAuditService.RecordCreate(entity, by));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = await db.ProductLines.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = ProductLineAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.ProductLineAuditLogs.Add(ProductLineAuditService.RecordUpdate(before, entity, by));
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

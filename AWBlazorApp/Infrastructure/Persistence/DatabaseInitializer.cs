@@ -214,9 +214,17 @@ WHERE a.SpatialLocation IS NULL;";
     /// </summary>
     private static readonly (string MigrationSuffix, string MarkerTable)[] MigrationMarkers =
     [
-        ("_InitialSchema",         "AspNetRoles"),
-        ("_AddApiKeys",            "ApiKeys"),
-        ("_AddToolSlotAuditLogs",  "ToolSlotAuditLogs"),
+        ("_InitialSchema",              "AspNetRoles"),
+        ("_AddApiKeys",                 "ApiKeys"),
+        ("_AddToolSlotAuditLogs",       "ToolSlotAuditLogs"),
+        // 2026-04 — AddEnterpriseMasterData: creates org.Organization/OrgUnit/Station/Asset/
+        // CostCenter/ProductLine + their audit log tables, AND formalizes the Insights tables
+        // (DashboardItems/KpiSnapshots/etc.) that EnsureMissingTablesAsync had been fabricating.
+        // On fresh databases: DashboardItems doesn't exist → migration runs and creates everything.
+        // On dev/existing databases: DashboardItems already exists → migration stamped as applied,
+        // then EnsureMissingTablesAsync creates the new org.* tables (with indexes + FKs from the
+        // design-time model). Either path produces the same final schema.
+        ("_AddEnterpriseMasterData",    "DashboardItems"),
     ];
 
     /// <summary>
@@ -355,11 +363,23 @@ WHERE a.SpatialLocation IS NULL;";
 
         if (missing.Count == 0) return;
 
+        // Always include schemas used by any missing table — CREATE TABLE [org].[Foo] will fail
+        // unless we first ensure the [org] schema exists. EnsureSchema is idempotent (EF emits
+        // IF NOT EXISTS), so including it unconditionally is safe.
+        var missingSchemas = missing.Select(m => m.Schema).Where(s => s != "dbo").Distinct().ToHashSet();
+
         var filtered = new List<MigrationOperation>();
         foreach (var op in allOps)
         {
             switch (op)
             {
+                case EnsureSchemaOperation ensure:
+                    if (missingSchemas.Contains(ensure.Name))
+                    {
+                        filtered.Add(ensure);
+                    }
+                    break;
+
                 case CreateTableOperation create:
                     if (missing.Contains((create.Schema ?? "dbo", create.Name)))
                     {
@@ -648,10 +668,30 @@ WHERE a.SpatialLocation IS NULL;";
         }
     }
 
-    private static Task SeedReferenceDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
+    private static async Task SeedReferenceDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
     {
-        // Booking/Coupon seed data removed — replaced by Forecasting domain.
-        // Forecast definitions are created by users through the UI.
-        return Task.CompletedTask;
+        await SeedPrimaryOrganizationAsync(db, cancellationToken);
+    }
+
+    /// <summary>
+    /// Makes sure there's at least one row in <c>org.Organization</c> marked <c>IsPrimary=true</c>
+    /// so downstream UI (OrgUnit create, Asset create, etc.) always has a root to hang things off.
+    /// No-ops once a primary organization exists.
+    /// </summary>
+    private static async Task SeedPrimaryOrganizationAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        var alreadySeeded = await db.Organizations.AsNoTracking().AnyAsync(o => o.IsPrimary, ct);
+        if (alreadySeeded) return;
+
+        var primary = new Features.Enterprise.Domain.Organization
+        {
+            Code = "PRIMARY",
+            Name = "Primary Organization",
+            IsPrimary = true,
+            IsActive = true,
+            ModifiedDate = DateTime.UtcNow,
+        };
+        db.Organizations.Add(primary);
+        await db.SaveChangesAsync(ct);
     }
 }
