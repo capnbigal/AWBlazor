@@ -1,0 +1,101 @@
+@page "/quality/capa"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ICapaService CapaService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>CAPA</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">CAPA cases</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">qa.CapaCase — corrective + preventive action investigations linked to NCRs</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Open case</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="CapaCaseDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.CaseNumber" Title="Number" />
+            <PropertyColumn Property="x => x.Title" Title="Title" />
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.OwnerBusinessEntityId" Title="Owner" />
+            <PropertyColumn Property="x => x.OpenedAt" Title="Opened" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ClosedAt" Title="Closed" Format="yyyy-MM-dd" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"quality/capa/{context.Item.Id}"))" /></CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="CapaCaseDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Open CAPA case</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="newCase.Title" Label="Title" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newCase.OwnerBusinessEntityId" Label="Owner (BusinessEntityId)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="ncrIdsCsv" Label="Linked NCR ids (comma-separated)" Variant="Variant.Outlined" HelperText="Optional — link more later" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Opening..." : "Open")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<CapaCaseDto> grid = null!;
+    private bool _loading = true;
+    private bool dialogOpen, saving;
+    private CreateCapaCaseRequest newCase = new();
+    private string ncrIdsCsv = string.Empty;
+
+    private async Task<GridData<CapaCaseDto>> LoadAsync(GridState<CapaCaseDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.CapaCases.AsNoTracking();
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.OpenedAt).ThenByDescending(x => x.Id)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<CapaCaseDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OpenCreate() { newCase = new CreateCapaCaseRequest(); ncrIdsCsv = string.Empty; dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            var linked = ncrIdsCsv
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => int.TryParse(s, out var id) ? id : (int?)null)
+                .Where(id => id.HasValue).Select(id => id!.Value).ToList();
+            var by = await GetUserNameAsync();
+            var newId = await CapaService.OpenAsync(newCase.Title!, newCase.OwnerBusinessEntityId, linked, by, CancellationToken.None);
+            Snackbar.Add($"Opened CAPA case #{newId}.", Severity.Success);
+            dialogOpen = false;
+            Navigation.NavigateTo($"quality/capa/{newId}");
+        }
+        catch (Exception ex) { Snackbar.Add($"Open failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

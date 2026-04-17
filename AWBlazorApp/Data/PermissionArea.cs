@@ -25,4 +25,5 @@ public enum PermissionArea
     Inventory = 107,
     Logistics = 108,
     Mes = 109,
+    Quality = 110,
 }

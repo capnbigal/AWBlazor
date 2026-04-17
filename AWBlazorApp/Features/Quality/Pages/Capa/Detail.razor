@@ -1,0 +1,203 @@
+@page "/quality/capa/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ICapaService CapaService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>CAPA @header?.CaseNumber</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("quality/capa"))" />
+            <MudText Typo="Typo.h5">@header.CaseNumber — @header.Title</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@header.Status</MudChip>
+            <MudSpacer />
+            @if (header.Status != CapaStatus.Closed)
+            {
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    @if (NextStatus(header.Status) is { } next)
+                    {
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowForward" OnClick="@(() => TransitionAsync(next))" Disabled="busy">Advance to @next</MudButton>
+                    }
+                    <MudButton Color="Color.Error" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Close" OnClick="@(() => TransitionAsync(CapaStatus.Closed))" Disabled="busy">Close</MudButton>
+                </AuthorizeView>
+            }
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Owner" Variant="Variant.Text">@(header.OwnerBusinessEntityId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Opened" Variant="Variant.Text">@header.OpenedAt.ToString("yyyy-MM-dd HH:mm")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Closed" Variant="Variant.Text">@(header.ClosedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="12"><MudTextField T="string" Label="Root cause" @bind-Value="editedRootCause" Variant="Variant.Outlined" Lines="3" Disabled="@(header.Status == CapaStatus.Closed)" /></MudItem>
+                <MudItem xs="12"><MudTextField T="string" Label="Corrective action" @bind-Value="editedCorrective" Variant="Variant.Outlined" Lines="3" Disabled="@(header.Status == CapaStatus.Closed)" /></MudItem>
+                <MudItem xs="12"><MudTextField T="string" Label="Preventive action" @bind-Value="editedPreventive" Variant="Variant.Outlined" Lines="3" Disabled="@(header.Status == CapaStatus.Closed)" /></MudItem>
+                <MudItem xs="12"><MudTextField T="string" Label="Verification notes" @bind-Value="editedVerification" Variant="Variant.Outlined" Lines="3" Disabled="@(header.Status == CapaStatus.Closed)" /></MudItem>
+                @if (header.Status != CapaStatus.Closed)
+                {
+                    <MudItem xs="12"><MudButton Color="Color.Primary" Variant="Variant.Outlined" OnClick="SaveEditsAsync" Disabled="busy">Save edits</MudButton></MudItem>
+                }
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Linked NCRs (@linkedNcrs.Count)</MudText>
+                <MudSpacer />
+                @if (header.Status != CapaStatus.Closed)
+                {
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudNumericField T="int?" @bind-Value="newNcrId" Label="NCR id" Variant="Variant.Outlined" Style="max-width: 150px" />
+                        <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Link" OnClick="LinkAsync" Disabled="busy">Link</MudButton>
+                    </AuthorizeView>
+                }
+            </MudStack>
+            @if (linkedNcrs.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">No NCRs linked yet.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="mt-2">
+                    <thead><tr><th>NCR id</th><th>Linked at</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var l in linkedNcrs.OrderByDescending(l => l.LinkedAt))
+                        {
+                            <tr>
+                                <td><MudLink Href="@($"quality/ncrs/{l.NonConformanceId}")">#@l.NonConformanceId</MudLink></td>
+                                <td>@l.LinkedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    @if (header.Status != CapaStatus.Closed)
+                                    {
+                                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                            <MudIconButton Icon="@Icons.Material.Filled.LinkOff" Size="Size.Small" Color="Color.Error" OnClick="@(() => UnlinkAsync(l.NonConformanceId))" />
+                                        </AuthorizeView>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private CapaCaseDto? header;
+    private List<CapaCaseNonConformanceDto> linkedNcrs = [];
+    private bool busy;
+
+    private string? editedRootCause, editedCorrective, editedPreventive, editedVerification;
+    private int? newNcrId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.CapaCases.AsNoTracking().FirstOrDefaultAsync(c => c.Id == Id);
+        header = entity?.ToDto();
+        if (header is not null)
+        {
+            editedRootCause = header.RootCause;
+            editedCorrective = header.CorrectiveAction;
+            editedPreventive = header.PreventiveAction;
+            editedVerification = header.VerificationNotes;
+        }
+        linkedNcrs = await db.CapaCaseNonConformances.AsNoTracking().Where(l => l.CapaCaseId == Id)
+            .OrderByDescending(l => l.LinkedAt).Select(l => l.ToDto()).ToListAsync();
+    }
+
+    private async Task SaveEditsAsync()
+    {
+        busy = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.CapaCases.FirstAsync(c => c.Id == Id);
+            var before = CapaCaseAuditService.CaptureSnapshot(entity);
+            new UpdateCapaCaseRequest
+            {
+                RootCause = editedRootCause,
+                CorrectiveAction = editedCorrective,
+                PreventiveAction = editedPreventive,
+                VerificationNotes = editedVerification,
+            }.ApplyTo(entity);
+            var by = await GetUserNameAsync();
+            db.CapaCaseAuditLogs.Add(CapaCaseAuditService.RecordUpdate(before, entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add("Edits saved.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Save failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task TransitionAsync(CapaStatus target)
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            await CapaService.TransitionAsync(Id, target, by, CancellationToken.None);
+            Snackbar.Add($"Status now {target}.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Transition failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task LinkAsync()
+    {
+        if (newNcrId is null or 0) { Snackbar.Add("Enter an NCR id.", Severity.Warning); return; }
+        try
+        {
+            await CapaService.LinkNcrAsync(Id, newNcrId.Value, CancellationToken.None);
+            Snackbar.Add($"Linked NCR #{newNcrId}.", Severity.Success);
+            newNcrId = null;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Link failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task UnlinkAsync(int ncrId)
+    {
+        await CapaService.UnlinkNcrAsync(Id, ncrId, CancellationToken.None);
+        await LoadAsync();
+    }
+
+    private static CapaStatus? NextStatus(CapaStatus current) => current switch
+    {
+        CapaStatus.Open => CapaStatus.Investigation,
+        CapaStatus.Investigation => CapaStatus.CorrectiveAction,
+        CapaStatus.CorrectiveAction => CapaStatus.Verification,
+        CapaStatus.Verification => CapaStatus.Closed,
+        _ => null,
+    };
+
+    private static Color StatusColor(CapaStatus s) => s switch
+    {
+        CapaStatus.Open => Color.Default,
+        CapaStatus.Investigation => Color.Info,
+        CapaStatus.CorrectiveAction => Color.Warning,
+        CapaStatus.Verification => Color.Primary,
+        CapaStatus.Closed => Color.Success,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

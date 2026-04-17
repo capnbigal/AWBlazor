@@ -16,6 +16,7 @@ using AWBlazorApp.Features.Enterprise.Domain;
 using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Mes.Domain;
+using AWBlazorApp.Features.Quality.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -290,6 +291,23 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<WorkInstructionAuditLog> WorkInstructionAuditLogs => Set<WorkInstructionAuditLog>();
     public DbSet<WorkInstructionRevisionAuditLog> WorkInstructionRevisionAuditLogs => Set<WorkInstructionRevisionAuditLog>();
     public DbSet<WorkInstructionStepAuditLog> WorkInstructionStepAuditLogs => Set<WorkInstructionStepAuditLog>();
+
+    // Batch 14 — Quality (qa.* schema). Inspections / NCRs / CAPA cases. NCR disposition writes
+    // SCRAP or paired Available→Quarantine MOVE inventory transactions through IInventoryService.
+    public DbSet<InspectionPlan> InspectionPlans => Set<InspectionPlan>();
+    public DbSet<InspectionPlanCharacteristic> InspectionPlanCharacteristics => Set<InspectionPlanCharacteristic>();
+    public DbSet<Inspection> Inspections => Set<Inspection>();
+    public DbSet<InspectionResult> InspectionResults => Set<InspectionResult>();
+    public DbSet<NonConformance> NonConformances => Set<NonConformance>();
+    public DbSet<NonConformanceAction> NonConformanceActions => Set<NonConformanceAction>();
+    public DbSet<CapaCase> CapaCases => Set<CapaCase>();
+    public DbSet<CapaCaseNonConformance> CapaCaseNonConformances => Set<CapaCaseNonConformance>();
+    public DbSet<InspectionPlanAuditLog> InspectionPlanAuditLogs => Set<InspectionPlanAuditLog>();
+    public DbSet<InspectionPlanCharacteristicAuditLog> InspectionPlanCharacteristicAuditLogs => Set<InspectionPlanCharacteristicAuditLog>();
+    public DbSet<InspectionAuditLog> InspectionAuditLogs => Set<InspectionAuditLog>();
+    public DbSet<NonConformanceAuditLog> NonConformanceAuditLogs => Set<NonConformanceAuditLog>();
+    public DbSet<NonConformanceActionAuditLog> NonConformanceActionAuditLogs => Set<NonConformanceActionAuditLog>();
+    public DbSet<CapaCaseAuditLog> CapaCaseAuditLogs => Set<CapaCaseAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1493,6 +1511,141 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.ToTable("WorkInstructionStepAuditLogs");
             b.HasIndex(x => x.WorkInstructionStepId);
             b.HasIndex(x => x.ChangedDate);
+        });
+
+        // --- Quality (qa schema) ---
+        builder.Entity<InspectionPlan>(b =>
+        {
+            b.HasIndex(x => x.PlanCode).IsUnique();
+            b.HasIndex(x => x.Scope);
+            b.HasIndex(x => x.ProductId);
+            b.HasIndex(x => x.VendorBusinessEntityId);
+            b.Property(x => x.Scope).HasConversion<byte>();
+        });
+
+        builder.Entity<InspectionPlanCharacteristic>(b =>
+        {
+            b.HasIndex(x => new { x.InspectionPlanId, x.SequenceNumber }).IsUnique();
+            b.HasOne<InspectionPlan>().WithMany().HasForeignKey(x => x.InspectionPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<Inspection>(b =>
+        {
+            b.HasIndex(x => x.InspectionNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.InspectionPlanId);
+            b.HasIndex(x => new { x.SourceKind, x.SourceId });
+            b.HasOne<InspectionPlan>().WithMany().HasForeignKey(x => x.InspectionPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.SourceKind).HasConversion<byte>();
+        });
+
+        builder.Entity<InspectionResult>(b =>
+        {
+            b.HasIndex(x => x.InspectionId);
+            b.HasIndex(x => x.RecordedAt).IsDescending();
+            b.HasOne<Inspection>().WithMany().HasForeignKey(x => x.InspectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<InspectionPlanCharacteristic>().WithMany().HasForeignKey(x => x.InspectionPlanCharacteristicId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<NonConformance>(b =>
+        {
+            b.HasIndex(x => x.NcrNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.InspectionId);
+            b.HasIndex(x => x.InventoryItemId);
+            b.HasOne<Inspection>().WithMany().HasForeignKey(x => x.InspectionId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.PostedTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.Disposition).HasConversion<byte?>();
+        });
+
+        builder.Entity<NonConformanceAction>(b =>
+        {
+            b.HasIndex(x => x.NonConformanceId);
+            b.HasIndex(x => x.PerformedAt).IsDescending();
+            b.HasOne<NonConformance>().WithMany().HasForeignKey(x => x.NonConformanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CapaCase>(b =>
+        {
+            b.HasIndex(x => x.CaseNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.OpenedAt).IsDescending();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<CapaCaseNonConformance>(b =>
+        {
+            b.HasIndex(x => new { x.CapaCaseId, x.NonConformanceId }).IsUnique();
+            b.HasIndex(x => x.NonConformanceId);
+            b.HasOne<CapaCase>().WithMany().HasForeignKey(x => x.CapaCaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<NonConformance>().WithMany().HasForeignKey(x => x.NonConformanceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Quality audit logs — dbo.
+        builder.Entity<InspectionPlanAuditLog>(b =>
+        {
+            b.ToTable("InspectionPlanAuditLogs");
+            b.HasIndex(x => x.InspectionPlanId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Scope).HasConversion<byte>();
+        });
+        builder.Entity<InspectionPlanCharacteristicAuditLog>(b =>
+        {
+            b.ToTable("InspectionPlanCharacteristicAuditLogs");
+            b.HasIndex(x => x.InspectionPlanCharacteristicId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+        builder.Entity<InspectionAuditLog>(b =>
+        {
+            b.ToTable("InspectionAuditLogs");
+            b.HasIndex(x => x.InspectionId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.SourceKind).HasConversion<byte>();
+        });
+        builder.Entity<NonConformanceAuditLog>(b =>
+        {
+            b.ToTable("NonConformanceAuditLogs");
+            b.HasIndex(x => x.NonConformanceId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.Disposition).HasConversion<byte?>();
+        });
+        builder.Entity<NonConformanceActionAuditLog>(b =>
+        {
+            b.ToTable("NonConformanceActionAuditLogs");
+            b.HasIndex(x => x.NonConformanceActionId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<CapaCaseAuditLog>(b =>
+        {
+            b.ToTable("CapaCaseAuditLogs");
+            b.HasIndex(x => x.CapaCaseId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
         });
     }
 }

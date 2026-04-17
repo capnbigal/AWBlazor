@@ -1,0 +1,185 @@
+@page "/quality/inspection-plans/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Plan @header?.PlanCode</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("quality/inspection-plans"))" />
+            <MudText Typo="Typo.h5">@header.PlanCode — @header.Name</MudText>
+            <MudChip T="string" Variant="Variant.Outlined">@header.Scope</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"quality/inspection-plans/{Id}/history")">History</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="12"><MudField Label="Description" Variant="Variant.Text">@(header.Description ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="ProductId" Variant="Variant.Text">@(header.ProductId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="WorkOrderRoutingId" Variant="Variant.Text">@(header.WorkOrderRoutingId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Vendor" Variant="Variant.Text">@(header.VendorBusinessEntityId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Sampling rule" Variant="Variant.Text">@(header.SamplingRule ?? "—")</MudField></MudItem>
+                <MudItem xs="12">
+                    <MudStack Row="true" Spacing="2">
+                        <MudChip T="string" Size="Size.Small" Color="@(header.AutoTriggerOnReceipt ? Color.Info : Color.Default)" Variant="Variant.Outlined">Auto on RCV</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@(header.AutoTriggerOnShipment ? Color.Info : Color.Default)" Variant="Variant.Outlined">Auto on SHP</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@(header.AutoTriggerOnProductionRun ? Color.Info : Color.Default)" Variant="Variant.Outlined">Auto on RUN</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@(header.IsActive ? Color.Success : Color.Default)" Variant="Variant.Outlined">@(header.IsActive ? "Active" : "Inactive")</MudChip>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Characteristics (@chars.Count)</MudText>
+                <MudSpacer />
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddChar">Add characteristic</MudButton>
+                </AuthorizeView>
+            </MudStack>
+            @if (chars.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">No characteristics yet — inspections against this plan will pass trivially. Add at least one.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="mt-2">
+                    <thead><tr><th>Seq</th><th>Name</th><th>Kind</th><th>Min</th><th>Max</th><th>Target</th><th>UoM</th><th>Expected</th><th>Critical</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in chars.OrderBy(c => c.SequenceNumber))
+                        {
+                            <tr>
+                                <td>@c.SequenceNumber</td>
+                                <td><strong>@c.Name</strong></td>
+                                <td>@c.Kind</td>
+                                <td>@(c.MinValue?.ToString("N4") ?? "—")</td>
+                                <td>@(c.MaxValue?.ToString("N4") ?? "—")</td>
+                                <td>@(c.TargetValue?.ToString("N4") ?? "—")</td>
+                                <td>@(c.UnitMeasureCode ?? "—")</td>
+                                <td>@(c.ExpectedValue ?? "—")</td>
+                                <td>@(c.IsCritical ? "✓" : "")</td>
+                                <td>
+                                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteCharAsync(c.Id))" />
+                                    </AuthorizeView>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="charDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New characteristic</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newChar.SequenceNumber" Label="Sequence" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newChar.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+            <MudSelect T="CharacteristicKind" @bind-Value="newChar.Kind" Label="Kind" Variant="Variant.Outlined">
+                <MudSelectItem T="CharacteristicKind" Value="@CharacteristicKind.Numeric">Numeric (Min/Max/Target)</MudSelectItem>
+                <MudSelectItem T="CharacteristicKind" Value="@CharacteristicKind.Attribute">Attribute (pass/fail)</MudSelectItem>
+            </MudSelect>
+            @if (newChar.Kind == CharacteristicKind.Numeric)
+            {
+                <MudNumericField T="decimal?" @bind-Value="newChar.MinValue" Label="Min" Variant="Variant.Outlined" />
+                <MudNumericField T="decimal?" @bind-Value="newChar.MaxValue" Label="Max" Variant="Variant.Outlined" />
+                <MudNumericField T="decimal?" @bind-Value="newChar.TargetValue" Label="Target" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="newChar.UnitMeasureCode" Label="UoM" Variant="Variant.Outlined" />
+            }
+            else
+            {
+                <MudTextField @bind-Value="newChar.ExpectedValue" Label="Expected value (e.g. Pass)" Required="true" Variant="Variant.Outlined" />
+            }
+            <MudCheckBox T="bool" @bind-Value="newChar.IsCritical" Label="Critical (single failure → overall Fail)" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => charDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddCharAsync" Disabled="busy">@(busy ? "Adding..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private InspectionPlanDto? header;
+    private List<InspectionPlanCharacteristicDto> chars = [];
+    private bool busy;
+
+    private bool charDialogOpen;
+    private CreateInspectionPlanCharacteristicRequest newChar = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.InspectionPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Id);
+        header = entity?.ToDto();
+        chars = await db.InspectionPlanCharacteristics.AsNoTracking().Where(c => c.InspectionPlanId == Id)
+            .OrderBy(c => c.SequenceNumber).Select(c => c.ToDto()).ToListAsync();
+    }
+
+    private void OpenAddChar()
+    {
+        newChar = new CreateInspectionPlanCharacteristicRequest
+        {
+            InspectionPlanId = Id,
+            SequenceNumber = chars.Count == 0 ? 1 : chars.Max(c => c.SequenceNumber) + 1,
+            Kind = CharacteristicKind.Numeric,
+        };
+        charDialogOpen = true;
+    }
+
+    private async Task AddCharAsync()
+    {
+        busy = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newChar.InspectionPlanId = Id;
+            var entity = newChar.ToEntity();
+            var by = await GetUserNameAsync();
+            db.InspectionPlanCharacteristics.Add(entity);
+            await db.SaveChangesAsync();
+            db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add("Characteristic added.", Severity.Success);
+            charDialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task DeleteCharAsync(int cid)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.InspectionPlanCharacteristics.FirstOrDefaultAsync(c => c.Id == cid);
+        if (entity is null) return;
+        var by = await GetUserNameAsync();
+        db.InspectionPlanCharacteristics.Remove(entity);
+        db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordDelete(entity, by));
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

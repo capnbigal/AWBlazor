@@ -239,6 +239,10 @@ WHERE a.SpatialLocation IS NULL;";
         // DowntimeEvent/DowntimeReason/WorkInstruction/Revision/Step + six audit logs.
         // Marker is ProductionRun (pure mes product).
         ("_AddMesModule",               "ProductionRun"),
+        // 2026-04 — AddQualityModule: creates qa.InspectionPlan/PlanCharacteristic/Inspection/
+        // Result/NonConformance/Action/CapaCase/CapaCaseNonConformance + six audit logs.
+        // Marker is InspectionPlan (pure qa product).
+        ("_AddQualityModule",           "InspectionPlan"),
     ];
 
     /// <summary>
