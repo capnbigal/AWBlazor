@@ -15,6 +15,7 @@ using AWBlazorApp.Features.ProcessManagement.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
 using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Logistics.Domain;
+using AWBlazorApp.Features.Mes.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -271,6 +272,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ShipmentLineAuditLog> ShipmentLineAuditLogs => Set<ShipmentLineAuditLog>();
     public DbSet<StockTransferAuditLog> StockTransferAuditLogs => Set<StockTransferAuditLog>();
     public DbSet<StockTransferLineAuditLog> StockTransferLineAuditLogs => Set<StockTransferLineAuditLog>();
+
+    // Batch 13 — Production execution / MES (mes.* schema). Run completion writes WIP_ISSUE
+    // and WIP_RECEIPT inventory transactions through IInventoryService; downtime + clock
+    // events are append-only audit-ish records that drive the OEE rollup.
+    public DbSet<ProductionRun> ProductionRuns => Set<ProductionRun>();
+    public DbSet<ProductionRunOperation> ProductionRunOperations => Set<ProductionRunOperation>();
+    public DbSet<OperatorClockEvent> OperatorClockEvents => Set<OperatorClockEvent>();
+    public DbSet<DowntimeEvent> DowntimeEvents => Set<DowntimeEvent>();
+    public DbSet<DowntimeReason> DowntimeReasons => Set<DowntimeReason>();
+    public DbSet<WorkInstruction> WorkInstructions => Set<WorkInstruction>();
+    public DbSet<WorkInstructionRevision> WorkInstructionRevisions => Set<WorkInstructionRevision>();
+    public DbSet<WorkInstructionStep> WorkInstructionSteps => Set<WorkInstructionStep>();
+    public DbSet<ProductionRunAuditLog> ProductionRunAuditLogs => Set<ProductionRunAuditLog>();
+    public DbSet<ProductionRunOperationAuditLog> ProductionRunOperationAuditLogs => Set<ProductionRunOperationAuditLog>();
+    public DbSet<DowntimeReasonAuditLog> DowntimeReasonAuditLogs => Set<DowntimeReasonAuditLog>();
+    public DbSet<WorkInstructionAuditLog> WorkInstructionAuditLogs => Set<WorkInstructionAuditLog>();
+    public DbSet<WorkInstructionRevisionAuditLog> WorkInstructionRevisionAuditLogs => Set<WorkInstructionRevisionAuditLog>();
+    public DbSet<WorkInstructionStepAuditLog> WorkInstructionStepAuditLogs => Set<WorkInstructionStepAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1354,6 +1373,125 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.ToTable("StockTransferLineAuditLogs");
             b.HasIndex(x => x.StockTransferLineId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+
+        // --- MES (mes schema) ---
+        builder.Entity<ProductionRun>(b =>
+        {
+            b.HasIndex(x => x.RunNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.WorkOrderId);
+            b.HasIndex(x => x.StationId);
+            b.HasIndex(x => x.PlannedStartAt).IsDescending();
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Kind).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<ProductionRunOperation>(b =>
+        {
+            b.HasIndex(x => x.ProductionRunId);
+            b.HasOne<ProductionRun>().WithMany().HasForeignKey(x => x.ProductionRunId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<OperatorClockEvent>(b =>
+        {
+            b.HasIndex(x => x.StationId);
+            b.HasIndex(x => x.BusinessEntityId);
+            b.HasIndex(x => x.ClockInAt).IsDescending();
+            b.HasOne<ProductionRun>().WithMany().HasForeignKey(x => x.ProductionRunId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<DowntimeEvent>(b =>
+        {
+            b.HasIndex(x => x.StationId);
+            b.HasIndex(x => x.DowntimeReasonId);
+            b.HasIndex(x => x.StartAt).IsDescending();
+            b.HasOne<ProductionRun>().WithMany().HasForeignKey(x => x.ProductionRunId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<DowntimeReason>().WithMany().HasForeignKey(x => x.DowntimeReasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<DowntimeReason>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+        });
+
+        builder.Entity<WorkInstruction>(b =>
+        {
+            b.HasIndex(x => x.WorkOrderRoutingId).IsUnique();
+            // NoAction (not SetNull) because the reverse FK from WorkInstructionRevision →
+            // WorkInstruction uses Cascade, and SQL Server rejects the resulting cascade cycle.
+            // Null-out on delete happens at the service layer instead.
+            b.HasOne<WorkInstructionRevision>().WithMany().HasForeignKey(x => x.ActiveRevisionId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        builder.Entity<WorkInstructionRevision>(b =>
+        {
+            b.HasIndex(x => new { x.WorkInstructionId, x.RevisionNumber }).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasOne<WorkInstruction>().WithMany().HasForeignKey(x => x.WorkInstructionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<WorkInstructionStep>(b =>
+        {
+            b.HasIndex(x => new { x.WorkInstructionRevisionId, x.SequenceNumber }).IsUnique();
+            b.HasOne<WorkInstructionRevision>().WithMany().HasForeignKey(x => x.WorkInstructionRevisionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MES audit logs — dbo.
+        builder.Entity<ProductionRunAuditLog>(b =>
+        {
+            b.ToTable("ProductionRunAuditLogs");
+            b.HasIndex(x => x.ProductionRunId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<ProductionRunOperationAuditLog>(b =>
+        {
+            b.ToTable("ProductionRunOperationAuditLogs");
+            b.HasIndex(x => x.ProductionRunOperationId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<DowntimeReasonAuditLog>(b =>
+        {
+            b.ToTable("DowntimeReasonAuditLogs");
+            b.HasIndex(x => x.DowntimeReasonId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<WorkInstructionAuditLog>(b =>
+        {
+            b.ToTable("WorkInstructionAuditLogs");
+            b.HasIndex(x => x.WorkInstructionId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<WorkInstructionRevisionAuditLog>(b =>
+        {
+            b.ToTable("WorkInstructionRevisionAuditLogs");
+            b.HasIndex(x => x.WorkInstructionRevisionId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<WorkInstructionStepAuditLog>(b =>
+        {
+            b.ToTable("WorkInstructionStepAuditLogs");
+            b.HasIndex(x => x.WorkInstructionStepId);
             b.HasIndex(x => x.ChangedDate);
         });
     }

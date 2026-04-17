@@ -118,6 +118,13 @@ public static class PermissionAreaMapping
         ("/api/goods-receipts", PermissionArea.Logistics),
         ("/api/shipments", PermissionArea.Logistics),
         ("/api/stock-transfers", PermissionArea.Logistics),
+
+        // MES — production execution (Module M4)
+        ("/api/production-runs", PermissionArea.Mes),
+        ("/api/operator-clock-events", PermissionArea.Mes),
+        ("/api/downtime-events", PermissionArea.Mes),
+        ("/api/downtime-reasons", PermissionArea.Mes),
+        ("/api/work-instructions", PermissionArea.Mes),
     ];
 
     /// <summary>

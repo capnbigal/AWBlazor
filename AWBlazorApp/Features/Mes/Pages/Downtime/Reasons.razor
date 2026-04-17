@@ -1,0 +1,150 @@
+@page "/mes/downtime/reasons"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Downtime reason codes</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Downtime reason codes</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">mes.DowntimeReason — 15 seeded on first boot, fully editable after</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New reason</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="DowntimeReasonDto" Items="@reasons" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.Code" Title="Code" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.Description" Title="Description" />
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEdit(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                    </AuthorizeView>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="DowntimeReasonDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>@(editing is null ? "New reason" : $"Edit {editing.Code}")</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            @if (editing is null)
+            {
+                <MudTextField @bind-Value="newCreate.Code" Label="Code" Required="true" Variant="Variant.Outlined" HelperText="UPPER_UNDERSCORE" />
+                <MudTextField @bind-Value="newCreate.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="newCreate.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+                <MudCheckBox T="bool" @bind-Value="newCreate.IsActive" Label="Active" />
+            }
+            else
+            {
+                <MudField Label="Code" Variant="Variant.Text">@editing.Code</MudField>
+                <MudTextField @bind-Value="newUpdate.Name" Label="Name" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="newUpdate.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+                <MudSelect T="bool?" @bind-Value="newUpdate.IsActive" Label="Active" Variant="Variant.Outlined">
+                    <MudSelectItem T="bool?" Value="@true">Yes</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@false">No</MudSelectItem>
+                </MudSelect>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<DowntimeReasonDto> reasons = [];
+    private bool dialogOpen, saving;
+    private DowntimeReasonDto? editing;
+    private CreateDowntimeReasonRequest newCreate = new();
+    private UpdateDowntimeReasonRequest newUpdate = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        reasons = await db.DowntimeReasons.AsNoTracking().OrderBy(r => r.Code).Select(r => r.ToDto()).ToListAsync();
+    }
+
+    private void OpenCreate() { editing = null; newCreate = new CreateDowntimeReasonRequest { IsActive = true }; dialogOpen = true; }
+    private void OpenEdit(DowntimeReasonDto row) { editing = row; newUpdate = new UpdateDowntimeReasonRequest { Name = row.Name, Description = row.Description, IsActive = row.IsActive }; dialogOpen = true; }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var by = await GetUserNameAsync();
+            if (editing is null)
+            {
+                var entity = newCreate.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.DowntimeReasons.Add(entity);
+                await db.SaveChangesAsync();
+                db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordCreate(entity, by));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                Snackbar.Add($"Created {entity.Code}.", Severity.Success);
+            }
+            else
+            {
+                var entity = await db.DowntimeReasons.FirstAsync(r => r.Id == editing.Id);
+                var before = DowntimeReasonAuditService.CaptureSnapshot(entity);
+                newUpdate.ApplyTo(entity);
+                db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordUpdate(before, entity, by));
+                await db.SaveChangesAsync();
+                Snackbar.Add("Updated.", Severity.Success);
+            }
+            dialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Save failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task DeleteAsync(DowntimeReasonDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete reason code?",
+            $"Delete {row.Code} — {row.Name}? If any downtime events reference it, deactivation is the safer choice.",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var inUse = await db.DowntimeEvents.AnyAsync(d => d.DowntimeReasonId == row.Id);
+        if (inUse)
+        {
+            Snackbar.Add("Reason is referenced by existing events; deactivate instead.", Severity.Warning);
+            return;
+        }
+        var entity = await db.DowntimeReasons.FirstAsync(r => r.Id == row.Id);
+        var by = await GetUserNameAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        db.DowntimeReasons.Remove(entity);
+        db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordDelete(entity, by));
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        Snackbar.Add("Deleted.", Severity.Success);
+        await LoadAsync();
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
