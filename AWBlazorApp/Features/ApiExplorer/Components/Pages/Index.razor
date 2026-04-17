@@ -105,6 +105,10 @@
 
                             @if (viewMode == "grid" && gridRows is { Count: > 0 })
                             {
+                                <MudTextField T="string" @bind-Value="gridFilter" Placeholder="Filter rows (matches any column)..."
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FilterList"
+                                              Class="mb-2" />
                                 <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="overflow-x: auto;">
                                     <thead>
                                         <tr>
@@ -115,7 +119,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var row in gridRows)
+                                        @foreach (var row in FilteredGridRows)
                                         {
                                             <tr>
                                                 @foreach (var col in gridColumns!)
@@ -126,12 +130,9 @@
                                         }
                                     </tbody>
                                 </MudSimpleTable>
-                                @if (totalCount.HasValue)
-                                {
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                        Showing @gridRows.Count of @totalCount.Value.ToString("N0") rows.
-                                    </MudText>
-                                }
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Showing @FilteredGridRows.Count of @gridRows.Count row@(gridRows.Count == 1 ? "" : "s")@(totalCount.HasValue && totalCount.Value != gridRows.Count ? $" (total on server: {totalCount.Value:N0})" : "")@(string.IsNullOrEmpty(gridFilter) ? "" : $" · filter: \"{gridFilter}\"").
+                                </MudText>
                             }
                             else
                             {
@@ -158,6 +159,7 @@
     private List<Dictionary<string, object?>>? gridRows;
     private List<string>? gridColumns;
     private long? totalCount;
+    private string gridFilter = "";
 
     private IEnumerable<ApiEndpoint> FilteredEndpoints =>
         string.IsNullOrWhiteSpace(filter)
@@ -177,7 +179,20 @@
         gridRows = null;
         gridColumns = null;
         totalCount = null;
+        gridFilter = "";
         builtUrl = BuildUrl(ep);
+    }
+
+    /// <summary>Case-insensitive substring match across every cell in a row. Empty needle = no filter.</summary>
+    private IReadOnlyList<Dictionary<string, object?>> FilteredGridRows
+    {
+        get
+        {
+            if (gridRows is null) return Array.Empty<Dictionary<string, object?>>();
+            if (string.IsNullOrWhiteSpace(gridFilter)) return gridRows;
+            var n = gridFilter.Trim();
+            return gridRows.Where(r => r.Values.Any(v => v?.ToString()?.Contains(n, StringComparison.OrdinalIgnoreCase) == true)).ToList();
+        }
     }
 
     private string BuildUrl(ApiEndpoint ep)
@@ -211,7 +226,9 @@
 
     /// <summary>
     /// Inspect the parsed JSON to decide if it's tabular: either a JSON array of objects, or a
-    /// PagedResult shape {items:[], totalCount, ...}. Populates gridColumns/gridRows when yes.
+    /// paging envelope {results:[], total, ...} (PagedResult shape from Shared/Models/Common.cs).
+    /// Also tolerates legacy {items:[], totalCount, ...} for any caller still using that shape.
+    /// Populates gridColumns/gridRows when yes.
     /// </summary>
     private void ParseGrid(ApiResponse res)
     {
@@ -232,11 +249,9 @@
                 items = root;
             }
             else if (root.ValueKind == JsonValueKind.Object
-                     && root.TryGetProperty("items", out var itemsProp)
-                     && itemsProp.ValueKind == JsonValueKind.Array)
+                     && TryGetArrayProperty(root, out items, out var totalProp))
             {
-                items = itemsProp;
-                if (root.TryGetProperty("totalCount", out var tc) && tc.TryGetInt64(out var tcVal))
+                if (totalProp is { } tc && tc.TryGetInt64(out var tcVal))
                     totalCount = tcVal;
             }
             else
@@ -269,6 +284,27 @@
         {
             // Non-tabular response — stay in JSON view.
         }
+    }
+
+    /// <summary>
+    /// Resolves which property on the response object holds the row array and which (if any)
+    /// holds the total-count scalar. Tries the current PagedResult shape first
+    /// (<c>results</c>/<c>total</c>), then the legacy shape (<c>items</c>/<c>totalCount</c>).
+    /// </summary>
+    private static bool TryGetArrayProperty(JsonElement root, out JsonElement array, out JsonElement? total)
+    {
+        foreach (var (arrayName, totalName) in new[] { ("results", "total"), ("items", "totalCount") })
+        {
+            if (root.TryGetProperty(arrayName, out var arr) && arr.ValueKind == JsonValueKind.Array)
+            {
+                array = arr;
+                total = root.TryGetProperty(totalName, out var tc) ? tc : null;
+                return true;
+            }
+        }
+        array = default;
+        total = null;
+        return false;
     }
 
     private static object? ExtractValue(JsonElement el) => el.ValueKind switch
