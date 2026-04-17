@@ -1,0 +1,147 @@
+@page "/quality/inspection-plans"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Inspection plans</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Inspection plans</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">qa.InspectionPlan — reusable templates with characteristics + auto-trigger flags</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New plan</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudSelect T="InspectionScope?" @bind-Value="filterScope" Label="Scope" Variant="Variant.Outlined" Clearable="true" Style="max-width: 200px">
+                <MudSelectItem T="InspectionScope?" Value="@null">(any)</MudSelectItem>
+                @foreach (var s in Enum.GetValues<InspectionScope>()) { <MudSelectItem T="InspectionScope?" Value="@s">@s</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int?" @bind-Value="filterProduct" Label="ProductId" Variant="Variant.Outlined" Clearable="true" />
+            <MudCheckBox T="bool" @bind-Value="filterActiveOnly" Label="Active only" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDataGrid T="InspectionPlanDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.PlanCode" Title="Code" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.Scope" Title="Scope" />
+            <PropertyColumn Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn Property="x => x.VendorBusinessEntityId" Title="Vendor" />
+            <TemplateColumn Title="Auto-trig" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        @if (context.Item.AutoTriggerOnReceipt) { <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">RCV</MudChip> }
+                        @if (context.Item.AutoTriggerOnShipment) { <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">SHP</MudChip> }
+                        @if (context.Item.AutoTriggerOnProductionRun) { <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">RUN</MudChip> }
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"quality/inspection-plans/{context.Item.Id}"))" /></CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="InspectionPlanDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New inspection plan</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="newPlan.PlanCode" Label="Plan code (UPPER)" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newPlan.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newPlan.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+            <MudSelect T="InspectionScope" @bind-Value="newPlan.Scope" Label="Scope" Variant="Variant.Outlined">
+                @foreach (var s in Enum.GetValues<InspectionScope>()) { <MudSelectItem T="InspectionScope" Value="@s">@s</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int?" @bind-Value="newPlan.ProductId" Label="ProductId" Variant="Variant.Outlined" HelperText="Most common — at least one of Product/Routing/Vendor required" />
+            <MudNumericField T="int?" @bind-Value="newPlan.WorkOrderRoutingId" Label="WorkOrderRoutingId (optional)" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newPlan.VendorBusinessEntityId" Label="Vendor (optional)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newPlan.SamplingRule" Label="Sampling rule" Variant="Variant.Outlined" />
+            <MudCheckBox T="bool" @bind-Value="newPlan.AutoTriggerOnReceipt" Label="Auto-trigger on receipt" />
+            <MudCheckBox T="bool" @bind-Value="newPlan.AutoTriggerOnShipment" Label="Auto-trigger on shipment" />
+            <MudCheckBox T="bool" @bind-Value="newPlan.AutoTriggerOnProductionRun" Label="Auto-trigger on production run" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<InspectionPlanDto> grid = null!;
+    private bool _loading = true;
+    private InspectionScope? filterScope;
+    private int? filterProduct;
+    private bool filterActiveOnly = true;
+
+    private bool dialogOpen, saving;
+    private CreateInspectionPlanRequest newPlan = new();
+
+    private async Task<GridData<InspectionPlanDto>> LoadAsync(GridState<InspectionPlanDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.InspectionPlans.AsNoTracking();
+            if (filterScope.HasValue) q = q.Where(x => x.Scope == filterScope.Value);
+            if (filterProduct.HasValue) q = q.Where(x => x.ProductId == filterProduct.Value);
+            if (filterActiveOnly) q = q.Where(x => x.IsActive);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderBy(x => x.PlanCode)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<InspectionPlanDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private void OpenCreate() { newPlan = new CreateInspectionPlanRequest { IsActive = true, Scope = InspectionScope.Inbound }; dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        if (!newPlan.ProductId.HasValue && !newPlan.WorkOrderRoutingId.HasValue && !newPlan.VendorBusinessEntityId.HasValue)
+        {
+            Snackbar.Add("At least one of ProductId, WorkOrderRoutingId, or VendorBusinessEntityId is required.", Severity.Error);
+            return;
+        }
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = newPlan.ToEntity();
+            var by = await GetUserNameAsync();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.InspectionPlans.Add(entity);
+            await db.SaveChangesAsync();
+            db.InspectionPlanAuditLogs.Add(InspectionPlanAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            Snackbar.Add($"Created {entity.PlanCode}.", Severity.Success);
+            dialogOpen = false;
+            Navigation.NavigateTo($"quality/inspection-plans/{entity.Id}");
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

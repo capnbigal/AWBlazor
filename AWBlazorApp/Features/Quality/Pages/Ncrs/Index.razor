@@ -1,0 +1,69 @@
+@page "/quality/ncrs"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>NCRs</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Non-conformances (NCRs)</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">qa.NonConformance — open from inspections or manually; disposition writes inv tx for Scrap/Quarantine</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudSelect T="NonConformanceStatus?" @bind-Value="filterStatus" Label="Status" Variant="Variant.Outlined" Clearable="true" Style="max-width: 200px">
+                <MudSelectItem T="NonConformanceStatus?" Value="@null">(any)</MudSelectItem>
+                @foreach (var s in Enum.GetValues<NonConformanceStatus>()) { <MudSelectItem T="NonConformanceStatus?" Value="@s">@s</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int?" @bind-Value="filterItem" Label="Item" Variant="Variant.Outlined" Clearable="true" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDataGrid T="NonConformanceDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.NcrNumber" Title="Number" />
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.Disposition" Title="Disposition" />
+            <PropertyColumn Property="x => x.InspectionId" Title="Inspection" />
+            <PropertyColumn Property="x => x.InventoryItemId" Title="Item" />
+            <PropertyColumn Property="x => x.LocationId" Title="Loc" />
+            <PropertyColumn Property="x => x.Quantity" Title="Qty" Format="N4" />
+            <PropertyColumn Property="x => x.PostedTransactionId" Title="Tx" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"quality/ncrs/{context.Item.Id}"))" /></CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="NonConformanceDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<NonConformanceDto> grid = null!;
+    private bool _loading = true;
+    private NonConformanceStatus? filterStatus;
+    private int? filterItem;
+
+    private async Task<GridData<NonConformanceDto>> LoadAsync(GridState<NonConformanceDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.NonConformances.AsNoTracking();
+            if (filterStatus.HasValue) q = q.Where(x => x.Status == filterStatus.Value);
+            if (filterItem.HasValue) q = q.Where(x => x.InventoryItemId == filterItem.Value);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.ModifiedDate).ThenByDescending(x => x.Id)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<NonConformanceDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+}

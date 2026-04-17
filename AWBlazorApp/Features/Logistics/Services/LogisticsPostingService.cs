@@ -2,6 +2,7 @@ using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Inventory.Services;
 using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Logistics.Services;
@@ -10,6 +11,7 @@ namespace AWBlazorApp.Features.Logistics.Services;
 public sealed class LogisticsPostingService(
     IDbContextFactory<ApplicationDbContext> dbFactory,
     IInventoryService inventoryService,
+    IEnumerable<IPostingTriggerHook> triggerHooks,
     ILogger<LogisticsPostingService> logger) : ILogisticsPostingService
 {
     public async Task<PostingResult> PostReceiptAsync(int goodsReceiptId, string? userId, CancellationToken ct)
@@ -59,9 +61,39 @@ public sealed class LogisticsPostingService(
         header.ModifiedDate = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
+        // Best-effort downstream notifications (Quality auto-trigger, etc.). Each hook
+        // failure is caught + logged so a downstream bug never rolls back our ledger writes.
+        await NotifyReceiptHooksAsync(db, header, lines, txIds, ct);
+
         logger.LogInformation("Posted receipt {Number} ({Lines} lines, {Txs} transactions)",
             header.ReceiptNumber, lines.Count, txIds.Count);
         return new PostingResult(header.Id, lines.Count, txIds);
+    }
+
+    private async Task NotifyReceiptHooksAsync(
+        ApplicationDbContext db, GoodsReceipt header, List<GoodsReceiptLine> lines, List<long> txIds, CancellationToken ct)
+    {
+        if (!triggerHooks.Any()) return;
+        // Resolve ProductId per line via inv.InventoryItem; cache to avoid N queries.
+        var itemIds = lines.Select(l => l.InventoryItemId).Distinct().ToList();
+        var productIdByItem = await db.InventoryItems.AsNoTracking()
+            .Where(i => itemIds.Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id, i => i.ProductId, ct);
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            if (!productIdByItem.TryGetValue(line.InventoryItemId, out var productId)) continue;
+            var ctx = new GoodsReceiptLinePostedContext(
+                header.Id, line.Id, header.PurchaseOrderId, header.VendorBusinessEntityId,
+                line.InventoryItemId, productId, line.Quantity, line.UnitMeasureCode,
+                line.LotId, i < txIds.Count ? txIds[i] : null);
+            foreach (var hook in triggerHooks)
+            {
+                try { await hook.AfterGoodsReceiptPostedAsync(ctx, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Posting trigger hook {Hook} failed for receipt line {Line}", hook.GetType().Name, line.Id); }
+            }
+        }
     }
 
     public async Task<PostingResult> PostShipmentAsync(int shipmentId, string? userId, CancellationToken ct)
@@ -108,9 +140,36 @@ public sealed class LogisticsPostingService(
         header.ModifiedDate = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
+        await NotifyShipmentHooksAsync(db, header, lines, txIds, ct);
+
         logger.LogInformation("Posted shipment {Number} ({Lines} lines, {Txs} transactions)",
             header.ShipmentNumber, lines.Count, txIds.Count);
         return new PostingResult(header.Id, lines.Count, txIds);
+    }
+
+    private async Task NotifyShipmentHooksAsync(
+        ApplicationDbContext db, Shipment header, List<ShipmentLine> lines, List<long> txIds, CancellationToken ct)
+    {
+        if (!triggerHooks.Any()) return;
+        var itemIds = lines.Select(l => l.InventoryItemId).Distinct().ToList();
+        var productIdByItem = await db.InventoryItems.AsNoTracking()
+            .Where(i => itemIds.Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id, i => i.ProductId, ct);
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            if (!productIdByItem.TryGetValue(line.InventoryItemId, out var productId)) continue;
+            var ctx = new ShipmentLinePostedContext(
+                header.Id, line.Id, header.SalesOrderId, header.CustomerBusinessEntityId,
+                line.InventoryItemId, productId, line.Quantity, line.UnitMeasureCode,
+                line.LotId, line.SerialUnitId, i < txIds.Count ? txIds[i] : null);
+            foreach (var hook in triggerHooks)
+            {
+                try { await hook.AfterShipmentPostedAsync(ctx, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Posting trigger hook {Hook} failed for shipment line {Line}", hook.GetType().Name, line.Id); }
+            }
+        }
     }
 
     public async Task<PostingResult> PostTransferAsync(int stockTransferId, string? userId, CancellationToken ct)

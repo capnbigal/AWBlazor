@@ -1,0 +1,200 @@
+@page "/quality/inspections/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IInspectionService InspectionService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Inspection @header?.InspectionNumber</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("quality/inspections"))" />
+            <MudText Typo="Typo.h5">@header.InspectionNumber</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@header.Status</MudChip>
+            <MudChip T="string" Variant="Variant.Outlined">@header.SourceKind #@header.SourceId</MudChip>
+            <MudSpacer />
+            @if (header.Status == InspectionStatus.Pending)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartAsync" Disabled="busy">Start</MudButton>
+            }
+            @if (header.Status is InspectionStatus.Pending or InspectionStatus.InProgress)
+            {
+                <MudButton Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="CompleteAsync" Disabled="busy">Complete</MudButton>
+            }
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Plan" Variant="Variant.Text">#@header.InspectionPlanId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Item" Variant="Variant.Text">@(header.InventoryItemId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Lot" Variant="Variant.Text">@(header.LotId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Quantity" Variant="Variant.Text">@($"{header.Quantity:N4} {header.UnitMeasureCode}")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Inspector" Variant="Variant.Text">@(header.InspectorBusinessEntityId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Inspected" Variant="Variant.Text">@(header.InspectedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="12"><MudField Label="Notes" Variant="Variant.Text">@(header.Notes ?? "—")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Characteristics &amp; results</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead><tr><th>Characteristic</th><th>Spec</th><th>Result</th><th>Pass</th><th>Action</th></tr></thead>
+                <tbody>
+                    @foreach (var c in chars.OrderBy(c => c.SequenceNumber))
+                    {
+                        var latest = results.Where(r => r.InspectionPlanCharacteristicId == c.Id).OrderByDescending(r => r.RecordedAt).FirstOrDefault();
+                        <tr>
+                            <td><strong>@c.SequenceNumber. @c.Name</strong>@(c.IsCritical ? " ⚠" : "")</td>
+                            <td>@FormatSpec(c)</td>
+                            <td>@(latest is null ? "—" : (c.Kind == CharacteristicKind.Numeric ? latest.NumericResult?.ToString("N4") : latest.AttributeResult))</td>
+                            <td>@(latest is null ? "—" : (latest.Passed ? "✓" : "✕"))</td>
+                            <td>
+                                @if (header.Status is InspectionStatus.Pending or InspectionStatus.InProgress)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenRecord(c))" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="recordDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Record result — @recordingChar?.Name</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            @if (recordingChar?.Kind == CharacteristicKind.Numeric)
+            {
+                <MudNumericField T="decimal?" @bind-Value="recordRequest.NumericResult" Label="Measured value" Variant="Variant.Outlined" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Spec: @FormatSpec(recordingChar)</MudText>
+            }
+            else
+            {
+                <MudTextField @bind-Value="recordRequest.AttributeResult" Label="Result (e.g. Pass / Fail)" Variant="Variant.Outlined" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Expected: @recordingChar?.ExpectedValue</MudText>
+            }
+            <MudTextField @bind-Value="recordRequest.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => recordDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="RecordAsync" Disabled="busy">@(busy ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private InspectionDto? header;
+    private List<InspectionPlanCharacteristicDto> chars = [];
+    private List<InspectionResultDto> results = [];
+    private bool busy;
+
+    private bool recordDialogOpen;
+    private InspectionPlanCharacteristicDto? recordingChar;
+    private RecordInspectionResultRequest recordRequest = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Inspections.AsNoTracking().FirstOrDefaultAsync(i => i.Id == Id);
+        header = entity?.ToDto();
+        if (entity is null) return;
+        chars = await db.InspectionPlanCharacteristics.AsNoTracking()
+            .Where(c => c.InspectionPlanId == entity.InspectionPlanId)
+            .OrderBy(c => c.SequenceNumber).Select(c => c.ToDto()).ToListAsync();
+        results = await db.InspectionResults.AsNoTracking().Where(r => r.InspectionId == Id)
+            .OrderByDescending(r => r.RecordedAt).Select(r => r.ToDto()).ToListAsync();
+    }
+
+    private async Task StartAsync()
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            await InspectionService.StartAsync(Id, null, by, CancellationToken.None);
+            Snackbar.Add("Inspection started.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Start failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task CompleteAsync()
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var result = await InspectionService.CompleteAsync(Id, by, CancellationToken.None);
+            var msg = result.FinalStatus == InspectionStatus.Pass
+                ? "Inspection passed."
+                : $"Inspection failed — auto-opened NCR #{result.AutoNcrId}.";
+            Snackbar.Add(msg, result.FinalStatus == InspectionStatus.Pass ? Severity.Success : Severity.Warning);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Complete failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private void OpenRecord(InspectionPlanCharacteristicDto c)
+    {
+        recordingChar = c;
+        recordRequest = new RecordInspectionResultRequest { InspectionPlanCharacteristicId = c.Id };
+        recordDialogOpen = true;
+    }
+
+    private async Task RecordAsync()
+    {
+        busy = true;
+        try
+        {
+            await InspectionService.RecordResultAsync(new RecordResultInput(
+                Id, recordRequest.InspectionPlanCharacteristicId,
+                recordRequest.NumericResult, recordRequest.AttributeResult, recordRequest.Notes),
+                recordRequest.RecordedByBusinessEntityId, CancellationToken.None);
+            Snackbar.Add("Result recorded.", Severity.Success);
+            recordDialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Record failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private static string FormatSpec(InspectionPlanCharacteristicDto c)
+    {
+        if (c.Kind == CharacteristicKind.Attribute) return c.ExpectedValue ?? "(non-empty)";
+        var min = c.MinValue?.ToString("N2") ?? "−∞";
+        var max = c.MaxValue?.ToString("N2") ?? "+∞";
+        return $"{min} … {max}{(c.UnitMeasureCode is null ? "" : $" {c.UnitMeasureCode}")}";
+    }
+
+    private static Color StatusColor(InspectionStatus s) => s switch
+    {
+        InspectionStatus.Pending => Color.Default,
+        InspectionStatus.InProgress => Color.Info,
+        InspectionStatus.Pass => Color.Success,
+        InspectionStatus.Fail => Color.Error,
+        InspectionStatus.Hold => Color.Warning,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

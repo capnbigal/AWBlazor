@@ -2,6 +2,7 @@ using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Inventory.Services;
 using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Mes.Services;
@@ -10,6 +11,7 @@ namespace AWBlazorApp.Features.Mes.Services;
 public sealed class ProductionRunService(
     IDbContextFactory<ApplicationDbContext> dbFactory,
     IInventoryService inventoryService,
+    IEnumerable<IPostingTriggerHook> triggerHooks,
     ILogger<ProductionRunService> logger) : IProductionRunService
 {
     public async Task<RunTransitionResult> StartAsync(int id, string? userId, CancellationToken ct)
@@ -112,9 +114,42 @@ public sealed class ProductionRunService(
         run.ModifiedDate = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
+        await NotifyRunCompletedHooksAsync(db, run, qtyProduced, qtyScrapped, wipReceiptTxId, ct);
+
         logger.LogInformation("Completed run {Number}: produced={Produced}, scrapped={Scrapped}",
             run.RunNumber, qtyProduced, qtyScrapped);
         return new RunCompletionResult(run.Id, run.RunNumber, qtyProduced, qtyScrapped, wipReceiptTxId, wipIssueTxId);
+    }
+
+    private async Task NotifyRunCompletedHooksAsync(
+        ApplicationDbContext db, ProductionRun run, decimal qtyProduced, decimal qtyScrapped,
+        long? wipReceiptTxId, CancellationToken ct)
+    {
+        if (!triggerHooks.Any()) return;
+        // Resolve InventoryItem + ProductId via the WorkOrder's product link, when present.
+        int? itemId = null;
+        int? productId = null;
+        if (run.WorkOrderId is { } woId)
+        {
+            var pid = await db.Database
+                .SqlQuery<int>($"SELECT ProductID AS Value FROM Production.WorkOrder WHERE WorkOrderID = {woId}")
+                .FirstOrDefaultAsync(ct);
+            if (pid != 0)
+            {
+                productId = pid;
+                itemId = await db.InventoryItems.AsNoTracking().Where(i => i.ProductId == pid)
+                    .Select(i => (int?)i.Id).FirstOrDefaultAsync(ct);
+            }
+        }
+
+        var ctx = new ProductionRunCompletedContext(
+            run.Id, run.WorkOrderId, run.StationId, itemId, productId,
+            qtyProduced, qtyScrapped, wipReceiptTxId);
+        foreach (var hook in triggerHooks)
+        {
+            try { await hook.AfterProductionRunCompletedAsync(ctx, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "Posting trigger hook {Hook} failed for run {Run}", hook.GetType().Name, run.Id); }
+        }
     }
 
     private async Task<RunTransitionResult> TransitionAsync(

@@ -1,0 +1,149 @@
+@page "/quality/ncrs/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject INonConformanceService NcrService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>NCR @header?.NcrNumber</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("quality/ncrs"))" />
+            <MudText Typo="Typo.h5">@header.NcrNumber</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@header.Status</MudChip>
+            @if (header.Disposition.HasValue)
+            {
+                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">@header.Disposition</MudChip>
+            }
+            <MudSpacer />
+            @if (header.PostedTransactionId is null && header.Status != NonConformanceStatus.Closed)
+            {
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Gavel" OnClick="OpenDisposition">Disposition</MudButton>
+                </AuthorizeView>
+            }
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Inspection" Variant="Variant.Text">@(header.InspectionId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Item" Variant="Variant.Text">@header.InventoryItemId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Lot" Variant="Variant.Text">@(header.LotId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Location" Variant="Variant.Text">@(header.LocationId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Quantity" Variant="Variant.Text">@($"{header.Quantity:N4} {header.UnitMeasureCode}")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Posted tx" Variant="Variant.Text">@(header.PostedTransactionId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="12"><MudField Label="Description" Variant="Variant.Text">@header.Description</MudField></MudItem>
+                @if (!string.IsNullOrEmpty(header.DispositionNotes))
+                {
+                    <MudItem xs="12"><MudField Label="Disposition notes" Variant="Variant.Text">@header.DispositionNotes</MudField></MudItem>
+                }
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Actions log (@actions.Count)</MudText>
+            @if (actions.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">No actions recorded yet.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                    <thead><tr><th>When</th><th>By</th><th>Action</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        @foreach (var a in actions)
+                        {
+                            <tr>
+                                <td>@a.PerformedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@(a.PerformedByUserId ?? "—")</td>
+                                <td>@a.Action</td>
+                                <td>@(a.Notes ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="dispositionDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Disposition NCR</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudSelect T="NonConformanceDisposition" @bind-Value="dispositionRequest.Disposition" Label="Disposition" Variant="Variant.Outlined">
+                @foreach (var d in Enum.GetValues<NonConformanceDisposition>()) { <MudSelectItem T="NonConformanceDisposition" Value="@d">@d</MudSelectItem> }
+            </MudSelect>
+            <MudAlert Severity="Severity.Info" Dense="true">
+                Scrap → posts SCRAP transaction. Quarantine → moves balance to Quarantine status.
+                Rework / UseAsIs / ReturnToSupplier → no inventory change.
+            </MudAlert>
+            <MudTextField @bind-Value="dispositionRequest.Notes" Label="Notes" Variant="Variant.Outlined" Lines="3" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dispositionDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="DispositionAsync" Disabled="busy">@(busy ? "Posting..." : "Apply")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private NonConformanceDto? header;
+    private List<NonConformanceActionDto> actions = [];
+    private bool busy;
+
+    private bool dispositionDialogOpen;
+    private DispositionNonConformanceRequest dispositionRequest = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.NonConformances.AsNoTracking().FirstOrDefaultAsync(n => n.Id == Id);
+        header = entity?.ToDto();
+        actions = await db.NonConformanceActions.AsNoTracking().Where(a => a.NonConformanceId == Id)
+            .OrderByDescending(a => a.PerformedAt).Select(a => a.ToDto()).ToListAsync();
+    }
+
+    private void OpenDisposition() { dispositionRequest = new DispositionNonConformanceRequest { Disposition = NonConformanceDisposition.UseAsIs }; dispositionDialogOpen = true; }
+
+    private async Task DispositionAsync()
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            await NcrService.DispositionAsync(Id, dispositionRequest.Disposition, dispositionRequest.Notes, by, CancellationToken.None);
+            Snackbar.Add($"NCR dispositioned: {dispositionRequest.Disposition}.", Severity.Success);
+            dispositionDialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Disposition failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private static Color StatusColor(NonConformanceStatus s) => s switch
+    {
+        NonConformanceStatus.Open => Color.Error,
+        NonConformanceStatus.Investigating => Color.Warning,
+        NonConformanceStatus.Dispositioned => Color.Info,
+        NonConformanceStatus.Closed => Color.Default,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

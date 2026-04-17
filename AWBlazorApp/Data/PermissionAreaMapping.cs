@@ -125,6 +125,12 @@ public static class PermissionAreaMapping
         ("/api/downtime-events", PermissionArea.Mes),
         ("/api/downtime-reasons", PermissionArea.Mes),
         ("/api/work-instructions", PermissionArea.Mes),
+
+        // Quality (Module M5)
+        ("/api/inspection-plans", PermissionArea.Quality),
+        ("/api/inspections", PermissionArea.Quality),
+        ("/api/non-conformances", PermissionArea.Quality),
+        ("/api/capa-cases", PermissionArea.Quality),
     ];
 
     /// <summary>

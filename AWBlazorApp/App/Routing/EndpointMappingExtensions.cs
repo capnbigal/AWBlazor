@@ -140,6 +140,12 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Mes.Endpoints.ShopFloorEndpoints.MapDowntimeReasonEndpoints(app);
         AWBlazorApp.Features.Mes.Endpoints.WorkInstructionEndpoints.MapWorkInstructionEndpoints(app);
 
+        // Batch 14 — Quality (qa schema). NCR disposition writes inv transactions via IInventoryService.
+        AWBlazorApp.Features.Quality.Endpoints.InspectionPlanEndpoints.MapInspectionPlanEndpoints(app);
+        AWBlazorApp.Features.Quality.Endpoints.InspectionEndpoints.MapInspectionEndpoints(app);
+        AWBlazorApp.Features.Quality.Endpoints.NonConformanceEndpoints.MapNonConformanceEndpoints(app);
+        AWBlazorApp.Features.Quality.Endpoints.CapaCaseEndpoints.MapCapaCaseEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 
