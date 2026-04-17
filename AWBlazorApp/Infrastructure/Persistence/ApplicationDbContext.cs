@@ -13,6 +13,7 @@ using AWBlazorApp.Features.Forecasting.Domain;
 using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
+using AWBlazorApp.Features.Inventory.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -234,6 +235,25 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<AssetAuditLog> AssetAuditLogs => Set<AssetAuditLog>();
     public DbSet<CostCenterAuditLog> CostCenterAuditLogs => Set<CostCenterAuditLog>();
     public DbSet<ProductLineAuditLog> ProductLineAuditLogs => Set<ProductLineAuditLog>();
+
+    // Batch 11 — Advanced inventory (inv.* schema). InventoryBalance is the derived on-hand
+    // aggregate, InventoryTransaction is the append-only ledger, Outbox/Queue are operational
+    // state machines (no separate audit log — changes are high-churn and audit would be noise).
+    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<Lot> Lots => Set<Lot>();
+    public DbSet<SerialUnit> SerialUnits => Set<SerialUnit>();
+    public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
+    public DbSet<InventoryTransactionType> InventoryTransactionTypes => Set<InventoryTransactionType>();
+    public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
+    public DbSet<InventoryAdjustment> InventoryAdjustments => Set<InventoryAdjustment>();
+    public DbSet<InventoryTransactionOutbox> InventoryTransactionOutbox => Set<InventoryTransactionOutbox>();
+    public DbSet<InventoryTransactionQueue> InventoryTransactionQueue => Set<InventoryTransactionQueue>();
+    public DbSet<InventoryLocationAuditLog> InventoryLocationAuditLogs => Set<InventoryLocationAuditLog>();
+    public DbSet<InventoryItemAuditLog> InventoryItemAuditLogs => Set<InventoryItemAuditLog>();
+    public DbSet<LotAuditLog> LotAuditLogs => Set<LotAuditLog>();
+    public DbSet<SerialUnitAuditLog> SerialUnitAuditLogs => Set<SerialUnitAuditLog>();
+    public DbSet<InventoryAdjustmentAuditLog> InventoryAdjustmentAuditLogs => Set<InventoryAdjustmentAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1011,6 +1031,179 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.ToTable("ProductLineAuditLogs");
             b.HasIndex(x => x.ProductLineId);
             b.HasIndex(x => x.ChangedDate);
+        });
+
+        // --- Advanced inventory (inv schema) ---
+        builder.Entity<InventoryLocation>(b =>
+        {
+            b.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
+            b.HasIndex(x => x.ParentLocationId);
+            b.HasIndex(x => x.Path);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.OrgUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.ParentLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // ProductionLocationId is a soft reference to Production.Location (short PK in AW) —
+            // not modeled as a FK because Production.Location is not in ApplicationDbContext.
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<InventoryItem>(b =>
+        {
+            b.HasIndex(x => x.ProductId).IsUnique();
+            b.HasIndex(x => x.DefaultLocationId);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.DefaultLocationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            // ProductId is a soft FK into Production.Product (not in this DbContext).
+        });
+
+        builder.Entity<Lot>(b =>
+        {
+            b.HasIndex(x => new { x.InventoryItemId, x.LotCode }).IsUnique();
+            b.HasIndex(x => x.VendorBusinessEntityId);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<SerialUnit>(b =>
+        {
+            b.HasIndex(x => new { x.InventoryItemId, x.SerialNumber }).IsUnique();
+            b.HasIndex(x => x.LotId);
+            b.HasIndex(x => x.CurrentLocationId);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.CurrentLocationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<InventoryBalance>(b =>
+        {
+            // SQL Server treats NULLs as distinct in a unique index, so we need two filtered
+            // indexes to enforce "exactly one balance row per (item, location, status)" across
+            // both the lot-tracked and non-lot-tracked cases.
+            b.HasIndex(x => new { x.InventoryItemId, x.LocationId, x.LotId, x.Status })
+                .IsUnique()
+                .HasFilter("[LotId] IS NOT NULL")
+                .HasDatabaseName("UX_InventoryBalance_ItemLocationLotStatus");
+            b.HasIndex(x => new { x.InventoryItemId, x.LocationId, x.Status })
+                .IsUnique()
+                .HasFilter("[LotId] IS NULL")
+                .HasDatabaseName("UX_InventoryBalance_ItemLocationStatus_NoLot");
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<InventoryTransactionType>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+        });
+
+        builder.Entity<InventoryTransaction>(b =>
+        {
+            b.HasIndex(x => x.TransactionNumber).IsUnique();
+            b.HasIndex(x => x.OccurredAt).IsDescending();
+            b.HasIndex(x => new { x.InventoryItemId, x.OccurredAt });
+            b.HasIndex(x => new { x.ReferenceType, x.ReferenceId });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasOne<InventoryTransactionType>().WithMany().HasForeignKey(x => x.TransactionTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.FromLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.ToLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<SerialUnit>().WithMany().HasForeignKey(x => x.SerialUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.FromStatus).HasConversion<byte?>();
+            b.Property(x => x.ToStatus).HasConversion<byte?>();
+            b.Property(x => x.ReferenceType).HasConversion<byte?>();
+        });
+
+        builder.Entity<InventoryAdjustment>(b =>
+        {
+            b.HasIndex(x => x.AdjustmentNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => new { x.InventoryItemId, x.LocationId });
+            b.HasOne<InventoryItem>().WithMany().HasForeignKey(x => x.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryLocation>().WithMany().HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Lot>().WithMany().HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.PostedTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.ReasonCode).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<InventoryTransactionOutbox>(b =>
+        {
+            b.HasIndex(x => x.InventoryTransactionId).IsUnique();
+            b.HasIndex(x => new { x.Status, x.NextAttemptAt });
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.InventoryTransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<InventoryTransactionQueue>(b =>
+        {
+            b.HasIndex(x => new { x.ParseStatus, x.ProcessStatus, x.ReceivedAt });
+            b.HasOne<InventoryTransaction>().WithMany().HasForeignKey(x => x.PostedTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Source).HasConversion<byte>();
+            b.Property(x => x.ParseStatus).HasConversion<byte>();
+            b.Property(x => x.ProcessStatus).HasConversion<byte>();
+        });
+
+        // Inventory audit logs — dbo, matching the enterprise convention.
+        builder.Entity<InventoryLocationAuditLog>(b =>
+        {
+            b.ToTable("InventoryLocationAuditLogs");
+            b.HasIndex(x => x.InventoryLocationId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+        builder.Entity<InventoryItemAuditLog>(b =>
+        {
+            b.ToTable("InventoryItemAuditLogs");
+            b.HasIndex(x => x.InventoryItemId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<LotAuditLog>(b =>
+        {
+            b.ToTable("LotAuditLogs");
+            b.HasIndex(x => x.LotId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<SerialUnitAuditLog>(b =>
+        {
+            b.ToTable("SerialUnitAuditLogs");
+            b.HasIndex(x => x.SerialUnitId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<InventoryAdjustmentAuditLog>(b =>
+        {
+            b.ToTable("InventoryAdjustmentAuditLogs");
+            b.HasIndex(x => x.InventoryAdjustmentId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.ReasonCode).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
         });
     }
 }

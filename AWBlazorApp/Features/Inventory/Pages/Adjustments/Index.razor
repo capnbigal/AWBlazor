@@ -1,0 +1,179 @@
+@page "/inventory/adjustments"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject IInventoryService InventoryService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Inventory adjustments</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Adjustments</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">inv.InventoryAdjustment — reason-coded wrappers around ADJUST transactions</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New adjustment</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="InventoryAdjustmentDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.AdjustmentNumber" Title="Number" />
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.InventoryItemId" Title="Item" />
+            <PropertyColumn Property="x => x.LocationId" Title="Location" />
+            <PropertyColumn Property="x => x.LotId" Title="Lot" />
+            <PropertyColumn Property="x => x.QuantityDelta" Title="Delta" Format="N4" />
+            <PropertyColumn Property="x => x.ReasonCode" Title="Reason" />
+            <PropertyColumn Property="x => x.Reason" Title="Notes" />
+            <PropertyColumn Property="x => x.RequestedByUserId" Title="Requested by" />
+            <PropertyColumn Property="x => x.RequestedAt" Title="Requested" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.PostedTransactionId" Title="Tx id" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.Status is AdjustmentStatus.Draft or AdjustmentStatus.PendingApproval or AdjustmentStatus.Approved)
+                    {
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudStack Row="true" Spacing="1">
+                                <MudTooltip Text="Approve + post"><MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" OnClick="@(() => ApproveAsync(context.Item))" /></MudTooltip>
+                                <MudTooltip Text="Reject"><MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" OnClick="@(() => RejectAsync(context.Item))" /></MudTooltip>
+                            </MudStack>
+                        </AuthorizeView>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="InventoryAdjustmentDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New adjustment</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newAdj.InventoryItemId" Label="InventoryItemId" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="int" @bind-Value="newAdj.LocationId" Label="LocationId" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newAdj.LotId" Label="LotId (optional)" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newAdj.QuantityDelta" Label="Quantity delta (+ or -)" Required="true" Variant="Variant.Outlined" />
+            <MudSelect T="AdjustmentReason" @bind-Value="newAdj.ReasonCode" Label="Reason" Variant="Variant.Outlined">
+                @foreach (var r in Enum.GetValues<AdjustmentReason>())
+                {
+                    <MudSelectItem T="AdjustmentReason" Value="@r">@r</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="newAdj.Reason" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Save draft")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<InventoryAdjustmentDto> grid = null!;
+    private bool _loading = true;
+    private bool dialogOpen;
+    private bool saving;
+    private CreateInventoryAdjustmentRequest newAdj = new();
+
+    private async Task<GridData<InventoryAdjustmentDto>> LoadAsync(GridState<InventoryAdjustmentDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.InventoryAdjustments.AsNoTracking();
+            var total = await query.CountAsync(ct);
+            var rows = await query.OrderByDescending(x => x.RequestedAt)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<InventoryAdjustmentDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OpenCreate() { newAdj = new CreateInventoryAdjustmentRequest(); dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var by = await GetUserNameAsync();
+            var entity = newAdj.ToEntity(by);
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.InventoryAdjustments.Add(entity);
+            await db.SaveChangesAsync();
+            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            Snackbar.Add($"Adjustment {entity.AdjustmentNumber} created.", Severity.Success);
+            dialogOpen = false;
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task ApproveAsync(InventoryAdjustmentDto row)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.InventoryAdjustments.FirstOrDefaultAsync(x => x.Id == row.Id);
+            if (entity is null) { Snackbar.Add("Not found.", Severity.Warning); return; }
+
+            var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
+            var by = await GetUserNameAsync();
+            var typeCode = entity.QuantityDelta > 0 ? InventoryTransactionTypeCodes.AdjustInc : InventoryTransactionTypeCodes.AdjustDec;
+            var result = await InventoryService.PostTransactionAsync(new PostTransactionRequest(
+                typeCode, entity.InventoryItemId, Math.Abs(entity.QuantityDelta), "EA",
+                entity.QuantityDelta > 0 ? null : entity.LocationId,
+                entity.QuantityDelta > 0 ? entity.LocationId : null,
+                entity.LotId, null, null, null,
+                TransactionReferenceKind.Adjustment, entity.Id, null,
+                entity.Reason, null, null), by, CancellationToken.None);
+
+            entity.Status = AdjustmentStatus.Posted;
+            entity.ApprovedByUserId = by;
+            entity.ApprovedAt = DateTime.UtcNow;
+            entity.PostedTransactionId = result.TransactionId;
+            entity.ModifiedDate = DateTime.UtcNow;
+            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add($"Approved and posted as tx {result.TransactionNumber}.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Approval failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task RejectAsync(InventoryAdjustmentDto row)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.InventoryAdjustments.FirstOrDefaultAsync(x => x.Id == row.Id);
+            if (entity is null) return;
+            var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
+            var by = await GetUserNameAsync();
+            entity.Status = AdjustmentStatus.Rejected;
+            entity.ApprovedByUserId = by;
+            entity.ApprovedAt = DateTime.UtcNow;
+            entity.ModifiedDate = DateTime.UtcNow;
+            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add("Adjustment rejected.", Severity.Info);
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Reject failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

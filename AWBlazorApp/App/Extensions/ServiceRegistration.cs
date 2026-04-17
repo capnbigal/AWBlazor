@@ -146,6 +146,9 @@ public static class ServiceRegistration
         services.AddTransient<AuditLogCleanupJob>();
         services.AddTransient<ApiKeyHashMigrationJob>();
         services.AddTransient<ProcessSchedulerJob>();
+        services.AddTransient<AWBlazorApp.Features.Inventory.Services.InventoryOutboxEmitterJob>();
+        services.AddScoped<AWBlazorApp.Features.Inventory.Services.IInventoryService, AWBlazorApp.Features.Inventory.Services.InventoryService>();
+        services.AddSingleton<AWBlazorApp.Features.Inventory.Services.IInventoryOutboxPublisher, AWBlazorApp.Features.Inventory.Services.LoggingInventoryOutboxPublisher>();
 
         var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
         var smtpHost = configuration["Smtp:Host"];
