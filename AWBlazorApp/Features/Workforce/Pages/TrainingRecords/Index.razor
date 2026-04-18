@@ -1,0 +1,131 @@
+@page "/workforce/training-records"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Training records</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Training records</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">wf.TrainingRecord — completed courses with auto-expiry from course recurrence</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Record completion</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudNumericField T="int?" @bind-Value="filterCourse" Label="Course ID" Variant="Variant.Outlined" Clearable="true" />
+            <MudNumericField T="int?" @bind-Value="filterEmployee" Label="Employee (BusinessEntityId)" Variant="Variant.Outlined" Clearable="true" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDataGrid T="TrainingRecordDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="#" />
+            <PropertyColumn Property="x => x.TrainingCourseId" Title="Course" />
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee" />
+            <PropertyColumn Property="x => x.CompletedAt" Title="Completed" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.ExpiresOn" Title="Expires" Format="yyyy-MM-dd" />
+            <PropertyColumn Property="x => x.Score" Title="Score" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="TrainingRecordDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Record training completion</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newRec.TrainingCourseId" Label="Training course ID" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="int" @bind-Value="newRec.BusinessEntityId" Label="Employee (BusinessEntityId)" Required="true" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="completedDate" Label="Completed (date)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newRec.Score" Label="Score (free text)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newRec.EvidenceUrl" Label="Evidence URL" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newRec.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Record")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<TrainingRecordDto> grid = null!;
+    private bool _loading = true;
+    private int? filterCourse;
+    private int? filterEmployee;
+
+    private bool dialogOpen, saving;
+    private CreateTrainingRecordRequest newRec = new();
+    private DateTime? completedDate = DateTime.UtcNow.Date;
+
+    private async Task<GridData<TrainingRecordDto>> LoadAsync(GridState<TrainingRecordDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.TrainingRecords.AsNoTracking();
+            if (filterCourse.HasValue) q = q.Where(x => x.TrainingCourseId == filterCourse.Value);
+            if (filterEmployee.HasValue) q = q.Where(x => x.BusinessEntityId == filterEmployee.Value);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.CompletedAt).ThenByDescending(x => x.Id)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<TrainingRecordDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private void OpenCreate() { newRec = new CreateTrainingRecordRequest(); completedDate = DateTime.UtcNow.Date; dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var course = await db.TrainingCourses.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == newRec.TrainingCourseId);
+            if (course is null) { Snackbar.Add("Course not found.", Severity.Error); return; }
+
+            var now = completedDate ?? DateTime.UtcNow;
+            var expires = course.RecurrenceMonths.HasValue ? now.AddMonths(course.RecurrenceMonths.Value) : (DateTime?)null;
+            var by = await GetUserNameAsync();
+
+            var entity = new TrainingRecord
+            {
+                TrainingCourseId = newRec.TrainingCourseId,
+                BusinessEntityId = newRec.BusinessEntityId,
+                CompletedAt = now,
+                ExpiresOn = expires,
+                Score = newRec.Score?.Trim(),
+                EvidenceUrl = newRec.EvidenceUrl?.Trim(),
+                Notes = newRec.Notes?.Trim(),
+                RecordedByUserId = by,
+                ModifiedDate = DateTime.UtcNow,
+            };
+            db.TrainingRecords.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add($"Recorded.", Severity.Success);
+            dialogOpen = false;
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Save failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

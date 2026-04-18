@@ -13,6 +13,15 @@ public interface IPostingTriggerHook
     Task AfterGoodsReceiptPostedAsync(GoodsReceiptLinePostedContext context, CancellationToken cancellationToken);
     Task AfterShipmentPostedAsync(ShipmentLinePostedContext context, CancellationToken cancellationToken);
     Task AfterProductionRunCompletedAsync(ProductionRunCompletedContext context, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Called after a successful <c>mes.OperatorClockEvent</c> insert. Workforce's
+    /// QualificationCheckHook uses this to flag missing/expired station-required quals into
+    /// <c>wf.QualificationAlert</c>. Default no-op so existing hooks (Quality) don't need to
+    /// change to recompile when new modules add new hook methods.
+    /// </summary>
+    Task AfterOperatorClockedInAsync(OperatorClockedInContext context, CancellationToken cancellationToken)
+        => Task.CompletedTask;
 }
 
 /// <summary>Everything a hook needs to know about a just-posted goods-receipt line.</summary>
@@ -30,3 +39,7 @@ public sealed record ProductionRunCompletedContext(
     int ProductionRunId, int? WorkOrderId, int? StationId,
     int? InventoryItemId, int? ProductId, decimal QuantityProduced, decimal QuantityScrapped,
     long? WipReceiptTransactionId);
+
+public sealed record OperatorClockedInContext(
+    long OperatorClockEventId, int StationId, int BusinessEntityId,
+    int? ProductionRunId, DateTime ClockInAt);

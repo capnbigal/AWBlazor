@@ -243,6 +243,10 @@ WHERE a.SpatialLocation IS NULL;";
         // Result/NonConformance/Action/CapaCase/CapaCaseNonConformance + six audit logs.
         // Marker is InspectionPlan (pure qa product).
         ("_AddQualityModule",           "InspectionPlan"),
+        // 2026-04 — AddWorkforceModule: creates wf.* schema (training, qualifications,
+        // attendance, leave, handover, announcements, alerts) + seven audit logs.
+        // Marker is TrainingCourse (pure wf product).
+        ("_AddWorkforceModule",         "TrainingCourse"),
     ];
 
     /// <summary>

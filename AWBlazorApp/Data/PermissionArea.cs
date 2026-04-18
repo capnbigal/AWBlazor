@@ -26,4 +26,5 @@ public enum PermissionArea
     Logistics = 108,
     Mes = 109,
     Quality = 110,
+    Workforce = 111,
 }
