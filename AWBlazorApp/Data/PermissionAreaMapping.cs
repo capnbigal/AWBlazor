@@ -131,6 +131,18 @@ public static class PermissionAreaMapping
         ("/api/inspections", PermissionArea.Quality),
         ("/api/non-conformances", PermissionArea.Quality),
         ("/api/capa-cases", PermissionArea.Quality),
+
+        // Workforce (Module M7)
+        ("/api/training-courses", PermissionArea.Workforce),
+        ("/api/training-records", PermissionArea.Workforce),
+        ("/api/qualifications", PermissionArea.Workforce),
+        ("/api/employee-qualifications", PermissionArea.Workforce),
+        ("/api/station-qualifications", PermissionArea.Workforce),
+        ("/api/qualification-alerts", PermissionArea.Workforce),
+        ("/api/attendance-events", PermissionArea.Workforce),
+        ("/api/leave-requests", PermissionArea.Workforce),
+        ("/api/shift-handover-notes", PermissionArea.Workforce),
+        ("/api/announcements", PermissionArea.Workforce),
     ];
 
     /// <summary>

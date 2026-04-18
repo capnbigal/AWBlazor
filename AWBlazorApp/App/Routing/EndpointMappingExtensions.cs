@@ -146,6 +146,12 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Quality.Endpoints.NonConformanceEndpoints.MapNonConformanceEndpoints(app);
         AWBlazorApp.Features.Quality.Endpoints.CapaCaseEndpoints.MapCapaCaseEndpoints(app);
 
+        // Batch 15 — Workforce (wf schema). Training, qualifications, attendance/leave, comms.
+        AWBlazorApp.Features.Workforce.Endpoints.TrainingEndpoints.MapTrainingEndpoints(app);
+        AWBlazorApp.Features.Workforce.Endpoints.QualificationEndpoints.MapQualificationEndpoints(app);
+        AWBlazorApp.Features.Workforce.Endpoints.AttendanceLeaveEndpoints.MapAttendanceLeaveEndpoints(app);
+        AWBlazorApp.Features.Workforce.Endpoints.CommunicationEndpoints.MapCommunicationEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

@@ -40,13 +40,28 @@ public static class ShopFloorEndpoints
         group.MapPost("/", async (
             CreateOperatorClockEventRequest request,
             IValidator<CreateOperatorClockEventRequest> validator,
-            ApplicationDbContext db, CancellationToken ct) =>
+            ApplicationDbContext db,
+            IEnumerable<AWBlazorApp.Shared.Services.IPostingTriggerHook> triggerHooks,
+            ILoggerFactory loggerFactory,
+            CancellationToken ct) =>
         {
             var v = await validator.ValidateAsync(request, ct);
             if (!v.IsValid) return Results.ValidationProblem(v.ToDictionary());
             var entity = request.ToEntity();
             db.OperatorClockEvents.Add(entity);
             await db.SaveChangesAsync(ct);
+
+            // Best-effort downstream hooks (qualification check, etc.). Each hook failure is
+            // caught + logged so a downstream bug never blocks a clock-in.
+            var hookLogger = loggerFactory.CreateLogger("OperatorClockInHooks");
+            var hookCtx = new AWBlazorApp.Shared.Services.OperatorClockedInContext(
+                entity.Id, entity.StationId, entity.BusinessEntityId, entity.ProductionRunId, entity.ClockInAt);
+            foreach (var hook in triggerHooks)
+            {
+                try { await hook.AfterOperatorClockedInAsync(hookCtx, ct); }
+                catch (Exception ex) { hookLogger.LogWarning(ex, "Clock-in hook {Hook} failed for event {Id}", hook.GetType().Name, entity.Id); }
+            }
+
             return Results.Created($"/api/operator-clock-events/{entity.Id}", new IdResponse((int)entity.Id));
         }).WithName("CreateOperatorClockEvent")
           .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));

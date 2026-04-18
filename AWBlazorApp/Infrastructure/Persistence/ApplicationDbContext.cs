@@ -17,6 +17,7 @@ using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Features.Quality.Domain;
+using AWBlazorApp.Features.Workforce.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -308,6 +309,27 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<NonConformanceAuditLog> NonConformanceAuditLogs => Set<NonConformanceAuditLog>();
     public DbSet<NonConformanceActionAuditLog> NonConformanceActionAuditLogs => Set<NonConformanceActionAuditLog>();
     public DbSet<CapaCaseAuditLog> CapaCaseAuditLogs => Set<CapaCaseAuditLog>();
+
+    // Batch 15 — Workforce (wf.* schema). Training, qualifications, attendance, leave,
+    // shift handovers, announcements, and the qualification-alert inbox raised by the
+    // operator-clock-in trigger hook.
+    public DbSet<TrainingCourse> TrainingCourses => Set<TrainingCourse>();
+    public DbSet<TrainingRecord> TrainingRecords => Set<TrainingRecord>();
+    public DbSet<Qualification> Qualifications => Set<Qualification>();
+    public DbSet<EmployeeQualification> EmployeeQualifications => Set<EmployeeQualification>();
+    public DbSet<StationQualification> StationQualifications => Set<StationQualification>();
+    public DbSet<QualificationAlert> QualificationAlerts => Set<QualificationAlert>();
+    public DbSet<AttendanceEvent> AttendanceEvents => Set<AttendanceEvent>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<ShiftHandoverNote> ShiftHandoverNotes => Set<ShiftHandoverNote>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<TrainingCourseAuditLog> TrainingCourseAuditLogs => Set<TrainingCourseAuditLog>();
+    public DbSet<QualificationAuditLog> QualificationAuditLogs => Set<QualificationAuditLog>();
+    public DbSet<EmployeeQualificationAuditLog> EmployeeQualificationAuditLogs => Set<EmployeeQualificationAuditLog>();
+    public DbSet<StationQualificationAuditLog> StationQualificationAuditLogs => Set<StationQualificationAuditLog>();
+    public DbSet<QualificationAlertAuditLog> QualificationAlertAuditLogs => Set<QualificationAlertAuditLog>();
+    public DbSet<LeaveRequestAuditLog> LeaveRequestAuditLogs => Set<LeaveRequestAuditLog>();
+    public DbSet<AnnouncementAuditLog> AnnouncementAuditLogs => Set<AnnouncementAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1646,6 +1668,145 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => x.CapaCaseId);
             b.HasIndex(x => x.ChangedDate);
             b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        // --- Workforce (wf schema) ---
+        builder.Entity<TrainingCourse>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.IsActive);
+        });
+
+        builder.Entity<TrainingRecord>(b =>
+        {
+            b.HasIndex(x => x.TrainingCourseId);
+            b.HasIndex(x => x.BusinessEntityId);
+            b.HasIndex(x => x.ExpiresOn);
+            b.HasOne<TrainingCourse>().WithMany().HasForeignKey(x => x.TrainingCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Qualification>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.Property(x => x.Category).HasConversion<byte>();
+        });
+
+        builder.Entity<EmployeeQualification>(b =>
+        {
+            b.HasIndex(x => new { x.BusinessEntityId, x.QualificationId }).IsUnique();
+            b.HasIndex(x => x.ExpiresOn);
+            b.HasOne<Qualification>().WithMany().HasForeignKey(x => x.QualificationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<StationQualification>(b =>
+        {
+            b.HasIndex(x => new { x.StationId, x.QualificationId }).IsUnique();
+            b.HasIndex(x => x.QualificationId);
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<Qualification>().WithMany().HasForeignKey(x => x.QualificationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<QualificationAlert>(b =>
+        {
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.BusinessEntityId);
+            b.HasIndex(x => x.StationId);
+            b.HasIndex(x => x.RaisedAt).IsDescending();
+            b.HasOne<Qualification>().WithMany().HasForeignKey(x => x.QualificationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Reason).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<AttendanceEvent>(b =>
+        {
+            b.HasIndex(x => new { x.BusinessEntityId, x.ShiftDate });
+            b.HasIndex(x => x.ShiftDate).IsDescending();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<LeaveRequest>(b =>
+        {
+            b.HasIndex(x => x.BusinessEntityId);
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.StartDate).IsDescending();
+            b.Property(x => x.LeaveType).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<ShiftHandoverNote>(b =>
+        {
+            b.HasIndex(x => new { x.StationId, x.ShiftDate });
+            b.HasIndex(x => x.AuthoredAt).IsDescending();
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Announcement>(b =>
+        {
+            b.HasIndex(x => x.PublishedAt).IsDescending();
+            b.HasIndex(x => new { x.OrganizationId, x.OrgUnitId, x.IsActive });
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.OrgUnitId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Severity).HasConversion<byte>();
+        });
+
+        // Workforce audit logs — dbo.
+        builder.Entity<TrainingCourseAuditLog>(b =>
+        {
+            b.ToTable("TrainingCourseAuditLogs");
+            b.HasIndex(x => x.TrainingCourseId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<QualificationAuditLog>(b =>
+        {
+            b.ToTable("QualificationAuditLogs");
+            b.HasIndex(x => x.QualificationId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Category).HasConversion<byte>();
+        });
+        builder.Entity<EmployeeQualificationAuditLog>(b =>
+        {
+            b.ToTable("EmployeeQualificationAuditLogs");
+            b.HasIndex(x => x.EmployeeQualificationId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<StationQualificationAuditLog>(b =>
+        {
+            b.ToTable("StationQualificationAuditLogs");
+            b.HasIndex(x => x.StationQualificationId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<QualificationAlertAuditLog>(b =>
+        {
+            b.ToTable("QualificationAlertAuditLogs");
+            b.HasIndex(x => x.QualificationAlertId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Reason).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<LeaveRequestAuditLog>(b =>
+        {
+            b.ToTable("LeaveRequestAuditLogs");
+            b.HasIndex(x => x.LeaveRequestId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.LeaveType).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<AnnouncementAuditLog>(b =>
+        {
+            b.ToTable("AnnouncementAuditLogs");
+            b.HasIndex(x => x.AnnouncementId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Severity).HasConversion<byte>();
         });
     }
 }
