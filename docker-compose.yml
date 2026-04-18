@@ -27,10 +27,11 @@ services:
     restart: unless-stopped
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: awblazor:${APP_TAG:-latest}
+    # Pulled from GitHub Container Registry — built and pushed by
+    # .github/workflows/build-and-push-image.yml on every push to main.
+    # APP_TAG defaults to "latest" but you can pin to a specific commit SHA
+    # for rollbacks: APP_TAG=a1b2c3d docker compose up -d app
+    image: ghcr.io/capnbigal/awblazor:${APP_TAG:-latest}
     container_name: awblazor-app
     depends_on:
       sqlserver:

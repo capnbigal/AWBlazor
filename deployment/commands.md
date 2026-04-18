@@ -21,9 +21,13 @@ git pull                                # grab latest main
 
 ## Docker Compose — app lifecycle
 
+The droplet **pulls** the app image from GitHub Container Registry — it does NOT build
+locally. Builds happen in CI (`.github/workflows/build-and-push-image.yml`) on every
+push to `main` and publish two tags: `latest` and `<short-sha>`.
+
 ```bash
-docker compose build app                # rebuild image after code changes
-docker compose up -d app                # start/replace just the app container
+docker compose pull app                 # fetch newest image (latest tag)
+docker compose up -d app                # (re)start app with the pulled image
 docker compose up -d sqlserver          # start just the SQL Server container
 docker compose up -d                    # start everything
 docker compose down                     # stop everything
@@ -31,7 +35,30 @@ docker compose ps                       # list containers + health
 docker compose logs -f app              # stream app logs (Ctrl+C to exit)
 docker compose logs app --since 24h     # app logs from last 24h, non-streaming
 docker compose logs app --tail 20       # last 20 lines
-docker compose up -d --force-recreate app   # force-recreate (picks up new .env)
+docker compose up -d --force-recreate app   # rotate container (picks up new .env / new image)
+```
+
+### Standard deploy after a PR merges to main
+
+```bash
+cd /opt/awblazor
+docker compose pull app
+docker compose up -d --force-recreate app
+docker compose logs -f app              # watch startup; Ctrl+C when "Now listening on" appears
+```
+
+### Pin to a specific image SHA (for rollback)
+
+```bash
+APP_TAG=a1b2c3d docker compose up -d --force-recreate app   # immutable per-commit tag
+APP_TAG=latest  docker compose up -d --force-recreate app   # back to newest
+```
+
+### Local build (dev only — droplet never does this)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml build app
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d app
 ```
 
 ## Docker — peek inside containers
