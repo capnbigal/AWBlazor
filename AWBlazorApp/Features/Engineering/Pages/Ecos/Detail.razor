@@ -1,0 +1,256 @@
+@page "/engineering/ecos/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IEcoService EcoService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>ECO @(eco?.Code ?? "—")</PageTitle>
+
+@if (eco is null)
+{
+    <MudText Typo="Typo.body1">Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("engineering/ecos"))" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@eco.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@eco.Title</MudText>
+            </MudStack>
+            <MudSpacer />
+            <MudChip T="string" Size="Size.Medium" Color="@StatusColor(eco.Status)" Variant="Variant.Filled">@eco.Status</MudChip>
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                @if (eco.Status == EcoStatus.Draft)
+                {
+                    <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Send" OnClick="Submit">Submit for review</MudButton>
+                    <MudButton Color="Color.Default" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Cancel" OnClick="Cancel">Cancel ECO</MudButton>
+                }
+                else if (eco.Status == EcoStatus.UnderReview)
+                {
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudButton Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check" OnClick="@(() => OpenReview(true))">Approve</MudButton>
+                        <MudButton Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Close" OnClick="@(() => OpenReview(false))">Reject</MudButton>
+                    </AuthorizeView>
+                    <MudButton Color="Color.Default" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Cancel" OnClick="Cancel">Cancel ECO</MudButton>
+                }
+                <MudSpacer />
+                @if (eco.DecidedAt.HasValue)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Decided @eco.DecidedAt.Value.ToString("yyyy-MM-dd HH:mm") by @eco.DecidedByUserId</MudText>
+                }
+            </MudStack>
+            @if (!string.IsNullOrWhiteSpace(eco.Description))
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.body2" Style="white-space: pre-wrap">@eco.Description</MudText>
+            }
+            @if (!string.IsNullOrWhiteSpace(eco.DecisionNotes))
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.subtitle2">Decision notes</MudText>
+                <MudText Typo="Typo.body2" Style="white-space: pre-wrap">@eco.DecisionNotes</MudText>
+            }
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Affected items</MudText>
+                <MudSpacer />
+                @if (eco.Status == EcoStatus.Draft)
+                {
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddAffected">Add</MudButton>
+                }
+            </MudStack>
+            <MudDataGrid T="EcoAffectedItemDto" Items="affected" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.AffectedKind" Title="Kind" />
+                    <PropertyColumn Property="x => x.TargetId" Title="Target ID" />
+                    <PropertyColumn Property="x => x.Notes" Title="Notes" />
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            @if (eco.Status == EcoStatus.Draft)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => RemoveAffected(context.Item.Id))" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">When this ECO is approved, BOM and Routing targets are activated and prior versions for the same product are deactivated. Product and Document targets are informational.</MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6">Approval history</MudText>
+            <MudDataGrid T="EcoApprovalDto" Items="approvals" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.DecidedAt" Title="At" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn Property="x => x.ApproverUserId" Title="By" />
+                    <PropertyColumn Property="x => x.Decision" Title="Decision" />
+                    <PropertyColumn Property="x => x.Notes" Title="Notes" />
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="addAffectedOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Add affected item</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudSelect T="EcoAffectedKind" @bind-Value="newAffected.AffectedKind" Label="Kind" Variant="Variant.Outlined">
+                @foreach (var k in Enum.GetValues<EcoAffectedKind>()) { <MudSelectItem T="EcoAffectedKind" Value="@k">@k</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int" @bind-Value="newAffected.TargetId" Label="Target ID" Required="true" Variant="Variant.Outlined" HelperText="For Bom/Routing: row ID in eng.BomHeader / eng.ManufacturingRouting to be activated." />
+            <MudTextField @bind-Value="newAffected.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => addAffectedOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAffected" Disabled="saving">@(saving ? "Saving..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="reviewOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>@(reviewApprove ? "Approve" : "Reject") @eco?.Code</TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="reviewNotes" Label="Decision notes" Variant="Variant.Outlined" Lines="3" />
+        @if (reviewApprove && affected.Any(a => a.AffectedKind is EcoAffectedKind.Bom or EcoAffectedKind.Routing))
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3">
+                Approving will activate the listed BOM/Routing revisions and deactivate prior versions for the same product.
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => reviewOpen = false">Cancel</MudButton>
+        <MudButton Color="@(reviewApprove ? Color.Success : Color.Error)" Variant="Variant.Filled" OnClick="SubmitReview">@(reviewApprove ? "Approve" : "Reject")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private EngineeringChangeOrderDto? eco;
+    private List<EcoAffectedItemDto> affected = new();
+    private List<EcoApprovalDto> approvals = new();
+
+    private bool addAffectedOpen, saving;
+    private CreateEcoAffectedItemRequest newAffected = new();
+
+    private bool reviewOpen, reviewApprove;
+    private string? reviewNotes;
+
+    private static Color StatusColor(EcoStatus s) => s switch
+    {
+        EcoStatus.Draft => Color.Default,
+        EcoStatus.UnderReview => Color.Warning,
+        EcoStatus.Approved => Color.Success,
+        EcoStatus.Rejected => Color.Error,
+        EcoStatus.Cancelled => Color.Dark,
+        _ => Color.Default,
+    };
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await db.EngineeringChangeOrders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        eco = row?.ToDto();
+        affected = await db.EcoAffectedItems.AsNoTracking()
+            .Where(a => a.EngineeringChangeOrderId == Id)
+            .OrderBy(a => a.AffectedKind).ThenBy(a => a.Id)
+            .Select(a => a.ToDto()).ToListAsync();
+        approvals = await db.EcoApprovals.AsNoTracking()
+            .Where(a => a.EngineeringChangeOrderId == Id)
+            .OrderByDescending(a => a.DecidedAt)
+            .Select(a => a.ToDto()).ToListAsync();
+    }
+
+    private void OpenAddAffected() { newAffected = new CreateEcoAffectedItemRequest { AffectedKind = EcoAffectedKind.Bom }; addAffectedOpen = true; }
+
+    private async Task AddAffected()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = newAffected.ToEntity(Id);
+            db.EcoAffectedItems.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Added.", Severity.Success);
+            addAffectedOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task RemoveAffected(int aId)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.EcoAffectedItems.FirstOrDefaultAsync(x => x.Id == aId);
+            if (entity is null) return;
+            db.EcoAffectedItems.Remove(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task Submit()
+    {
+        try
+        {
+            var by = await GetUserNameAsync();
+            await EcoService.SubmitForReviewAsync(Id, by, default);
+            Snackbar.Add("Submitted for review.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Submit failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task Cancel()
+    {
+        try
+        {
+            var by = await GetUserNameAsync();
+            await EcoService.CancelAsync(Id, by, default);
+            Snackbar.Add("Cancelled.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Cancel failed: {ex.Message}", Severity.Error); }
+    }
+
+    private void OpenReview(bool approve) { reviewApprove = approve; reviewNotes = null; reviewOpen = true; }
+
+    private async Task SubmitReview()
+    {
+        try
+        {
+            var by = await GetUserNameAsync();
+            if (reviewApprove) await EcoService.ApproveAsync(Id, reviewNotes, by, default);
+            else await EcoService.RejectAsync(Id, reviewNotes, by, default);
+            Snackbar.Add(reviewApprove ? "Approved — affected revisions activated." : "Rejected.", Severity.Success);
+            reviewOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Decision failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

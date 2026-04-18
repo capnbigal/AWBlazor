@@ -17,6 +17,7 @@ using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Features.Quality.Domain;
+using AWBlazorApp.Features.Engineering.Domain;
 using AWBlazorApp.Features.Workforce.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -330,6 +331,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<QualificationAlertAuditLog> QualificationAlertAuditLogs => Set<QualificationAlertAuditLog>();
     public DbSet<LeaveRequestAuditLog> LeaveRequestAuditLogs => Set<LeaveRequestAuditLog>();
     public DbSet<AnnouncementAuditLog> AnnouncementAuditLogs => Set<AnnouncementAuditLog>();
+
+    // Batch 16 — Engineering (eng.* schema). Routings, BOMs, ECOs, engineering documents,
+    // and deviation requests. Feeds MES (which consumes the active routing/BOM revisions
+    // when launching a production run).
+    public DbSet<ManufacturingRouting> ManufacturingRoutings => Set<ManufacturingRouting>();
+    public DbSet<RoutingStep> RoutingSteps => Set<RoutingStep>();
+    public DbSet<BomHeader> BomHeaders => Set<BomHeader>();
+    public DbSet<BomLine> BomLines => Set<BomLine>();
+    public DbSet<EngineeringChangeOrder> EngineeringChangeOrders => Set<EngineeringChangeOrder>();
+    public DbSet<EcoAffectedItem> EcoAffectedItems => Set<EcoAffectedItem>();
+    public DbSet<EcoApproval> EcoApprovals => Set<EcoApproval>();
+    public DbSet<EngineeringDocument> EngineeringDocuments => Set<EngineeringDocument>();
+    public DbSet<DeviationRequest> DeviationRequests => Set<DeviationRequest>();
+    public DbSet<ManufacturingRoutingAuditLog> ManufacturingRoutingAuditLogs => Set<ManufacturingRoutingAuditLog>();
+    public DbSet<BomHeaderAuditLog> BomHeaderAuditLogs => Set<BomHeaderAuditLog>();
+    public DbSet<EngineeringChangeOrderAuditLog> EngineeringChangeOrderAuditLogs => Set<EngineeringChangeOrderAuditLog>();
+    public DbSet<EngineeringDocumentAuditLog> EngineeringDocumentAuditLogs => Set<EngineeringDocumentAuditLog>();
+    public DbSet<DeviationRequestAuditLog> DeviationRequestAuditLogs => Set<DeviationRequestAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1807,6 +1826,114 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => x.AnnouncementId);
             b.HasIndex(x => x.ChangedDate);
             b.Property(x => x.Severity).HasConversion<byte>();
+        });
+
+        // --- Engineering (eng schema) ---
+        builder.Entity<ManufacturingRouting>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.ProductId, x.IsActive });
+            b.HasIndex(x => new { x.ProductId, x.RevisionNumber }).IsUnique();
+        });
+
+        builder.Entity<RoutingStep>(b =>
+        {
+            b.HasIndex(x => new { x.ManufacturingRoutingId, x.SequenceNumber }).IsUnique();
+            b.HasOne<ManufacturingRouting>().WithMany().HasForeignKey(x => x.ManufacturingRoutingId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<BomHeader>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.ProductId, x.IsActive });
+            b.HasIndex(x => new { x.ProductId, x.RevisionNumber }).IsUnique();
+        });
+
+        builder.Entity<BomLine>(b =>
+        {
+            b.HasIndex(x => x.BomHeaderId);
+            b.HasIndex(x => x.ComponentProductId);
+            b.HasOne<BomHeader>().WithMany().HasForeignKey(x => x.BomHeaderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<EngineeringChangeOrder>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.RaisedAt).IsDescending();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<EcoAffectedItem>(b =>
+        {
+            b.HasIndex(x => x.EngineeringChangeOrderId);
+            b.HasIndex(x => new { x.AffectedKind, x.TargetId });
+            b.HasOne<EngineeringChangeOrder>().WithMany().HasForeignKey(x => x.EngineeringChangeOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.AffectedKind).HasConversion<byte>();
+        });
+
+        builder.Entity<EcoApproval>(b =>
+        {
+            b.HasIndex(x => x.EngineeringChangeOrderId);
+            b.HasIndex(x => x.DecidedAt).IsDescending();
+            b.HasOne<EngineeringChangeOrder>().WithMany().HasForeignKey(x => x.EngineeringChangeOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Decision).HasConversion<byte>();
+        });
+
+        builder.Entity<EngineeringDocument>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.ProductId, x.Kind });
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<DeviationRequest>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.ProductId, x.Status });
+            b.HasIndex(x => x.RaisedAt).IsDescending();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        // Engineering audit logs — dbo.
+        builder.Entity<ManufacturingRoutingAuditLog>(b =>
+        {
+            b.ToTable("ManufacturingRoutingAuditLogs");
+            b.HasIndex(x => x.ManufacturingRoutingId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<BomHeaderAuditLog>(b =>
+        {
+            b.ToTable("BomHeaderAuditLogs");
+            b.HasIndex(x => x.BomHeaderId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<EngineeringChangeOrderAuditLog>(b =>
+        {
+            b.ToTable("EngineeringChangeOrderAuditLogs");
+            b.HasIndex(x => x.EngineeringChangeOrderId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+        builder.Entity<EngineeringDocumentAuditLog>(b =>
+        {
+            b.ToTable("EngineeringDocumentAuditLogs");
+            b.HasIndex(x => x.EngineeringDocumentId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+        builder.Entity<DeviationRequestAuditLog>(b =>
+        {
+            b.ToTable("DeviationRequestAuditLogs");
+            b.HasIndex(x => x.DeviationRequestId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Status).HasConversion<byte>();
         });
     }
 }

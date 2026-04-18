@@ -247,6 +247,10 @@ WHERE a.SpatialLocation IS NULL;";
         // attendance, leave, handover, announcements, alerts) + seven audit logs.
         // Marker is TrainingCourse (pure wf product).
         ("_AddWorkforceModule",         "TrainingCourse"),
+        // 2026-04 — AddEngineeringModule: creates eng.* schema (manufacturing routings + steps,
+        // BOMs, ECOs + affected items + approvals, documents, deviations) + five audit logs.
+        // Marker is EngineeringChangeOrder (pure eng product).
+        ("_AddEngineeringModule",       "EngineeringChangeOrder"),
     ];
 
     /// <summary>

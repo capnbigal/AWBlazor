@@ -1,0 +1,132 @@
+@page "/engineering/boms/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>BOM @(bom?.Code ?? "—")</PageTitle>
+
+@if (bom is null)
+{
+    <MudText Typo="Typo.body1">Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("engineering/boms"))" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@bom.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@bom.Name · Product @bom.ProductId · Rev @bom.RevisionNumber</MudText>
+            </MudStack>
+            <MudSpacer />
+            @if (bom.IsActive)
+            { <MudChip T="string" Size="Size.Medium" Color="Color.Success" Variant="Variant.Filled">Active</MudChip> }
+            else
+            { <MudChip T="string" Size="Size.Medium" Color="Color.Default" Variant="Variant.Outlined">Inactive</MudChip> }
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Components</MudText>
+                <MudSpacer />
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddLine">Add component</MudButton>
+                </AuthorizeView>
+            </MudStack>
+            <MudDataGrid T="BomLineDto" Items="lines" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.ComponentProductId" Title="Component" />
+                    <PropertyColumn Property="x => x.Quantity" Title="Qty" />
+                    <PropertyColumn Property="x => x.UnitMeasureCode" Title="UOM" />
+                    <TemplateColumn Title="Scrap %" Sortable="false">
+                        <CellTemplate>@((context.Item.ScrapPercentage * 100m).ToString("N2"))%</CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Notes" Title="Notes" />
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteLine(context.Item.Id))" />
+                            </AuthorizeView>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="addLineOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Add component</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newLine.ComponentProductId" Label="Component product ID" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newLine.Quantity" Label="Quantity" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newLine.UnitMeasureCode" Label="UOM (3 chars, e.g. EA, LB)" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newLine.ScrapPercentage" Label="Scrap fraction (0-1, e.g. 0.05 = 5%)" Step="0.01m" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newLine.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => addLineOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddLineAsync" Disabled="saving">@(saving ? "Saving..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private BomHeaderDto? bom;
+    private List<BomLineDto> lines = new();
+
+    private bool addLineOpen, saving;
+    private CreateBomLineRequest newLine = new();
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await db.BomHeaders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        bom = row?.ToDto();
+        lines = await db.BomLines.AsNoTracking()
+            .Where(l => l.BomHeaderId == Id)
+            .OrderBy(l => l.ComponentProductId)
+            .Select(l => l.ToDto()).ToListAsync();
+    }
+
+    private void OpenAddLine() { newLine = new CreateBomLineRequest { BomHeaderId = Id, UnitMeasureCode = "EA" }; addLineOpen = true; }
+
+    private async Task AddLineAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newLine.BomHeaderId = Id;
+            var entity = newLine.ToEntity();
+            db.BomLines.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Added.", Severity.Success);
+            addLineOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task DeleteLine(int lineId)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.BomLines.FirstOrDefaultAsync(l => l.Id == lineId);
+            if (entity is null) return;
+            db.BomLines.Remove(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+}

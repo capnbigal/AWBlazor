@@ -143,6 +143,13 @@ public static class PermissionAreaMapping
         ("/api/leave-requests", PermissionArea.Workforce),
         ("/api/shift-handover-notes", PermissionArea.Workforce),
         ("/api/announcements", PermissionArea.Workforce),
+
+        // Engineering (Module M9)
+        ("/api/manufacturing-routings", PermissionArea.Engineering),
+        ("/api/boms", PermissionArea.Engineering),
+        ("/api/engineering-change-orders", PermissionArea.Engineering),
+        ("/api/engineering-documents", PermissionArea.Engineering),
+        ("/api/deviation-requests", PermissionArea.Engineering),
     ];
 
     /// <summary>
