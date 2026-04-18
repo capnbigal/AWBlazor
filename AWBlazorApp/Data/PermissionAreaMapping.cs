@@ -158,6 +158,15 @@ public static class PermissionAreaMapping
         ("/api/spare-parts", PermissionArea.Maintenance),
         ("/api/meter-readings", PermissionArea.Maintenance),
         ("/api/maintenance-logs", PermissionArea.Maintenance),
+
+        // Performance (Module M8)
+        ("/api/oee-snapshots", PermissionArea.Performance),
+        ("/api/production-metrics", PermissionArea.Performance),
+        ("/api/maintenance-metrics", PermissionArea.Performance),
+        ("/api/kpi-definitions", PermissionArea.Performance),
+        ("/api/kpi-values", PermissionArea.Performance),
+        ("/api/scorecards", PermissionArea.Performance),
+        ("/api/performance-reports", PermissionArea.Performance),
     ];
 
     /// <summary>

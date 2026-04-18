@@ -1,0 +1,130 @@
+@page "/performance/oee"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IOeeService OeeService
+@inject ISnackbar Snackbar
+
+<PageTitle>OEE snapshots</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">OEE snapshots</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Availability × Performance × Quality per station per period</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Calculate" OnClick="OpenCompute">Compute snapshot</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudNumericField T="int?" @bind-Value="filterStation" Label="Station ID" Variant="Variant.Outlined" Clearable="true" />
+            <MudSelect T="PerformancePeriodKind?" @bind-Value="filterPeriod" Label="Period" Variant="Variant.Outlined" Clearable="true" Style="max-width: 200px">
+                <MudSelectItem T="PerformancePeriodKind?" Value="@null">(any)</MudSelectItem>
+                @foreach (var p in Enum.GetValues<PerformancePeriodKind>()) { <MudSelectItem T="PerformancePeriodKind?" Value="@p">@p</MudSelectItem> }
+            </MudSelect>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDataGrid T="OeeSnapshotDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.StationId" Title="Station" />
+            <PropertyColumn Property="x => x.PeriodKind" Title="Period" />
+            <PropertyColumn Property="x => x.PeriodStart" Title="Start" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="Availability" Sortable="false"><CellTemplate>@((context.Item.Availability * 100m).ToString("F1"))%</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Performance" Sortable="false"><CellTemplate>@((context.Item.Performance * 100m).ToString("F1"))%</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Quality" Sortable="false"><CellTemplate>@((context.Item.Quality * 100m).ToString("F1"))%</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="OEE" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@OeeColor(context.Item.Oee)" Variant="Variant.Filled">@((context.Item.Oee * 100m).ToString("F1"))%</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.UnitsProduced" Title="Units" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="OeeSnapshotDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Compute OEE snapshot</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="compute.StationId" Label="Station ID" Required="true" Variant="Variant.Outlined" />
+            <MudSelect T="PerformancePeriodKind" @bind-Value="compute.PeriodKind" Label="Period kind" Variant="Variant.Outlined">
+                @foreach (var p in Enum.GetValues<PerformancePeriodKind>()) { <MudSelectItem T="PerformancePeriodKind" Value="@p">@p</MudSelectItem> }
+            </MudSelect>
+            <MudDatePicker @bind-Date="startDate" Label="Period start" Required="true" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="endDate" Label="Period end" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="compute.IdealCycleSeconds" Label="Ideal cycle (seconds)" Required="true" Variant="Variant.Outlined" HelperText="Target seconds per unit at full speed — used in the Performance denominator." />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ComputeAsync" Disabled="computing">@(computing ? "Computing…" : "Compute")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<OeeSnapshotDto> grid = null!;
+    private bool _loading = true;
+    private int? filterStation;
+    private PerformancePeriodKind? filterPeriod;
+
+    private bool dialogOpen, computing;
+    private ComputeOeeRequest compute = new();
+    private DateTime? startDate = DateTime.UtcNow.Date.AddDays(-1);
+    private DateTime? endDate = DateTime.UtcNow.Date;
+
+    private static Color OeeColor(decimal oee) => oee switch
+    {
+        >= 0.85m => Color.Success,
+        >= 0.60m => Color.Warning,
+        _ => Color.Error,
+    };
+
+    private async Task<GridData<OeeSnapshotDto>> LoadAsync(GridState<OeeSnapshotDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.OeeSnapshots.AsNoTracking();
+            if (filterStation.HasValue) q = q.Where(x => x.StationId == filterStation.Value);
+            if (filterPeriod.HasValue) q = q.Where(x => x.PeriodKind == filterPeriod.Value);
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.PeriodStart)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<OeeSnapshotDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private void OpenCompute()
+    {
+        compute = new ComputeOeeRequest { PeriodKind = PerformancePeriodKind.Day, IdealCycleSeconds = 60 };
+        startDate = DateTime.UtcNow.Date.AddDays(-1);
+        endDate = DateTime.UtcNow.Date;
+        dialogOpen = true;
+    }
+
+    private async Task ComputeAsync()
+    {
+        computing = true;
+        try
+        {
+            if (startDate.HasValue) compute.PeriodStart = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
+            if (endDate.HasValue) compute.PeriodEnd = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
+            var snap = await OeeService.ComputeAsync(
+                compute.StationId, compute.PeriodKind,
+                compute.PeriodStart, compute.PeriodEnd,
+                compute.IdealCycleSeconds, default);
+            Snackbar.Add($"OEE = {snap.Oee * 100m:F1}%", Severity.Success);
+            dialogOpen = false;
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Compute failed: {ex.Message}", Severity.Error); }
+        finally { computing = false; }
+    }
+}
