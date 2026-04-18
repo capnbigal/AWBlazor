@@ -1,5 +1,6 @@
 using AWBlazorApp.Features.Engineering.Audit;
 using AWBlazorApp.Features.Engineering.Domain;
+using AWBlazorApp.Features.Enterprise.Domain;
 using AWBlazorApp.Features.Maintenance.Audit;
 using AWBlazorApp.Features.Maintenance.Domain;
 using AWBlazorApp.Features.Performance.Audit;
@@ -31,8 +32,15 @@ public sealed class DemoDataSeeder
     public async Task<DemoSeedResult> SeedAllAsync(CancellationToken cancellationToken)
     {
         var result = new DemoSeedResult();
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
+        // The wf/eng/maint/perf seeds all FK back to org.Station / org.Asset and to AW
+        // Production.Product. AW restores ship Product populated, but the org schema starts
+        // empty on a fresh deploy (Phase A creates the tables, doesn't seed them). Bootstrap
+        // a minimum baseline if any of those upstream rows are missing — counts get rolled
+        // into result.Baseline so the caller can see what was created.
+        result.Baseline = await EnsureBaselineAsync(cancellationToken);
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var employeeIds = await db.Employees.AsNoTracking().OrderBy(e => e.Id).Take(12).Select(e => e.Id).ToListAsync(cancellationToken);
         var stationIds = await db.Stations.AsNoTracking().OrderBy(s => s.Id).Take(6).Select(s => s.Id).ToListAsync(cancellationToken);
         var assetIds = await db.Assets.AsNoTracking().OrderBy(a => a.Id).Take(6).Select(a => a.Id).ToListAsync(cancellationToken);
@@ -40,7 +48,7 @@ public sealed class DemoDataSeeder
 
         if (employeeIds.Count == 0 || stationIds.Count == 0 || assetIds.Count == 0 || productIds.Count == 0)
         {
-            _logger.LogWarning("Demo seed skipped — upstream FK targets missing. Employees={E} Stations={S} Assets={A} Products={P}",
+            _logger.LogWarning("Demo seed skipped — upstream FK targets missing even after baseline. Employees={E} Stations={S} Assets={A} Products={P}",
                 employeeIds.Count, stationIds.Count, assetIds.Count, productIds.Count);
             result.Skipped = true;
             return result;
@@ -51,9 +59,121 @@ public sealed class DemoDataSeeder
         result.Maintenance = await SeedMaintenanceAsync(assetIds, productIds, cancellationToken);
         result.Performance = await SeedPerformanceAsync(stationIds, assetIds, cancellationToken);
 
-        _logger.LogInformation("Demo seed complete: wf={Wf} eng={Eng} maint={Maint} perf={Perf}",
-            result.Workforce, result.Engineering, result.Maintenance, result.Performance);
+        _logger.LogInformation("Demo seed complete: baseline={Base} wf={Wf} eng={Eng} maint={Maint} perf={Perf}",
+            result.Baseline, result.Workforce, result.Engineering, result.Maintenance, result.Performance);
         return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  BASELINE — seed minimum org/orgunit/station/asset if empty
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a minimum org hierarchy + 3 stations + 5 assets when those tables are empty,
+    /// so the wf/eng/maint/perf seeds have FK targets. Returns the count of rows created.
+    /// Idempotent — checks for the DEMO-PLANT marker organization and skips if present.
+    /// </summary>
+    private async Task<int> EnsureBaselineAsync(CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var rows = 0;
+        var now = DateTime.UtcNow;
+
+        // Already bootstrapped?
+        if (await db.Organizations.AnyAsync(o => o.Code == "DEMO-PLANT", ct))
+        {
+            _logger.LogInformation("Baseline org/station/asset already present, skipping bootstrap.");
+            return 0;
+        }
+
+        // 1. Organization (only if no organizations exist at all — preserve any real one).
+        var org = await db.Organizations.FirstOrDefaultAsync(o => o.IsPrimary, ct);
+        if (org is null)
+        {
+            org = new Organization
+            {
+                Code = "DEMO-PLANT",
+                Name = "Demo Manufacturing Plant",
+                IsPrimary = !await db.Organizations.AnyAsync(o => o.IsPrimary, ct),
+                IsActive = true,
+                ModifiedDate = now,
+            };
+            db.Organizations.Add(org);
+            await db.SaveChangesAsync(ct);
+            rows++;
+            _logger.LogInformation("Bootstrapped Organization {Code} (Id={Id}).", org.Code, org.Id);
+        }
+
+        // 2. OrgUnit (Plant -> Area). Reuse if any exist for this org.
+        var orgUnit = await db.OrgUnits.FirstOrDefaultAsync(u => u.OrganizationId == org.Id, ct);
+        if (orgUnit is null)
+        {
+            var plant = new OrgUnit
+            {
+                OrganizationId = org.Id,
+                Kind = OrgUnitKind.Plant,
+                Code = "DEMO-PLANT-A",
+                Name = "Plant A",
+                Path = "DEMO-PLANT-A",
+                Depth = 0,
+                IsActive = true,
+                ModifiedDate = now,
+            };
+            db.OrgUnits.Add(plant);
+            await db.SaveChangesAsync(ct);
+            rows++;
+
+            orgUnit = new OrgUnit
+            {
+                OrganizationId = org.Id,
+                ParentOrgUnitId = plant.Id,
+                Kind = OrgUnitKind.Area,
+                Code = "DEMO-AREA-MAIN",
+                Name = "Main Production Area",
+                Path = "DEMO-PLANT-A/DEMO-AREA-MAIN",
+                Depth = 1,
+                IsActive = true,
+                ModifiedDate = now,
+            };
+            db.OrgUnits.Add(orgUnit);
+            await db.SaveChangesAsync(ct);
+            rows++;
+            _logger.LogInformation("Bootstrapped 2 OrgUnits under Organization {Id}.", org.Id);
+        }
+
+        // 3. Stations — only seed if NONE exist anywhere (preserve real installations).
+        if (!await db.Stations.AnyAsync(ct))
+        {
+            var stations = new[]
+            {
+                new Station { OrgUnitId = orgUnit.Id, Code = "DEMO-ST-01", Name = "Assembly Station 1", StationKind = StationKind.Assembly, IsActive = true, ModifiedDate = now },
+                new Station { OrgUnitId = orgUnit.Id, Code = "DEMO-ST-02", Name = "Assembly Station 2", StationKind = StationKind.Assembly, IsActive = true, ModifiedDate = now },
+                new Station { OrgUnitId = orgUnit.Id, Code = "DEMO-ST-03", Name = "Inspection Bench", StationKind = StationKind.Inspection, IsActive = true, ModifiedDate = now },
+            };
+            db.Stations.AddRange(stations);
+            await db.SaveChangesAsync(ct);
+            rows += stations.Length;
+            _logger.LogInformation("Bootstrapped {Count} stations under OrgUnit {Id}.", stations.Length, orgUnit.Id);
+        }
+
+        // 4. Assets — only seed if NONE exist anywhere.
+        if (!await db.Assets.AnyAsync(ct))
+        {
+            var assets = new[]
+            {
+                new Asset { OrganizationId = org.Id, OrgUnitId = orgUnit.Id, AssetTag = "DEMO-AST-CNC01", Name = "CNC Mill #1", Manufacturer = "Haas", Model = "VF-2", AssetType = AssetType.Machine, Status = AssetStatus.Active, ModifiedDate = now },
+                new Asset { OrganizationId = org.Id, OrgUnitId = orgUnit.Id, AssetTag = "DEMO-AST-LATHE01", Name = "Lathe #1", Manufacturer = "Mazak", Model = "QT-200", AssetType = AssetType.Machine, Status = AssetStatus.Active, ModifiedDate = now },
+                new Asset { OrganizationId = org.Id, OrgUnitId = orgUnit.Id, AssetTag = "DEMO-AST-PRESS01", Name = "Hydraulic Press", Manufacturer = "Schuler", AssetType = AssetType.Machine, Status = AssetStatus.Active, ModifiedDate = now },
+                new Asset { OrganizationId = org.Id, OrgUnitId = orgUnit.Id, AssetTag = "DEMO-AST-FORK01", Name = "Forklift", Manufacturer = "Toyota", Model = "8FGU25", AssetType = AssetType.Vehicle, Status = AssetStatus.Active, ModifiedDate = now },
+                new Asset { OrganizationId = org.Id, OrgUnitId = orgUnit.Id, AssetTag = "DEMO-AST-CMM01", Name = "Coordinate Measuring Machine", Manufacturer = "Zeiss", AssetType = AssetType.Instrument, Status = AssetStatus.Active, ModifiedDate = now },
+            };
+            db.Assets.AddRange(assets);
+            await db.SaveChangesAsync(ct);
+            rows += assets.Length;
+            _logger.LogInformation("Bootstrapped {Count} assets under OrgUnit {Id}.", assets.Length, orgUnit.Id);
+        }
+
+        return rows;
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -715,9 +835,10 @@ public sealed class DemoDataSeeder
 public sealed class DemoSeedResult
 {
     public bool Skipped { get; set; }
+    public int Baseline { get; set; }
     public int Workforce { get; set; }
     public int Engineering { get; set; }
     public int Maintenance { get; set; }
     public int Performance { get; set; }
-    public int Total => Workforce + Engineering + Maintenance + Performance;
+    public int Total => Baseline + Workforce + Engineering + Maintenance + Performance;
 }
