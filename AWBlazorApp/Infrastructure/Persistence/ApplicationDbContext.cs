@@ -19,6 +19,7 @@ using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Features.Quality.Domain;
 using AWBlazorApp.Features.Engineering.Domain;
 using AWBlazorApp.Features.Maintenance.Domain;
+using AWBlazorApp.Features.Performance.Domain;
 using AWBlazorApp.Features.Workforce.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -366,6 +367,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<PmScheduleAuditLog> PmScheduleAuditLogs => Set<PmScheduleAuditLog>();
     public DbSet<MaintenanceWorkOrderAuditLog> MaintenanceWorkOrderAuditLogs => Set<MaintenanceWorkOrderAuditLog>();
     public DbSet<SparePartAuditLog> SparePartAuditLogs => Set<SparePartAuditLog>();
+
+    // Batch 18 — Performance (perf.* schema). OEE snapshots, daily/monthly metric rollups,
+    // KPI definitions and their evaluated values, scorecards, saved reports.
+    public DbSet<OeeSnapshot> OeeSnapshots => Set<OeeSnapshot>();
+    public DbSet<ProductionDailyMetric> ProductionDailyMetrics => Set<ProductionDailyMetric>();
+    public DbSet<MaintenanceMonthlyMetric> MaintenanceMonthlyMetrics => Set<MaintenanceMonthlyMetric>();
+    public DbSet<KpiDefinition> KpiDefinitions => Set<KpiDefinition>();
+    public DbSet<KpiValue> KpiValues => Set<KpiValue>();
+    public DbSet<ScorecardDefinition> ScorecardDefinitions => Set<ScorecardDefinition>();
+    public DbSet<ScorecardKpi> ScorecardKpis => Set<ScorecardKpi>();
+    public DbSet<PerformanceReport> PerformanceReports => Set<PerformanceReport>();
+    public DbSet<PerformanceReportRun> PerformanceReportRuns => Set<PerformanceReportRun>();
+    public DbSet<KpiDefinitionAuditLog> KpiDefinitionAuditLogs => Set<KpiDefinitionAuditLog>();
+    public DbSet<ScorecardDefinitionAuditLog> ScorecardDefinitionAuditLogs => Set<ScorecardDefinitionAuditLog>();
+    public DbSet<PerformanceReportAuditLog> PerformanceReportAuditLogs => Set<PerformanceReportAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -2069,6 +2085,106 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.ToTable("SparePartAuditLogs");
             b.HasIndex(x => x.SparePartId);
             b.HasIndex(x => x.ChangedDate);
+        });
+
+        // --- Performance (perf schema) ---
+        builder.Entity<OeeSnapshot>(b =>
+        {
+            b.HasIndex(x => new { x.StationId, x.PeriodKind, x.PeriodStart }).IsUnique();
+            b.HasIndex(x => x.PeriodStart).IsDescending();
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.PeriodKind).HasConversion<byte>();
+        });
+
+        builder.Entity<ProductionDailyMetric>(b =>
+        {
+            b.HasIndex(x => new { x.StationId, x.Date }).IsUnique();
+            b.HasIndex(x => x.Date).IsDescending();
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<MaintenanceMonthlyMetric>(b =>
+        {
+            b.HasIndex(x => new { x.AssetId, x.Year, x.Month }).IsUnique();
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<KpiDefinition>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.IsActive);
+            b.Property(x => x.Source).HasConversion<byte>();
+            b.Property(x => x.Aggregation).HasConversion<byte>();
+            b.Property(x => x.Direction).HasConversion<byte>();
+        });
+
+        builder.Entity<KpiValue>(b =>
+        {
+            b.HasIndex(x => new { x.KpiDefinitionId, x.PeriodKind, x.PeriodStart }).IsUnique();
+            b.HasIndex(x => x.PeriodStart).IsDescending();
+            b.HasOne<KpiDefinition>().WithMany().HasForeignKey(x => x.KpiDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.PeriodKind).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        builder.Entity<ScorecardDefinition>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.IsActive);
+        });
+
+        builder.Entity<ScorecardKpi>(b =>
+        {
+            b.HasIndex(x => new { x.ScorecardDefinitionId, x.DisplayOrder });
+            b.HasIndex(x => new { x.ScorecardDefinitionId, x.KpiDefinitionId }).IsUnique();
+            b.HasOne<ScorecardDefinition>().WithMany().HasForeignKey(x => x.ScorecardDefinitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<KpiDefinition>().WithMany().HasForeignKey(x => x.KpiDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.Visual).HasConversion<byte>();
+        });
+
+        builder.Entity<PerformanceReport>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.IsActive);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<PerformanceReportRun>(b =>
+        {
+            b.HasIndex(x => x.PerformanceReportId);
+            b.HasIndex(x => x.RunAt).IsDescending();
+            b.HasOne<PerformanceReport>().WithMany().HasForeignKey(x => x.PerformanceReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Performance audit logs — dbo.
+        builder.Entity<KpiDefinitionAuditLog>(b =>
+        {
+            b.ToTable("KpiDefinitionAuditLogs");
+            b.HasIndex(x => x.KpiDefinitionId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Source).HasConversion<byte>();
+            b.Property(x => x.Aggregation).HasConversion<byte>();
+            b.Property(x => x.Direction).HasConversion<byte>();
+        });
+        builder.Entity<ScorecardDefinitionAuditLog>(b =>
+        {
+            b.ToTable("ScorecardDefinitionAuditLogs");
+            b.HasIndex(x => x.ScorecardDefinitionId);
+            b.HasIndex(x => x.ChangedDate);
+        });
+        builder.Entity<PerformanceReportAuditLog>(b =>
+        {
+            b.ToTable("PerformanceReportAuditLogs");
+            b.HasIndex(x => x.PerformanceReportId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Kind).HasConversion<byte>();
         });
     }
 }

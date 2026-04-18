@@ -1,0 +1,102 @@
+@page "/performance/scorecards"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Scorecards</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Scorecards</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Named dashboards composed of ordered KPIs</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New scorecard</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudDataGrid T="ScorecardDefinitionDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.Code" Title="Code" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.OwnerUserId" Title="Owner" />
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"performance/scorecards/{context.Item.Id}"))" /></CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ScorecardDefinitionDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>New scorecard</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="newRow.Code" Label="Code (UPPER)" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newRow.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newRow.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
+            <MudCheckBox T="bool" @bind-Value="newRow.IsActive" Label="Active" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="saving">@(saving ? "Saving..." : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<ScorecardDefinitionDto> grid = null!;
+    private bool _loading = true;
+
+    private bool dialogOpen, saving;
+    private CreateScorecardDefinitionRequest newRow = new();
+
+    private async Task<GridData<ScorecardDefinitionDto>> LoadAsync(GridState<ScorecardDefinitionDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.ScorecardDefinitions.AsNoTracking();
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderBy(x => x.Code)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ScorecardDefinitionDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void OpenCreate() { newRow = new CreateScorecardDefinitionRequest { IsActive = true }; dialogOpen = true; }
+
+    private async Task CreateAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var by = await GetUserNameAsync();
+            var entity = newRow.ToEntity(by);
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.ScorecardDefinitions.Add(entity);
+            await db.SaveChangesAsync();
+            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            Snackbar.Add($"Created {entity.Code}.", Severity.Success);
+            dialogOpen = false;
+            Navigation.NavigateTo($"performance/scorecards/{entity.Id}");
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

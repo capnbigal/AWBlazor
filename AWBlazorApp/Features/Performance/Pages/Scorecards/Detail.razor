@@ -1,0 +1,221 @@
+@page "/performance/scorecards/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IKpiEvaluationService EvalService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Scorecard @(scorecard?.Code ?? "—")</PageTitle>
+
+@if (scorecard is null)
+{
+    <MudText Typo="Typo.body1">Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("performance/scorecards"))" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@scorecard.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@scorecard.Name</MudText>
+            </MudStack>
+            <MudSpacer />
+            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" OnClick="EvaluateAll" Disabled="evaluating">@(evaluating ? "Evaluating…" : "Evaluate all KPIs")</MudButton>
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddKpi">Add KPI</MudButton>
+            </AuthorizeView>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(scorecard.Description))
+        {
+            <MudPaper Class="pa-4" Elevation="1"><MudText Typo="Typo.body2">@scorecard.Description</MudText></MudPaper>
+        }
+
+        <MudGrid Spacing="3">
+            @foreach (var row in kpiRows)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudStack Spacing="0" Style="flex: 1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@row.KpiCode</MudText>
+                                <MudText Typo="Typo.h6">@row.KpiName</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Color="@StatusColor(row.Status)" Variant="Variant.Filled">@row.Status</MudChip>
+                        </MudStack>
+                        <MudDivider Class="my-2" />
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline">
+                            <MudText Typo="Typo.h4">@(row.Value?.ToString("F2") ?? "—")</MudText>
+                            @if (!string.IsNullOrWhiteSpace(row.Unit))
+                            { <MudText Typo="Typo.body2" Color="Color.Secondary">@row.Unit</MudText> }
+                            <MudSpacer />
+                            @if (row.Target.HasValue)
+                            { <MudText Typo="Typo.caption" Color="Color.Secondary">target @row.Target.Value.ToString("F2")</MudText> }
+                        </MudStack>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@row.Visual</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
+                            <MudSpacer />
+                            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => RemoveKpi(row.ScorecardKpiId))" />
+                            </AuthorizeView>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+            @if (kpiRows.Count == 0)
+            {
+                <MudItem xs="12"><MudAlert Severity="Severity.Info">No KPIs on this scorecard yet — add one.</MudAlert></MudItem>
+            }
+        </MudGrid>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="addOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Add KPI to scorecard</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudSelect T="int" @bind-Value="addReq.KpiDefinitionId" Label="KPI" Required="true" Variant="Variant.Outlined">
+                @foreach (var k in availableKpis)
+                { <MudSelectItem T="int" Value="@k.Id">@k.Code — @k.Name</MudSelectItem> }
+            </MudSelect>
+            <MudNumericField T="int" @bind-Value="addReq.DisplayOrder" Label="Display order" Variant="Variant.Outlined" />
+            <MudSelect T="ScorecardKpiVisual" @bind-Value="addReq.Visual" Label="Visual" Variant="Variant.Outlined">
+                @foreach (var v in Enum.GetValues<ScorecardKpiVisual>()) { <MudSelectItem T="ScorecardKpiVisual" Value="@v">@v</MudSelectItem> }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => addOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddKpiAsync" Disabled="saving">@(saving ? "Saving..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ScorecardDefinitionDto? scorecard;
+    private List<ScorecardKpiRow> kpiRows = new();
+    private List<KpiDefinitionDto> availableKpis = new();
+    private bool evaluating;
+
+    private bool addOpen, saving;
+    private CreateScorecardKpiRequest addReq = new();
+
+    private sealed record ScorecardKpiRow(
+        int ScorecardKpiId, string KpiCode, string KpiName, string? Unit,
+        ScorecardKpiVisual Visual,
+        decimal? Value, decimal? Target, KpiStatus Status);
+
+    private static Color StatusColor(KpiStatus s) => s switch
+    {
+        KpiStatus.OnTarget => Color.Success,
+        KpiStatus.Warning => Color.Warning,
+        KpiStatus.Critical => Color.Error,
+        _ => Color.Default,
+    };
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await db.ScorecardDefinitions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        scorecard = row?.ToDto();
+
+        var joined = await (from sk in db.ScorecardKpis.AsNoTracking()
+                            join k in db.KpiDefinitions.AsNoTracking() on sk.KpiDefinitionId equals k.Id
+                            where sk.ScorecardDefinitionId == Id
+                            orderby sk.DisplayOrder, sk.Id
+                            select new { sk.Id, k.Code, k.Name, k.Unit, sk.Visual, k.TargetValue, KpiId = k.Id })
+            .ToListAsync();
+
+        // Pick the latest computed KpiValue per KPI for display.
+        var kpiIds = joined.Select(j => j.KpiId).ToList();
+        var latestValues = await db.KpiValues.AsNoTracking()
+            .Where(v => kpiIds.Contains(v.KpiDefinitionId))
+            .GroupBy(v => v.KpiDefinitionId)
+            .Select(g => g.OrderByDescending(v => v.PeriodStart).First())
+            .ToListAsync();
+
+        kpiRows = joined.Select(j =>
+        {
+            var latest = latestValues.FirstOrDefault(v => v.KpiDefinitionId == j.KpiId);
+            return new ScorecardKpiRow(
+                j.Id, j.Code, j.Name, j.Unit, j.Visual,
+                latest?.Value, j.TargetValue,
+                latest?.Status ?? KpiStatus.Unknown);
+        }).ToList();
+
+        var usedKpiIds = kpiRows.Select(r => r.ScorecardKpiId).ToHashSet();
+        availableKpis = await db.KpiDefinitions.AsNoTracking()
+            .Where(k => k.IsActive)
+            .OrderBy(k => k.Code)
+            .Select(k => k.ToDto()).ToListAsync();
+    }
+
+    private void OpenAddKpi()
+    {
+        addReq = new CreateScorecardKpiRequest { ScorecardDefinitionId = Id, DisplayOrder = kpiRows.Count + 1, Visual = ScorecardKpiVisual.KpiCard };
+        addOpen = true;
+    }
+
+    private async Task AddKpiAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            addReq.ScorecardDefinitionId = Id;
+            if (await db.ScorecardKpis.AnyAsync(k => k.ScorecardDefinitionId == Id && k.KpiDefinitionId == addReq.KpiDefinitionId))
+            { Snackbar.Add("KPI already on this scorecard.", Severity.Error); return; }
+            var entity = addReq.ToEntity();
+            db.ScorecardKpis.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("KPI added.", Severity.Success);
+            addOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task RemoveKpi(int scorecardKpiId)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.ScorecardKpis.FirstOrDefaultAsync(k => k.Id == scorecardKpiId);
+            if (entity is null) return;
+            db.ScorecardKpis.Remove(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task EvaluateAll()
+    {
+        evaluating = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var kpiIds = await db.ScorecardKpis.AsNoTracking()
+                .Where(k => k.ScorecardDefinitionId == Id)
+                .Select(k => k.KpiDefinitionId).ToListAsync();
+
+            var end = DateTime.UtcNow;
+            var start = end.AddDays(-7);
+            foreach (var kpiId in kpiIds)
+            {
+                try { await EvalService.EvaluateAsync(kpiId, PerformancePeriodKind.Day, start, end, default); }
+                catch (Exception ex) { Snackbar.Add($"KPI {kpiId}: {ex.Message}", Severity.Warning); }
+            }
+            Snackbar.Add($"Evaluated {kpiIds.Count} KPIs.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Evaluate all failed: {ex.Message}", Severity.Error); }
+        finally { evaluating = false; }
+    }
+}

@@ -164,6 +164,12 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Maintenance.Endpoints.MaintenanceWorkOrderEndpoints.MapMaintenanceWorkOrderEndpoints(app);
         AWBlazorApp.Features.Maintenance.Endpoints.SparePartEndpoints.MapSparePartEndpoints(app);
 
+        // Batch 18 — Performance (perf schema). OEE, metric rollups, KPIs, scorecards, reports.
+        AWBlazorApp.Features.Performance.Endpoints.MetricsEndpoints.MapMetricsEndpoints(app);
+        AWBlazorApp.Features.Performance.Endpoints.KpiEndpoints.MapKpiEndpoints(app);
+        AWBlazorApp.Features.Performance.Endpoints.ScorecardEndpoints.MapScorecardEndpoints(app);
+        AWBlazorApp.Features.Performance.Endpoints.ReportEndpoints.MapReportEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

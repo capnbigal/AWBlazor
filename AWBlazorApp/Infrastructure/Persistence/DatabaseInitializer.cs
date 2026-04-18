@@ -255,6 +255,10 @@ WHERE a.SpatialLocation IS NULL;";
         // + tasks, work orders + tasks, spare parts, part usage, meter readings, logs) + four
         // audit logs. Marker is MaintenanceWorkOrder (pure maint product).
         ("_AddMaintenanceModule",       "MaintenanceWorkOrder"),
+        // 2026-04 — AddPerformanceModule: creates perf.* schema (OEE snapshots, production /
+        // maintenance metric rollups, KPI definitions + values, scorecards, saved reports) +
+        // three audit logs. Marker is KpiDefinition (pure perf product).
+        ("_AddPerformanceModule",       "KpiDefinition"),
     ];
 
     /// <summary>

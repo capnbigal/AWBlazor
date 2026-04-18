@@ -1,0 +1,69 @@
+@page "/performance"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Performance</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Performance</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">OEE, production + maintenance metric rollups, KPIs, scorecards, saved reports</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Speed" Color="Color.Primary" Value="@latestOeePct" Label="Latest OEE" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ShowChart" Color="Color.Info" Value="@kpiCount.ToString("N0")" Label="Active KPIs" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Dashboard" Color="Color.Success" Value="@scorecardCount.ToString("N0")" Label="Scorecards" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Description" Color="Color.Secondary" Value="@reportCount.ToString("N0")" Label="Saved reports" /></MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        @foreach (var card in Cards)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h6">@card.Title</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Subtitle</MudText>
+                        </MudStack>
+                        <MudSpacer />
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="@card.Href">Open</MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudStack>
+
+@code {
+    private string latestOeePct = "—";
+    private int kpiCount, scorecardCount, reportCount;
+
+    private record NavCard(string Title, string Subtitle, string Href, string Icon);
+
+    private static readonly NavCard[] Cards =
+    [
+        new("OEE snapshots", "Per-station Availability × Performance × Quality rollups.", "performance/oee", Icons.Material.Filled.Speed),
+        new("Production metrics", "Per-station daily throughput, cycle time, yield.", "performance/production-metrics", Icons.Material.Filled.Factory),
+        new("Maintenance metrics", "Per-asset monthly MTBF / MTTR / availability / PM compliance.", "performance/maintenance-metrics", Icons.Material.Filled.Handyman),
+        new("KPIs", "Named KPIs with enum-based aggregations over the above metrics.", "performance/kpis", Icons.Material.Filled.ShowChart),
+        new("Scorecards", "Named dashboards composed of ordered KPIs with visual hints.", "performance/scorecards", Icons.Material.Filled.Dashboard),
+        new("Reports", "Saved performance-report queries + run history.", "performance/reports", Icons.Material.Filled.Description),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        kpiCount = await db.KpiDefinitions.CountAsync(k => k.IsActive);
+        scorecardCount = await db.ScorecardDefinitions.CountAsync(s => s.IsActive);
+        reportCount = await db.PerformanceReports.CountAsync(r => r.IsActive);
+
+        var latest = await db.OeeSnapshots.AsNoTracking()
+            .OrderByDescending(s => s.PeriodStart)
+            .Select(s => (decimal?)s.Oee)
+            .FirstOrDefaultAsync();
+        latestOeePct = latest.HasValue ? $"{latest.Value * 100m:F1}%" : "—";
+    }
+}

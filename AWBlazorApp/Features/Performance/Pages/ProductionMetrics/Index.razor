@@ -1,0 +1,107 @@
+@page "/performance/production-metrics"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IProductionMetricsService Svc
+@inject ISnackbar Snackbar
+
+<PageTitle>Production metrics</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Production metrics</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Per-station daily throughput, cycle time, yield</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Calculate" OnClick="OpenCompute">Compute day</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudNumericField T="int?" @bind-Value="filterStation" Label="Station ID" Variant="Variant.Outlined" Clearable="true" />
+            <MudDatePicker @bind-Date="filterFrom" Label="From" Variant="Variant.Outlined" Clearable="true" />
+            <MudDatePicker @bind-Date="filterTo" Label="To" Variant="Variant.Outlined" Clearable="true" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDataGrid T="ProductionDailyMetricDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.StationId" Title="Station" />
+            <PropertyColumn Property="x => x.Date" Title="Date" />
+            <PropertyColumn Property="x => x.UnitsProduced" Title="Units" />
+            <PropertyColumn Property="x => x.UnitsScrapped" Title="Scrap" />
+            <TemplateColumn Title="Yield" Sortable="false">
+                <CellTemplate>@(context.Item.YieldFraction.HasValue ? $"{context.Item.YieldFraction.Value * 100m:F1}%" : "—")</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Avg cycle (s)" Sortable="false">
+                <CellTemplate>@(context.Item.AverageCycleSeconds?.ToString("F1") ?? "—")</CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.RunCount" Title="Runs" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductionDailyMetricDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+<MudDialog @bind-Visible="dialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Compute production metric</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="compute.StationId" Label="Station ID" Required="true" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="computeDate" Label="Date" Required="true" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => dialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ComputeAsync" Disabled="computing">@(computing ? "Computing…" : "Compute")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudDataGrid<ProductionDailyMetricDto> grid = null!;
+    private bool _loading = true;
+    private int? filterStation;
+    private DateTime? filterFrom, filterTo;
+
+    private bool dialogOpen, computing;
+    private ComputeProductionMetricRequest compute = new();
+    private DateTime? computeDate = DateTime.UtcNow.Date.AddDays(-1);
+
+    private async Task<GridData<ProductionDailyMetricDto>> LoadAsync(GridState<ProductionDailyMetricDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var q = db.ProductionDailyMetrics.AsNoTracking();
+            if (filterStation.HasValue) q = q.Where(x => x.StationId == filterStation.Value);
+            if (filterFrom.HasValue) { var d = DateOnly.FromDateTime(filterFrom.Value); q = q.Where(x => x.Date >= d); }
+            if (filterTo.HasValue) { var d = DateOnly.FromDateTime(filterTo.Value); q = q.Where(x => x.Date <= d); }
+            var total = await q.CountAsync(ct);
+            var rows = await q.OrderByDescending(x => x.Date)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductionDailyMetricDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private void OpenCompute() { compute = new ComputeProductionMetricRequest(); computeDate = DateTime.UtcNow.Date.AddDays(-1); dialogOpen = true; }
+
+    private async Task ComputeAsync()
+    {
+        computing = true;
+        try
+        {
+            if (computeDate.HasValue) compute.Date = DateOnly.FromDateTime(computeDate.Value);
+            var m = await Svc.ComputeDailyAsync(compute.StationId, compute.Date, default);
+            Snackbar.Add($"Computed {m.RunCount} runs, {m.UnitsProduced:F0} units.", Severity.Success);
+            dialogOpen = false;
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex) { Snackbar.Add($"Compute failed: {ex.Message}", Severity.Error); }
+        finally { computing = false; }
+    }
+}

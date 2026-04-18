@@ -29,4 +29,5 @@ public enum PermissionArea
     Workforce = 111,
     Engineering = 112,
     Maintenance = 113,
+    Performance = 114,
 }
