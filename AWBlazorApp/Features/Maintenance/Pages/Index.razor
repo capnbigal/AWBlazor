@@ -1,0 +1,64 @@
+@page "/maintenance"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Maintenance</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Maintenance</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">PM schedules, work orders, spare parts, meter-based due detection</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Assignment" Color="Color.Warning" Value="@openWorkOrders.ToString("N0")" Label="Open work orders" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Value="@inProgressWorkOrders.ToString("N0")" Label="In progress" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Schedule" Color="Color.Primary" Value="@activeSchedules.ToString("N0")" Label="Active PM schedules" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Value="@criticalAssets.ToString("N0")" Label="Critical assets" /></MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        @foreach (var card in Cards)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h6">@card.Title</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Subtitle</MudText>
+                        </MudStack>
+                        <MudSpacer />
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="@card.Href">Open</MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int openWorkOrders, inProgressWorkOrders, activeSchedules, criticalAssets;
+
+    private record NavCard(string Title, string Subtitle, string Href, string Icon);
+
+    private static readonly NavCard[] Cards =
+    [
+        new("Work orders", "Draft → Scheduled → InProgress → Completed with OnHold/Cancelled side paths.", "maintenance/work-orders", Icons.Material.Filled.Assignment),
+        new("PM schedules", "Time- or meter-based preventive maintenance. Generate due WOs on demand.", "maintenance/pm-schedules", Icons.Material.Filled.Schedule),
+        new("Asset profiles", "Criticality, owner, target MTBF per asset. 1:1 sidecar on org.Asset.", "maintenance/asset-profiles", Icons.Material.Filled.PrecisionManufacturing),
+        new("Spare parts", "Standalone catalog with optional link to AW Production.Product.", "maintenance/spare-parts", Icons.Material.Filled.Inventory),
+        new("Meter readings", "Runtime hours / cycles / kWh. Drives usage-based PM due checks.", "maintenance/meter-readings", Icons.Material.Filled.Speed),
+        new("Maintenance log", "Free-form observations not yet escalated to a work order.", "maintenance/logs", Icons.Material.Filled.EventNote),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        openWorkOrders = await db.MaintenanceWorkOrders.CountAsync(w =>
+            w.Status != WorkOrderStatus.Completed && w.Status != WorkOrderStatus.Cancelled);
+        inProgressWorkOrders = await db.MaintenanceWorkOrders.CountAsync(w => w.Status == WorkOrderStatus.InProgress);
+        activeSchedules = await db.PmSchedules.CountAsync(s => s.IsActive);
+        criticalAssets = await db.AssetMaintenanceProfiles.CountAsync(p => p.Criticality == AssetCriticality.Critical);
+    }
+}

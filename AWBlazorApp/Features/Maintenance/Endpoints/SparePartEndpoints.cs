@@ -1,0 +1,147 @@
+using System.Security.Claims;
+using AWBlazorApp.Data;
+using AWBlazorApp.Features.Maintenance.Audit;
+using AWBlazorApp.Features.Maintenance.Models;
+using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Models;
+using FluentValidation;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace AWBlazorApp.Features.Maintenance.Endpoints;
+
+public static class SparePartEndpoints
+{
+    public static IEndpointRouteBuilder MapSparePartEndpoints(this IEndpointRouteBuilder app)
+    {
+        var parts = app.MapGroup("/api/spare-parts")
+            .WithTags("SpareParts")
+            .RequireAuthorization("ApiOrCookie");
+
+        parts.MapGet("/", ListAsync).WithName("ListSpareParts");
+        parts.MapGet("/{id:int}", GetAsync).WithName("GetSparePart");
+        parts.MapPost("/", CreateAsync).WithName("CreateSparePart")
+            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
+        parts.MapPatch("/{id:int}", UpdateAsync).WithName("UpdateSparePart")
+            .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
+        parts.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteSparePart")
+            .RequireAuthorization(p => p.RequireRole(AppRoles.Admin));
+        parts.MapGet("/{id:int}/history", HistoryAsync).WithName("ListSparePartHistory");
+
+        parts.MapGet("/{id:int}/usage", ListUsageAsync).WithName("ListSparePartUsage");
+        parts.MapPost("/usage", CreateUsageAsync).WithName("CreateSparePartUsage");
+
+        return app;
+    }
+
+    private static async Task<Ok<PagedResult<SparePartDto>>> ListAsync(
+        ApplicationDbContext db,
+        [FromQuery] int skip = 0, [FromQuery] int take = 50,
+        [FromQuery] string? search = null,
+        [FromQuery] bool? isActive = null,
+        CancellationToken ct = default)
+    {
+        take = Math.Clamp(take, 1, 500);
+        var q = db.SpareParts.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim();
+            q = q.Where(x => x.PartNumber.Contains(s) || x.Name.Contains(s));
+        }
+        if (isActive.HasValue) q = q.Where(x => x.IsActive == isActive.Value);
+        var total = await q.CountAsync(ct);
+        var rows = await q.OrderBy(x => x.PartNumber)
+            .Skip(skip).Take(take).Select(x => x.ToDto()).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<SparePartDto>(rows, total, skip, take));
+    }
+
+    private static async Task<Results<Ok<SparePartDto>, NotFound>> GetAsync(int id, ApplicationDbContext db, CancellationToken ct)
+    {
+        var row = await db.SpareParts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        return row is null ? TypedResults.NotFound() : TypedResults.Ok(row.ToDto());
+    }
+
+    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateAsync(
+        CreateSparePartRequest request,
+        IValidator<CreateSparePartRequest> validator,
+        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
+    {
+        var v = await validator.ValidateAsync(request, ct);
+        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
+        var entity = request.ToEntity();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        db.SpareParts.Add(entity);
+        await db.SaveChangesAsync(ct);
+        db.SparePartAuditLogs.Add(SparePartAuditService.RecordCreate(entity, user.Identity?.Name));
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return TypedResults.Created($"/api/spare-parts/{entity.Id}", new IdResponse(entity.Id));
+    }
+
+    private static async Task<Results<Ok<IdResponse>, NotFound, ValidationProblem>> UpdateAsync(
+        int id, UpdateSparePartRequest request,
+        IValidator<UpdateSparePartRequest> validator,
+        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
+    {
+        var v = await validator.ValidateAsync(request, ct);
+        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
+        var entity = await db.SpareParts.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (entity is null) return TypedResults.NotFound();
+        var before = SparePartAuditService.CaptureSnapshot(entity);
+        request.ApplyTo(entity);
+        db.SparePartAuditLogs.Add(SparePartAuditService.RecordUpdate(before, entity, user.Identity?.Name));
+        await db.SaveChangesAsync(ct);
+        return TypedResults.Ok(new IdResponse(entity.Id));
+    }
+
+    private static async Task<Results<NoContent, NotFound>> DeleteAsync(
+        int id, ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
+    {
+        var entity = await db.SpareParts.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (entity is null) return TypedResults.NotFound();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        db.SpareParts.Remove(entity);
+        db.SparePartAuditLogs.Add(SparePartAuditService.RecordDelete(entity, user.Identity?.Name));
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<PagedResult<SparePartAuditLogDto>>> HistoryAsync(
+        int id, ApplicationDbContext db,
+        [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
+    {
+        take = Math.Clamp(take, 1, 500);
+        var q = db.SparePartAuditLogs.AsNoTracking().Where(a => a.SparePartId == id);
+        var total = await q.CountAsync(ct);
+        var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
+            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<SparePartAuditLogDto>(rows, total, skip, take));
+    }
+
+    private static async Task<Ok<PagedResult<WorkOrderPartUsageDto>>> ListUsageAsync(
+        int id, ApplicationDbContext db,
+        [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
+    {
+        take = Math.Clamp(take, 1, 500);
+        var q = db.WorkOrderPartUsages.AsNoTracking().Where(u => u.SparePartId == id);
+        var total = await q.CountAsync(ct);
+        var rows = await q.OrderByDescending(u => u.UsedAt)
+            .Skip(skip).Take(take).Select(u => u.ToDto()).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<WorkOrderPartUsageDto>(rows, total, skip, take));
+    }
+
+    private static async Task<Results<Created<IdResponse>, ValidationProblem>> CreateUsageAsync(
+        CreateWorkOrderPartUsageRequest request,
+        IValidator<CreateWorkOrderPartUsageRequest> validator,
+        ApplicationDbContext db, ClaimsPrincipal user, CancellationToken ct)
+    {
+        var v = await validator.ValidateAsync(request, ct);
+        if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
+        var entity = request.ToEntity(user.Identity?.Name);
+        db.WorkOrderPartUsages.Add(entity);
+        await db.SaveChangesAsync(ct);
+        return TypedResults.Created($"/api/spare-parts/usage/{entity.Id}", new IdResponse(entity.Id));
+    }
+}

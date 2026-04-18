@@ -158,6 +158,12 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Engineering.Endpoints.EngineeringChangeOrderEndpoints.MapEngineeringChangeOrderEndpoints(app);
         AWBlazorApp.Features.Engineering.Endpoints.DocumentDeviationEndpoints.MapDocumentDeviationEndpoints(app);
 
+        // Batch 17 — Maintenance (maint schema). Asset profiles, PM schedules, work orders, spares.
+        AWBlazorApp.Features.Maintenance.Endpoints.AssetMaintenanceEndpoints.MapAssetMaintenanceEndpoints(app);
+        AWBlazorApp.Features.Maintenance.Endpoints.PmScheduleEndpoints.MapPmScheduleEndpoints(app);
+        AWBlazorApp.Features.Maintenance.Endpoints.MaintenanceWorkOrderEndpoints.MapMaintenanceWorkOrderEndpoints(app);
+        AWBlazorApp.Features.Maintenance.Endpoints.SparePartEndpoints.MapSparePartEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

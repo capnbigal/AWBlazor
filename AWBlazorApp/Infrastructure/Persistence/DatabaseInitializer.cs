@@ -251,6 +251,10 @@ WHERE a.SpatialLocation IS NULL;";
         // BOMs, ECOs + affected items + approvals, documents, deviations) + five audit logs.
         // Marker is EngineeringChangeOrder (pure eng product).
         ("_AddEngineeringModule",       "EngineeringChangeOrder"),
+        // 2026-04 — AddMaintenanceModule: creates maint.* schema (asset profiles, PM schedules
+        // + tasks, work orders + tasks, spare parts, part usage, meter readings, logs) + four
+        // audit logs. Marker is MaintenanceWorkOrder (pure maint product).
+        ("_AddMaintenanceModule",       "MaintenanceWorkOrder"),
     ];
 
     /// <summary>
