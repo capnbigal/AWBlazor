@@ -1,4 +1,5 @@
 using AWBlazorApp.Data;
+using AWBlazorApp.Features.Admin.Services;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Models;
 using AWBlazorApp.Shared.Services;
@@ -36,6 +37,15 @@ public static class AdminEndpoints
         })
         .WithName("ClearLookupCache")
         .WithSummary("Evict cached reference-data lookups so the next request reloads from the database.");
+
+        group.MapPost("/seed-demo-data", async Task<Ok<DemoSeedResult>> (
+            DemoDataSeeder seeder, CancellationToken ct) =>
+        {
+            var result = await seeder.SeedAllAsync(ct);
+            return TypedResults.Ok(result);
+        })
+        .WithName("SeedDemoData")
+        .WithSummary("Idempotent seed of representative demo data across M6-M9 modules. Safe to re-run — each module skips if already seeded.");
 
         return app;
     }
