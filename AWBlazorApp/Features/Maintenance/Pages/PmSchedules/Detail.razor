@@ -1,0 +1,182 @@
+@page "/maintenance/pm-schedules/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IPmScheduleService PmService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>PM @(schedule?.Code ?? "—")</PageTitle>
+
+@if (schedule is null)
+{
+    <MudText Typo="Typo.body1">Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("maintenance/pm-schedules"))" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@schedule.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@schedule.Name · Asset @schedule.AssetId · every @schedule.IntervalValue @schedule.IntervalKind</MudText>
+            </MudStack>
+            <MudSpacer />
+            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                <MudButton Color="Color.Secondary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AutoAwesome" OnClick="GenerateDue" Disabled="generating">@(generating ? "Generating…" : "Generate if due")</MudButton>
+            </AuthorizeView>
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudGrid>
+                <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">Last completed</MudText><MudText Typo="Typo.body2">@(schedule.LastCompletedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudText></MudItem>
+                <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">Last meter value</MudText><MudText Typo="Typo.body2">@(schedule.LastCompletedMeterValue?.ToString("N2") ?? "—")</MudText></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Tasks (copied onto each generated work order)</MudText>
+                <MudSpacer />
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddTask">Add task</MudButton>
+                </AuthorizeView>
+            </MudStack>
+            <MudDataGrid T="PmScheduleTaskDto" Items="tasks" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.SequenceNumber" Title="#" />
+                    <PropertyColumn Property="x => x.TaskName" Title="Task" />
+                    <PropertyColumn Property="x => x.EstimatedMinutes" Title="Est min" />
+                    <TemplateColumn Title="Signoff" Sortable="false"><CellTemplate>@(context.Item.RequiresSignoff ? "⚠" : "")</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteTask(context.Item.Id))" />
+                            </AuthorizeView>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6">Recent work orders from this schedule</MudText>
+            <MudDataGrid T="MaintenanceWorkOrderDto" Items="recentWos" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.WorkOrderNumber" Title="WO#" />
+                    <PropertyColumn Property="x => x.Status" Title="Status" />
+                    <PropertyColumn Property="x => x.RaisedAt" Title="Raised" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn Property="x => x.CompletedAt" Title="Completed" Format="yyyy-MM-dd HH:mm" />
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"maintenance/work-orders/{context.Item.Id}"))" /></CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="addTaskOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Add task</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newTask.SequenceNumber" Label="Sequence" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newTask.TaskName" Label="Task name" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newTask.Instructions" Label="Instructions" Variant="Variant.Outlined" Lines="3" />
+            <MudNumericField T="int?" @bind-Value="newTask.EstimatedMinutes" Label="Estimated minutes" Variant="Variant.Outlined" />
+            <MudCheckBox T="bool" @bind-Value="newTask.RequiresSignoff" Label="Requires signoff" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => addTaskOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddTaskAsync">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private PmScheduleDto? schedule;
+    private List<PmScheduleTaskDto> tasks = new();
+    private List<MaintenanceWorkOrderDto> recentWos = new();
+    private bool generating;
+
+    private bool addTaskOpen;
+    private CreatePmScheduleTaskRequest newTask = new();
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await db.PmSchedules.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
+        schedule = row?.ToDto();
+        tasks = await db.PmScheduleTasks.AsNoTracking()
+            .Where(t => t.PmScheduleId == Id)
+            .OrderBy(t => t.SequenceNumber)
+            .Select(t => t.ToDto()).ToListAsync();
+        recentWos = await db.MaintenanceWorkOrders.AsNoTracking()
+            .Where(w => w.PmScheduleId == Id)
+            .OrderByDescending(w => w.RaisedAt)
+            .Take(20)
+            .Select(w => w.ToDto()).ToListAsync();
+    }
+
+    private void OpenAddTask()
+    {
+        var next = tasks.Count == 0 ? 10 : tasks.Max(t => t.SequenceNumber) + 10;
+        newTask = new CreatePmScheduleTaskRequest { PmScheduleId = Id, SequenceNumber = next };
+        addTaskOpen = true;
+    }
+
+    private async Task AddTaskAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newTask.PmScheduleId = Id;
+            var entity = newTask.ToEntity();
+            db.PmScheduleTasks.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Added.", Severity.Success);
+            addTaskOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task DeleteTask(int taskId)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.PmScheduleTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+            if (entity is null) return;
+            db.PmScheduleTasks.Remove(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task GenerateDue()
+    {
+        generating = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var count = await PmService.GenerateDueWorkOrdersAsync(Id, by, default);
+            Snackbar.Add(count > 0 ? "Generated a work order." : "Not yet due.", count > 0 ? Severity.Success : Severity.Info);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Generate failed: {ex.Message}", Severity.Error); }
+        finally { generating = false; }
+    }
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

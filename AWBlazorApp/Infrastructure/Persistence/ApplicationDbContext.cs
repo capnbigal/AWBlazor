@@ -18,6 +18,7 @@ using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Features.Quality.Domain;
 using AWBlazorApp.Features.Engineering.Domain;
+using AWBlazorApp.Features.Maintenance.Domain;
 using AWBlazorApp.Features.Workforce.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -349,6 +350,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EngineeringChangeOrderAuditLog> EngineeringChangeOrderAuditLogs => Set<EngineeringChangeOrderAuditLog>();
     public DbSet<EngineeringDocumentAuditLog> EngineeringDocumentAuditLogs => Set<EngineeringDocumentAuditLog>();
     public DbSet<DeviationRequestAuditLog> DeviationRequestAuditLogs => Set<DeviationRequestAuditLog>();
+
+    // Batch 17 — Maintenance (maint.* schema). PM schedules, work orders with tasks and spare
+    // parts usage, meter readings driving usage-based PM, free-form maintenance logs.
+    public DbSet<AssetMaintenanceProfile> AssetMaintenanceProfiles => Set<AssetMaintenanceProfile>();
+    public DbSet<PmSchedule> PmSchedules => Set<PmSchedule>();
+    public DbSet<PmScheduleTask> PmScheduleTasks => Set<PmScheduleTask>();
+    public DbSet<MaintenanceWorkOrder> MaintenanceWorkOrders => Set<MaintenanceWorkOrder>();
+    public DbSet<MaintenanceWorkOrderTask> MaintenanceWorkOrderTasks => Set<MaintenanceWorkOrderTask>();
+    public DbSet<SparePart> SpareParts => Set<SparePart>();
+    public DbSet<WorkOrderPartUsage> WorkOrderPartUsages => Set<WorkOrderPartUsage>();
+    public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
+    public DbSet<MaintenanceLog> MaintenanceLogs => Set<MaintenanceLog>();
+    public DbSet<AssetMaintenanceProfileAuditLog> AssetMaintenanceProfileAuditLogs => Set<AssetMaintenanceProfileAuditLog>();
+    public DbSet<PmScheduleAuditLog> PmScheduleAuditLogs => Set<PmScheduleAuditLog>();
+    public DbSet<MaintenanceWorkOrderAuditLog> MaintenanceWorkOrderAuditLogs => Set<MaintenanceWorkOrderAuditLog>();
+    public DbSet<SparePartAuditLog> SparePartAuditLogs => Set<SparePartAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1934,6 +1951,124 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => x.DeviationRequestId);
             b.HasIndex(x => x.ChangedDate);
             b.Property(x => x.Status).HasConversion<byte>();
+        });
+
+        // --- Maintenance (maint schema) ---
+        builder.Entity<AssetMaintenanceProfile>(b =>
+        {
+            b.HasIndex(x => x.AssetId).IsUnique();
+            b.HasIndex(x => x.NextPmDueAt);
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Criticality).HasConversion<byte>();
+        });
+
+        builder.Entity<PmSchedule>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => new { x.AssetId, x.IsActive });
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.IntervalKind).HasConversion<byte>();
+            b.Property(x => x.DefaultPriority).HasConversion<byte>();
+        });
+
+        builder.Entity<PmScheduleTask>(b =>
+        {
+            b.HasIndex(x => new { x.PmScheduleId, x.SequenceNumber }).IsUnique();
+            b.HasOne<PmSchedule>().WithMany().HasForeignKey(x => x.PmScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<MaintenanceWorkOrder>(b =>
+        {
+            b.HasIndex(x => x.WorkOrderNumber).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => new { x.AssetId, x.Status });
+            b.HasIndex(x => x.ScheduledFor);
+            b.HasIndex(x => x.RaisedAt).IsDescending();
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<PmSchedule>().WithMany().HasForeignKey(x => x.PmScheduleId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Type).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.Priority).HasConversion<byte>();
+        });
+
+        builder.Entity<MaintenanceWorkOrderTask>(b =>
+        {
+            b.HasIndex(x => new { x.MaintenanceWorkOrderId, x.SequenceNumber }).IsUnique();
+            b.HasOne<MaintenanceWorkOrder>().WithMany().HasForeignKey(x => x.MaintenanceWorkOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SparePart>(b =>
+        {
+            b.HasIndex(x => x.PartNumber).IsUnique();
+            b.HasIndex(x => x.IsActive);
+            b.HasIndex(x => x.ProductId);
+        });
+
+        builder.Entity<WorkOrderPartUsage>(b =>
+        {
+            b.HasIndex(x => x.MaintenanceWorkOrderId);
+            b.HasIndex(x => x.SparePartId);
+            b.HasOne<MaintenanceWorkOrder>().WithMany().HasForeignKey(x => x.MaintenanceWorkOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<SparePart>().WithMany().HasForeignKey(x => x.SparePartId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MeterReading>(b =>
+        {
+            b.HasIndex(x => new { x.AssetId, x.Kind, x.RecordedAt }).IsDescending(false, false, true);
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        builder.Entity<MaintenanceLog>(b =>
+        {
+            b.HasIndex(x => new { x.AssetId, x.AuthoredAt }).IsDescending(false, true);
+            b.HasIndex(x => x.MaintenanceWorkOrderId);
+            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<MaintenanceWorkOrder>().WithMany().HasForeignKey(x => x.MaintenanceWorkOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+            b.Property(x => x.Kind).HasConversion<byte>();
+        });
+
+        // Maintenance audit logs — dbo.
+        builder.Entity<AssetMaintenanceProfileAuditLog>(b =>
+        {
+            b.ToTable("AssetMaintenanceProfileAuditLogs");
+            b.HasIndex(x => x.AssetMaintenanceProfileId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Criticality).HasConversion<byte>();
+        });
+        builder.Entity<PmScheduleAuditLog>(b =>
+        {
+            b.ToTable("PmScheduleAuditLogs");
+            b.HasIndex(x => x.PmScheduleId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.IntervalKind).HasConversion<byte>();
+            b.Property(x => x.DefaultPriority).HasConversion<byte>();
+        });
+        builder.Entity<MaintenanceWorkOrderAuditLog>(b =>
+        {
+            b.ToTable("MaintenanceWorkOrderAuditLogs");
+            b.HasIndex(x => x.MaintenanceWorkOrderId);
+            b.HasIndex(x => x.ChangedDate);
+            b.Property(x => x.Type).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.Priority).HasConversion<byte>();
+        });
+        builder.Entity<SparePartAuditLog>(b =>
+        {
+            b.ToTable("SparePartAuditLogs");
+            b.HasIndex(x => x.SparePartId);
+            b.HasIndex(x => x.ChangedDate);
         });
     }
 }

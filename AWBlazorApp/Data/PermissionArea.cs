@@ -28,4 +28,5 @@ public enum PermissionArea
     Quality = 110,
     Workforce = 111,
     Engineering = 112,
+    Maintenance = 113,
 }

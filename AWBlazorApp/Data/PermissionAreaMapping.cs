@@ -150,6 +150,14 @@ public static class PermissionAreaMapping
         ("/api/engineering-change-orders", PermissionArea.Engineering),
         ("/api/engineering-documents", PermissionArea.Engineering),
         ("/api/deviation-requests", PermissionArea.Engineering),
+
+        // Maintenance (Module M6)
+        ("/api/asset-maintenance-profiles", PermissionArea.Maintenance),
+        ("/api/pm-schedules", PermissionArea.Maintenance),
+        ("/api/maintenance-work-orders", PermissionArea.Maintenance),
+        ("/api/spare-parts", PermissionArea.Maintenance),
+        ("/api/meter-readings", PermissionArea.Maintenance),
+        ("/api/maintenance-logs", PermissionArea.Maintenance),
     ];
 
     /// <summary>

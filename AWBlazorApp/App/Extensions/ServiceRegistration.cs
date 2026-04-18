@@ -163,6 +163,9 @@ public static class ServiceRegistration
         services.AddScoped<AWBlazorApp.Features.Engineering.Services.IEcoService, AWBlazorApp.Features.Engineering.Services.EcoService>();
         services.AddScoped<AWBlazorApp.Features.Engineering.Services.IDeviationService, AWBlazorApp.Features.Engineering.Services.DeviationService>();
 
+        services.AddScoped<AWBlazorApp.Features.Maintenance.Services.IWorkOrderService, AWBlazorApp.Features.Maintenance.Services.WorkOrderService>();
+        services.AddScoped<AWBlazorApp.Features.Maintenance.Services.IPmScheduleService, AWBlazorApp.Features.Maintenance.Services.PmScheduleService>();
+
         var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
         var smtpHost = configuration["Smtp:Host"];
 
