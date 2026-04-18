@@ -11,10 +11,18 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId",
-                schema: "mes",
-                table: "WorkInstruction");
+            // The mes.* tables are not created by the (empty) AddMesModule migration — they're
+            // materialized at runtime by DatabaseInitializer.EnsureMissingTablesAsync from the
+            // design-time model, which already applies the NoAction onDelete. So on any fresh
+            // deployment the old SetNull FK never existed; guard the drop against SQL 4902.
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT 1 FROM sys.foreign_keys
+                           WHERE name = 'FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId'
+                             AND parent_object_id = OBJECT_ID(N'[mes].[WorkInstruction]'))
+                BEGIN
+                    ALTER TABLE [mes].[WorkInstruction]
+                        DROP CONSTRAINT [FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId];
+                END");
 
             migrationBuilder.EnsureSchema(
                 name: "qa");
@@ -710,14 +718,21 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                 table: "NonConformanceAuditLogs",
                 column: "NonConformanceId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId",
-                schema: "mes",
-                table: "WorkInstruction",
-                column: "ActiveRevisionId",
-                principalSchema: "mes",
-                principalTable: "WorkInstructionRevision",
-                principalColumn: "Id");
+            // Re-add the FK only when mes.WorkInstruction exists and the constraint isn't already
+            // present (EnsureMissingTablesAsync creates it with NoAction onDelete the first time it
+            // runs; this is a safety net for incremental upgrades).
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id
+                           WHERE s.name = 'mes' AND t.name = 'WorkInstruction')
+                AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys
+                                WHERE name = 'FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId'
+                                  AND parent_object_id = OBJECT_ID(N'[mes].[WorkInstruction]'))
+                BEGIN
+                    ALTER TABLE [mes].[WorkInstruction]
+                        ADD CONSTRAINT [FK_WorkInstruction_WorkInstructionRevision_ActiveRevisionId]
+                        FOREIGN KEY ([ActiveRevisionId])
+                        REFERENCES [mes].[WorkInstructionRevision]([Id]);
+                END");
         }
 
         /// <inheritdoc />
