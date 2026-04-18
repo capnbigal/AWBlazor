@@ -27,4 +27,5 @@ public enum PermissionArea
     Mes = 109,
     Quality = 110,
     Workforce = 111,
+    Engineering = 112,
 }

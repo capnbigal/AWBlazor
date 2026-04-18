@@ -152,6 +152,12 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Workforce.Endpoints.AttendanceLeaveEndpoints.MapAttendanceLeaveEndpoints(app);
         AWBlazorApp.Features.Workforce.Endpoints.CommunicationEndpoints.MapCommunicationEndpoints(app);
 
+        // Batch 16 — Engineering (eng schema). Routings, BOMs, ECOs, docs, deviations.
+        AWBlazorApp.Features.Engineering.Endpoints.RoutingEndpoints.MapRoutingEndpoints(app);
+        AWBlazorApp.Features.Engineering.Endpoints.BomEndpoints.MapBomEndpoints(app);
+        AWBlazorApp.Features.Engineering.Endpoints.EngineeringChangeOrderEndpoints.MapEngineeringChangeOrderEndpoints(app);
+        AWBlazorApp.Features.Engineering.Endpoints.DocumentDeviationEndpoints.MapDocumentDeviationEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

@@ -1,0 +1,137 @@
+@page "/engineering/routings/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Routing @(routing?.Code ?? "—")</PageTitle>
+
+@if (routing is null)
+{
+    <MudText Typo="Typo.body1">Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("engineering/routings"))" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">@routing.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@routing.Name · Product @routing.ProductId · Rev @routing.RevisionNumber</MudText>
+            </MudStack>
+            <MudSpacer />
+            @if (routing.IsActive)
+            { <MudChip T="string" Size="Size.Medium" Color="Color.Success" Variant="Variant.Filled">Active</MudChip> }
+            else
+            { <MudChip T="string" Size="Size.Medium" Color="Color.Default" Variant="Variant.Outlined">Inactive</MudChip> }
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Routing steps</MudText>
+                <MudSpacer />
+                <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                    <MudButton Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddStep">Add step</MudButton>
+                </AuthorizeView>
+            </MudStack>
+            <MudDataGrid T="RoutingStepDto" Items="steps" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.SequenceNumber" Title="#" />
+                    <PropertyColumn Property="x => x.OperationName" Title="Operation" />
+                    <PropertyColumn Property="x => x.StationId" Title="Station" />
+                    <PropertyColumn Property="x => x.StandardMinutes" Title="Std min" />
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteStep(context.Item.Id))" />
+                            </AuthorizeView>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">Total standard minutes: @totalMinutes.ToString("N1")</MudText>
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="addStepOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Add routing step</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newStep.SequenceNumber" Label="Sequence number" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newStep.OperationName" Label="Operation" Required="true" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newStep.StationId" Label="Station ID (optional)" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="newStep.StandardMinutes" Label="Standard minutes" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newStep.Instructions" Label="Instructions" Variant="Variant.Outlined" Lines="3" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => addStepOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddStepAsync" Disabled="saving">@(saving ? "Saving..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ManufacturingRoutingDto? routing;
+    private List<RoutingStepDto> steps = new();
+    private decimal totalMinutes;
+
+    private bool addStepOpen, saving;
+    private CreateRoutingStepRequest newStep = new();
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var row = await db.ManufacturingRoutings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        routing = row?.ToDto();
+        steps = await db.RoutingSteps.AsNoTracking()
+            .Where(s => s.ManufacturingRoutingId == Id)
+            .OrderBy(s => s.SequenceNumber)
+            .Select(s => s.ToDto()).ToListAsync();
+        totalMinutes = steps.Sum(s => s.StandardMinutes);
+    }
+
+    private void OpenAddStep()
+    {
+        var next = steps.Count == 0 ? 10 : steps.Max(s => s.SequenceNumber) + 10;
+        newStep = new CreateRoutingStepRequest { ManufacturingRoutingId = Id, SequenceNumber = next };
+        addStepOpen = true;
+    }
+
+    private async Task AddStepAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newStep.ManufacturingRoutingId = Id;
+            var entity = newStep.ToEntity();
+            db.RoutingSteps.Add(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Added.", Severity.Success);
+            addStepOpen = false;
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add failed: {ex.Message}", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    private async Task DeleteStep(int stepId)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.RoutingSteps.FirstOrDefaultAsync(s => s.Id == stepId);
+            if (entity is null) return;
+            db.RoutingSteps.Remove(entity);
+            await db.SaveChangesAsync();
+            Snackbar.Add("Removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+}
