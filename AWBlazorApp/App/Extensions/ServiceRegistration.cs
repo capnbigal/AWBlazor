@@ -171,6 +171,8 @@ public static class ServiceRegistration
         services.AddScoped<AWBlazorApp.Features.Performance.Services.IMaintenanceMetricsService, AWBlazorApp.Features.Performance.Services.MaintenanceMetricsService>();
         services.AddScoped<AWBlazorApp.Features.Performance.Services.IKpiEvaluationService, AWBlazorApp.Features.Performance.Services.KpiEvaluationService>();
 
+        services.AddScoped<AWBlazorApp.Features.Admin.Services.DemoDataSeeder>();
+
         var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
         var smtpHost = configuration["Smtp:Host"];
 
