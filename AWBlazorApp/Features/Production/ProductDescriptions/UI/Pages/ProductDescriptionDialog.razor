@@ -1,0 +1,178 @@
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Cultures.Domain
+@using AWBlazorApp.Features.Production.Documents.Domain
+@using AWBlazorApp.Features.Production.Illustrations.Domain
+@using AWBlazorApp.Features.Production.Locations.Domain
+@using AWBlazorApp.Features.Production.ProductCategories.Domain
+@using AWBlazorApp.Features.Production.ProductCostHistories.Domain
+@using AWBlazorApp.Features.Production.ProductDescriptions.Domain
+@using AWBlazorApp.Features.Production.ProductDocuments.Domain
+@using AWBlazorApp.Features.Production.ProductInventories.Domain
+@using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain
+@using AWBlazorApp.Features.Production.ProductModels.Domain
+@using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain
+@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain
+@using AWBlazorApp.Features.Production.ProductPhotos.Domain
+@using AWBlazorApp.Features.Production.ProductProductPhotos.Domain
+@using AWBlazorApp.Features.Production.ProductReviews.Domain
+@using AWBlazorApp.Features.Production.Products.Domain
+@using AWBlazorApp.Features.Production.ProductSubcategories.Domain
+@using AWBlazorApp.Features.Production.ScrapReasons.Domain
+@using AWBlazorApp.Features.Production.TransactionHistories.Domain
+@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain
+@using AWBlazorApp.Features.Production.UnitMeasures.Domain
+@using AWBlazorApp.Features.Production.WorkOrders.Domain
+@using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Cultures.Dtos
+@using AWBlazorApp.Features.Production.Documents.Dtos
+@using AWBlazorApp.Features.Production.Illustrations.Dtos
+@using AWBlazorApp.Features.Production.Locations.Dtos
+@using AWBlazorApp.Features.Production.ProductCategories.Dtos
+@using AWBlazorApp.Features.Production.ProductCostHistories.Dtos
+@using AWBlazorApp.Features.Production.ProductDescriptions.Dtos
+@using AWBlazorApp.Features.Production.ProductDocuments.Dtos
+@using AWBlazorApp.Features.Production.ProductInventories.Dtos
+@using AWBlazorApp.Features.Production.ProductListPriceHistories.Dtos
+@using AWBlazorApp.Features.Production.ProductModels.Dtos
+@using AWBlazorApp.Features.Production.ProductModelIllustrations.Dtos
+@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Dtos
+@using AWBlazorApp.Features.Production.ProductPhotos.Dtos
+@using AWBlazorApp.Features.Production.ProductProductPhotos.Dtos
+@using AWBlazorApp.Features.Production.ProductReviews.Dtos
+@using AWBlazorApp.Features.Production.Products.Dtos
+@using AWBlazorApp.Features.Production.ProductSubcategories.Dtos
+@using AWBlazorApp.Features.Production.ScrapReasons.Dtos
+@using AWBlazorApp.Features.Production.TransactionHistories.Dtos
+@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Dtos
+@using AWBlazorApp.Features.Production.UnitMeasures.Dtos
+@using AWBlazorApp.Features.Production.WorkOrders.Dtos
+@using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@using AWBlazorApp.Features.Production.Cultures.Application.Services
+@using AWBlazorApp.Features.Production.Documents.Application.Services
+@using AWBlazorApp.Features.Production.Illustrations.Application.Services
+@using AWBlazorApp.Features.Production.Locations.Application.Services
+@using AWBlazorApp.Features.Production.ProductCategories.Application.Services
+@using AWBlazorApp.Features.Production.ProductCostHistories.Application.Services
+@using AWBlazorApp.Features.Production.ProductDescriptions.Application.Services
+@using AWBlazorApp.Features.Production.ProductDocuments.Application.Services
+@using AWBlazorApp.Features.Production.ProductInventories.Application.Services
+@using AWBlazorApp.Features.Production.ProductListPriceHistories.Application.Services
+@using AWBlazorApp.Features.Production.ProductModels.Application.Services
+@using AWBlazorApp.Features.Production.ProductModelIllustrations.Application.Services
+@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Application.Services
+@using AWBlazorApp.Features.Production.ProductPhotos.Application.Services
+@using AWBlazorApp.Features.Production.ProductProductPhotos.Application.Services
+@using AWBlazorApp.Features.Production.ProductReviews.Application.Services
+@using AWBlazorApp.Features.Production.Products.Application.Services
+@using AWBlazorApp.Features.Production.ProductSubcategories.Application.Services
+@using AWBlazorApp.Features.Production.ScrapReasons.Application.Services
+@using AWBlazorApp.Features.Production.TransactionHistories.Application.Services
+@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Application.Services
+@using AWBlazorApp.Features.Production.UnitMeasures.Application.Services
+@using AWBlazorApp.Features.Production.WorkOrders.Application.Services
+@using AWBlazorApp.Features.Production.WorkOrderRoutings.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateProductDescriptionRequest> CreateValidator
+@inject MudFormValidator<UpdateProductDescriptionRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create description" : $"Edit description #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudTextField Value="@createModel.Description" ValueChanged="@((string? v) => createModel = createModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Required="true" MaxLength="400" Lines="4" />
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudTextField Value="@updateModel.Description" ValueChanged="@((string? v) => updateModel = updateModel with { Description = v })" Label="Description" Variant="Variant.Outlined" Required="true" MaxLength="400" Lines="4" />
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProductDescriptionDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateProductDescriptionRequest createModel = new();
+    private UpdateProductDescriptionRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null) updateModel = new UpdateProductDescriptionRequest { Description = Model.Description };
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.ProductDescriptions.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.ProductDescriptions.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = ProductDescriptionAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

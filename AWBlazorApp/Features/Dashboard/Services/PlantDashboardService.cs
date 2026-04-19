@@ -1,10 +1,10 @@
 using AWBlazorApp.Features.Dashboard.Dtos;
-using AWBlazorApp.Features.Engineering.Domain;
-using AWBlazorApp.Features.Maintenance.Domain;
-using AWBlazorApp.Features.Mes.Domain;
-using AWBlazorApp.Features.Performance.Domain;
-using AWBlazorApp.Features.Quality.Domain;
-using AWBlazorApp.Features.Workforce.Domain;
+using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
+using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
+using AWBlazorApp.Features.Performance.Kpis.Domain; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain; using AWBlazorApp.Features.Performance.Oee.Domain; using AWBlazorApp.Features.Performance.ProductionMetrics.Domain; using AWBlazorApp.Features.Performance.Reports.Domain; using AWBlazorApp.Features.Performance.Scorecards.Domain; 
+using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
+using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -280,7 +280,7 @@ public sealed class PlantDashboardService : IPlantDashboardService
         var orgUnits = await db.OrgUnits.AsNoTracking().CountAsync(ct);
         var stations = await db.Stations.AsNoTracking().CountAsync(s => s.IsActive, ct);
         var assets = await db.Assets.AsNoTracking()
-            .CountAsync(a => a.Status == AWBlazorApp.Features.Enterprise.Domain.AssetStatus.Active, ct);
+            .CountAsync(a => a.Status == AWBlazorApp.Features.Enterprise.Assets.Domain.AssetStatus.Active, ct);
 
         // ── 30-day per-module trends ─────────────────────────────────────────
         // Pull only the date column from each table for the trailing 30 days, then bin in

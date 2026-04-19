@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
-using AWBlazorApp.Features.HumanResources.Domain;
+using AWBlazorApp.Features.HumanResources.Departments.Domain; using AWBlazorApp.Features.HumanResources.Employees.Domain; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain; using AWBlazorApp.Features.HumanResources.JobCandidates.Domain; using AWBlazorApp.Features.HumanResources.Shifts.Domain; 
 
 namespace AWBlazorApp.Features.ProcessManagement.Domain;
 

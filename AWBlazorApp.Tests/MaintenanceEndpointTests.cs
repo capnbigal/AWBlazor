@@ -2,8 +2,8 @@ using System.Net;
 using System.Text.Json;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Features.Identity.Domain;
-using AWBlazorApp.Features.Maintenance.Domain;
-using AWBlazorApp.Features.Maintenance.Services;
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
+using AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services; using AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services; 
 using AWBlazorApp.Shared.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -279,7 +279,7 @@ public class MaintenanceEndpointTests : IntegrationTestFixtureBase
         var orgId = await db.Organizations.AsNoTracking().Select(o => o.Id).FirstOrDefaultAsync();
         if (orgId == 0)
         {
-            var org = new AWBlazorApp.Features.Enterprise.Domain.Organization
+            var org = new AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization
             {
                 Code = "TESTORG-M",
                 Name = "Test org for maintenance tests",
@@ -290,13 +290,13 @@ public class MaintenanceEndpointTests : IntegrationTestFixtureBase
             orgId = org.Id;
         }
 
-        var asset = new AWBlazorApp.Features.Enterprise.Domain.Asset
+        var asset = new AWBlazorApp.Features.Enterprise.Assets.Domain.Asset
         {
             AssetTag = "ASSET-M-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Test asset for maintenance tests",
             OrganizationId = orgId,
-            AssetType = AWBlazorApp.Features.Enterprise.Domain.AssetType.Machine,
-            Status = AWBlazorApp.Features.Enterprise.Domain.AssetStatus.Active,
+            AssetType = AWBlazorApp.Features.Enterprise.Assets.Domain.AssetType.Machine,
+            Status = AWBlazorApp.Features.Enterprise.Assets.Domain.AssetStatus.Active,
             ModifiedDate = DateTime.UtcNow,
         };
         db.Assets.Add(asset);

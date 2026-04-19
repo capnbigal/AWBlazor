@@ -1,0 +1,198 @@
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
+@using AWBlazorApp.Features.Enterprise.CostCenters.Domain
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Domain
+@using AWBlazorApp.Features.Enterprise.Organizations.Domain
+@using AWBlazorApp.Features.Enterprise.ProductLines.Domain
+@using AWBlazorApp.Features.Enterprise.Stations.Domain
+@using AWBlazorApp.Features.Enterprise.Assets.Dtos
+@using AWBlazorApp.Features.Enterprise.CostCenters.Dtos
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos
+@using AWBlazorApp.Features.Enterprise.Organizations.Dtos
+@using AWBlazorApp.Features.Enterprise.ProductLines.Dtos
+@using AWBlazorApp.Features.Enterprise.Stations.Dtos
+@using AWBlazorApp.Features.Enterprise.Assets.Application.Services
+@using AWBlazorApp.Features.Enterprise.CostCenters.Application.Services
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services
+@using AWBlazorApp.Features.Enterprise.Organizations.Application.Services
+@using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services
+@using AWBlazorApp.Features.Enterprise.Stations.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateOrgUnitRequest> CreateValidator
+@inject MudFormValidator<UpdateOrgUnitRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create org unit" : $"Edit org unit #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int" Value="@createModel.OrganizationId" ValueChanged="@((int v) => createModel = createModel with { OrganizationId = v })" Label="Organization" Variant="Variant.Outlined" Required="true">
+                            @foreach (var o in orgs) { <MudSelectItem T="int" Value="@o.Id">@o.Code — @o.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="OrgUnitKind" Value="@createModel.Kind" ValueChanged="@((OrgUnitKind v) => createModel = createModel with { Kind = v })" Label="Kind" Variant="Variant.Outlined" Required="true">
+                            @foreach (var k in Enum.GetValues<OrgUnitKind>()) { <MudSelectItem T="OrgUnitKind" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Code" ValueChanged="@((string? v) => createModel = createModel with { Code = v })" Label="Code" Variant="Variant.Outlined" Required="true" MaxLength="32" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="200" /></MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="int?" Value="@createModel.ParentOrgUnitId" ValueChanged="@((int? v) => createModel = createModel with { ParentOrgUnitId = v })" Label="Parent org unit (leave empty for root of the org)" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="int?" Value="@null">(root)</MudSelectItem>
+                            @foreach (var u in allUnits.Where(u => u.OrganizationId == createModel.OrganizationId))
+                            { <MudSelectItem T="int?" Value="@u.Id">@u.Path — @u.Kind · @u.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@createModel.CostCenterId" ValueChanged="@((int? v) => createModel = createModel with { CostCenterId = v })" Label="Cost center ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@createModel.ManagerBusinessEntityId" ValueChanged="@((int? v) => createModel = createModel with { ManagerBusinessEntityId = v })" Label="Manager Business Entity ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12"><MudSwitch T="bool" Value="@createModel.IsActive" ValueChanged="@((bool v) => createModel = createModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="OrgUnitKind?" Value="@updateModel.Kind" ValueChanged="@((OrgUnitKind? v) => updateModel = updateModel with { Kind = v })" Label="Kind" Variant="Variant.Outlined">
+                            @foreach (var k in Enum.GetValues<OrgUnitKind>()) { <MudSelectItem T="OrgUnitKind?" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Code" ValueChanged="@((string? v) => updateModel = updateModel with { Code = v })" Label="Code" Variant="Variant.Outlined" MaxLength="32" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" MaxLength="200" /></MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="int?" Value="@updateModel.ParentOrgUnitId" ValueChanged="@((int? v) => updateModel = updateModel with { ParentOrgUnitId = v })" Label="Parent org unit" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="int?" Value="@null">(root)</MudSelectItem>
+                            @foreach (var u in allUnits.Where(u => u.OrganizationId == Model!.OrganizationId && u.Id != Model.Id && !u.Path.StartsWith(Model.Path + "/")))
+                            { <MudSelectItem T="int?" Value="@u.Id">@u.Path — @u.Kind · @u.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.CostCenterId" ValueChanged="@((int? v) => updateModel = updateModel with { CostCenterId = v })" Label="Cost center ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.ManagerBusinessEntityId" ValueChanged="@((int? v) => updateModel = updateModel with { ManagerBusinessEntityId = v })" Label="Manager BE ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12"><MudSwitch T="bool" Value="@(updateModel.IsActive ?? true)" ValueChanged="@((bool v) => updateModel = updateModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public OrgUnitDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateOrgUnitRequest createModel = new();
+    private UpdateOrgUnitRequest updateModel = new();
+    private bool saving;
+    private List<OrganizationDto> orgs = [];
+    private List<OrgUnitDto> allUnits = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        orgs = await db.Organizations.AsNoTracking().Where(o => o.IsActive).OrderBy(o => o.Code).Select(o => o.ToDto()).ToListAsync();
+        allUnits = await db.OrgUnits.AsNoTracking().OrderBy(u => u.Path).Select(u => u.ToDto()).ToListAsync();
+
+        if (Model is not null)
+        {
+            updateModel = new UpdateOrgUnitRequest
+            {
+                Kind = Model.Kind, Code = Model.Code, Name = Model.Name,
+                ParentOrgUnitId = Model.ParentOrgUnitId,
+                CostCenterId = Model.CostCenterId, ManagerBusinessEntityId = Model.ManagerBusinessEntityId,
+                IsActive = Model.IsActive,
+            };
+        }
+        else if (orgs.Count > 0)
+        {
+            createModel = createModel with { OrganizationId = orgs.First(o => o.IsPrimary).Id };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var by = await GetCurrentUserNameAsync();
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = createModel.ToEntity();
+                await ResolvePathAsync(db, entity);
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.OrgUnits.Add(entity);
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                db.OrgUnitAuditLogs.Add(OrgUnitAuditService.RecordCreate(entity, by));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = await db.OrgUnits.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = OrgUnitAuditService.CaptureSnapshot(entity);
+                var oldPath = entity.Path;
+                updateModel.ApplyTo(entity);
+                var parentChanged = updateModel.ParentOrgUnitId is not null && updateModel.ParentOrgUnitId != before.ParentOrgUnitId;
+                var codeChanged = updateModel.Code is not null && updateModel.Code.Trim().ToUpperInvariant() != before.Code;
+                if (parentChanged || codeChanged)
+                {
+                    await ResolvePathAsync(db, entity);
+                    await CascadePathAsync(db, entity.Id, oldPath, entity.Path, entity.Depth);
+                }
+                db.OrgUnitAuditLogs.Add(OrgUnitAuditService.RecordUpdate(before, entity, by));
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private static async Task ResolvePathAsync(ApplicationDbContext db, OrgUnit entity)
+    {
+        if (entity.ParentOrgUnitId is null) { entity.Path = entity.Code; entity.Depth = 0; return; }
+        var parent = await db.OrgUnits.AsNoTracking()
+            .Where(x => x.Id == entity.ParentOrgUnitId.Value)
+            .Select(x => new { x.Path, x.Depth, x.OrganizationId })
+            .FirstOrDefaultAsync() ?? throw new InvalidOperationException("Parent not found.");
+        entity.OrganizationId = parent.OrganizationId;
+        entity.Path = $"{parent.Path}/{entity.Code}";
+        entity.Depth = (byte)(parent.Depth + 1);
+    }
+
+    private static async Task CascadePathAsync(ApplicationDbContext db, int rootId, string oldPath, string newPath, byte newDepth)
+    {
+        if (oldPath == newPath) return;
+        var prefix = oldPath + "/";
+        var depthShift = newDepth - (byte)oldPath.Count(c => c == '/');
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $@"UPDATE [org].[OrgUnit] SET [Path] = {newPath} + SUBSTRING([Path], LEN({oldPath}) + 1, 8000), [Depth] = [Depth] + {depthShift}
+               WHERE [Id] <> {rootId} AND [Path] LIKE {prefix + "%"}");
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

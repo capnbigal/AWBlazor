@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Logistics.Dtos;
+using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos; 
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Logistics.Validators;

@@ -1,0 +1,140 @@
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
+@using AWBlazorApp.Features.Sales.CreditCards.Domain
+@using AWBlazorApp.Features.Sales.Currencies.Domain
+@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
+@using AWBlazorApp.Features.Sales.Customers.Domain
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesPeople.Domain
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
+@using AWBlazorApp.Features.Sales.SalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
+@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
+@using AWBlazorApp.Features.Sales.Stores.Domain
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
+@using AWBlazorApp.Features.Sales.CreditCards.Dtos
+@using AWBlazorApp.Features.Sales.Currencies.Dtos
+@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
+@using AWBlazorApp.Features.Sales.Customers.Dtos
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
+@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
+@using AWBlazorApp.Features.Sales.Stores.Dtos
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services
+@using AWBlazorApp.Features.Sales.CreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.Currencies.Application.Services
+@using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services
+@using AWBlazorApp.Features.Sales.Customers.Application.Services
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPeople.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services
+@using AWBlazorApp.Features.Sales.Stores.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateSpecialOfferProductRequest> CreateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">Link a special offer to a product</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <FkSelect TValue="int" Value="@createModel.SpecialOfferId" ValueChanged="@((int v) => createModel = createModel with { SpecialOfferId = v })" Label="Special offer" Items="_specialOffers" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm form = null!;
+    private CreateSpecialOfferProductRequest createModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _specialOffers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _specialOffers = await Lookup.GetSpecialOffersAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (await db.SpecialOfferProducts.AnyAsync(x => x.SpecialOfferId == createModel.SpecialOfferId && x.ProductId == createModel.ProductId))
+            {
+                Snackbar.Add("Link already exists.", Severity.Error);
+                return;
+            }
+
+            var changedBy = await GetCurrentUserNameAsync();
+            var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.SpecialOfferProducts.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+            {
+                Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                return;
+            }
+            db.SpecialOfferProductAuditLogs.Add(SpecialOfferProductAuditService.RecordCreate(entity, changedBy));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

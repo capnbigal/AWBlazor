@@ -1,8 +1,8 @@
-using AWBlazorApp.Features.Sales.Api;
-using AWBlazorApp.Features.Production.Api;
-using AWBlazorApp.Features.HumanResources.Api;
-using AWBlazorApp.Features.Purchasing.Api;
-using AWBlazorApp.Features.Person.Api;
+using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Api; using AWBlazorApp.Features.Sales.CreditCards.Api; using AWBlazorApp.Features.Sales.Currencies.Api; using AWBlazorApp.Features.Sales.CurrencyRates.Api; using AWBlazorApp.Features.Sales.Customers.Api; using AWBlazorApp.Features.Sales.PersonCreditCards.Api; using AWBlazorApp.Features.Sales.SalesOrderDetails.Api; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Api; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Api; using AWBlazorApp.Features.Sales.SalesPeople.Api; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Api; using AWBlazorApp.Features.Sales.SalesReasons.Api; using AWBlazorApp.Features.Sales.SalesTaxRates.Api; using AWBlazorApp.Features.Sales.SalesTerritories.Api; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Api; using AWBlazorApp.Features.Sales.ShoppingCartItems.Api; using AWBlazorApp.Features.Sales.SpecialOffers.Api; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Api; using AWBlazorApp.Features.Sales.Stores.Api; 
+using AWBlazorApp.Features.Production.Api; using AWBlazorApp.Features.Production.Cultures.Api; using AWBlazorApp.Features.Production.Documents.Api; using AWBlazorApp.Features.Production.Illustrations.Api; using AWBlazorApp.Features.Production.Locations.Api; using AWBlazorApp.Features.Production.ProductCategories.Api; using AWBlazorApp.Features.Production.ProductCostHistories.Api; using AWBlazorApp.Features.Production.ProductDescriptions.Api; using AWBlazorApp.Features.Production.ProductDocuments.Api; using AWBlazorApp.Features.Production.ProductInventories.Api; using AWBlazorApp.Features.Production.ProductListPriceHistories.Api; using AWBlazorApp.Features.Production.ProductModels.Api; using AWBlazorApp.Features.Production.ProductModelIllustrations.Api; using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Api; using AWBlazorApp.Features.Production.ProductPhotos.Api; using AWBlazorApp.Features.Production.ProductProductPhotos.Api; using AWBlazorApp.Features.Production.ProductReviews.Api; using AWBlazorApp.Features.Production.Products.Api; using AWBlazorApp.Features.Production.ProductSubcategories.Api; using AWBlazorApp.Features.Production.ScrapReasons.Api; using AWBlazorApp.Features.Production.TransactionHistories.Api; using AWBlazorApp.Features.Production.TransactionHistoryArchives.Api; using AWBlazorApp.Features.Production.UnitMeasures.Api; using AWBlazorApp.Features.Production.WorkOrders.Api; using AWBlazorApp.Features.Production.WorkOrderRoutings.Api; 
+using AWBlazorApp.Features.HumanResources.Departments.Api; using AWBlazorApp.Features.HumanResources.Employees.Api; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Api; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Api; using AWBlazorApp.Features.HumanResources.JobCandidates.Api; using AWBlazorApp.Features.HumanResources.Shifts.Api; 
+using AWBlazorApp.Features.Purchasing.ProductVendors.Api; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Api; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Api; using AWBlazorApp.Features.Purchasing.ShipMethods.Api; using AWBlazorApp.Features.Purchasing.Vendors.Api; 
+using AWBlazorApp.Features.Person.Addresses.Api; using AWBlazorApp.Features.Person.AddressTypes.Api; using AWBlazorApp.Features.Person.BusinessEntities.Api; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Api; using AWBlazorApp.Features.Person.BusinessEntityContacts.Api; using AWBlazorApp.Features.Person.ContactTypes.Api; using AWBlazorApp.Features.Person.CountryRegions.Api; using AWBlazorApp.Features.Person.EmailAddresses.Api; using AWBlazorApp.Features.Person.Persons.Api; using AWBlazorApp.Features.Person.PersonPhones.Api; using AWBlazorApp.Features.Person.PhoneNumberTypes.Api; using AWBlazorApp.Features.Person.StateProvinces.Api; 
 using AWBlazorApp.Features.Forecasting.Api;
 using AWBlazorApp.Features.ProcessManagement.Api;
 using AWBlazorApp.Features.ToolSlots.Api;
@@ -10,7 +10,7 @@ using AWBlazorApp.Features.Gallery.Api;
 using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Features.Admin.Api;
-using AWBlazorApp.Features.Enterprise.Api;
+using AWBlazorApp.Features.Enterprise.Assets.Api; using AWBlazorApp.Features.Enterprise.CostCenters.Api; using AWBlazorApp.Features.Enterprise.OrgUnits.Api; using AWBlazorApp.Features.Enterprise.Organizations.Api; using AWBlazorApp.Features.Enterprise.ProductLines.Api; using AWBlazorApp.Features.Enterprise.Stations.Api; 
 
 namespace AWBlazorApp.App.Routing;
 
@@ -120,31 +120,31 @@ public static class EndpointMappingExtensions
         app.MapProductLineEndpoints();
 
         // Batch 11 — Advanced inventory (inv schema). Transaction writes go through IInventoryService.
-        AWBlazorApp.Features.Inventory.Api.InventoryItemEndpoints.MapInventoryItemEndpoints(app);
-        AWBlazorApp.Features.Inventory.Api.InventoryLocationEndpoints.MapInventoryLocationEndpoints(app);
-        AWBlazorApp.Features.Inventory.Api.LotEndpoints.MapLotEndpoints(app);
-        AWBlazorApp.Features.Inventory.Api.SerialUnitEndpoints.MapSerialUnitEndpoints(app);
+        AWBlazorApp.Features.Inventory.Items.Api.InventoryItemEndpoints.MapInventoryItemEndpoints(app);
+        AWBlazorApp.Features.Inventory.Locations.Api.InventoryLocationEndpoints.MapInventoryLocationEndpoints(app);
+        AWBlazorApp.Features.Inventory.Lots.Api.LotEndpoints.MapLotEndpoints(app);
+        AWBlazorApp.Features.Inventory.Serials.Api.SerialUnitEndpoints.MapSerialUnitEndpoints(app);
         AWBlazorApp.Features.Inventory.Api.InventoryTransactionEndpoints.MapInventoryTransactionEndpoints(app);
-        AWBlazorApp.Features.Inventory.Api.InventoryAdjustmentEndpoints.MapInventoryAdjustmentEndpoints(app);
+        AWBlazorApp.Features.Inventory.Adjustments.Api.InventoryAdjustmentEndpoints.MapInventoryAdjustmentEndpoints(app);
         AWBlazorApp.Features.Inventory.Api.InventoryReadOnlyEndpoints.MapInventoryReadOnlyEndpoints(app);
 
         // Batch 12 — Logistics (lgx schema). Post workflows wire into IInventoryService.
-        AWBlazorApp.Features.Logistics.Api.GoodsReceiptEndpoints.MapGoodsReceiptEndpoints(app);
-        AWBlazorApp.Features.Logistics.Api.ShipmentEndpoints.MapShipmentEndpoints(app);
-        AWBlazorApp.Features.Logistics.Api.StockTransferEndpoints.MapStockTransferEndpoints(app);
+        AWBlazorApp.Features.Logistics.Receipts.Api.GoodsReceiptEndpoints.MapGoodsReceiptEndpoints(app);
+        AWBlazorApp.Features.Logistics.Shipments.Api.ShipmentEndpoints.MapShipmentEndpoints(app);
+        AWBlazorApp.Features.Logistics.Transfers.Api.StockTransferEndpoints.MapStockTransferEndpoints(app);
 
         // Batch 13 — MES (mes schema). Production-run completion writes WIP_ISSUE/WIP_RECEIPT via IInventoryService.
-        AWBlazorApp.Features.Mes.Api.ProductionRunEndpoints.MapProductionRunEndpoints(app);
+        AWBlazorApp.Features.Mes.Runs.Api.ProductionRunEndpoints.MapProductionRunEndpoints(app);
         AWBlazorApp.Features.Mes.Api.ShopFloorEndpoints.MapOperatorClockEventEndpoints(app);
         AWBlazorApp.Features.Mes.Api.ShopFloorEndpoints.MapDowntimeEventEndpoints(app);
         AWBlazorApp.Features.Mes.Api.ShopFloorEndpoints.MapDowntimeReasonEndpoints(app);
-        AWBlazorApp.Features.Mes.Api.WorkInstructionEndpoints.MapWorkInstructionEndpoints(app);
+        AWBlazorApp.Features.Mes.Instructions.Api.WorkInstructionEndpoints.MapWorkInstructionEndpoints(app);
 
         // Batch 14 — Quality (qa schema). NCR disposition writes inv transactions via IInventoryService.
-        AWBlazorApp.Features.Quality.Api.InspectionPlanEndpoints.MapInspectionPlanEndpoints(app);
-        AWBlazorApp.Features.Quality.Api.InspectionEndpoints.MapInspectionEndpoints(app);
-        AWBlazorApp.Features.Quality.Api.NonConformanceEndpoints.MapNonConformanceEndpoints(app);
-        AWBlazorApp.Features.Quality.Api.CapaCaseEndpoints.MapCapaCaseEndpoints(app);
+        AWBlazorApp.Features.Quality.Plans.Api.InspectionPlanEndpoints.MapInspectionPlanEndpoints(app);
+        AWBlazorApp.Features.Quality.Inspections.Api.InspectionEndpoints.MapInspectionEndpoints(app);
+        AWBlazorApp.Features.Quality.Ncrs.Api.NonConformanceEndpoints.MapNonConformanceEndpoints(app);
+        AWBlazorApp.Features.Quality.Capa.Api.CapaCaseEndpoints.MapCapaCaseEndpoints(app);
 
         // Batch 15 — Workforce (wf schema). Training, qualifications, attendance/leave, comms.
         AWBlazorApp.Features.Workforce.Api.TrainingEndpoints.MapTrainingEndpoints(app);
@@ -153,22 +153,22 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Workforce.Api.CommunicationEndpoints.MapCommunicationEndpoints(app);
 
         // Batch 16 — Engineering (eng schema). Routings, BOMs, ECOs, docs, deviations.
-        AWBlazorApp.Features.Engineering.Api.RoutingEndpoints.MapRoutingEndpoints(app);
-        AWBlazorApp.Features.Engineering.Api.BomEndpoints.MapBomEndpoints(app);
-        AWBlazorApp.Features.Engineering.Api.EngineeringChangeOrderEndpoints.MapEngineeringChangeOrderEndpoints(app);
+        AWBlazorApp.Features.Engineering.Routings.Api.RoutingEndpoints.MapRoutingEndpoints(app);
+        AWBlazorApp.Features.Engineering.Boms.Api.BomEndpoints.MapBomEndpoints(app);
+        AWBlazorApp.Features.Engineering.Ecos.Api.EngineeringChangeOrderEndpoints.MapEngineeringChangeOrderEndpoints(app);
         AWBlazorApp.Features.Engineering.Api.DocumentDeviationEndpoints.MapDocumentDeviationEndpoints(app);
 
         // Batch 17 — Maintenance (maint schema). Asset profiles, PM schedules, work orders, spares.
-        AWBlazorApp.Features.Maintenance.Api.AssetMaintenanceEndpoints.MapAssetMaintenanceEndpoints(app);
-        AWBlazorApp.Features.Maintenance.Api.PmScheduleEndpoints.MapPmScheduleEndpoints(app);
-        AWBlazorApp.Features.Maintenance.Api.MaintenanceWorkOrderEndpoints.MapMaintenanceWorkOrderEndpoints(app);
-        AWBlazorApp.Features.Maintenance.Api.SparePartEndpoints.MapSparePartEndpoints(app);
+        AWBlazorApp.Features.Maintenance.AssetProfiles.Api.AssetMaintenanceEndpoints.MapAssetMaintenanceEndpoints(app);
+        AWBlazorApp.Features.Maintenance.PmSchedules.Api.PmScheduleEndpoints.MapPmScheduleEndpoints(app);
+        AWBlazorApp.Features.Maintenance.WorkOrders.Api.MaintenanceWorkOrderEndpoints.MapMaintenanceWorkOrderEndpoints(app);
+        AWBlazorApp.Features.Maintenance.SpareParts.Api.SparePartEndpoints.MapSparePartEndpoints(app);
 
         // Batch 18 — Performance (perf schema). OEE, metric rollups, KPIs, scorecards, reports.
-        AWBlazorApp.Features.Performance.Api.MetricsEndpoints.MapMetricsEndpoints(app);
-        AWBlazorApp.Features.Performance.Api.KpiEndpoints.MapKpiEndpoints(app);
-        AWBlazorApp.Features.Performance.Api.ScorecardEndpoints.MapScorecardEndpoints(app);
-        AWBlazorApp.Features.Performance.Api.ReportEndpoints.MapReportEndpoints(app);
+        AWBlazorApp.Features.Performance.ProductionMetrics.Api.MetricsEndpoints.MapMetricsEndpoints(app);
+        AWBlazorApp.Features.Performance.Kpis.Api.KpiEndpoints.MapKpiEndpoints(app);
+        AWBlazorApp.Features.Performance.Scorecards.Api.ScorecardEndpoints.MapScorecardEndpoints(app);
+        AWBlazorApp.Features.Performance.Reports.Api.ReportEndpoints.MapReportEndpoints(app);
 
         // Cross-module plant dashboard. Aggregates from every module schema.
         AWBlazorApp.Features.Dashboard.Api.DashboardEndpoints.MapDashboardEndpoints(app);

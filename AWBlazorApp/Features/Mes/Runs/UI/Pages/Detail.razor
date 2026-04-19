@@ -1,0 +1,224 @@
+@using AWBlazorApp.Features.Mes.Runs.Dtos
+@page "/mes/runs/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IProductionRunService RunService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Run @header?.RunNumber</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("mes/runs"))" />
+            <MudText Typo="Typo.h5">@header.RunNumber</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@header.Status</MudChip>
+            <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">@header.Kind</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"mes/runs/history?id={Id}")">History</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudStack Row="true" Spacing="2">
+                @if (header.Status == ProductionRunStatus.Draft)
+                {
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartAsync" Disabled="busy">Start</MudButton>
+                }
+                @if (header.Status == ProductionRunStatus.InProgress)
+                {
+                    <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Pause" OnClick="PauseAsync" Disabled="busy">Pause</MudButton>
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudButton Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="OpenCompleteAsync" Disabled="busy">Complete</MudButton>
+                    </AuthorizeView>
+                }
+                @if (header.Status == ProductionRunStatus.Paused)
+                {
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="ResumeAsync" Disabled="busy">Resume</MudButton>
+                }
+                @if (header.Status is ProductionRunStatus.Draft or ProductionRunStatus.InProgress or ProductionRunStatus.Paused)
+                {
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudButton Color="Color.Error" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Cancel" OnClick="CancelAsync" Disabled="busy">Cancel</MudButton>
+                    </AuthorizeView>
+                }
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="WorkOrder" Variant="Variant.Text">@(header.WorkOrderId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Station" Variant="Variant.Text">@(header.StationId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Asset" Variant="Variant.Text">@(header.AssetId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Kind" Variant="Variant.Text">@header.Kind</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Planned start" Variant="Variant.Text">@(header.PlannedStartAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Actual start" Variant="Variant.Text">@(header.ActualStartAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Actual end" Variant="Variant.Text">@(header.ActualEndAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Posted by" Variant="Variant.Text">@(header.PostedByUserId ?? "—")</MudField></MudItem>
+                <MudItem xs="4" md="3"><MudField Label="Planned" Variant="Variant.Text">@header.QuantityPlanned.ToString("N4")</MudField></MudItem>
+                <MudItem xs="4" md="3"><MudField Label="Produced" Variant="Variant.Text">@header.QuantityProduced.ToString("N4")</MudField></MudItem>
+                <MudItem xs="4" md="3"><MudField Label="Scrapped" Variant="Variant.Text">@header.QuantityScrapped.ToString("N4")</MudField></MudItem>
+                <MudItem xs="12"><MudField Label="Notes" Variant="Variant.Text">@(header.Notes ?? "—")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Operations (@operations.Count)</MudText>
+            @if (operations.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">No operations recorded yet.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                    <thead><tr><th>Seq</th><th>WO step</th><th>Description</th><th>Start</th><th>End</th><th style="text-align:right">Hours</th></tr></thead>
+                    <tbody>
+                        @foreach (var op in operations.OrderBy(o => o.SequenceNumber))
+                        {
+                            <tr>
+                                <td>@op.SequenceNumber</td>
+                                <td>@(op.OperationSequence?.ToString() ?? "—")</td>
+                                <td>@op.OperationDescription</td>
+                                <td>@(op.StartAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td>@(op.EndAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                <td style="text-align:right">@op.ActualHours.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="completeDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true }">
+    <TitleContent>Complete run</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="decimal" @bind-Value="completeRequest.QuantityProduced" Label="Quantity produced" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal" @bind-Value="completeRequest.QuantityScrapped" Label="Quantity scrapped" Variant="Variant.Outlined" />
+            <MudDivider />
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Optional: also issue consumed materials from stock</MudText>
+            <MudNumericField T="int?" @bind-Value="completeRequest.MaterialIssueInventoryItemId" Label="Material: InventoryItemId" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal?" @bind-Value="completeRequest.MaterialIssueQuantity" Label="Material: Quantity" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="completeRequest.MaterialIssueUnitMeasureCode" Label="Material: UoM" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="completeRequest.MaterialIssueFromLocationId" Label="Material: FromLocationId" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="completeRequest.MaterialIssueLotId" Label="Material: LotId (optional)" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => completeDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="CompleteAsync" Disabled="busy">@(busy ? "Posting..." : "Complete")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private ProductionRunDto? header;
+    private List<ProductionRunOperationDto> operations = [];
+    private bool busy;
+
+    private bool completeDialogOpen;
+    private CompleteProductionRunRequest completeRequest = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductionRuns.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        header = entity?.ToDto();
+        operations = await db.ProductionRunOperations.AsNoTracking().Where(o => o.ProductionRunId == Id)
+            .Select(o => o.ToDto()).ToListAsync();
+    }
+
+    private async Task StartAsync() => await RunActionAsync(u => RunService.StartAsync(Id, u, CancellationToken.None), "Started");
+    private async Task PauseAsync() => await RunActionAsync(u => RunService.PauseAsync(Id, u, CancellationToken.None), "Paused");
+    private async Task ResumeAsync() => await RunActionAsync(u => RunService.ResumeAsync(Id, u, CancellationToken.None), "Resumed");
+
+    private async Task CancelAsync()
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Cancel run?",
+            "Cancelling abandons the run without posting WIP transactions. Continue?",
+            yesText: "Cancel run", cancelText: "Keep running");
+        if (confirm != true) return;
+        await RunActionAsync(u => RunService.CancelAsync(Id, u, CancellationToken.None), "Cancelled");
+    }
+
+    private async Task RunActionAsync(Func<string?, Task<RunTransitionResult>> action, string verb)
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var result = await action(by);
+            Snackbar.Add($"{verb} — status now {result.Status}.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"{verb} failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private void OpenCompleteAsync()
+    {
+        completeRequest = new CompleteProductionRunRequest
+        {
+            QuantityProduced = header?.QuantityPlanned ?? 0,
+            QuantityScrapped = 0,
+        };
+        completeDialogOpen = true;
+    }
+
+    private async Task CompleteAsync()
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var result = await RunService.CompleteAsync(Id,
+                completeRequest.QuantityProduced, completeRequest.QuantityScrapped,
+                completeRequest.MaterialIssueQuantity is > 0 && completeRequest.MaterialIssueInventoryItemId is > 0
+                    && completeRequest.MaterialIssueFromLocationId is > 0
+                    && !string.IsNullOrWhiteSpace(completeRequest.MaterialIssueUnitMeasureCode)
+                    ? new MaterialIssueRequest(
+                        completeRequest.MaterialIssueInventoryItemId.Value,
+                        completeRequest.MaterialIssueQuantity.Value,
+                        completeRequest.MaterialIssueUnitMeasureCode,
+                        completeRequest.MaterialIssueFromLocationId.Value,
+                        completeRequest.MaterialIssueLotId)
+                    : null,
+                by, CancellationToken.None);
+            var txParts = new List<string>();
+            if (result.WipReceiptTransactionId.HasValue) txParts.Add($"WIP_RECEIPT tx {result.WipReceiptTransactionId}");
+            if (result.WipIssueTransactionId.HasValue) txParts.Add($"WIP_ISSUE tx {result.WipIssueTransactionId}");
+            Snackbar.Add($"Completed {result.RunNumber}. {string.Join(", ", txParts)}", Severity.Success);
+            completeDialogOpen = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Complete failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private static Color StatusColor(ProductionRunStatus s) => s switch
+    {
+        ProductionRunStatus.Draft => Color.Default,
+        ProductionRunStatus.InProgress => Color.Success,
+        ProductionRunStatus.Paused => Color.Warning,
+        ProductionRunStatus.Completed => Color.Primary,
+        ProductionRunStatus.Cancelled => Color.Error,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

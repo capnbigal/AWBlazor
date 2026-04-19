@@ -1,4 +1,5 @@
 using AWBlazorApp.Features.Inventory.Dtos;
+using AWBlazorApp.Features.Inventory.Adjustments.Dtos; using AWBlazorApp.Features.Inventory.Items.Dtos; using AWBlazorApp.Features.Inventory.Locations.Dtos; using AWBlazorApp.Features.Inventory.Lots.Dtos; using AWBlazorApp.Features.Inventory.Serials.Dtos; 
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Inventory.Validators;

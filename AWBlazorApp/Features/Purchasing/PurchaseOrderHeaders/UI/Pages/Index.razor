@@ -1,0 +1,185 @@
+@page "/aw/purchase-order-headers"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Domain
+@using AWBlazorApp.Features.Purchasing.Vendors.Domain
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
+@using AWBlazorApp.Features.Purchasing.Vendors.Dtos
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services
+@using AWBlazorApp.Features.Purchasing.Vendors.Application.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Purchase order headers</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Purchase order headers</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Purchasing.PurchaseOrderHeader</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/purchase-order-headers/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New PO</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterVendorId ?? 0)" ValueChanged="@(v => { filterVendorId = v == 0 ? null : v; })" Label="Vendor" SearchFunc="@(q => Lookup.SearchVendorsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudNumericField T="byte?" @bind-Value="filterStatus" Label="Status (1-4)" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="PurchaseOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <HierarchyColumn T="PurchaseOrderHeaderDto" />
+            <PropertyColumn Property="x => x.Id" Title="PO #">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.Id)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    @{ var (label, color) = StatusHelper.PurchaseOrderStatus(context.Item.Status); }
+                    <MudChip T="string" Size="Size.Small" Color="@color" Variant="Variant.Filled">@label</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.VendorId" Title="Vendor">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.VendorId)" Title="Vendor" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EmployeeId" Title="Employee">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.EmployeeId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.OrderDate" Title="Order date" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.OrderDate)" Title="Order date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeader" PropertyName="@nameof(PurchaseOrderHeaderDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent><PurchaseOrderExpandedRow PurchaseOrderId="@context.Item.Id" /></ChildRowContent>
+        <PagerContent><MudDataGridPager T="PurchaseOrderHeaderDto" /></PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<PurchaseOrderHeaderDto> grid = null!;
+    private bool _loading = true;
+    private int? filterVendorId;
+    private byte? filterStatus;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<PurchaseOrderHeaderDto>> LoadServerDataAsync(GridState<PurchaseOrderHeaderDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.PurchaseOrderHeaders.AsNoTracking();
+            if (filterVendorId.HasValue) query = query.Where(x => x.VendorId == filterVendorId.Value);
+            if (filterStatus.HasValue) query = query.Where(x => x.Status == filterStatus.Value);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(PurchaseOrderHeaderDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(PurchaseOrderHeaderDto.EmployeeId)   => sort.Descending ? query.OrderByDescending(x => x.EmployeeId)   : query.OrderBy(x => x.EmployeeId),
+                nameof(PurchaseOrderHeaderDto.VendorId)     => sort.Descending ? query.OrderByDescending(x => x.VendorId)     : query.OrderBy(x => x.VendorId),
+                nameof(PurchaseOrderHeaderDto.OrderDate)    => sort.Descending ? query.OrderByDescending(x => x.OrderDate)    : query.OrderBy(x => x.OrderDate),
+                nameof(PurchaseOrderHeaderDto.SubTotal)     => sort.Descending ? query.OrderByDescending(x => x.SubTotal)     : query.OrderBy(x => x.SubTotal),
+                nameof(PurchaseOrderHeaderDto.TotalDue)     => sort.Descending ? query.OrderByDescending(x => x.TotalDue)     : query.OrderBy(x => x.TotalDue),
+                nameof(PurchaseOrderHeaderDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                           => query.OrderByDescending(x => x.OrderDate).ThenBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<PurchaseOrderHeaderDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<PurchaseOrderHeaderDialog>("New PO", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("PO created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(PurchaseOrderHeaderDto row)
+    {
+        var parameters = new DialogParameters<PurchaseOrderHeaderDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<PurchaseOrderHeaderDialog>($"Edit PO #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("PO updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(PurchaseOrderHeaderDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete PO?", $"Permanently delete PO #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.PurchaseOrderHeaders.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("PO no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.PurchaseOrderHeaderAuditLogs.Add(PurchaseOrderHeaderAuditService.RecordDelete(entity, changedBy));
+        db.PurchaseOrderHeaders.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("PO deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(PurchaseOrderHeaderDto row) => Navigation.NavigateTo($"aw/purchase-order-headers/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

@@ -1,0 +1,149 @@
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Domain
+@using AWBlazorApp.Features.Purchasing.Vendors.Domain
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
+@using AWBlazorApp.Features.Purchasing.Vendors.Dtos
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services
+@using AWBlazorApp.Features.Purchasing.Vendors.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreatePurchaseOrderDetailRequest> CreateValidator
+@inject MudFormValidator<UpdatePurchaseOrderDetailRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create line item" : $"Edit ({Model!.PurchaseOrderId}, {Model.PurchaseOrderDetailId})")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.PurchaseOrderId" ValueChanged="@((int v) => createModel = createModel with { PurchaseOrderId = v })" Label="Purchase order" SearchFunc="Lookup.SearchPurchaseOrdersAsync" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudNumericField T="short" Value="@createModel.OrderQty" ValueChanged="@((short v) => createModel = createModel with { OrderQty = v })" Label="Order qty" Variant="Variant.Outlined" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudNumericField T="decimal" Value="@createModel.UnitPrice" ValueChanged="@((decimal v) => createModel = createModel with { UnitPrice = v })" Label="Unit price" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@createModel.DueDate" DateChanged="@((DateTime? v) => createModel = createModel with { DueDate = v ?? DateTime.UtcNow.Date })" Label="Due date" Variant="Variant.Outlined" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal" Value="@createModel.ReceivedQty" ValueChanged="@((decimal v) => createModel = createModel with { ReceivedQty = v })" Label="Received qty" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal" Value="@createModel.RejectedQty" ValueChanged="@((decimal v) => createModel = createModel with { RejectedQty = v })" Label="Rejected qty" Variant="Variant.Outlined" Min="0" Step="0.01M" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4"><MudNumericField T="short?" Value="@updateModel.OrderQty" ValueChanged="@((short? v) => updateModel = updateModel with { OrderQty = v })" Label="Order qty" Variant="Variant.Outlined" Clearable="true" Min="1" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudNumericField T="decimal?" Value="@updateModel.UnitPrice" ValueChanged="@((decimal? v) => updateModel = updateModel with { UnitPrice = v })" Label="Unit price" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudDatePicker Date="@updateModel.DueDate" DateChanged="@((DateTime? v) => updateModel = updateModel with { DueDate = v })" Label="Due date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal?" Value="@updateModel.ReceivedQty" ValueChanged="@((decimal? v) => updateModel = updateModel with { ReceivedQty = v })" Label="Received qty" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal?" Value="@updateModel.RejectedQty" ValueChanged="@((decimal? v) => updateModel = updateModel with { RejectedQty = v })" Label="Rejected qty" Variant="Variant.Outlined" Clearable="true" Min="0" Step="0.01M" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public PurchaseOrderDetailDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreatePurchaseOrderDetailRequest createModel = new() { OrderQty = 1, DueDate = DateTime.UtcNow.Date };
+    private UpdatePurchaseOrderDetailRequest updateModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+            updateModel = new UpdatePurchaseOrderDetailRequest
+            {
+                DueDate = Model.DueDate,
+                OrderQty = Model.OrderQty,
+                ProductId = Model.ProductId,
+                UnitPrice = Model.UnitPrice,
+                ReceivedQty = Model.ReceivedQty,
+                RejectedQty = Model.RejectedQty,
+            };
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate required FKs
+                if (!await db.PurchaseOrderHeaders.AnyAsync(x => x.Id == createModel.PurchaseOrderId))
+                { Snackbar.Add($"Purchase order #{createModel.PurchaseOrderId} does not exist.", Severity.Error); return; }
+                if (!await db.Products.AnyAsync(x => x.Id == createModel.ProductId))
+                { Snackbar.Add($"Product #{createModel.ProductId} does not exist.", Severity.Error); return; }
+
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.PurchaseOrderDetails.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.PurchaseOrderDetailAuditLogs.Add(PurchaseOrderDetailAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.PurchaseOrderDetails.FirstOrDefaultAsync(t => t.PurchaseOrderId == Model!.PurchaseOrderId && t.PurchaseOrderDetailId == Model.PurchaseOrderDetailId);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = PurchaseOrderDetailAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.PurchaseOrderDetailAuditLogs.Add(PurchaseOrderDetailAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

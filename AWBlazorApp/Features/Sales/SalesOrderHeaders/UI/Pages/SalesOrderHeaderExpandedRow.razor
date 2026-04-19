@@ -1,0 +1,106 @@
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
+@using AWBlazorApp.Features.Sales.CreditCards.Domain
+@using AWBlazorApp.Features.Sales.Currencies.Domain
+@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
+@using AWBlazorApp.Features.Sales.Customers.Domain
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesPeople.Domain
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
+@using AWBlazorApp.Features.Sales.SalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
+@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
+@using AWBlazorApp.Features.Sales.Stores.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else if (lineItems.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="my-2">No line items found.</MudAlert>
+}
+else
+{
+    <div class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Line items — @lineItems.Count item(s), total: @lineItems.Sum(x => x.LineTotal).ToString("C2")</MudText>
+        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+            <thead>
+                <tr>
+                    <th>Detail #</th>
+                    <th>Product</th>
+                    <th style="text-align:right">Qty</th>
+                    <th style="text-align:right">Unit price</th>
+                    <th style="text-align:right">Discount</th>
+                    <th style="text-align:right">Line total</th>
+                    <th>Tracking #</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var li in lineItems)
+                {
+                    <tr>
+                        <td>@li.DetailId</td>
+                        <td><MudLink Href="aw/products" Color="Color.Primary">@li.ProductName</MudLink></td>
+                        <td style="text-align:right">@li.OrderQty</td>
+                        <td style="text-align:right">@li.UnitPrice.ToString("C2")</td>
+                        <td style="text-align:right">@li.UnitPriceDiscount.ToString("C2")</td>
+                        <td style="text-align:right"><strong>@li.LineTotal.ToString("C2")</strong></td>
+                        <td>@(li.CarrierTrackingNumber ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </div>
+}
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private bool loading = true;
+    private List<LineItemRow> lineItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var products = await db.Products.AsNoTracking()
+            .Select(p => new { p.Id, p.Name })
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var details = await db.SalesOrderDetails.AsNoTracking()
+            .Where(d => d.SalesOrderId == OrderId)
+            .OrderBy(d => d.SalesOrderDetailId)
+            .ToListAsync();
+
+        lineItems = details.Select(d => new LineItemRow
+        {
+            DetailId = d.SalesOrderDetailId,
+            ProductName = products.GetValueOrDefault(d.ProductId, $"Product {d.ProductId}"),
+            OrderQty = d.OrderQty,
+            UnitPrice = d.UnitPrice,
+            UnitPriceDiscount = d.UnitPriceDiscount,
+            LineTotal = d.LineTotal,
+            CarrierTrackingNumber = d.CarrierTrackingNumber,
+        }).ToList();
+
+        loading = false;
+    }
+
+    private sealed class LineItemRow
+    {
+        public int DetailId { get; init; }
+        public string ProductName { get; init; } = "";
+        public short OrderQty { get; init; }
+        public decimal UnitPrice { get; init; }
+        public decimal UnitPriceDiscount { get; init; }
+        public decimal LineTotal { get; init; }
+        public string? CarrierTrackingNumber { get; init; }
+    }
+}

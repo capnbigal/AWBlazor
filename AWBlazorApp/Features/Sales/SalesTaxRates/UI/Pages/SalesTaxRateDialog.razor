@@ -1,0 +1,204 @@
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
+@using AWBlazorApp.Features.Sales.CreditCards.Domain
+@using AWBlazorApp.Features.Sales.Currencies.Domain
+@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
+@using AWBlazorApp.Features.Sales.Customers.Domain
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesPeople.Domain
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
+@using AWBlazorApp.Features.Sales.SalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
+@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
+@using AWBlazorApp.Features.Sales.Stores.Domain
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
+@using AWBlazorApp.Features.Sales.CreditCards.Dtos
+@using AWBlazorApp.Features.Sales.Currencies.Dtos
+@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
+@using AWBlazorApp.Features.Sales.Customers.Dtos
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
+@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
+@using AWBlazorApp.Features.Sales.Stores.Dtos
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services
+@using AWBlazorApp.Features.Sales.CreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.Currencies.Application.Services
+@using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services
+@using AWBlazorApp.Features.Sales.Customers.Application.Services
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPeople.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services
+@using AWBlazorApp.Features.Sales.Stores.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateSalesTaxRateRequest> CreateValidator
+@inject MudFormValidator<UpdateSalesTaxRateRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create tax rate" : $"Edit tax rate #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="int" Value="@createModel.StateProvinceId" ValueChanged="@((int v) => createModel = createModel with { StateProvinceId = v })" Label="State / province" Required="true" Items="_stateProvinces" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="byte" Value="@createModel.TaxType" ValueChanged="@((byte v) => createModel = createModel with { TaxType = v })" Label="Tax type (1-3)" Variant="Variant.Outlined" Min="(byte)1" Max="(byte)3" HelperText="1=state, 2=federal, 3=shared" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal" Value="@createModel.TaxRate" ValueChanged="@((decimal v) => createModel = createModel with { TaxRate = v })" Label="Tax rate %" Variant="Variant.Outlined" Format="F4" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <FkSelect TValue="int?" Value="@updateModel.StateProvinceId" ValueChanged="@((int? v) => updateModel = updateModel with { StateProvinceId = v })" Label="State / province" Clearable="true" Items="_stateProvincesNullable" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="byte?" Value="@updateModel.TaxType" ValueChanged="@((byte? v) => updateModel = updateModel with { TaxType = v })" Label="Tax type (1-3)" Variant="Variant.Outlined" Min="(byte)1" Max="(byte)3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="decimal?" Value="@updateModel.TaxRate" ValueChanged="@((decimal? v) => updateModel = updateModel with { TaxRate = v })" Label="Tax rate %" Variant="Variant.Outlined" Format="F4" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SalesTaxRateDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateSalesTaxRateRequest createModel = new() { TaxType = 1 };
+    private UpdateSalesTaxRateRequest updateModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _stateProvinces = [];
+    private List<LookupItem<int?>> _stateProvincesNullable = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stateProvinces = await Lookup.GetStateProvincesAsync();
+        _stateProvincesNullable = _stateProvinces.Select(x => new LookupItem<int?>(x.Id, x.DisplayText)).ToList();
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            updateModel = new UpdateSalesTaxRateRequest
+            {
+                StateProvinceId = Model.StateProvinceId,
+                TaxType = Model.TaxType,
+                TaxRate = Model.TaxRate,
+                Name = Model.Name,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.SalesTaxRates.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.SalesTaxRateAuditLogs.Add(SalesTaxRateAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.SalesTaxRates.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = SalesTaxRateAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.SalesTaxRateAuditLogs.Add(SalesTaxRateAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

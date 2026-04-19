@@ -103,7 +103,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.BomHeader", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomHeader", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -150,7 +150,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BomHeader", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.BomHeaderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomHeaderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -210,7 +210,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BomHeaderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.BomLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -251,7 +251,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BomLine", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.DeviationRequest", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Deviations.Domain.DeviationRequest", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -326,7 +326,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DeviationRequest", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.DeviationRequestAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Deviations.Domain.DeviationRequestAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -414,7 +414,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DeviationRequestAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EcoAffectedItem", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EcoAffectedItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -447,7 +447,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EcoAffectedItem", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EcoApproval", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EcoApproval", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -485,7 +485,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EcoApproval", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EngineeringChangeOrder", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EngineeringChangeOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -547,7 +547,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EngineeringChangeOrder", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EngineeringChangeOrderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EngineeringChangeOrderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -622,7 +622,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EngineeringChangeOrderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EngineeringDocument", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Documents.Domain.EngineeringDocument", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -673,7 +673,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EngineeringDocument", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EngineeringDocumentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Documents.Domain.EngineeringDocumentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -740,7 +740,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EngineeringDocumentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.ManufacturingRouting", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.ManufacturingRouting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -787,7 +787,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ManufacturingRouting", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.ManufacturingRoutingAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.ManufacturingRoutingAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -847,7 +847,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ManufacturingRoutingAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.RoutingStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.RoutingStep", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -889,7 +889,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("RoutingStep", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Asset", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -959,7 +959,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Asset", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.AssetAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Assets.Domain.AssetAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1039,7 +1039,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AssetAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.CostCenter", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenter", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1077,7 +1077,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CostCenter", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.CostCenterAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenterAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1133,7 +1133,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CostCenterAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1194,7 +1194,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OrgUnit", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.OrgUnitAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnitAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1266,7 +1266,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OrgUnitAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Organization", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1314,7 +1314,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Organization", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.OrganizationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Organizations.Domain.OrganizationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1374,7 +1374,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OrganizationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.ProductLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.ProductLines.Domain.ProductLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1413,7 +1413,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductLine", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.ProductLineAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.ProductLines.Domain.ProductLineAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1470,7 +1470,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductLineAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Station", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1518,7 +1518,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Station", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.StationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Stations.Domain.StationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1716,7 +1716,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ForecastHistoricalSnapshots");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.Department", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Departments.Domain.Department", b =>
                 {
                     b.Property<short>("Id")
                         .ValueGeneratedOnAdd()
@@ -1749,7 +1749,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.DepartmentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Departments.Domain.DepartmentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1796,7 +1796,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DepartmentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.Employee", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Employees.Domain.Employee", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -1872,7 +1872,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.EmployeeAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Employees.Domain.EmployeeAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1952,7 +1952,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeeAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.EmployeeDepartmentHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain.EmployeeDepartmentHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -1986,7 +1986,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.EmployeeDepartmentHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain.EmployeeDepartmentHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2037,7 +2037,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeeDepartmentHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.EmployeePayHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain.EmployeePayHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -2067,7 +2067,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.EmployeePayHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain.EmployeePayHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2115,7 +2115,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeePayHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.JobCandidate", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.JobCandidates.Domain.JobCandidate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2140,7 +2140,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.JobCandidateAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.JobCandidates.Domain.JobCandidateAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2182,7 +2182,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("JobCandidateAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.Shift", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Shifts.Domain.Shift", b =>
                 {
                     b.Property<byte>("Id")
                         .ValueGeneratedOnAdd()
@@ -2217,7 +2217,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Domain.ShiftAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Shifts.Domain.ShiftAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2569,7 +2569,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SavedQueries");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryAdjustment", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Adjustments.Domain.InventoryAdjustment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2642,7 +2642,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryAdjustment", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryAdjustmentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Adjustments.Domain.InventoryAdjustmentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2724,7 +2724,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryAdjustmentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryBalance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Reports.Domain.InventoryBalance", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2772,7 +2772,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryBalance", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryItem", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2820,7 +2820,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryItem", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryItemAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItemAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2886,7 +2886,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryItemAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2947,7 +2947,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryLocation", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryLocationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3019,7 +3019,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryLocationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -3117,7 +3117,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryTransaction", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionOutbox", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Outbox.Domain.InventoryTransactionOutbox", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -3161,7 +3161,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryTransactionOutbox", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionQueue", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Queue.Domain.InventoryTransactionQueue", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -3207,7 +3207,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryTransactionQueue", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionType", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Types.Domain.InventoryTransactionType", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int");
@@ -3242,7 +3242,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryTransactionType", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.Lot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3283,7 +3283,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Lot", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.LotAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Lots.Domain.LotAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3341,7 +3341,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("LotAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.SerialUnit", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnit", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3381,7 +3381,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SerialUnit", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.SerialUnitAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnitAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3436,7 +3436,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SerialUnitAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceipt", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceipt", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3495,7 +3495,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("GoodsReceipt", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceiptAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3564,7 +3564,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("GoodsReceiptAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceiptLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3613,7 +3613,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("GoodsReceiptLine", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceiptLineAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptLineAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3674,7 +3674,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("GoodsReceiptLineAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.Shipment", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.Shipment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3743,7 +3743,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Shipment", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.ShipmentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3822,7 +3822,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShipmentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.ShipmentLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3876,7 +3876,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShipmentLine", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.ShipmentLineAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentLineAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3940,7 +3940,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShipmentLineAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransfer", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransfer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4008,7 +4008,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransfer", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransferAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4083,7 +4083,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransferAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransferLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4137,7 +4137,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransferLine", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransferLineAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferLineAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4201,7 +4201,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransferLineAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.AssetMaintenanceProfile", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.AssetProfiles.Domain.AssetMaintenanceProfile", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4241,7 +4241,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AssetMaintenanceProfile", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.AssetMaintenanceProfileAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.AssetProfiles.Domain.AssetMaintenanceProfileAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4299,7 +4299,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AssetMaintenanceProfileAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Logs.Domain.MaintenanceLog", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -4341,7 +4341,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceLog", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrder", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4432,7 +4432,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceWorkOrder", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4530,7 +4530,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceWorkOrderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrderTask", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrderTask", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4587,7 +4587,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceWorkOrderTask", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MeterReading", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.MeterReadings.Domain.MeterReading", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -4626,7 +4626,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MeterReading", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.PmSchedule", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmSchedule", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4685,7 +4685,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PmSchedule", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.PmScheduleAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmScheduleAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4760,7 +4760,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PmScheduleAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.PmScheduleTask", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmScheduleTask", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4800,7 +4800,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PmScheduleTask", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.SparePart", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.SpareParts.Domain.SparePart", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4857,7 +4857,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SparePart", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.SparePartAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.SpareParts.Domain.SparePartAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4927,7 +4927,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SparePartAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.WorkOrderPartUsage", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.WorkOrderPartUsage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -4970,7 +4970,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkOrderPartUsage", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.DowntimeEvent", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeEvent", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -5014,7 +5014,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DowntimeEvent", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.DowntimeReason", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeReason", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5050,7 +5050,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DowntimeReason", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.DowntimeReasonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeReasonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5104,7 +5104,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DowntimeReasonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.OperatorClockEvent", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.OperatorClockEvent", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -5148,7 +5148,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OperatorClockEvent", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRun", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRun", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5224,7 +5224,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionRun", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRunAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5308,7 +5308,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionRunAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRunOperation", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunOperation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5349,7 +5349,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionRunOperation", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRunOperationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunOperationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5410,7 +5410,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionRunOperationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstruction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstruction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5445,7 +5445,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstruction", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5497,7 +5497,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionRevision", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevision", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5541,7 +5541,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionRevision", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionRevisionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevisionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5603,7 +5603,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionRevisionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionStep", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5644,7 +5644,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionStep", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionStepAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionStepAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5700,7 +5700,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionStepAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.KpiDefinition", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinition", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5760,7 +5760,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("KpiDefinition", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.KpiDefinitionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinitionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -5836,7 +5836,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("KpiDefinitionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.KpiValue", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiValue", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -5882,7 +5882,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("KpiValue", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.MaintenanceMonthlyMetric", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain.MaintenanceMonthlyMetric", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -5937,7 +5937,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceMonthlyMetric", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.OeeSnapshot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Oee.Domain.OeeSnapshot", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -6004,7 +6004,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OeeSnapshot", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.PerformanceReport", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReport", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6052,7 +6052,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PerformanceReport", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.PerformanceReportAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReportAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6115,7 +6115,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PerformanceReportAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.PerformanceReportRun", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReportRun", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -6159,7 +6159,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PerformanceReportRun", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ProductionDailyMetric", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.ProductionMetrics.Domain.ProductionDailyMetric", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -6205,7 +6205,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionDailyMetric", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ScorecardDefinition", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardDefinition", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6247,7 +6247,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ScorecardDefinition", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ScorecardDefinitionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardDefinitionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6305,7 +6305,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ScorecardDefinitionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ScorecardKpi", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardKpi", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6340,7 +6340,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ScorecardKpi", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.Address", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.Addresses.Domain.Address", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6392,7 +6392,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.AddressAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.Addresses.Domain.AddressAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6453,7 +6453,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AddressAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.AddressType", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.AddressTypes.Domain.AddressType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6484,7 +6484,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.AddressTypeAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.AddressTypes.Domain.AddressTypeAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6530,7 +6530,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AddressTypeAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntity", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntities.Domain.BusinessEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6555,7 +6555,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntityAddress", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain.BusinessEntityAddress", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -6585,7 +6585,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntityAddressAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain.BusinessEntityAddressAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6633,7 +6633,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BusinessEntityAddressAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntityAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntities.Domain.BusinessEntityAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6675,7 +6675,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BusinessEntityAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntityContact", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityContacts.Domain.BusinessEntityContact", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -6705,7 +6705,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.BusinessEntityContactAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityContacts.Domain.BusinessEntityContactAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6753,7 +6753,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BusinessEntityContactAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.ContactType", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.ContactTypes.Domain.ContactType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6780,7 +6780,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.ContactTypeAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.ContactTypes.Domain.ContactTypeAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6823,7 +6823,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ContactTypeAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.CountryRegion", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.CountryRegions.Domain.CountryRegion", b =>
                 {
                     b.Property<string>("CountryRegionCode")
                         .HasMaxLength(3)
@@ -6848,7 +6848,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.CountryRegionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.CountryRegions.Domain.CountryRegionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6893,7 +6893,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CountryRegionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.EmailAddress", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.EmailAddresses.Domain.EmailAddress", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -6927,7 +6927,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.EmailAddressAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.EmailAddresses.Domain.EmailAddressAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -6976,7 +6976,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmailAddressAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.Person", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.Persons.Domain.Person", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -7039,7 +7039,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.PersonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.Persons.Domain.PersonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7111,7 +7111,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PersonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.PersonPhone", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.PersonPhones.Domain.PersonPhone", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -7138,7 +7138,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.PersonPhoneAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.PersonPhones.Domain.PersonPhoneAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7185,7 +7185,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PersonPhoneAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.PhoneNumberType", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.PhoneNumberTypes.Domain.PhoneNumberType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7212,7 +7212,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.PhoneNumberTypeAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.PhoneNumberTypes.Domain.PhoneNumberTypeAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7255,7 +7255,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PhoneNumberTypeAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.StateProvince", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.StateProvinces.Domain.StateProvince", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7306,7 +7306,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Domain.StateProvinceAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Person.StateProvinces.Domain.StateProvinceAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7684,7 +7684,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BillOfMaterialsAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.Culture", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Cultures.Domain.Culture", b =>
                 {
                     b.Property<string>("CultureId")
                         .HasMaxLength(6)
@@ -7709,7 +7709,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.CultureAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Cultures.Domain.CultureAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7754,7 +7754,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CultureAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.Document", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Documents.Domain.Document", b =>
                 {
                     b.Property<SqlHierarchyId>("DocumentNode")
                         .HasColumnType("hierarchyid")
@@ -7829,7 +7829,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.DocumentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Documents.Domain.DocumentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7901,7 +7901,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DocumentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.Illustration", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Illustrations.Domain.Illustration", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7922,7 +7922,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.IllustrationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Illustrations.Domain.IllustrationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -7961,7 +7961,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("IllustrationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.Location", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Locations.Domain.Location", b =>
                 {
                     b.Property<short>("Id")
                         .ValueGeneratedOnAdd()
@@ -7996,7 +7996,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.LocationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Locations.Domain.LocationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8045,7 +8045,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("LocationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.Product", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Products.Domain.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8169,7 +8169,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.Products.Domain.ProductAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8286,7 +8286,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductCategory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCategories.Domain.ProductCategory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8317,7 +8317,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductCategoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCategories.Domain.ProductCategoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8363,7 +8363,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductCategoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductCostHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCostHistories.Domain.ProductCostHistory", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -8393,7 +8393,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductCostHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCostHistories.Domain.ProductCostHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8441,7 +8441,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductCostHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductDescription", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDescriptions.Domain.ProductDescription", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8472,7 +8472,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductDescriptionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDescriptions.Domain.ProductDescriptionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8518,7 +8518,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductDescriptionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductDocument", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDocuments.Domain.ProductDocument", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -8540,7 +8540,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductDocumentAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDocuments.Domain.ProductDocumentAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8584,7 +8584,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductDocumentAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductInventory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductInventories.Domain.ProductInventory", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -8624,7 +8624,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductInventoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductInventories.Domain.ProductInventoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8679,7 +8679,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductInventoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductListPriceHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductListPriceHistories.Domain.ProductListPriceHistory", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -8709,7 +8709,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductListPriceHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductListPriceHistories.Domain.ProductListPriceHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8757,7 +8757,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductListPriceHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModel", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModels.Domain.ProductModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8788,7 +8788,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModelAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModels.Domain.ProductModelAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8834,7 +8834,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductModelAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModelIllustration", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelIllustrations.Domain.ProductModelIllustration", b =>
                 {
                     b.Property<int>("ProductModelId")
                         .HasColumnType("int")
@@ -8856,7 +8856,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModelIllustrationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelIllustrations.Domain.ProductModelIllustrationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8898,7 +8898,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductModelIllustrationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModelProductDescriptionCulture", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain.ProductModelProductDescriptionCulture", b =>
                 {
                     b.Property<int>("ProductModelId")
                         .HasColumnType("int")
@@ -8925,7 +8925,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductModelProductDescriptionCultureAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain.ProductModelProductDescriptionCultureAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -8972,7 +8972,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductModelProductDescriptionCultureAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductPhoto", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductPhotos.Domain.ProductPhoto", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9011,7 +9011,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductPhotoAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductPhotos.Domain.ProductPhotoAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9058,7 +9058,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductPhotoAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductProductPhoto", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductProductPhotos.Domain.ProductProductPhoto", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -9084,7 +9084,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductProductPhotoAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductProductPhotos.Domain.ProductProductPhotoAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9129,7 +9129,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductProductPhotoAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductReview", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductReviews.Domain.ProductReview", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9179,7 +9179,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductReviewAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductReviews.Domain.ProductReviewAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9239,7 +9239,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductReviewAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductSubcategory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductSubcategories.Domain.ProductSubcategory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9274,7 +9274,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ProductSubcategoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductSubcategories.Domain.ProductSubcategoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9323,7 +9323,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductSubcategoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ScrapReason", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ScrapReasons.Domain.ScrapReason", b =>
                 {
                     b.Property<short>("Id")
                         .ValueGeneratedOnAdd()
@@ -9350,7 +9350,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.ScrapReasonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.ScrapReasons.Domain.ScrapReasonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9393,7 +9393,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ScrapReasonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.TransactionHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistories.Domain.TransactionHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9444,7 +9444,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.TransactionHistoryArchive", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain.TransactionHistoryArchive", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -9492,7 +9492,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.TransactionHistoryArchiveAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain.TransactionHistoryArchiveAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9554,7 +9554,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("TransactionHistoryArchiveAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.TransactionHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistories.Domain.TransactionHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9616,7 +9616,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("TransactionHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.UnitMeasure", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.UnitMeasures.Domain.UnitMeasure", b =>
                 {
                     b.Property<string>("UnitMeasureCode")
                         .HasMaxLength(3)
@@ -9641,7 +9641,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.UnitMeasureAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.UnitMeasures.Domain.UnitMeasureAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9686,7 +9686,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("UnitMeasureAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.WorkOrder", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrders.Domain.WorkOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9740,7 +9740,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.WorkOrderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrders.Domain.WorkOrderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9803,7 +9803,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkOrderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.WorkOrderRouting", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrderRoutings.Domain.WorkOrderRouting", b =>
                 {
                     b.Property<int>("WorkOrderId")
                         .HasColumnType("int")
@@ -9861,7 +9861,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Domain.WorkOrderRoutingAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrderRoutings.Domain.WorkOrderRoutingAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -9930,7 +9930,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkOrderRoutingAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.ProductVendor", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ProductVendors.Domain.ProductVendor", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -9986,7 +9986,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.ProductVendorAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ProductVendors.Domain.ProductVendorAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10053,7 +10053,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductVendorAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.PurchaseOrderDetail", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain.PurchaseOrderDetail", b =>
                 {
                     b.Property<int>("PurchaseOrderId")
                         .HasColumnType("int")
@@ -10112,7 +10112,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.PurchaseOrderDetailAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain.PurchaseOrderDetailAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10178,7 +10178,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PurchaseOrderDetailAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.PurchaseOrderHeader", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain.PurchaseOrderHeader", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10244,7 +10244,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.PurchaseOrderHeaderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain.PurchaseOrderHeaderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10316,7 +10316,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PurchaseOrderHeaderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.ShipMethod", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ShipMethods.Domain.ShipMethod", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10355,7 +10355,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.ShipMethodAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ShipMethods.Domain.ShipMethodAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10407,7 +10407,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShipMethodAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.Vendor", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Vendors.Domain.Vendor", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -10454,7 +10454,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Domain.VendorAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Vendors.Domain.VendorAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10514,7 +10514,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("VendorAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.CapaCase", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCase", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10576,7 +10576,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CapaCase", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.CapaCaseAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCaseAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10651,7 +10651,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CapaCaseAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.CapaCaseNonConformance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCaseNonConformance", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10678,7 +10678,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CapaCaseNonConformance", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.Inspection", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.Inspection", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10752,7 +10752,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Inspection", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.InspectionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10834,7 +10834,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionPlan", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10901,7 +10901,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlan", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionPlanAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -10980,7 +10980,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlanAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionPlanCharacteristic", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristic", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11033,7 +11033,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlanCharacteristic", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionPlanCharacteristicAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristicAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11105,7 +11105,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlanCharacteristicAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionResult", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.InspectionResult", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -11151,7 +11151,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionResult", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformance", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11232,7 +11232,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("NonConformance", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformanceAction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceAction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11272,7 +11272,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("NonConformanceAction", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformanceActionAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceActionAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11324,7 +11324,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("NonConformanceActionAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformanceAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11410,7 +11410,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("NonConformanceAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CountryRegionCurrency", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain.CountryRegionCurrency", b =>
                 {
                     b.Property<string>("CountryRegionCode")
                         .HasMaxLength(3)
@@ -11434,7 +11434,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CountryRegionCurrencyAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain.CountryRegionCurrencyAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11480,7 +11480,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CountryRegionCurrencyAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CreditCard", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CreditCards.Domain.CreditCard", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11521,7 +11521,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CreditCardAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CreditCards.Domain.CreditCardAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11574,7 +11574,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CreditCardAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.Currency", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Currencies.Domain.Currency", b =>
                 {
                     b.Property<string>("CurrencyCode")
                         .HasMaxLength(3)
@@ -11599,7 +11599,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CurrencyAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Currencies.Domain.CurrencyAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11644,7 +11644,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CurrencyAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CurrencyRate", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CurrencyRates.Domain.CurrencyRate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11689,7 +11689,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CurrencyRateAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.CurrencyRates.Domain.CurrencyRateAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11745,7 +11745,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CurrencyRateAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.Customer", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Customers.Domain.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11789,7 +11789,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.CustomerAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Customers.Domain.CustomerAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11844,7 +11844,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("CustomerAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.PersonCreditCard", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.PersonCreditCards.Domain.PersonCreditCard", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -11866,7 +11866,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.PersonCreditCardAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.PersonCreditCards.Domain.PersonCreditCardAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -11908,7 +11908,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PersonCreditCardAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderDetail", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderDetails.Domain.SalesOrderDetail", b =>
                 {
                     b.Property<int>("SalesOrderId")
                         .HasColumnType("int")
@@ -11967,7 +11967,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderDetailAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderDetails.Domain.SalesOrderDetailAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12034,7 +12034,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesOrderDetailAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderHeader", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain.SalesOrderHeader", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12159,7 +12159,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderHeaderAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain.SalesOrderHeaderAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12275,7 +12275,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesOrderHeaderAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderHeaderSalesReason", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain.SalesOrderHeaderSalesReason", b =>
                 {
                     b.Property<int>("SalesOrderId")
                         .HasColumnType("int")
@@ -12297,7 +12297,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesOrderHeaderSalesReasonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain.SalesOrderHeaderSalesReasonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12339,7 +12339,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesOrderHeaderSalesReasonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesPerson", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPeople.Domain.SalesPerson", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -12385,7 +12385,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesPersonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPeople.Domain.SalesPersonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12445,7 +12445,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesPersonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesPersonQuotaHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain.SalesPersonQuotaHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -12475,7 +12475,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesPersonQuotaHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain.SalesPersonQuotaHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12523,7 +12523,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesPersonQuotaHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesReason", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesReasons.Domain.SalesReason", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12556,7 +12556,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesReasonAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesReasons.Domain.SalesReasonAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12603,7 +12603,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesReasonAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTaxRate", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTaxRates.Domain.SalesTaxRate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12646,7 +12646,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTaxRateAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTaxRates.Domain.SalesTaxRateAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12701,7 +12701,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesTaxRateAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTerritory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritories.Domain.SalesTerritory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12760,7 +12760,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTerritoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritories.Domain.SalesTerritoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12826,7 +12826,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesTerritoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTerritoryHistory", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain.SalesTerritoryHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
                         .HasColumnType("int")
@@ -12860,7 +12860,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SalesTerritoryHistoryAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain.SalesTerritoryHistoryAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12911,7 +12911,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesTerritoryHistoryAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.ShoppingCartItem", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.ShoppingCartItems.Domain.ShoppingCartItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -12950,7 +12950,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.ShoppingCartItemAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.ShoppingCartItems.Domain.ShoppingCartItemAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13002,7 +13002,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShoppingCartItemAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SpecialOffer", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOffers.Domain.SpecialOffer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13065,7 +13065,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SpecialOfferAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOffers.Domain.SpecialOfferAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13134,7 +13134,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SpecialOfferAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SpecialOfferProduct", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain.SpecialOfferProduct", b =>
                 {
                     b.Property<int>("SpecialOfferId")
                         .HasColumnType("int")
@@ -13160,7 +13160,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.SpecialOfferProductAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain.SpecialOfferProductAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13205,7 +13205,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SpecialOfferProductAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.Store", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Stores.Domain.Store", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int")
@@ -13237,7 +13237,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Domain.StoreAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Sales.Stores.Domain.StoreAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13541,7 +13541,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ArticleReads");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.Announcement", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Announcements.Domain.Announcement", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13595,7 +13595,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Announcement", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.AnnouncementAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Announcements.Domain.AnnouncementAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13660,7 +13660,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AnnouncementAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.AttendanceEvent", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Attendance.Domain.AttendanceEvent", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -13703,7 +13703,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AttendanceEvent", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.EmployeeQualification", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain.EmployeeQualification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13750,7 +13750,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeeQualification", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.EmployeeQualificationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain.EmployeeQualificationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13813,7 +13813,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeeQualificationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.LeaveRequest", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.LeaveRequests.Domain.LeaveRequest", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13873,7 +13873,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("LeaveRequest", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.LeaveRequestAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.LeaveRequests.Domain.LeaveRequestAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13949,7 +13949,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("LeaveRequestAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.Qualification", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Qualifications.Domain.Qualification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13988,7 +13988,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Qualification", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.QualificationAlert", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Alerts.Domain.QualificationAlert", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -14047,7 +14047,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("QualificationAlert", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.QualificationAlertAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Alerts.Domain.QualificationAlertAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14118,7 +14118,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("QualificationAlertAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.QualificationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Qualifications.Domain.QualificationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14175,7 +14175,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("QualificationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.ShiftHandoverNote", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.HandoverNotes.Domain.ShiftHandoverNote", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14230,7 +14230,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ShiftHandoverNote", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.StationQualification", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.StationQualifications.Domain.StationQualification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14260,7 +14260,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StationQualification", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.StationQualificationAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.StationQualifications.Domain.StationQualificationAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14308,7 +14308,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StationQualificationAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.TrainingCourse", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingCourses.Domain.TrainingCourse", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14352,7 +14352,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("TrainingCourse", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.TrainingCourseAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingCourses.Domain.TrainingCourseAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14412,7 +14412,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("TrainingCourseAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.TrainingRecord", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingRecords.Domain.TrainingRecord", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -14595,119 +14595,119 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.BomLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomLine", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Engineering.Domain.BomHeader", null)
+                    b.HasOne("AWBlazorApp.Features.Engineering.Boms.Domain.BomHeader", null)
                         .WithMany()
                         .HasForeignKey("BomHeaderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EcoAffectedItem", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EcoAffectedItem", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Engineering.Domain.EngineeringChangeOrder", null)
+                    b.HasOne("AWBlazorApp.Features.Engineering.Ecos.Domain.EngineeringChangeOrder", null)
                         .WithMany()
                         .HasForeignKey("EngineeringChangeOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.EcoApproval", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EcoApproval", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Engineering.Domain.EngineeringChangeOrder", null)
+                    b.HasOne("AWBlazorApp.Features.Engineering.Ecos.Domain.EngineeringChangeOrder", null)
                         .WithMany()
                         .HasForeignKey("EngineeringChangeOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Domain.RoutingStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.RoutingStep", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Engineering.Domain.ManufacturingRouting", null)
+                    b.HasOne("AWBlazorApp.Features.Engineering.Routings.Domain.ManufacturingRouting", null)
                         .WithMany()
                         .HasForeignKey("ManufacturingRoutingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Asset", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", null)
                         .WithMany()
                         .HasForeignKey("OrgUnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("ParentAssetId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.CostCenter", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenter", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.CostCenter", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenter", null)
                         .WithMany()
                         .HasForeignKey("CostCenterId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", null)
                         .WithMany()
                         .HasForeignKey("ParentOrgUnitId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Organization", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("ParentOrganizationId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.ProductLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.ProductLines.Domain.ProductLine", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Domain.Station", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", null)
                         .WithMany()
                         .HasForeignKey("OrgUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -14758,515 +14758,515 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryAdjustment", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Adjustments.Domain.InventoryAdjustment", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("PostedTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryBalance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Reports.Domain.InventoryBalance", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryItem", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("DefaultLocationId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", null)
                         .WithMany()
                         .HasForeignKey("OrgUnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("ParentLocationId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("FromLocationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.SerialUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnit", null)
                         .WithMany()
                         .HasForeignKey("SerialUnitId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("ToLocationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionType", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Types.Domain.InventoryTransactionType", null)
                         .WithMany()
                         .HasForeignKey("TransactionTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionOutbox", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Outbox.Domain.InventoryTransactionOutbox", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("InventoryTransactionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.InventoryTransactionQueue", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Queue.Domain.InventoryTransactionQueue", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("PostedTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.Lot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Domain.SerialUnit", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnit", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("CurrentLocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceipt", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceipt", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("ReceivedLocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.GoodsReceiptLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptLine", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Logistics.Domain.GoodsReceipt", null)
+                    b.HasOne("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceipt", null)
                         .WithMany()
                         .HasForeignKey("GoodsReceiptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("PostedTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.Shipment", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.Shipment", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("ShippedFromLocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.ShipmentLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentLine", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("PostedTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.SerialUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnit", null)
                         .WithMany()
                         .HasForeignKey("SerialUnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Logistics.Domain.Shipment", null)
+                    b.HasOne("AWBlazorApp.Features.Logistics.Shipments.Domain.Shipment", null)
                         .WithMany()
                         .HasForeignKey("ShipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransfer", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransfer", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("FromLocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("FromOrganizationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("ToLocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("ToOrganizationId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Domain.StockTransferLine", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferLine", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("FromTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.SerialUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnit", null)
                         .WithMany()
                         .HasForeignKey("SerialUnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Logistics.Domain.StockTransfer", null)
+                    b.HasOne("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransfer", null)
                         .WithMany()
                         .HasForeignKey("StockTransferId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("ToTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.AssetMaintenanceProfile", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.AssetProfiles.Domain.AssetMaintenanceProfile", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Logs.Domain.MaintenanceLog", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrder", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("MaintenanceWorkOrderId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrder", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrder", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.PmSchedule", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmSchedule", null)
                         .WithMany()
                         .HasForeignKey("PmScheduleId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrderTask", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrderTask", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrder", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("MaintenanceWorkOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.MeterReading", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.MeterReadings.Domain.MeterReading", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.PmSchedule", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmSchedule", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.PmScheduleTask", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmScheduleTask", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.PmSchedule", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmSchedule", null)
                         .WithMany()
                         .HasForeignKey("PmScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Domain.WorkOrderPartUsage", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.WorkOrderPartUsage", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.MaintenanceWorkOrder", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("MaintenanceWorkOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Maintenance.Domain.SparePart", null)
+                    b.HasOne("AWBlazorApp.Features.Maintenance.SpareParts.Domain.SparePart", null)
                         .WithMany()
                         .HasForeignKey("SparePartId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.DowntimeEvent", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeEvent", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.DowntimeReason", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeReason", null)
                         .WithMany()
                         .HasForeignKey("DowntimeReasonId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.ProductionRun", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRun", null)
                         .WithMany()
                         .HasForeignKey("ProductionRunId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.OperatorClockEvent", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.OperatorClockEvent", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.ProductionRun", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRun", null)
                         .WithMany()
                         .HasForeignKey("ProductionRunId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRun", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRun", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.ProductionRunOperation", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunOperation", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.ProductionRun", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRun", null)
                         .WithMany()
                         .HasForeignKey("ProductionRunId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstruction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstruction", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.WorkInstructionRevision", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevision", null)
                         .WithMany()
                         .HasForeignKey("ActiveRevisionId")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionRevision", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevision", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.WorkInstruction", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstruction", null)
                         .WithMany()
                         .HasForeignKey("WorkInstructionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Domain.WorkInstructionStep", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionStep", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Mes.Domain.WorkInstructionRevision", null)
+                    b.HasOne("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevision", null)
                         .WithMany()
                         .HasForeignKey("WorkInstructionRevisionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.KpiValue", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiValue", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Performance.Domain.KpiDefinition", null)
+                    b.HasOne("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinition", null)
                         .WithMany()
                         .HasForeignKey("KpiDefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.MaintenanceMonthlyMetric", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain.MaintenanceMonthlyMetric", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Asset", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Assets.Domain.Asset", null)
                         .WithMany()
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.OeeSnapshot", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Oee.Domain.OeeSnapshot", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.PerformanceReportRun", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReportRun", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Performance.Domain.PerformanceReport", null)
+                    b.HasOne("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReport", null)
                         .WithMany()
                         .HasForeignKey("PerformanceReportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ProductionDailyMetric", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.ProductionMetrics.Domain.ProductionDailyMetric", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Domain.ScorecardKpi", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardKpi", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Performance.Domain.KpiDefinition", null)
+                    b.HasOne("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinition", null)
                         .WithMany()
                         .HasForeignKey("KpiDefinitionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Performance.Domain.ScorecardDefinition", null)
+                    b.HasOne("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardDefinition", null)
                         .WithMany()
                         .HasForeignKey("ScorecardDefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -15280,7 +15280,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DefaultProcessorUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.HumanResources.Domain.Department", "Department")
+                    b.HasOne("AWBlazorApp.Features.HumanResources.Departments.Domain.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -15346,96 +15346,96 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("ProcessStep");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.CapaCaseNonConformance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCaseNonConformance", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.CapaCase", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Capa.Domain.CapaCase", null)
                         .WithMany()
                         .HasForeignKey("CapaCaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.NonConformance", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformance", null)
                         .WithMany()
                         .HasForeignKey("NonConformanceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.Inspection", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.Inspection", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.InspectionPlan", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlan", null)
                         .WithMany()
                         .HasForeignKey("InspectionPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionPlanCharacteristic", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristic", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.InspectionPlan", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlan", null)
                         .WithMany()
                         .HasForeignKey("InspectionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.InspectionResult", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.InspectionResult", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.Inspection", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Inspections.Domain.Inspection", null)
                         .WithMany()
                         .HasForeignKey("InspectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.InspectionPlanCharacteristic", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristic", null)
                         .WithMany()
                         .HasForeignKey("InspectionPlanCharacteristicId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformance", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformance", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.Inspection", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Inspections.Domain.Inspection", null)
                         .WithMany()
                         .HasForeignKey("InspectionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryItem", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", null)
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryLocation", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", null)
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.Lot", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", null)
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Inventory.Domain.InventoryTransaction", null)
+                    b.HasOne("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", null)
                         .WithMany()
                         .HasForeignKey("PostedTransactionId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Domain.NonConformanceAction", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceAction", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Quality.Domain.NonConformance", null)
+                    b.HasOne("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformance", null)
                         .WithMany()
                         .HasForeignKey("NonConformanceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -15453,70 +15453,70 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.Announcement", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Announcements.Domain.Announcement", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.OrgUnit", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", null)
                         .WithMany()
                         .HasForeignKey("OrgUnitId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Organization", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.EmployeeQualification", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain.EmployeeQualification", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Workforce.Domain.Qualification", null)
+                    b.HasOne("AWBlazorApp.Features.Workforce.Qualifications.Domain.Qualification", null)
                         .WithMany()
                         .HasForeignKey("QualificationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.QualificationAlert", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Alerts.Domain.QualificationAlert", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Workforce.Domain.Qualification", null)
+                    b.HasOne("AWBlazorApp.Features.Workforce.Qualifications.Domain.Qualification", null)
                         .WithMany()
                         .HasForeignKey("QualificationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.ShiftHandoverNote", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.HandoverNotes.Domain.ShiftHandoverNote", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
-                        .WithMany()
-                        .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.StationQualification", b =>
-                {
-                    b.HasOne("AWBlazorApp.Features.Workforce.Domain.Qualification", null)
-                        .WithMany()
-                        .HasForeignKey("QualificationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("AWBlazorApp.Features.Enterprise.Domain.Station", null)
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
                         .WithMany()
                         .HasForeignKey("StationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Domain.TrainingRecord", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.StationQualifications.Domain.StationQualification", b =>
                 {
-                    b.HasOne("AWBlazorApp.Features.Workforce.Domain.TrainingCourse", null)
+                    b.HasOne("AWBlazorApp.Features.Workforce.Qualifications.Domain.Qualification", null)
+                        .WithMany()
+                        .HasForeignKey("QualificationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", null)
+                        .WithMany()
+                        .HasForeignKey("StationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingRecords.Domain.TrainingRecord", b =>
+                {
+                    b.HasOne("AWBlazorApp.Features.Workforce.TrainingCourses.Domain.TrainingCourse", null)
                         .WithMany()
                         .HasForeignKey("TrainingCourseId")
                         .OnDelete(DeleteBehavior.Restrict)

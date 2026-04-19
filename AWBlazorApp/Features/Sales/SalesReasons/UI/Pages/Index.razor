@@ -1,0 +1,213 @@
+@page "/aw/sales-reasons"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
+@using AWBlazorApp.Features.Sales.CreditCards.Domain
+@using AWBlazorApp.Features.Sales.Currencies.Domain
+@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
+@using AWBlazorApp.Features.Sales.Customers.Domain
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesPeople.Domain
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
+@using AWBlazorApp.Features.Sales.SalesReasons.Domain
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
+@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
+@using AWBlazorApp.Features.Sales.Stores.Domain
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
+@using AWBlazorApp.Features.Sales.CreditCards.Dtos
+@using AWBlazorApp.Features.Sales.Currencies.Dtos
+@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
+@using AWBlazorApp.Features.Sales.Customers.Dtos
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
+@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
+@using AWBlazorApp.Features.Sales.Stores.Dtos
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services
+@using AWBlazorApp.Features.Sales.CreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.Currencies.Application.Services
+@using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services
+@using AWBlazorApp.Features.Sales.Customers.Application.Services
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPeople.Application.Services
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesReasons.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services
+@using AWBlazorApp.Features.Sales.Stores.Application.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Sales reasons</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Sales reasons</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesReason</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-reasons/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New sales reason</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterReasonType" Label="Reason type" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="SalesReasonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesReason" PropertyName="@nameof(SalesReasonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesReason" PropertyName="@nameof(SalesReasonDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ReasonType" Title="Reason type">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesReason" PropertyName="@nameof(SalesReasonDto.ReasonType)" Title="Reason type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesReason" PropertyName="@nameof(SalesReasonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="SalesReasonDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<SalesReasonDto> grid = null!;
+    private bool _loading = true;
+    private string? filterName;
+    private string? filterReasonType;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<SalesReasonDto>> LoadServerDataAsync(GridState<SalesReasonDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.SalesReasons.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            if (!string.IsNullOrWhiteSpace(filterReasonType))
+            {
+                var needle = filterReasonType.Trim();
+                query = query.Where(x => x.ReasonType == needle);
+            }
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(SalesReasonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(SalesReasonDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+                nameof(SalesReasonDto.ReasonType)   => sort.Descending ? query.OrderByDescending(x => x.ReasonType)   : query.OrderBy(x => x.ReasonType),
+                nameof(SalesReasonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                   => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<SalesReasonDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<SalesReasonDialog>("New sales reason", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales reason created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(SalesReasonDto row)
+    {
+        var parameters = new DialogParameters<SalesReasonDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<SalesReasonDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales reason updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(SalesReasonDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete sales reason?", $"Permanently delete sales reason #{row.Id} \"{row.Name}\"?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.SalesReasons.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Sales reason no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.SalesReasonAuditLogs.Add(SalesReasonAuditService.RecordDelete(entity, changedBy));
+        db.SalesReasons.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Sales reason deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(SalesReasonDto row) => Navigation.NavigateTo($"aw/sales-reasons/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

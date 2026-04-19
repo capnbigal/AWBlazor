@@ -1,0 +1,70 @@
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
+@using AWBlazorApp.Features.Enterprise.CostCenters.Domain
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Domain
+@using AWBlazorApp.Features.Enterprise.Organizations.Domain
+@using AWBlazorApp.Features.Enterprise.ProductLines.Domain
+@using AWBlazorApp.Features.Enterprise.Stations.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Tree</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Path: <code>@path</code></MudText>
+                    <MudText Typo="Typo.body2">Depth: <strong>@depth</strong></MudText>
+                    <MudText Typo="Typo.body2">Children: <strong>@childCount</strong></MudText>
+                    <MudText Typo="Typo.body2">Stations: <strong>@stationCount</strong></MudText>
+                    <MudText Typo="Typo.body2">Assets located here: <strong>@assetCount</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Assignments</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Cost center ID: <strong>@(costCenterId?.ToString() ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Manager BE#: <strong>@(managerBeId?.ToString() ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Links</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudLink Href="@($"enterprise/stations?orgUnitId={OrgUnitId}")">Stations under this unit</MudLink>
+                    <MudLink Href="@($"enterprise/assets?orgUnitId={OrgUnitId}")">Assets located here</MudLink>
+                    <MudLink Href="@($"enterprise/tree?focusUnitId={OrgUnitId}")">Open in tree</MudLink>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [Parameter] public int OrgUnitId { get; set; }
+
+    private bool loading = true;
+    private string path = "";
+    private byte depth;
+    private int childCount, stationCount, assetCount;
+    private int? costCenterId;
+    private int? managerBeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var unit = await db.OrgUnits.AsNoTracking().FirstOrDefaultAsync(u => u.Id == OrgUnitId);
+        if (unit is not null)
+        {
+            path = unit.Path; depth = unit.Depth;
+            costCenterId = unit.CostCenterId; managerBeId = unit.ManagerBusinessEntityId;
+        }
+        childCount   = await db.OrgUnits.CountAsync(x => x.ParentOrgUnitId == OrgUnitId);
+        stationCount = await db.Stations.CountAsync(s => s.OrgUnitId == OrgUnitId);
+        assetCount   = await db.Assets.CountAsync(a => a.OrgUnitId == OrgUnitId);
+        loading = false;
+    }
+}

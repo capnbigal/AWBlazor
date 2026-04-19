@@ -1,3 +1,4 @@
+using AWBlazorApp.Features.Inventory.Dtos;
 namespace AWBlazorApp.Features.Inventory.Services;
 
 /// <summary>

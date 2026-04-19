@@ -1,0 +1,254 @@
+@using AWBlazorApp.Features.Mes.Instructions.Dtos
+@page "/mes/instructions/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IWorkInstructionRevisionService RevisionService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Instruction @header?.Title</PageTitle>
+
+@if (header is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("mes/instructions"))" />
+            <MudText Typo="Typo.h5">@header.Title</MudText>
+            <MudChip T="string" Variant="Variant.Outlined">Routing #@header.WorkOrderRoutingId</MudChip>
+            <MudSpacer />
+            <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.NoteAdd" OnClick="CreateRevisionAsync" Disabled="busy">New revision (copy from current)</MudButton>
+            </AuthorizeView>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6" Class="mb-2">Revisions (@revisions.Count)</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead><tr><th>#</th><th>Rev</th><th>Status</th><th>Created</th><th>Published</th><th>Notes</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var rev in revisions.OrderByDescending(r => r.RevisionNumber))
+                    {
+                        <tr class="@(rev.Id == selectedRevisionId ? "mud-theme-primary" : "")">
+                            <td>@rev.Id</td>
+                            <td><strong>R@rev.RevisionNumber</strong></td>
+                            <td><MudChip T="string" Size="Size.Small" Color="@RevisionColor(rev.Status)" Variant="Variant.Filled">@rev.Status</MudChip></td>
+                            <td>@rev.CreatedDate.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@(rev.PublishedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                            <td>@(rev.Notes ?? "")</td>
+                            <td>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" OnClick="@(() => SelectRevisionAsync(rev.Id))" />
+                                    @if (rev.Status == WorkInstructionRevisionStatus.Draft)
+                                    {
+                                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Publish" Size="Size.Small" Color="Color.Success" OnClick="@(() => PublishAsync(rev.Id))" />
+                                        </AuthorizeView>
+                                    }
+                                </MudStack>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+
+        @if (selectedRevisionId.HasValue)
+        {
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                    <MudText Typo="Typo.h6">Steps — Revision @selectedRevision?.RevisionNumber (@selectedRevision?.Status)</MudText>
+                    <MudSpacer />
+                    @if (selectedRevision?.Status == WorkInstructionRevisionStatus.Draft)
+                    {
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+                            <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddStep">Add step</MudButton>
+                        </AuthorizeView>
+                    }
+                </MudStack>
+                @if (steps.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">No steps on this revision yet.</MudAlert>
+                }
+                else
+                {
+                    <MudStack Spacing="2">
+                        @foreach (var step in steps.OrderBy(s => s.SequenceNumber))
+                        {
+                            <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.subtitle1"><strong>@step.SequenceNumber. @step.Title</strong></MudText>
+                                    @if (step.EstimatedDurationMinutes.HasValue)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@step.EstimatedDurationMinutes min</MudChip>
+                                    }
+                                    <MudSpacer />
+                                    @if (selectedRevision?.Status == WorkInstructionRevisionStatus.Draft)
+                                    {
+                                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteStepAsync(step.Id))" />
+                                        </AuthorizeView>
+                                    }
+                                </MudStack>
+                                <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@step.Body</MudText>
+                                @if (!string.IsNullOrEmpty(step.AttachmentUrl))
+                                {
+                                    <MudLink Href="@step.AttachmentUrl" Target="_blank">Attachment</MudLink>
+                                }
+                            </MudPaper>
+                        }
+                    </MudStack>
+                }
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+<MudDialog @bind-Visible="stepDialogOpen" Options="new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }">
+    <TitleContent>New step</TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField T="int" @bind-Value="newStep.SequenceNumber" Label="Sequence number" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newStep.Title" Label="Title" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="newStep.Body" Label="Body (Markdown-ish)" Variant="Variant.Outlined" Lines="6" />
+            <MudTextField @bind-Value="newStep.AttachmentUrl" Label="Attachment URL" Variant="Variant.Outlined" />
+            <MudNumericField T="int?" @bind-Value="newStep.EstimatedDurationMinutes" Label="Estimated duration (minutes)" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => stepDialogOpen = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddStepAsync" Disabled="busy">@(busy ? "Adding..." : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private WorkInstructionDto? header;
+    private List<WorkInstructionRevisionDto> revisions = [];
+    private int? selectedRevisionId;
+    private WorkInstructionRevisionDto? selectedRevision;
+    private List<WorkInstructionStepDto> steps = [];
+    private bool busy;
+
+    private bool stepDialogOpen;
+    private CreateWorkInstructionStepRequest newStep = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.WorkInstructions.AsNoTracking().FirstOrDefaultAsync(w => w.Id == Id);
+        header = entity?.ToDto();
+        revisions = await db.WorkInstructionRevisions.AsNoTracking().Where(r => r.WorkInstructionId == Id)
+            .OrderByDescending(r => r.RevisionNumber).Select(r => r.ToDto()).ToListAsync();
+        selectedRevisionId ??= header?.ActiveRevisionId ?? revisions.FirstOrDefault()?.Id;
+        await LoadStepsAsync();
+    }
+
+    private async Task LoadStepsAsync()
+    {
+        if (selectedRevisionId is null) { steps = []; selectedRevision = null; return; }
+        await using var db = await DbFactory.CreateDbContextAsync();
+        selectedRevision = revisions.FirstOrDefault(r => r.Id == selectedRevisionId);
+        steps = await db.WorkInstructionSteps.AsNoTracking()
+            .Where(s => s.WorkInstructionRevisionId == selectedRevisionId)
+            .OrderBy(s => s.SequenceNumber).Select(s => s.ToDto()).ToListAsync();
+    }
+
+    private async Task SelectRevisionAsync(int id)
+    {
+        selectedRevisionId = id;
+        await LoadStepsAsync();
+    }
+
+    private async Task CreateRevisionAsync()
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            var newId = await RevisionService.CreateNewRevisionAsync(Id, by, CancellationToken.None);
+            Snackbar.Add($"Created revision (id {newId}).", Severity.Success);
+            selectedRevisionId = newId;
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Create failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task PublishAsync(int revId)
+    {
+        busy = true;
+        try
+        {
+            var by = await GetUserNameAsync();
+            await RevisionService.PublishAsync(revId, by, CancellationToken.None);
+            Snackbar.Add("Published.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Publish failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private void OpenAddStep()
+    {
+        newStep = new CreateWorkInstructionStepRequest
+        {
+            WorkInstructionRevisionId = selectedRevisionId ?? 0,
+            SequenceNumber = steps.Count == 0 ? 1 : steps.Max(s => s.SequenceNumber) + 1,
+        };
+        stepDialogOpen = true;
+    }
+
+    private async Task AddStepAsync()
+    {
+        busy = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newStep.WorkInstructionRevisionId = selectedRevisionId!.Value;
+            var entity = newStep.ToEntity();
+            var by = await GetUserNameAsync();
+            db.WorkInstructionSteps.Add(entity);
+            await db.SaveChangesAsync();
+            db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordCreate(entity, by));
+            await db.SaveChangesAsync();
+            Snackbar.Add("Step added.", Severity.Success);
+            stepDialogOpen = false;
+            await LoadStepsAsync();
+        }
+        catch (Exception ex) { Snackbar.Add($"Add step failed: {ex.Message}", Severity.Error); }
+        finally { busy = false; }
+    }
+
+    private async Task DeleteStepAsync(int stepId)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.WorkInstructionSteps.FirstOrDefaultAsync(s => s.Id == stepId);
+        if (entity is null) return;
+        var by = await GetUserNameAsync();
+        db.WorkInstructionSteps.Remove(entity);
+        db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordDelete(entity, by));
+        await db.SaveChangesAsync();
+        await LoadStepsAsync();
+    }
+
+    private static Color RevisionColor(WorkInstructionRevisionStatus s) => s switch
+    {
+        WorkInstructionRevisionStatus.Draft => Color.Warning,
+        WorkInstructionRevisionStatus.Published => Color.Success,
+        WorkInstructionRevisionStatus.Superseded => Color.Default,
+        _ => Color.Default,
+    };
+
+    private async Task<string?> GetUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

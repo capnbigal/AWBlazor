@@ -1,0 +1,169 @@
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Cultures.Domain
+@using AWBlazorApp.Features.Production.Documents.Domain
+@using AWBlazorApp.Features.Production.Illustrations.Domain
+@using AWBlazorApp.Features.Production.Locations.Domain
+@using AWBlazorApp.Features.Production.ProductCategories.Domain
+@using AWBlazorApp.Features.Production.ProductCostHistories.Domain
+@using AWBlazorApp.Features.Production.ProductDescriptions.Domain
+@using AWBlazorApp.Features.Production.ProductDocuments.Domain
+@using AWBlazorApp.Features.Production.ProductInventories.Domain
+@using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain
+@using AWBlazorApp.Features.Production.ProductModels.Domain
+@using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain
+@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain
+@using AWBlazorApp.Features.Production.ProductPhotos.Domain
+@using AWBlazorApp.Features.Production.ProductProductPhotos.Domain
+@using AWBlazorApp.Features.Production.ProductReviews.Domain
+@using AWBlazorApp.Features.Production.Products.Domain
+@using AWBlazorApp.Features.Production.ProductSubcategories.Domain
+@using AWBlazorApp.Features.Production.ScrapReasons.Domain
+@using AWBlazorApp.Features.Production.TransactionHistories.Domain
+@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain
+@using AWBlazorApp.Features.Production.UnitMeasures.Domain
+@using AWBlazorApp.Features.Production.WorkOrders.Domain
+@using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Lifecycle</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Sell start: <strong>@(product?.SellStartDate.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Sell end: <strong>@(product?.SellEndDate?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Discontinued: <strong>@(product?.DiscontinuedDate?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Sales summary</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Total orders: <strong>@orderCount.ToString("N0")</strong></MudText>
+                    <MudText Typo="Typo.body2">Total qty sold: <strong>@totalQty.ToString("N0")</strong></MudText>
+                    <MudText Typo="Typo.body2">Total revenue: <strong>@totalRevenue.ToString("C2")</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Pricing</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Standard cost: <strong>@(product?.StandardCost.ToString("C2") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">List price: <strong>@(product?.ListPrice.ToString("C2") ?? "—")</strong></MudText>
+                    @if (product is not null && product.ListPrice > 0)
+                    {
+                        var margin = (1 - product.StandardCost / product.ListPrice) * 100;
+                        <MudText Typo="Typo.body2">Margin: <strong>@margin.ToString("N1")%</strong></MudText>
+                    }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        @if (priceHistory.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">Price history</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead><tr><th>Start date</th><th>End date</th><th style="text-align:right">List price</th></tr></thead>
+                <tbody>
+                    @foreach (var ph in priceHistory)
+                    {
+                        <tr>
+                            <td>@ph.StartDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(ph.EndDate?.ToString("yyyy-MM-dd") ?? "Current")</td>
+                            <td style="text-align:right">@ph.ListPrice.ToString("C2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+
+        @if (recentOrders.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">Recent orders (last 10)</MudText>
+            <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                <thead><tr><th>Order #</th><th>Date</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit price</th><th style="text-align:right">Line total</th></tr></thead>
+                <tbody>
+                    @foreach (var o in recentOrders)
+                    {
+                        <tr>
+                            <td><MudLink Href="aw/sales-order-headers" Color="Color.Primary">@o.OrderNumber</MudLink></td>
+                            <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
+                            <td style="text-align:right">@o.Qty</td>
+                            <td style="text-align:right">@o.UnitPrice.ToString("C2")</td>
+                            <td style="text-align:right">@o.LineTotal.ToString("C2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int ProductId { get; set; }
+
+    private bool loading = true;
+    private Product? product;
+    private int orderCount;
+    private int totalQty;
+    private decimal totalRevenue;
+    private List<ProductListPriceHistory> priceHistory = [];
+    private List<RecentOrderRow> recentOrders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == ProductId);
+
+        var details = await db.SalesOrderDetails.AsNoTracking()
+            .Where(d => d.ProductId == ProductId)
+            .ToListAsync();
+        orderCount = details.Select(d => d.SalesOrderId).Distinct().Count();
+        totalQty = details.Sum(d => (int)d.OrderQty);
+        totalRevenue = details.Sum(d => d.LineTotal);
+
+        priceHistory = await db.ProductListPriceHistories.AsNoTracking()
+            .Where(p => p.ProductId == ProductId)
+            .OrderByDescending(p => p.StartDate)
+            .ToListAsync();
+
+        var recentDetails = await db.SalesOrderDetails.AsNoTracking()
+            .Where(d => d.ProductId == ProductId)
+            .OrderByDescending(d => d.SalesOrderId)
+            .Take(10)
+            .ToListAsync();
+
+        var orderIds = recentDetails.Select(d => d.SalesOrderId).Distinct().ToList();
+        var headers = await db.SalesOrderHeaders.AsNoTracking()
+            .Where(h => orderIds.Contains(h.Id))
+            .ToDictionaryAsync(h => h.Id);
+
+        recentOrders = recentDetails.Select(d =>
+        {
+            headers.TryGetValue(d.SalesOrderId, out var h);
+            return new RecentOrderRow
+            {
+                OrderNumber = h?.SalesOrderNumber ?? $"SO-{d.SalesOrderId}",
+                OrderDate = h?.OrderDate ?? DateTime.MinValue,
+                Qty = d.OrderQty,
+                UnitPrice = d.UnitPrice,
+                LineTotal = d.LineTotal,
+            };
+        }).ToList();
+
+        loading = false;
+    }
+
+    private sealed class RecentOrderRow
+    {
+        public string OrderNumber { get; init; } = "";
+        public DateTime OrderDate { get; init; }
+        public short Qty { get; init; }
+        public decimal UnitPrice { get; init; }
+        public decimal LineTotal { get; init; }
+    }
+}
