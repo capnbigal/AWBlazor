@@ -68,12 +68,7 @@ public static class EmployeePayHistoryEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EmployeePayHistories.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.EmployeePayHistoryAuditLogs.Add(EmployeePayHistoryAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => EmployeePayHistoryAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/employee-pay-histories/by-key?businessEntityId={entity.BusinessEntityId}&rateChangeDate={entity.RateChangeDate:O}",
             new CompositeKeyResponse(new Dictionary<string, object>

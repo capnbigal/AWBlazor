@@ -70,12 +70,7 @@ public static class SparePartEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.SpareParts.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.SparePartAuditLogs.Add(SparePartAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => SparePartAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/spare-parts/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -100,11 +95,7 @@ public static class SparePartEndpoints
     {
         var entity = await db.SpareParts.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.SpareParts.Remove(entity);
-        db.SparePartAuditLogs.Add(SparePartAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, SparePartAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

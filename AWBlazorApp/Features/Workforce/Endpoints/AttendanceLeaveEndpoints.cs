@@ -143,12 +143,7 @@ public static class AttendanceLeaveEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.LeaveRequests.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.LeaveRequestAuditLogs.Add(LeaveRequestAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => LeaveRequestAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/leave-requests/{entity.Id}", new IdResponse(entity.Id));
     }
 
