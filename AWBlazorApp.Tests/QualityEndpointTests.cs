@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
 using AWBlazorApp.Features.Identity.Domain;
 using AWBlazorApp.Features.Inventory.Domain;
@@ -9,7 +9,7 @@ using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Logistics.Services;
 using AWBlazorApp.Features.Quality.Domain;
 using AWBlazorApp.Features.Quality.Services;
-using AWBlazorApp.Shared.Models;
+using AWBlazorApp.Shared.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;

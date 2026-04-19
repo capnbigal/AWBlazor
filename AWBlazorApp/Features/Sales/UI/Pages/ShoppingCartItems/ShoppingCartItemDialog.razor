@@ -1,0 +1,142 @@
+@using AWBlazorApp.Features.Sales.Domain
+@using AWBlazorApp.Features.Sales.Dtos
+@using AWBlazorApp.Features.Sales.Audit
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateShoppingCartItemRequest> CreateValidator
+@inject MudFormValidator<UpdateShoppingCartItemRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject LookupService Lookup
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create cart item" : $"Edit cart item #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField Value="@createModel.ShoppingCartId" ValueChanged="@((string? v) => createModel = createModel with { ShoppingCartId = v })" Label="Shopping cart id" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@createModel.ProductId" ValueChanged="@((int v) => createModel = createModel with { ProductId = v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" Value="@createModel.Quantity" ValueChanged="@((int v) => createModel = createModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" Required="true" Min="1" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudTextField Value="@updateModel.ShoppingCartId" ValueChanged="@((string? v) => updateModel = updateModel with { ShoppingCartId = v })" Label="Shopping cart id" Variant="Variant.Outlined" Required="true" MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <FkAutocomplete TValue="int" Value="@(updateModel.ProductId ?? 0)" ValueChanged="@((int v) => updateModel = updateModel with { ProductId = v == 0 ? null : v })" Label="Product" SearchFunc="Lookup.SearchProductsAsync" InitialDisplayText="@_editProductName" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" Value="@updateModel.Quantity" ValueChanged="@((int? v) => updateModel = updateModel with { Quantity = v })" Label="Quantity" Variant="Variant.Outlined" Min="1" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ShoppingCartItemDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateShoppingCartItemRequest createModel = new() { Quantity = 1 };
+    private UpdateShoppingCartItemRequest updateModel = new();
+    private bool saving;
+    private string? _editProductName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Model is not null)
+        {
+            _editProductName = await Lookup.GetProductNameAsync(Model.ProductId);
+            updateModel = new UpdateShoppingCartItemRequest
+            {
+                ShoppingCartId = Model.ShoppingCartId,
+                ProductId = Model.ProductId,
+                Quantity = Model.Quantity,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var changedBy = await GetCurrentUserNameAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+
+                // Validate required FK
+                if (!await db.Products.AnyAsync(x => x.Id == createModel.ProductId))
+                { Snackbar.Add($"Product #{createModel.ProductId} does not exist.", Severity.Error); return; }
+
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.ShoppingCartItems.Add(entity);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                db.ShoppingCartItemAuditLogs.Add(ShoppingCartItemAuditService.RecordCreate(entity, changedBy));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var entity = await db.ShoppingCartItems.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = ShoppingCartItemAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.ShoppingCartItemAuditLogs.Add(ShoppingCartItemAuditService.RecordUpdate(before, entity, changedBy));
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+                {
+                    Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                    return;
+                }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

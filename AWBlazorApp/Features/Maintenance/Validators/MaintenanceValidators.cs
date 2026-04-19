@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Maintenance.Models;
+using AWBlazorApp.Features.Maintenance.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Maintenance.Validators;

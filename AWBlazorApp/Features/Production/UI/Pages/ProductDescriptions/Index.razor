@@ -1,0 +1,146 @@
+@page "/aw/product-descriptions"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Product descriptions</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product descriptions</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductDescription</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-descriptions/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New description</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudTextField @bind-Value="filterContains" Label="Description contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="ProductDescriptionDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Description" Title="Description">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.Description)" Title="Description" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductDescription" PropertyName="@nameof(ProductDescriptionDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductDescriptionDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductDescriptionDto> grid = null!;
+    private bool _loading = true;
+    private string? filterContains;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<ProductDescriptionDto>> LoadServerDataAsync(GridState<ProductDescriptionDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductDescriptions.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterContains))
+            {
+                var needle = filterContains.Trim();
+                query = query.Where(x => x.Description.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductDescriptionDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(ProductDescriptionDto.Description)  => sort.Descending ? query.OrderByDescending(x => x.Description)  : query.OrderBy(x => x.Description),
+                nameof(ProductDescriptionDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                          => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductDescriptionDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductDescriptionDialog>("New description", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Description created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductDescriptionDto row)
+    {
+        var parameters = new DialogParameters<ProductDescriptionDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductDescriptionDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Description updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductDescriptionDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete description?", $"Permanently delete description #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductDescriptions.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Description no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductDescriptionAuditLogs.Add(ProductDescriptionAuditService.RecordDelete(entity, changedBy));
+        db.ProductDescriptions.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Description deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductDescriptionDto row) => Navigation.NavigateTo($"aw/product-descriptions/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

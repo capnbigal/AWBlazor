@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Dashboard.Models;
+using AWBlazorApp.Features.Dashboard.Dtos;
 
 namespace AWBlazorApp.Features.Dashboard.Services;
 

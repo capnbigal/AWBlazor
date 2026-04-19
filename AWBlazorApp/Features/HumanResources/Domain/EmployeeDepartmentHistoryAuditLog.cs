@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.HumanResources.Domain;
 
 /// <summary>Audit log for <see cref="EmployeeDepartmentHistory"/>. EF-managed table <c>dbo.EmployeeDepartmentHistoryAuditLogs</c>. Carries all 4 composite-key components.</summary>

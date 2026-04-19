@@ -1,7 +1,7 @@
 using System.Text;
 using AWBlazorApp.Features.ToolSlots.Domain;
-using AWBlazorApp.Features.ToolSlots.Models;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.ToolSlots.Dtos;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Domain;
 

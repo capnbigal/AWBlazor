@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Performance.Models;
+using AWBlazorApp.Features.Performance.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Performance.Validators;

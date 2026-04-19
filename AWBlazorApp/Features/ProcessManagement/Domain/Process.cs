@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations.Schema;
 using AWBlazorApp.Features.HumanResources.Domain;

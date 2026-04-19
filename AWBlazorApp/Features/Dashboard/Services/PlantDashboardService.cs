@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Dashboard.Models;
+using AWBlazorApp.Features.Dashboard.Dtos;
 using AWBlazorApp.Features.Engineering.Domain;
 using AWBlazorApp.Features.Maintenance.Domain;
 using AWBlazorApp.Features.Mes.Domain;

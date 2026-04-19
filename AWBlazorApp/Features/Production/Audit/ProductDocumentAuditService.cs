@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Audit;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Features.Production.Domain;
 
 namespace AWBlazorApp.Features.Production.Audit;

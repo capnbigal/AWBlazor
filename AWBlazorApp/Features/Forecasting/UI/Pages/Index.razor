@@ -1,0 +1,227 @@
+@page "/forecasts"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Forecasting.Domain
+@using AWBlazorApp.Shared.Dtos
+@using AWBlazorApp.Features.Forecasting.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IForecastComputationService ComputeService
+
+<PageTitle>Forecasts</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Forecasts</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">
+            New forecast
+        </MudButton>
+    </MudStack>
+
+    <MudDataGrid T="ForecastDefinitionDto"
+                 ServerData="LoadServerDataAsync"
+                 @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 SortMode="SortMode.Single"
+                 RowsPerPage="25"
+                >
+        <Columns>
+            <HierarchyColumn T="ForecastDefinitionDto" />
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Data source" SortLabel="DataSource">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="DataSource" Title="Data source" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+                <CellTemplate>
+                    @context.Item.DataSource
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Method" SortLabel="Method">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="Method" Title="Method" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+                <CellTemplate>
+                    @context.Item.Method
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Granularity" Title="Granularity">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.Granularity)" Title="Granularity" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Status" SortLabel="Status">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="Status" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+                <CellTemplate>
+                    <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">
+                        @context.Item.Status
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.LookbackMonths" Title="Lookback">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.LookbackMonths)" Title="Lookback" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.HorizonPeriods" Title="Horizon">
+                <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.HorizonPeriods)" Title="Horizon" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Last computed" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <CellTemplate>
+                    @(context.Item.LastComputedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never")
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="Compute forecast">
+                            <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" aria-label="Launch"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => ComputeAsync(context.Item))" />
+                        </MudTooltip>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OpenEditAsync(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeleteAsync(context.Item))" />
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent>
+            <ForecastExpandedRow ForecastId="@context.Item.Id" />
+        </ChildRowContent>
+        <PagerContent>
+            <MudDataGridPager T="ForecastDefinitionDto" />
+        </PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ForecastDefinitionDto> grid = null!;
+    private bool _loading = true;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private static Color StatusColor(ForecastStatus status) => status switch
+    {
+        ForecastStatus.Draft => Color.Default,
+        ForecastStatus.Active => Color.Success,
+        ForecastStatus.Archived => Color.Warning,
+        _ => Color.Default,
+    };
+
+    private async Task<GridData<ForecastDefinitionDto>> LoadServerDataAsync(GridState<ForecastDefinitionDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ForecastDefinitions.AsNoTracking().Where(f => f.DeletedDate == null);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ForecastDefinitionDto.Name)           => sort.Descending ? query.OrderByDescending(f => f.Name)           : query.OrderBy(f => f.Name),
+                "DataSource"                                  => sort.Descending ? query.OrderByDescending(f => f.DataSource)     : query.OrderBy(f => f.DataSource),
+                "Method"                                      => sort.Descending ? query.OrderByDescending(f => f.Method)         : query.OrderBy(f => f.Method),
+                nameof(ForecastDefinitionDto.Granularity)     => sort.Descending ? query.OrderByDescending(f => f.Granularity)    : query.OrderBy(f => f.Granularity),
+                "Status"                                      => sort.Descending ? query.OrderByDescending(f => f.Status)         : query.OrderBy(f => f.Status),
+                nameof(ForecastDefinitionDto.LookbackMonths)  => sort.Descending ? query.OrderByDescending(f => f.LookbackMonths) : query.OrderBy(f => f.LookbackMonths),
+                nameof(ForecastDefinitionDto.HorizonPeriods)  => sort.Descending ? query.OrderByDescending(f => f.HorizonPeriods) : query.OrderBy(f => f.HorizonPeriods),
+                nameof(ForecastDefinitionDto.CreatedDate)     => sort.Descending ? query.OrderByDescending(f => f.CreatedDate)    : query.OrderBy(f => f.CreatedDate),
+                _                                             => query.OrderByDescending(f => f.CreatedDate),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize)
+                .Take(state.PageSize)
+                .Select(f => f.ToDto())
+                .ToListAsync(ct);
+
+            return new GridData<ForecastDefinitionDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ForecastDialog>("Create forecast", new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Forecast created.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task OpenEditAsync(ForecastDefinitionDto item)
+    {
+        var parameters = new DialogParameters<ForecastDialog> { { x => x.Model, item } };
+        var dialog = await DialogService.ShowAsync<ForecastDialog>("Edit forecast", parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true,
+        });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Forecast updated.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+    }
+
+    private async Task ComputeAsync(ForecastDefinitionDto item)
+    {
+        try
+        {
+            await ComputeService.ComputeAndSaveAsync(item.Id);
+            Snackbar.Add($"Forecast '{item.Name}' computed successfully.", Severity.Success);
+            await grid.ReloadServerData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Computation failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(ForecastDefinitionDto item)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete forecast?",
+            $"Soft-delete forecast '{item.Name}'?",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ForecastDefinitions.FirstOrDefaultAsync(f => f.Id == item.Id);
+        if (entity is null)
+        {
+            Snackbar.Add("Forecast no longer exists.", Severity.Warning);
+            await grid.ReloadServerData();
+            return;
+        }
+
+        entity.DeletedDate = DateTime.UtcNow;
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Forecast deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+}

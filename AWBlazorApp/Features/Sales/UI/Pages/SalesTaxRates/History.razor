@@ -1,0 +1,116 @@
+@page "/aw/sales-tax-rates/history"
+@page "/aw/sales-tax-rates/history/{SlotId:int}"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Sales.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Sales tax rate history@(SlotId is null ? "" : $" — #{SlotId}")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/sales-tax-rates"))" />
+        <MudText Typo="Typo.h4">@(SlotId is null ? "Sales tax rate history" : $"History for tax rate #{SlotId}")</MudText>
+        <MudSpacer />
+        @if (SlotId is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List" Href="aw/sales-tax-rates/history">All history</MudButton>
+        }
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Every create, update, and delete of a <code>Sales.SalesTaxRate</code> row is recorded here.</MudText>
+
+    @if (SlotId is null)
+    {
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                        <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4"><MudNumericField T="int?" @bind-Value="filterRowId" Label="Tax rate id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+
+    <MudDataGrid T="SalesTaxRateAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.SalesTaxRateId" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.SalesTaxRateId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.TaxRate" Title="Rate" Format="F4">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.TaxRate)" Title="Rate" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <HeaderTemplate><GridColumnHeader TEntity="SalesTaxRateAuditLog" PropertyName="@nameof(SalesTaxRateAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="SalesTaxRateAuditLogDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter] public int? SlotId { get; set; }
+
+    private MudDataGrid<SalesTaxRateAuditLogDto> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+    private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<SalesTaxRateAuditLogDto>> LoadServerDataAsync(GridState<SalesTaxRateAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SalesTaxRateAuditLogs.AsNoTracking();
+
+        var scopedId = SlotId ?? filterRowId;
+        if (scopedId.HasValue) query = query.Where(a => a.SalesTaxRateId == scopedId.Value);
+        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var needle = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
+        }
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SalesTaxRateAuditLogDto.ChangedDate)    => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)    : query.OrderBy(a => a.ChangedDate),
+            nameof(SalesTaxRateAuditLogDto.SalesTaxRateId) => sort.Descending ? query.OrderByDescending(a => a.SalesTaxRateId) : query.OrderBy(a => a.SalesTaxRateId),
+            nameof(SalesTaxRateAuditLogDto.ChangedBy)      => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)      : query.OrderBy(a => a.ChangedBy),
+            nameof(SalesTaxRateAuditLogDto.Name)           => sort.Descending ? query.OrderByDescending(a => a.Name)           : query.OrderBy(a => a.Name),
+            nameof(SalesTaxRateAuditLogDto.TaxRate)        => sort.Descending ? query.OrderByDescending(a => a.TaxRate)        : query.OrderBy(a => a.TaxRate),
+            nameof(SalesTaxRateAuditLogDto.ChangeSummary)  => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)  : query.OrderBy(a => a.ChangeSummary),
+            _                                              => query.OrderByDescending(a => a.ChangedDate),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<SalesTaxRateAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
+    };
+}

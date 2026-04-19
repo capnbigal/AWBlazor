@@ -1,8 +1,8 @@
-using AWBlazorApp.Shared.Models;
-using AWBlazorApp.Features.ToolSlots.Models;
+using AWBlazorApp.Shared.Dtos;
+using AWBlazorApp.Features.ToolSlots.Dtos;
 using FluentValidation;
 
-namespace AWBlazorApp.Shared.Validators;
+namespace AWBlazorApp.Shared.Validation;
 
 public sealed class CreateToolSlotConfigurationValidator : AbstractValidator<CreateToolSlotConfigurationRequest>
 {

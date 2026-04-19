@@ -1,0 +1,158 @@
+@page "/aw/product-reviews"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Product reviews</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Product reviews</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductReview</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-reviews/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New review</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterMinRating" Label="Minimum rating" Variant="Variant.Outlined" Clearable="true" Min="1" Max="5" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="ProductReviewDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ReviewerName" Title="Reviewer">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewerName)" Title="Reviewer" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Rating" Title="Rating">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.Rating)" Title="Rating" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ReviewDate" Title="Date" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.ReviewDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EmailAddress" Title="Email">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductReview" PropertyName="@nameof(ProductReviewDto.EmailAddress)" Title="Email" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductReviewDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductReviewDto> grid = null!;
+    private bool _loading = true;
+    private int? filterProductId;
+    private int? filterMinRating;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<ProductReviewDto>> LoadServerDataAsync(GridState<ProductReviewDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductReviews.AsNoTracking();
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            if (filterMinRating.HasValue) query = query.Where(x => x.Rating >= filterMinRating.Value);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductReviewDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(ProductReviewDto.ProductId)    => sort.Descending ? query.OrderByDescending(x => x.ProductId)    : query.OrderBy(x => x.ProductId),
+                nameof(ProductReviewDto.ReviewerName) => sort.Descending ? query.OrderByDescending(x => x.ReviewerName) : query.OrderBy(x => x.ReviewerName),
+                nameof(ProductReviewDto.EmailAddress) => sort.Descending ? query.OrderByDescending(x => x.EmailAddress) : query.OrderBy(x => x.EmailAddress),
+                nameof(ProductReviewDto.Rating)       => sort.Descending ? query.OrderByDescending(x => x.Rating)       : query.OrderBy(x => x.Rating),
+                nameof(ProductReviewDto.ReviewDate)   => sort.Descending ? query.OrderByDescending(x => x.ReviewDate)   : query.OrderBy(x => x.ReviewDate),
+                _                                     => query.OrderByDescending(x => x.ReviewDate),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductReviewDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductReviewDialog>("New review", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Review created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(ProductReviewDto row)
+    {
+        var parameters = new DialogParameters<ProductReviewDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<ProductReviewDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Review updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductReviewDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete review?", $"Permanently delete review #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductReviews.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Review no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductReviewAuditLogs.Add(ProductReviewAuditService.RecordDelete(entity, changedBy));
+        db.ProductReviews.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Review deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductReviewDto row) => Navigation.NavigateTo($"aw/product-reviews/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

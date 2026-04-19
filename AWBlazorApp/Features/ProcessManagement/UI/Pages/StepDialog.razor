@@ -1,0 +1,115 @@
+@using AWBlazorApp.Features.ProcessManagement.Domain
+@using AWBlazorApp.Shared.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsNew ? "Add step" : $"Edit step: {Model?.Name}")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <MudNumericField T="int" @bind-Value="formModel.SequenceNumber" Label="Sequence #" Variant="Variant.Outlined" Min="1" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="8">
+                    <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int?" @bind-Value="formModel.EstimatedDurationMinutes" Label="Est. duration (min)" Variant="Variant.Outlined" Min="1" Clearable="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">
+            @(saving ? "Saving..." : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProcessStepDto? Model { get; set; }
+    [Parameter] public int ProcessId { get; set; }
+
+    private bool IsNew => Model is null;
+
+    private MudForm form = null!;
+    private FormModel formModel = new();
+    private bool saving;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            formModel = new FormModel
+            {
+                SequenceNumber = Model.SequenceNumber,
+                Name = Model.Name,
+                Description = Model.Description,
+                EstimatedDurationMinutes = Model.EstimatedDurationMinutes,
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                var entity = new ProcessStep
+                {
+                    ProcessId = ProcessId,
+                    SequenceNumber = formModel.SequenceNumber,
+                    Name = formModel.Name,
+                    Description = formModel.Description,
+                    EstimatedDurationMinutes = formModel.EstimatedDurationMinutes,
+                };
+                db.ProcessSteps.Add(entity);
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                var entity = await db.ProcessSteps.FirstOrDefaultAsync(s => s.Id == Model!.Id && s.ProcessId == ProcessId);
+                if (entity is null)
+                {
+                    MudDialog.Close(DialogResult.Cancel());
+                    return;
+                }
+
+                entity.SequenceNumber = formModel.SequenceNumber;
+                entity.Name = formModel.Name;
+                entity.Description = formModel.Description;
+                entity.EstimatedDurationMinutes = formModel.EstimatedDurationMinutes;
+
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public int SequenceNumber { get; set; } = 1;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int? EstimatedDurationMinutes { get; set; }
+    }
+}

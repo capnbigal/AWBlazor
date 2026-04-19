@@ -1,0 +1,148 @@
+@page "/gallery/products"
+@attribute [Authorize]
+@using AWBlazorApp.Shared.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Product photo gallery</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="2">
+        <div>
+            <MudText Typo="Typo.h4">Product photo gallery</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Demos MudCarousel + MudFileUpload against the Production.ProductPhoto byte columns.
+            </MudText>
+        </div>
+        <MudSpacer />
+        <MudTextField T="string" @bind-Value="search" Placeholder="Search product name..."
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-0"
+                      Style="max-width: 280px;"
+                      DebounceInterval="250" OnDebounceIntervalElapsed="ReloadAsync" />
+    </MudStack>
+
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (products.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No products match the current filter.</MudAlert>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var p in products)
+            {
+                <MudItem xs="6" sm="4" md="3" lg="2">
+                    <MudCard Class="photo-card" @onclick="@(() => OpenAsync(p))" Style="cursor: pointer;">
+                        <MudCardMedia Image="@($"/api/gallery/photos/{p.PhotoId}/thumb")"
+                                      Height="160"
+                                      Style="background-size: contain; background-color: var(--mud-palette-background-grey);" />
+                        <MudCardContent Class="pa-2">
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@p.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@p.ProductNumber</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* ── MudFileUpload demo (POC only — does not persist) ──────────────────── *@
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h6">Upload photo (demo)</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                POC — selected files are previewed below but not persisted to the database.
+            </MudText>
+            <MudFileUpload T="IBrowserFile" FilesChanged="OnFilesSelected" Accept="image/*" MaximumFileCount="1">
+                <ActivatorContent>
+                    <MudButton HtmlTag="label" Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload">
+                        Choose image
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+            @if (!string.IsNullOrEmpty(uploadPreview))
+            {
+                <img src="@uploadPreview" alt="preview"
+                     style="max-width: 240px; max-height: 240px; border-radius: 8px; border: 1px solid var(--mud-palette-divider);" />
+                <MudText Typo="Typo.caption">@uploadName (@uploadSize bytes)</MudText>
+            }
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+@code {
+    private List<ProductThumb> products = new();
+    private string search = "";
+    private bool loading = true;
+
+    private string uploadPreview = "";
+    private string uploadName = "";
+    private long uploadSize;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        loading = true;
+        StateHasChanged();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        // Join ProductProductPhoto → ProductPhoto → Product. Take only primary photo per product
+        // and only those that actually have thumbnail bytes. Cap at 60 for gallery display.
+        var query = from pp in db.ProductProductPhotos.AsNoTracking()
+                    join ph in db.ProductPhotos.AsNoTracking() on pp.ProductPhotoId equals ph.Id
+                    join pr in db.Products.AsNoTracking() on pp.ProductId equals pr.Id
+                    where pp.Primary && ph.ThumbNailPhoto != null
+                    select new { pr.Id, pr.Name, pr.ProductNumber, PhotoId = ph.Id };
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.Name.Contains(search));
+
+        var rows = await query.OrderBy(x => x.Name).Take(60).ToListAsync();
+        products = rows.Select(x => new ProductThumb(x.Id, x.Name, x.ProductNumber, x.PhotoId)).ToList();
+        loading = false;
+    }
+
+    private async Task OpenAsync(ProductThumb product)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var photos = await (from pp in db.ProductProductPhotos.AsNoTracking()
+                            join ph in db.ProductPhotos.AsNoTracking() on pp.ProductPhotoId equals ph.Id
+                            where pp.ProductId == product.Id && ph.LargePhoto != null
+                            orderby pp.Primary descending
+                            select ph.Id).ToListAsync();
+
+        var parameters = new DialogParameters
+        {
+            ["Title"] = product.Name,
+            ["PhotoIds"] = photos,
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<PhotoDialog>(product.Name, parameters, options);
+    }
+
+    private async Task OnFilesSelected(IBrowserFile? file)
+    {
+        if (file is null) return;
+        // 5 MB cap for the preview data URL so we don't blow the SignalR frame.
+        const long maxBytes = 5 * 1024 * 1024;
+        if (file.Size > maxBytes)
+        {
+            Snackbar.Add("File too large for preview (max 5 MB).", Severity.Warning);
+            return;
+        }
+        using var ms = new MemoryStream();
+        await file.OpenReadStream(maxBytes).CopyToAsync(ms);
+        uploadPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+        uploadName = file.Name;
+        uploadSize = file.Size;
+    }
+
+    private sealed record ProductThumb(int Id, string Name, string ProductNumber, int PhotoId);
+}

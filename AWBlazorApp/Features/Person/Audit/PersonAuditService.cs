@@ -1,5 +1,5 @@
 using System.Text;
-using AWBlazorApp.Features.AdventureWorks.Audit;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Features.Person.Domain;
 using PersonEntity = AWBlazorApp.Features.Person.Domain.Person;
 

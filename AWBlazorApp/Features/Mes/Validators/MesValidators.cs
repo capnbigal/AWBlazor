@@ -1,5 +1,5 @@
 using AWBlazorApp.Features.Mes.Domain;
-using AWBlazorApp.Features.Mes.Models;
+using AWBlazorApp.Features.Mes.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Mes.Validators;

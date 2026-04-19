@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Production.Domain;
 
 /// <summary>Audit log for <see cref="Illustration"/>. EF-managed table <c>dbo.IllustrationAuditLogs</c>.</summary>

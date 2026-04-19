@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using AWBlazorApp.Features.Performance.Domain;
-using AWBlazorApp.Features.Performance.Models;
+using AWBlazorApp.Features.Performance.Dtos;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 

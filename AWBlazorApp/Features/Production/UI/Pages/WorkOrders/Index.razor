@@ -1,0 +1,172 @@
+@page "/aw/work-orders"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+
+<PageTitle>Work orders</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Work orders</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.WorkOrder</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/work-orders/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New work order</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="WorkOrderDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <HierarchyColumn T="WorkOrderDto" />
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product id">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.ProductId)" Title="Product id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.OrderQty" Title="Order qty">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.OrderQty)" Title="Order qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ScrappedQty" Title="Scrapped">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.ScrappedQty)" Title="Scrapped" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StockedQty" Title="Stocked">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.StockedQty)" Title="Stocked" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DueDate" Title="Due" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.DueDate)" Title="Due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ScrapReasonId" Title="Scrap reason" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
+                <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.ScrapReasonId)" Title="Scrap reason" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent>
+            <WorkOrderExpandedRow WorkOrderId="@context.Item.Id" />
+        </ChildRowContent>
+        <PagerContent><MudDataGridPager T="WorkOrderDto" /></PagerContent>
+        <NoRecordsContent>
+            <EmptyState />
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<WorkOrderDto> grid = null!;
+    private bool _loading = true;
+    private int? filterProductId;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<WorkOrderDto>> LoadServerDataAsync(GridState<WorkOrderDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.WorkOrders.AsNoTracking();
+            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(WorkOrderDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+                nameof(WorkOrderDto.ProductId)     => sort.Descending ? query.OrderByDescending(x => x.ProductId)     : query.OrderBy(x => x.ProductId),
+                nameof(WorkOrderDto.OrderQty)      => sort.Descending ? query.OrderByDescending(x => x.OrderQty)      : query.OrderBy(x => x.OrderQty),
+                nameof(WorkOrderDto.StockedQty)    => sort.Descending ? query.OrderByDescending(x => x.StockedQty)    : query.OrderBy(x => x.StockedQty),
+                nameof(WorkOrderDto.ScrappedQty)   => sort.Descending ? query.OrderByDescending(x => x.ScrappedQty)   : query.OrderBy(x => x.ScrappedQty),
+                nameof(WorkOrderDto.StartDate)     => sort.Descending ? query.OrderByDescending(x => x.StartDate)     : query.OrderBy(x => x.StartDate),
+                nameof(WorkOrderDto.EndDate)       => sort.Descending ? query.OrderByDescending(x => x.EndDate)       : query.OrderBy(x => x.EndDate),
+                nameof(WorkOrderDto.DueDate)       => sort.Descending ? query.OrderByDescending(x => x.DueDate)       : query.OrderBy(x => x.DueDate),
+                nameof(WorkOrderDto.ScrapReasonId) => sort.Descending ? query.OrderByDescending(x => x.ScrapReasonId) : query.OrderBy(x => x.ScrapReasonId),
+                _                                  => query.OrderByDescending(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<WorkOrderDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<WorkOrderDialog>("New work order", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Work order created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(WorkOrderDto row)
+    {
+        var parameters = new DialogParameters<WorkOrderDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<WorkOrderDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Work order updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(WorkOrderDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete work order?", $"Permanently delete work order #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.WorkOrders.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Work order no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.WorkOrderAuditLogs.Add(WorkOrderAuditService.RecordDelete(entity, changedBy));
+        db.WorkOrders.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Work order deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(WorkOrderDto row) => Navigation.NavigateTo($"aw/work-orders/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

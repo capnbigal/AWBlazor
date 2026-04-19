@@ -2,7 +2,7 @@ using System.Text;
 using AWBlazorApp.Infrastructure.Email;
 using AWBlazorApp.Infrastructure.Jobs;
 using AWBlazorApp.Features.Insights.Domain;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Domain;
 using Hangfire;

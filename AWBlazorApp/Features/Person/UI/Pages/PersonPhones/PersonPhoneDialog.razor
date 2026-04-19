@@ -1,0 +1,96 @@
+@using AWBlazorApp.Features.Person.Domain
+@using AWBlazorApp.Features.Person.Dtos
+@using AWBlazorApp.Features.Person.Audit
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreatePersonPhoneRequest> CreateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LookupService Lookup
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">New phone number</MudText></TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <FkAutocomplete TValue="int" Value="@createModel.BusinessEntityId" ValueChanged="@((int v) => createModel = createModel with { BusinessEntityId = v })" Label="Person" Required="true" SearchFunc="@(q => Lookup.SearchPersonsAsync(q))" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <FkSelect TValue="int" Value="@createModel.PhoneNumberTypeId" ValueChanged="@((int v) => createModel = createModel with { PhoneNumberTypeId = v })" Label="Phone number type" Required="true" Items="_phoneNumberTypes" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@createModel.PhoneNumber" ValueChanged="@((string? v) => createModel = createModel with { PhoneNumber = v })" Label="Phone number" Variant="Variant.Outlined" Required="true" MaxLength="25" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">All three columns are part of the composite key. To change a phone number, delete this row and create a new one.</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm form = null!;
+    private CreatePersonPhoneRequest createModel = new();
+    private bool saving;
+    private List<LookupItem<int>> _phoneNumberTypes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _phoneNumberTypes = await Lookup.GetPhoneNumberTypesAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+
+            var phone = (createModel.PhoneNumber ?? string.Empty).Trim();
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (await db.PersonPhones.AnyAsync(x =>
+                    x.BusinessEntityId == createModel.BusinessEntityId
+                    && x.PhoneNumber == phone
+                    && x.PhoneNumberTypeId == createModel.PhoneNumberTypeId))
+            {
+                Snackbar.Add("That phone row already exists.", Severity.Error);
+                return;
+            }
+
+            var changedBy = await GetCurrentUserNameAsync();
+            var entity = createModel.ToEntity();
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.PersonPhones.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY") == true)
+            {
+                Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
+                return;
+            }
+            db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordCreate(entity, changedBy));
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
