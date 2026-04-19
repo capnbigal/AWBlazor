@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AWBlazorApp.Features.Production.Domain;
+namespace AWBlazorApp.Features.Production.Boms.Domain;
 
 /// <summary>Assembly-component relationship with effective-date range. Maps onto the pre-existing <c>Production.BillOfMaterials</c> table.</summary>
 [Table("BillOfMaterials", Schema = "Production")]

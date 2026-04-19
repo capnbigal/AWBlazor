@@ -1,7 +1,7 @@
 using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations;
 
-namespace AWBlazorApp.Features.Production.Domain;
+namespace AWBlazorApp.Features.Production.Boms.Domain;
 
 /// <summary>Audit log for <see cref="BillOfMaterials"/>. EF-managed table <c>dbo.BillOfMaterialsAuditLogs</c>.</summary>
 public class BillOfMaterialsAuditLog : AdventureWorksAuditLogBase
