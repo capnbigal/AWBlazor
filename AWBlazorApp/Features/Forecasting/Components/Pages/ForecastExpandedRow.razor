@@ -60,7 +60,7 @@ else if (definition is not null)
                 <MudText Typo="Typo.h6" Class="mb-3">Forecast vs. actuals</MudText>
                 <MudChart T="double" ChartType="ChartType.Line"
                           ChartSeries="@chartSeries"
-                          XAxisLabels="@chartLabels"
+                          ChartLabels="@chartLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.RotatedAxisLineOptions"
                           Width="100%" Height="320px" />
             </MudPaper>
