@@ -77,12 +77,7 @@ public static class InventoryLocationEndpoints
         var entity = request.ToEntity();
         await ResolvePathAndDepthAsync(db, entity, ct);
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.InventoryLocations.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.InventoryLocationAuditLogs.Add(InventoryLocationAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => InventoryLocationAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/inventory-locations/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -129,11 +124,7 @@ public static class InventoryLocationEndpoints
             });
         }
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.InventoryLocations.Remove(entity);
-        db.InventoryLocationAuditLogs.Add(InventoryLocationAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, InventoryLocationAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

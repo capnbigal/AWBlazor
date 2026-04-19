@@ -76,12 +76,7 @@ public static class InventoryAdjustmentEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.InventoryAdjustments.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => InventoryAdjustmentAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/inventory-adjustments/{entity.Id}", new IdResponse(entity.Id));
     }
 
