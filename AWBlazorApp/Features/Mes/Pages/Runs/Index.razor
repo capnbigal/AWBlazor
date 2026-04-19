@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthStateProvider
+@inject AWBlazorApp.Features.Insights.Services.NotificationService NotificationService
 
 <PageTitle>Production runs</PageTitle>
 
@@ -143,6 +144,7 @@
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.RunNumber}.", Severity.Success);
+            await NotificationService.NotifyDashboardChangedAsync("Mes");
             dialogOpen = false;
             Navigation.NavigateTo($"mes/runs/{entity.Id}");
         }

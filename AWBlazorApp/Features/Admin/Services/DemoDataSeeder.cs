@@ -638,15 +638,24 @@ public sealed class DemoDataSeeder
     public async Task<int> SeedPerformanceAsync(List<int> stationIds, List<int> assetIds, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        if (await db.KpiDefinitions.AnyAsync(k => k.Code == "DEMO-KPI-OEE", ct))
-        {
-            _logger.LogInformation("Performance demo seed: already present, skipping.");
-            return 0;
-        }
+
+        // The heavy time-series data (OEE snapshots, daily metrics, monthly maintenance) is
+        // idempotent only at the (date, station/asset) level, so we skip it when the first KPI
+        // definition is already present. The KPI/Scorecard seeding further down runs every time
+        // and is per-code idempotent, so adding a new DEMO-KPI-* below this line will backfill
+        // it on existing dev databases without re-creating the time-series rows.
+        var heavyDataAlreadySeeded = await db.KpiDefinitions.AnyAsync(k => k.Code == "DEMO-KPI-OEE", ct);
 
         var now = DateTime.UtcNow;
         var today = now.Date;
         var rows = 0;
+
+        if (heavyDataAlreadySeeded)
+        {
+            _logger.LogInformation("Performance demo seed: heavy data already present, only backfilling KPIs/scorecards.");
+            rows += await EnsureKpisAndScorecardsAsync(db, now, ct);
+            return rows;
+        }
 
         // OEE snapshots — last 7 days, station 0.
         var rnd = new Random(17);
@@ -737,83 +746,10 @@ public sealed class DemoDataSeeder
         }
         await db.SaveChangesAsync(ct);
 
-        // KPIs.
-        var kpis = new[]
-        {
-            new KpiDefinition { Code = "DEMO-KPI-OEE", Name = "Plant OEE", Unit = "%", Source = KpiSource.OeeOverall, Aggregation = KpiAggregation.Average, TargetValue = 0.85m, WarningThreshold = 0.75m, CriticalThreshold = 0.60m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-            new KpiDefinition { Code = "DEMO-KPI-AVAIL", Name = "Availability", Unit = "%", Source = KpiSource.OeeAvailability, Aggregation = KpiAggregation.Average, TargetValue = 0.90m, WarningThreshold = 0.80m, CriticalThreshold = 0.70m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-            new KpiDefinition { Code = "DEMO-KPI-YIELD", Name = "First-pass yield", Unit = "%", Source = KpiSource.ProductionYield, Aggregation = KpiAggregation.Average, TargetValue = 0.98m, WarningThreshold = 0.95m, CriticalThreshold = 0.90m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-            new KpiDefinition { Code = "DEMO-KPI-THRU", Name = "Daily throughput", Unit = "units", Source = KpiSource.ProductionUnits, Aggregation = KpiAggregation.Sum, TargetValue = 1500m, WarningThreshold = 1200m, CriticalThreshold = 900m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-            new KpiDefinition { Code = "DEMO-KPI-MTBF", Name = "Mean time between failures", Unit = "hrs", Source = KpiSource.MaintenanceMtbf, Aggregation = KpiAggregation.Average, TargetValue = 200m, WarningThreshold = 150m, CriticalThreshold = 100m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-            new KpiDefinition { Code = "DEMO-KPI-PMCOMP", Name = "PM compliance", Unit = "%", Source = KpiSource.MaintenancePmCompliance, Aggregation = KpiAggregation.Average, TargetValue = 0.95m, WarningThreshold = 0.85m, CriticalThreshold = 0.70m, Direction = KpiDirection.HigherIsBetter, IsActive = true, ModifiedDate = now },
-        };
-        db.KpiDefinitions.AddRange(kpis);
-        await db.SaveChangesAsync(ct);
-        foreach (var k in kpis) db.KpiDefinitionAuditLogs.Add(KpiDefinitionAuditService.RecordCreate(k, "demo-seed"));
-        rows += kpis.Length;
-
-        // KPI values — one latest value per KPI for the last week.
-        var weekStart = DateTime.SpecifyKind(today.AddDays(-7), DateTimeKind.Utc);
-        var weekEnd = DateTime.SpecifyKind(today, DateTimeKind.Utc);
-        foreach (var kpi in kpis)
-        {
-            decimal sampleValue = kpi.Code switch
-            {
-                "DEMO-KPI-OEE" => 0.72m,
-                "DEMO-KPI-AVAIL" => 0.88m,
-                "DEMO-KPI-YIELD" => 0.97m,
-                "DEMO-KPI-THRU" => 1320m,
-                "DEMO-KPI-MTBF" => 175m,
-                "DEMO-KPI-PMCOMP" => 0.92m,
-                _ => 0m,
-            };
-            KpiStatus status = (kpi.Direction == KpiDirection.HigherIsBetter)
-                ? (sampleValue < kpi.CriticalThreshold ? KpiStatus.Critical
-                    : sampleValue < kpi.WarningThreshold ? KpiStatus.Warning
-                    : KpiStatus.OnTarget)
-                : (sampleValue > kpi.CriticalThreshold ? KpiStatus.Critical
-                    : sampleValue > kpi.WarningThreshold ? KpiStatus.Warning
-                    : KpiStatus.OnTarget);
-            db.KpiValues.Add(new KpiValue
-            {
-                KpiDefinitionId = kpi.Id,
-                PeriodKind = PerformancePeriodKind.Week,
-                PeriodStart = weekStart,
-                PeriodEnd = weekEnd,
-                Value = sampleValue,
-                TargetAtPeriod = kpi.TargetValue,
-                Status = status,
-                ComputedAt = now,
-                ModifiedDate = now,
-            });
-            rows++;
-        }
-        await db.SaveChangesAsync(ct);
-
-        // Scorecards.
-        var pmScorecard = new ScorecardDefinition { Code = "DEMO-SC-PLANT", Name = "Plant Manager Dashboard", Description = "Top-level plant performance at a glance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
-        var maintScorecard = new ScorecardDefinition { Code = "DEMO-SC-MAINT", Name = "Maintenance Lead Dashboard", Description = "Reliability + PM compliance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
-        db.ScorecardDefinitions.AddRange(pmScorecard, maintScorecard);
-        await db.SaveChangesAsync(ct);
-        db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(pmScorecard, "demo-seed"));
-        db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(maintScorecard, "demo-seed"));
-        rows += 2;
-
-        var plantKpiCodes = new[] { "DEMO-KPI-OEE", "DEMO-KPI-AVAIL", "DEMO-KPI-YIELD", "DEMO-KPI-THRU" };
-        var maintKpiCodes = new[] { "DEMO-KPI-MTBF", "DEMO-KPI-PMCOMP", "DEMO-KPI-AVAIL" };
-        for (var i = 0; i < plantKpiCodes.Length; i++)
-        {
-            var kpi = kpis.First(k => k.Code == plantKpiCodes[i]);
-            db.ScorecardKpis.Add(new ScorecardKpi { ScorecardDefinitionId = pmScorecard.Id, KpiDefinitionId = kpi.Id, DisplayOrder = (i + 1) * 10, Visual = ScorecardKpiVisual.KpiCard, ModifiedDate = now });
-            rows++;
-        }
-        for (var i = 0; i < maintKpiCodes.Length; i++)
-        {
-            var kpi = kpis.First(k => k.Code == maintKpiCodes[i]);
-            db.ScorecardKpis.Add(new ScorecardKpi { ScorecardDefinitionId = maintScorecard.Id, KpiDefinitionId = kpi.Id, DisplayOrder = (i + 1) * 10, Visual = ScorecardKpiVisual.KpiCard, ModifiedDate = now });
-            rows++;
-        }
-        await db.SaveChangesAsync(ct);
+        // KPI definitions, sample values, scorecards, scorecard memberships — extracted into a
+        // per-code-idempotent helper so adding a new DEMO-KPI-* below this line will backfill
+        // it on existing dev databases, not just fresh installs.
+        rows += await EnsureKpisAndScorecardsAsync(db, now, ct);
 
         // Reports.
         var reports = new[]
@@ -829,6 +765,154 @@ public sealed class DemoDataSeeder
         await db.SaveChangesAsync(ct);
         _logger.LogInformation("Seeded {Rows} performance demo rows.", rows);
         return rows;
+    }
+
+    /// <summary>
+    /// Seeds (or backfills) the demo KPI definitions, a sample week-of value per KPI, the two
+    /// demo scorecards, and the scorecard→KPI memberships. Each step is per-code idempotent —
+    /// calling repeatedly only adds rows that are missing. Add a new entry to <c>specs</c>
+    /// below to extend the demo set; existing dev databases will pick it up on the next call.
+    /// </summary>
+    private async Task<int> EnsureKpisAndScorecardsAsync(ApplicationDbContext db, DateTime now, CancellationToken ct)
+    {
+        var rows = 0;
+        var today = now.Date;
+
+        // KPI definitions. (Code, Name, Unit, Source, Aggregation, Target, Warning, Critical, Direction).
+        // Order matters only for ScorecardKpi.DisplayOrder, which is derived from the per-scorecard
+        // arrays further down; the KPI list itself can be reordered freely.
+        var specs = new (string Code, string Name, string Unit, KpiSource Source, KpiAggregation Agg,
+                         decimal Target, decimal Warn, decimal Crit, KpiDirection Dir, decimal Sample)[]
+        {
+            ("DEMO-KPI-OEE",     "Plant OEE",                    "%",      KpiSource.OeeOverall,            KpiAggregation.Average, 0.85m, 0.75m, 0.60m, KpiDirection.HigherIsBetter, 0.72m),
+            ("DEMO-KPI-AVAIL",   "Availability",                 "%",      KpiSource.OeeAvailability,       KpiAggregation.Average, 0.90m, 0.80m, 0.70m, KpiDirection.HigherIsBetter, 0.88m),
+            ("DEMO-KPI-PERF",    "Performance",                  "%",      KpiSource.OeePerformance,        KpiAggregation.Average, 0.95m, 0.85m, 0.70m, KpiDirection.HigherIsBetter, 0.83m),
+            ("DEMO-KPI-QUAL",    "Quality",                      "%",      KpiSource.OeeQuality,            KpiAggregation.Average, 0.99m, 0.97m, 0.93m, KpiDirection.HigherIsBetter, 0.96m),
+            ("DEMO-KPI-YIELD",   "First-pass yield",             "%",      KpiSource.ProductionYield,       KpiAggregation.Average, 0.98m, 0.95m, 0.90m, KpiDirection.HigherIsBetter, 0.97m),
+            ("DEMO-KPI-THRU",    "Daily throughput",             "units",  KpiSource.ProductionUnits,       KpiAggregation.Sum,     1500m, 1200m,  900m, KpiDirection.HigherIsBetter, 1320m),
+            ("DEMO-KPI-PEAK",    "Peak hourly throughput",       "units",  KpiSource.ProductionUnits,       KpiAggregation.Maximum,  220m,  180m,  140m, KpiDirection.HigherIsBetter,  195m),
+            ("DEMO-KPI-CYCLE",   "Average cycle time",           "s",      KpiSource.ProductionCycleSeconds, KpiAggregation.Average,  60m,   75m,   90m, KpiDirection.LowerIsBetter,   72m),
+            ("DEMO-KPI-MTBF",    "Mean time between failures",   "hrs",    KpiSource.MaintenanceMtbf,       KpiAggregation.Average,  200m,  150m,  100m, KpiDirection.HigherIsBetter,  175m),
+            ("DEMO-KPI-MTTR",    "Mean time to repair",          "hrs",    KpiSource.MaintenanceMttr,       KpiAggregation.Average,  2.0m,  4.0m,  8.0m, KpiDirection.LowerIsBetter,   3.2m),
+            ("DEMO-KPI-MAVAIL",  "Asset availability",           "%",      KpiSource.MaintenanceAvailability, KpiAggregation.Average, 0.95m, 0.90m, 0.85m, KpiDirection.HigherIsBetter, 0.93m),
+            ("DEMO-KPI-PMCOMP",  "PM compliance",                "%",      KpiSource.MaintenancePmCompliance, KpiAggregation.Average, 0.95m, 0.85m, 0.70m, KpiDirection.HigherIsBetter, 0.92m),
+        };
+
+        var existingCodes = await db.KpiDefinitions
+            .Where(k => specs.Select(s => s.Code).Contains(k.Code))
+            .Select(k => new { k.Code, k.Id })
+            .ToListAsync(ct);
+        var idByCode = existingCodes.ToDictionary(x => x.Code, x => x.Id);
+
+        var kpisToInsert = specs.Where(s => !idByCode.ContainsKey(s.Code))
+            .Select(s => new KpiDefinition
+            {
+                Code = s.Code, Name = s.Name, Unit = s.Unit,
+                Source = s.Source, Aggregation = s.Agg,
+                TargetValue = s.Target, WarningThreshold = s.Warn, CriticalThreshold = s.Crit,
+                Direction = s.Dir, IsActive = true, ModifiedDate = now,
+            })
+            .ToList();
+
+        if (kpisToInsert.Count > 0)
+        {
+            db.KpiDefinitions.AddRange(kpisToInsert);
+            await db.SaveChangesAsync(ct);
+            foreach (var k in kpisToInsert)
+            {
+                db.KpiDefinitionAuditLogs.Add(KpiDefinitionAuditService.RecordCreate(k, "demo-seed"));
+                idByCode[k.Code] = k.Id;
+            }
+            await db.SaveChangesAsync(ct);
+            rows += kpisToInsert.Count;
+        }
+
+        // KPI values — one sample per KPI for the last week, only insert if no value exists yet.
+        var weekStart = DateTime.SpecifyKind(today.AddDays(-7), DateTimeKind.Utc);
+        var weekEnd = DateTime.SpecifyKind(today, DateTimeKind.Utc);
+        foreach (var s in specs)
+        {
+            if (!idByCode.TryGetValue(s.Code, out var kpiId)) continue;
+            if (await db.KpiValues.AnyAsync(v => v.KpiDefinitionId == kpiId && v.PeriodStart == weekStart, ct)) continue;
+
+            var status = (s.Dir == KpiDirection.HigherIsBetter)
+                ? (s.Sample < s.Crit ? KpiStatus.Critical
+                    : s.Sample < s.Warn ? KpiStatus.Warning
+                    : KpiStatus.OnTarget)
+                : (s.Sample > s.Crit ? KpiStatus.Critical
+                    : s.Sample > s.Warn ? KpiStatus.Warning
+                    : KpiStatus.OnTarget);
+            db.KpiValues.Add(new KpiValue
+            {
+                KpiDefinitionId = kpiId,
+                PeriodKind = PerformancePeriodKind.Week,
+                PeriodStart = weekStart,
+                PeriodEnd = weekEnd,
+                Value = s.Sample,
+                TargetAtPeriod = s.Target,
+                Status = status,
+                ComputedAt = now,
+                ModifiedDate = now,
+            });
+            rows++;
+        }
+        await db.SaveChangesAsync(ct);
+
+        // Scorecards.
+        var pmScorecard = await db.ScorecardDefinitions.FirstOrDefaultAsync(s => s.Code == "DEMO-SC-PLANT", ct);
+        if (pmScorecard is null)
+        {
+            pmScorecard = new ScorecardDefinition { Code = "DEMO-SC-PLANT", Name = "Plant Manager Dashboard", Description = "Top-level plant performance at a glance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
+            db.ScorecardDefinitions.Add(pmScorecard);
+            await db.SaveChangesAsync(ct);
+            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(pmScorecard, "demo-seed"));
+            rows++;
+        }
+        var maintScorecard = await db.ScorecardDefinitions.FirstOrDefaultAsync(s => s.Code == "DEMO-SC-MAINT", ct);
+        if (maintScorecard is null)
+        {
+            maintScorecard = new ScorecardDefinition { Code = "DEMO-SC-MAINT", Name = "Maintenance Lead Dashboard", Description = "Reliability + PM compliance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
+            db.ScorecardDefinitions.Add(maintScorecard);
+            await db.SaveChangesAsync(ct);
+            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(maintScorecard, "demo-seed"));
+            rows++;
+        }
+
+        // Scorecard memberships — per-(scorecardId,kpiId) idempotent.
+        var plantKpiCodes = new[] { "DEMO-KPI-OEE", "DEMO-KPI-AVAIL", "DEMO-KPI-PERF", "DEMO-KPI-QUAL", "DEMO-KPI-YIELD", "DEMO-KPI-THRU", "DEMO-KPI-PEAK", "DEMO-KPI-CYCLE" };
+        var maintKpiCodes = new[] { "DEMO-KPI-MTBF", "DEMO-KPI-MTTR", "DEMO-KPI-MAVAIL", "DEMO-KPI-PMCOMP", "DEMO-KPI-AVAIL" };
+        rows += await EnsureScorecardKpisAsync(db, pmScorecard.Id, plantKpiCodes, idByCode, now, ct);
+        rows += await EnsureScorecardKpisAsync(db, maintScorecard.Id, maintKpiCodes, idByCode, now, ct);
+
+        return rows;
+    }
+
+    private static async Task<int> EnsureScorecardKpisAsync(
+        ApplicationDbContext db, int scorecardId, string[] kpiCodes,
+        Dictionary<string, int> idByCode, DateTime now, CancellationToken ct)
+    {
+        var existing = await db.ScorecardKpis.AsNoTracking()
+            .Where(k => k.ScorecardDefinitionId == scorecardId)
+            .Select(k => k.KpiDefinitionId)
+            .ToListAsync(ct);
+        var existingSet = existing.ToHashSet();
+        var added = 0;
+        for (var i = 0; i < kpiCodes.Length; i++)
+        {
+            if (!idByCode.TryGetValue(kpiCodes[i], out var kpiId)) continue;
+            if (existingSet.Contains(kpiId)) continue;
+            db.ScorecardKpis.Add(new ScorecardKpi
+            {
+                ScorecardDefinitionId = scorecardId,
+                KpiDefinitionId = kpiId,
+                DisplayOrder = (i + 1) * 10,
+                Visual = ScorecardKpiVisual.KpiCard,
+                ModifiedDate = now,
+            });
+            added++;
+        }
+        if (added > 0) await db.SaveChangesAsync(ct);
+        return added;
     }
 }
 

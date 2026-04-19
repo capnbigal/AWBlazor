@@ -1,8 +1,10 @@
 @page "/dashboard/plant"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.SignalR.Client
 @inject IPlantDashboardService DashboardService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@implements IAsyncDisposable
 
 <PageTitle>Plant dashboard</PageTitle>
 
@@ -16,6 +18,9 @@
             </MudText>
         </MudStack>
         <MudSpacer />
+        <MudChip T="string" Size="Size.Small" Color="@(_hubConnected ? Color.Success : Color.Default)" Variant="Variant.Outlined" Icon="@(_hubConnected ? Icons.Material.Filled.Sensors : Icons.Material.Filled.SensorsOff)">
+            @(_hubConnected ? "Live" : "Offline")
+        </MudChip>
         <MudButton Color="Color.Primary" Variant="Variant.Outlined"
                    StartIcon="@Icons.Material.Filled.Refresh"
                    OnClick="RefreshAsync" Disabled="@_loading">
@@ -113,13 +118,31 @@
                             @foreach (var stat in module.Stats)
                             {
                                 <MudItem xs="6">
-                                    <MudStack Spacing="0">
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@stat.Label</MudText>
-                                        <MudText Typo="Typo.h6" Color="@ColorFromString(stat.Color)">@stat.Value</MudText>
-                                    </MudStack>
+                                    @if (!string.IsNullOrWhiteSpace(stat.LinkHref))
+                                    {
+                                        <div style="cursor: pointer" title="@($"Open {stat.Label}")" @onclick="@(() => Navigation.NavigateTo(stat.LinkHref!))">
+                                            <MudStack Spacing="0">
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@stat.Label</MudText>
+                                                <MudText Typo="Typo.h6" Color="@ColorFromString(stat.Color)">@stat.Value</MudText>
+                                            </MudStack>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@stat.Label</MudText>
+                                            <MudText Typo="Typo.h6" Color="@ColorFromString(stat.Color)">@stat.Value</MudText>
+                                        </MudStack>
+                                    }
                                 </MudItem>
                             }
                         </MudGrid>
+                        @if (module.Trend30d.Count > 0 && module.Trend30d.Sum() > 0)
+                        {
+                            <MudDivider Class="my-3" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@module.Trend30dLabel · last 30 days</MudText>
+                            @((MarkupString)BuildModuleTrendSvg(module.Trend30d))
+                        }
                     </MudPaper>
                 </MudItem>
             }
@@ -161,10 +184,54 @@
 @code {
     private PlantDashboardDto? _dto;
     private bool _loading;
+    private HubConnection? _hub;
+    private bool _hubConnected;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+        await StartHubAsync();
+    }
+
+    /// <summary>
+    /// Subscribe to "DashboardChanged" so writes to any module trigger a fresh dashboard
+    /// build without the user clicking Refresh. Failures are non-fatal — the page still
+    /// works with the cached data + manual refresh button.
+    /// </summary>
+    private async Task StartHubAsync()
+    {
+        try
+        {
+            _hub = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri(AWBlazorApp.Infrastructure.SignalR.NotificationHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hub.On<string>("DashboardChanged", async source =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    DashboardService.Invalidate();
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            });
+            _hub.Reconnected += _ => InvokeAsync(() => { _hubConnected = true; StateHasChanged(); return Task.CompletedTask; });
+            _hub.Reconnecting += _ => InvokeAsync(() => { _hubConnected = false; StateHasChanged(); return Task.CompletedTask; });
+            _hub.Closed += _ => InvokeAsync(() => { _hubConnected = false; StateHasChanged(); return Task.CompletedTask; });
+
+            await _hub.StartAsync();
+            _hubConnected = true;
+        }
+        catch
+        {
+            _hubConnected = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null) await _hub.DisposeAsync();
     }
 
     private async Task LoadAsync()
@@ -234,6 +301,30 @@
         "Info" => Color.Info,
         _ => Color.Default,
     };
+
+    /// <summary>
+    /// Bar-style sparkline for a 30-day per-module count series. Bars instead of a line so
+    /// sparse activity (most days zero) is still readable — flat-line sparklines hide that.
+    /// </summary>
+    private static string BuildModuleTrendSvg(IReadOnlyList<int> bins)
+    {
+        const int width = 320;
+        const int height = 36;
+        const int padding = 2;
+        var max = Math.Max(1, bins.Max());
+        var bandW = (width - 2.0 * padding) / bins.Count;
+        var sb = new System.Text.StringBuilder();
+        sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:36px;display:block;margin-top:4px"">");
+        for (var i = 0; i < bins.Count; i++)
+        {
+            if (bins[i] == 0) continue;
+            var x = padding + i * bandW;
+            var h = bins[i] / (double)max * (height - 2 * padding);
+            sb.Append($@"<rect x=""{x:F1}"" y=""{height - padding - h:F1}"" width=""{bandW * 0.85:F1}"" height=""{h:F1}"" fill=""var(--mud-palette-primary)"" opacity=""0.7""/>");
+        }
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
 
     /// <summary>
     /// Wraps a KpiCard in a clickable surface that navigates to the source list page when

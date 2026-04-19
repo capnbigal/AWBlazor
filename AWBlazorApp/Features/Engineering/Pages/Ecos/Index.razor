@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthStateProvider
+@inject AWBlazorApp.Features.Insights.Services.NotificationService NotificationService
 
 <PageTitle>Engineering change orders</PageTitle>
 
@@ -121,6 +122,7 @@
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.Code}.", Severity.Success);
+            await NotificationService.NotifyDashboardChangedAsync("Engineering");
             dialogOpen = false;
             Navigation.NavigateTo($"engineering/ecos/{entity.Id}");
         }

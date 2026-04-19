@@ -1,0 +1,128 @@
+@page "/admin/rollup"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using AWBlazorApp.Features.Performance.Jobs
+@inject MetricsRollupJob Job
+@inject ISnackbar Snackbar
+
+<PageTitle>Performance rollup — admin</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Performance rollup</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Manually trigger the same job that runs nightly via Hangfire (<code>performance-metrics-rollup</code>, 02:00 UTC).
+                Use Backfill on a fresh deploy to populate historical OEE / production / maintenance charts.
+            </MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h6">Run rollup</MudText>
+                <MudStack Spacing="2" Class="mt-3">
+                    <MudDatePicker @bind-Date="_date" Label="End date (default: yesterday)" Variant="Variant.Outlined" Clearable="true" />
+                    <MudNumericField T="int" @bind-Value="_days" Label="Days to cover (1-365)" Min="1" Max="365" Variant="Variant.Outlined" HelperText="1 = single day; N = trailing N days ending on the target date" />
+                    <MudNumericField T="decimal?" @bind-Value="_idealCycle" Label="Override ideal cycle seconds (optional)" Variant="Variant.Outlined" Clearable="true" HelperText="Leave blank to use per-station IdealCycleSeconds, falling back to 60s" />
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="RunCustom" Disabled="@_running">
+                            @(_running ? "Running…" : "Run")
+                        </MudButton>
+                        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="@(() => RunPreset(1))" Disabled="@_running">Yesterday only</MudButton>
+                        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="@(() => RunPreset(7))" Disabled="@_running">Last 7 days</MudButton>
+                        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="@(() => RunPreset(30))" Disabled="@_running">Last 30 days</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6">Last run</MudText>
+                    <MudSpacer />
+                    @if (_lastRunAt.HasValue)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_lastRunAt.Value.ToString("yyyy-MM-dd HH:mm:ss") UTC</MudText>
+                    }
+                </MudStack>
+                @if (_lastResult is null && _lastError is null)
+                {
+                    <MudAlert Severity="Severity.Info" Class="mt-3" Variant="Variant.Text">No run on this session yet.</MudAlert>
+                }
+                else if (_lastError is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@_lastError</MudAlert>
+                }
+                else if (_lastResult is not null)
+                {
+                    <MudGrid Class="mt-2" Spacing="2">
+                        <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">From</MudText><MudText Typo="Typo.body1">@_lastResult.FromDate</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">To</MudText><MudText Typo="Typo.body1">@_lastResult.ToDate</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">Days covered</MudText><MudText Typo="Typo.body1">@_lastResult.DaysCovered</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.caption" Color="Color.Secondary">Failures</MudText><MudText Typo="Typo.body1" Color="@(_lastResult.Failures > 0 ? Color.Error : Color.Default)">@_lastResult.Failures</MudText></MudItem>
+                        <MudItem xs="4"><MudText Typo="Typo.caption" Color="Color.Secondary">OEE rollups</MudText><MudText Typo="Typo.h5">@_lastResult.OeeRollups</MudText></MudItem>
+                        <MudItem xs="4"><MudText Typo="Typo.caption" Color="Color.Secondary">Production rollups</MudText><MudText Typo="Typo.h5">@_lastResult.ProductionRollups</MudText></MudItem>
+                        <MudItem xs="4"><MudText Typo="Typo.caption" Color="Color.Secondary">Maintenance rollups</MudText><MudText Typo="Typo.h5">@_lastResult.MaintenanceRollups</MudText></MudItem>
+                        @if (_lastResult.MaintenanceMonthsRolledUp.Count > 0)
+                        {
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Maintenance months rolled up</MudText>
+                                <MudStack Row="true" Spacing="1" Class="mt-1">
+                                    @foreach (var m in _lastResult.MaintenanceMonthsRolledUp)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@m</MudChip>
+                                    }
+                                </MudStack>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private DateTime? _date;
+    private int _days = 1;
+    private decimal? _idealCycle;
+    private bool _running;
+
+    private MetricsRollupResult? _lastResult;
+    private string? _lastError;
+    private DateTime? _lastRunAt;
+
+    private async Task RunCustom()
+    {
+        DateOnly? targetDate = _date.HasValue ? DateOnly.FromDateTime(_date.Value) : null;
+        await ExecuteAsync(targetDate, _days, _idealCycle);
+    }
+
+    private async Task RunPreset(int days)
+    {
+        _days = days;
+        await ExecuteAsync(targetDate: null, days, _idealCycle);
+    }
+
+    private async Task ExecuteAsync(DateOnly? targetDate, int days, decimal? idealCycle)
+    {
+        _running = true;
+        _lastError = null;
+        try
+        {
+            _lastResult = await Job.RunAsync(targetDate, days, idealCycle, default);
+            _lastRunAt = DateTime.UtcNow;
+            Snackbar.Add($"Rollup complete: {_lastResult.OeeRollups + _lastResult.ProductionRollups + _lastResult.MaintenanceRollups} rows across {_lastResult.DaysCovered} day(s).", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _lastError = ex.Message;
+            _lastRunAt = DateTime.UtcNow;
+            Snackbar.Add($"Rollup failed: {ex.Message}", Severity.Error);
+        }
+        finally { _running = false; }
+    }
+}

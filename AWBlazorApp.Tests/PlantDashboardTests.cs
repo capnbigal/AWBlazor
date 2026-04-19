@@ -44,6 +44,13 @@ public class PlantDashboardTests : IntegrationTestFixtureBase
         Assert.That(dto.OeeTrend7d, Is.Not.Null);
         Assert.That(dto.ProductionTrend7d, Is.Not.Null);
         Assert.That(dto.WorkOrderTrend7d.Count, Is.EqualTo(8), "WO trend should always emit 8 days (7 prior + today) padded with zeros.");
+
+        // Module mini-stats now expose drill-through hrefs and a 30-day trend per card.
+        var workforce = dto.ModuleHealth.First(m => m.Name == "Workforce");
+        Assert.That(workforce.Stats.All(s => !string.IsNullOrWhiteSpace(s.LinkHref)), Is.True,
+            "Every Workforce mini-stat should ship a drill-through href.");
+        Assert.That(dto.ModuleHealth.All(m => m.Trend30d.Count == 30), Is.True,
+            "Every module card should emit exactly 30 daily bins for the trend sparkline.");
     }
 
     [Test]
