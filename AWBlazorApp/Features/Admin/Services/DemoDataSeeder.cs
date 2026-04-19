@@ -5,8 +5,10 @@ using AWBlazorApp.Features.Inventory.Domain;
 using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Maintenance.Audit;
 using AWBlazorApp.Features.Maintenance.Domain;
+using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Features.Performance.Audit;
 using AWBlazorApp.Features.Performance.Domain;
+using AWBlazorApp.Features.Quality.Domain;
 using AWBlazorApp.Features.Workforce.Audit;
 using AWBlazorApp.Features.Workforce.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
@@ -62,9 +64,11 @@ public sealed class DemoDataSeeder
         result.Performance = await SeedPerformanceAsync(stationIds, assetIds, cancellationToken);
         result.Inventory = await SeedInventoryAsync(productIds, cancellationToken);
         result.Logistics = await SeedLogisticsAsync(cancellationToken);
+        result.Quality = await SeedQualityAsync(productIds, employeeIds, cancellationToken);
+        result.Mes = await SeedMesAsync(stationIds, cancellationToken);
 
-        _logger.LogInformation("Demo seed complete: baseline={Base} wf={Wf} eng={Eng} maint={Maint} perf={Perf} inv={Inv} lgx={Lgx}",
-            result.Baseline, result.Workforce, result.Engineering, result.Maintenance, result.Performance, result.Inventory, result.Logistics);
+        _logger.LogInformation("Demo seed complete: baseline={Base} wf={Wf} eng={Eng} maint={Maint} perf={Perf} inv={Inv} lgx={Lgx} qa={Qa} mes={Mes}",
+            result.Baseline, result.Workforce, result.Engineering, result.Maintenance, result.Performance, result.Inventory, result.Logistics, result.Quality, result.Mes);
         return result;
     }
 
@@ -187,12 +191,17 @@ public sealed class DemoDataSeeder
     public async Task<int> SeedWorkforceAsync(List<int> employeeIds, List<int> stationIds, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var seededRows = 0;
 
-        // Marker: DEMO-FORKLIFT training course.
+        // Marker: DEMO-FORKLIFT training course. The heavy block below is idempotent at the
+        // module-marker level — but training records are seeded by the per-call EnsureDemo...
+        // helper at the end so existing dev DBs (where the marker already exists) still get
+        // training records backfilled into the wf.TrainingRecord table.
         if (await db.TrainingCourses.AnyAsync(c => c.Code == "DEMO-FORKLIFT", ct))
         {
-            _logger.LogInformation("Workforce demo seed: already present, skipping.");
-            return 0;
+            _logger.LogInformation("Workforce demo seed: heavy block already present, only backfilling training records.");
+            seededRows += await EnsureDemoTrainingRecordsAsync(db, employeeIds, ct);
+            return seededRows;
         }
 
         var now = DateTime.UtcNow;
@@ -361,7 +370,57 @@ public sealed class DemoDataSeeder
         rows += announcements.Length;
 
         await db.SaveChangesAsync(ct);
+
+        // Backfill training records via the per-call helper (newly added in this PR — even on
+        // a fresh-seed path it lands rows here so the count is reflected in the return value).
+        rows += await EnsureDemoTrainingRecordsAsync(db, employeeIds, ct);
+
         _logger.LogInformation("Seeded {Rows} workforce demo rows.", rows);
+        return rows;
+    }
+
+    /// <summary>
+    /// Per-call helper that adds 8 training-record completions if none exist yet (keyed off
+    /// <c>RecordedByUserId == "demo-seed"</c>). Lets existing dev DBs that were seeded before
+    /// this loop existed get backfilled without re-running the heavy SeedWorkforceAsync block.
+    /// </summary>
+    private async Task<int> EnsureDemoTrainingRecordsAsync(ApplicationDbContext db, List<int> employeeIds, CancellationToken ct)
+    {
+        if (await db.TrainingRecords.AnyAsync(t => t.RecordedByUserId == "demo-seed", ct))
+            return 0;
+
+        // Pull the seeded courses we created earlier in this same module.
+        var demoCourses = await db.TrainingCourses
+            .Where(c => c.Code.StartsWith("DEMO-"))
+            .Select(c => new { c.Id, c.RecurrenceMonths })
+            .ToListAsync(ct);
+        if (demoCourses.Count == 0 || employeeIds.Count == 0) return 0;
+
+        var now = DateTime.UtcNow;
+        var rnd = new Random(99);
+        var rows = 0;
+        for (var i = 0; i < Math.Min(employeeIds.Count, 8); i++)
+        {
+            var course = demoCourses[rnd.Next(demoCourses.Count)];
+            var completed = now.AddDays(-rnd.Next(30, 540));
+            var expires = course.RecurrenceMonths.HasValue
+                ? completed.AddMonths(course.RecurrenceMonths.Value)
+                : (DateTime?)null;
+            db.TrainingRecords.Add(new TrainingRecord
+            {
+                TrainingCourseId = course.Id,
+                BusinessEntityId = employeeIds[i],
+                CompletedAt = completed,
+                ExpiresOn = expires,
+                Score = rnd.Next(80, 101) + "%",
+                EvidenceUrl = "https://example.com/training/" + Guid.NewGuid().ToString("N")[..8],
+                Notes = "Seeded demo training completion.",
+                RecordedByUserId = "demo-seed",
+                ModifiedDate = now,
+            });
+            rows++;
+        }
+        await db.SaveChangesAsync(ct);
         return rows;
     }
 
@@ -1138,6 +1197,250 @@ public sealed class DemoDataSeeder
         return rows;
     }
 
+    // ────────────────────────────────────────────────────────────────
+    //  QUALITY — seed inspection plans + inspections + NCR + CAPA chain
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds the QA chain end-to-end: 2 InspectionPlans (Inbound + InProcess), 2 Inspections
+    /// (Pending + Pass), 1 NonConformance (Open), 1 CapaCase (Open). Idempotent — keyed off
+    /// the "DEMO-QA-PLAN-INB" plan code. The NCR pulls an InventoryItem if any exist (so seed
+    /// the inventory module first); skips the NCR + CAPA chain when no items are present.
+    /// </summary>
+    public async Task<int> SeedQualityAsync(List<int> productIds, List<int> employeeIds, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        if (await db.InspectionPlans.AnyAsync(p => p.PlanCode == "DEMO-QA-PLAN-INB", ct))
+        {
+            _logger.LogInformation("Quality demo seed: already present, skipping.");
+            return 0;
+        }
+
+        var now = DateTime.UtcNow;
+        var rows = 0;
+
+        // Two reusable plans — one inbound (auto-trigger on receipt), one in-process.
+        var inboundPlan = new InspectionPlan
+        {
+            PlanCode = "DEMO-QA-PLAN-INB",
+            Name = "Inbound receipt sampling",
+            Description = "Sample 5% of every inbound receipt; reject lots with > 2% defects.",
+            Scope = InspectionScope.Inbound,
+            ProductId = productIds.Count > 0 ? productIds[0] : null,
+            SamplingRule = "5% per lot",
+            AutoTriggerOnReceipt = true,
+            IsActive = true, ModifiedDate = now,
+        };
+        var inProcessPlan = new InspectionPlan
+        {
+            PlanCode = "DEMO-QA-PLAN-IP",
+            Name = "First-piece in-process check",
+            Description = "First-piece inspection at start of every production run.",
+            Scope = InspectionScope.InProcess,
+            ProductId = productIds.Count > 1 ? productIds[1] : null,
+            SamplingRule = "First piece",
+            AutoTriggerOnProductionRun = true,
+            IsActive = true, ModifiedDate = now,
+        };
+        db.InspectionPlans.AddRange(inboundPlan, inProcessPlan);
+        await db.SaveChangesAsync(ct);
+        rows += 2;
+
+        // Two inspections — one Pending (newly raised), one Pass (closed cleanly).
+        var firstItem = await db.InventoryItems.OrderBy(i => i.Id).Select(i => new { i.Id }).FirstOrDefaultAsync(ct);
+        var pendingInspection = new Inspection
+        {
+            InspectionNumber = "DEMO-INSP-001",
+            InspectionPlanId = inboundPlan.Id,
+            Status = InspectionStatus.Pending,
+            SourceKind = InspectionSourceKind.Manual,
+            SourceId = 0,
+            InspectorBusinessEntityId = employeeIds.Count > 0 ? employeeIds[0] : null,
+            InventoryItemId = firstItem?.Id,
+            Quantity = 100m,
+            UnitMeasureCode = "EA",
+            Notes = "Seeded demo inspection — awaiting inspector.",
+            ModifiedDate = now,
+        };
+        var passedInspection = new Inspection
+        {
+            InspectionNumber = "DEMO-INSP-002",
+            InspectionPlanId = inProcessPlan.Id,
+            Status = InspectionStatus.Pass,
+            SourceKind = InspectionSourceKind.Manual,
+            SourceId = 0,
+            InspectorBusinessEntityId = employeeIds.Count > 0 ? employeeIds[0] : null,
+            InspectedAt = now.AddDays(-2),
+            InventoryItemId = firstItem?.Id,
+            Quantity = 50m,
+            UnitMeasureCode = "EA",
+            Notes = "Seeded demo inspection — first-piece check passed.",
+            PostedByUserId = "demo-seed",
+            ModifiedDate = now,
+        };
+        db.Inspections.AddRange(pendingInspection, passedInspection);
+        await db.SaveChangesAsync(ct);
+        rows += 2;
+
+        // NCR + CAPA chain — only if we have an InventoryItem to anchor the NCR to.
+        if (firstItem is not null)
+        {
+            var ncr = new NonConformance
+            {
+                NcrNumber = "DEMO-NCR-001",
+                InspectionId = passedInspection.Id, // ties to a (passed) inspection — fine for demo
+                InventoryItemId = firstItem.Id,
+                Quantity = 5m,
+                UnitMeasureCode = "EA",
+                Description = "Demo NCR — surface defect found on small lot.",
+                Status = NonConformanceStatus.Open,
+                ModifiedDate = now,
+            };
+            db.NonConformances.Add(ncr);
+            await db.SaveChangesAsync(ct);
+            rows++;
+
+            db.CapaCases.Add(new CapaCase
+            {
+                CaseNumber = "DEMO-CAPA-001",
+                Title = "Investigate recurring surface defects",
+                Status = CapaStatus.Investigation,
+                RootCause = "Pending — under investigation.",
+                OwnerBusinessEntityId = employeeIds.Count > 0 ? employeeIds[0] : null,
+                OpenedAt = now.AddDays(-1),
+                ModifiedDate = now,
+            });
+            rows++;
+        }
+
+        await db.SaveChangesAsync(ct);
+        _logger.LogInformation("Seeded {Rows} quality demo rows.", rows);
+        return rows;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  MES — seed production runs + downtime events + work instruction
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds a representative slice of MES activity: 2 ProductionRuns, 2 DowntimeEvents tied
+    /// to a real DowntimeReason code, 1 WorkInstruction tied to a real AW WorkOrderRouting.
+    /// Idempotent — keyed off the "DEMO-RUN-001" run number. Pulls AW WorkOrder + Routing IDs
+    /// from the legacy schema; skips affected rows when those FK targets are missing.
+    /// </summary>
+    public async Task<int> SeedMesAsync(List<int> stationIds, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        if (await db.ProductionRuns.AnyAsync(r => r.RunNumber == "DEMO-RUN-001", ct))
+        {
+            _logger.LogInformation("MES demo seed: already present, skipping.");
+            return 0;
+        }
+
+        var now = DateTime.UtcNow;
+        var rows = 0;
+
+        // Pull a real AW WorkOrder for the production-run FK — seeded by AdventureWorks
+        // restore. WorkInstruction.WorkOrderRoutingId is a soft int FK (no DB-level constraint
+        // and no join in the list endpoint), so we point it at the demo-seeded engineering
+        // ManufacturingRouting Id since that entity has a usable surrogate key — the legacy AW
+        // Production.WorkOrderRouting has only a composite PK and no Id column to point at.
+        var firstAwWorkOrderId = await db.Database
+            .SqlQueryRaw<int>("SELECT TOP 1 WorkOrderID AS Value FROM Production.WorkOrder ORDER BY WorkOrderID")
+            .FirstOrDefaultAsync(ct);
+        var demoRoutingId = await db.ManufacturingRoutings
+            .Where(r => r.Code == "DEMO-RT-ROAD")
+            .Select(r => (int?)r.Id)
+            .FirstOrDefaultAsync(ct);
+
+        var firstStation = stationIds.Count > 0 ? (int?)stationIds[0] : null;
+
+        // 2 ProductionRuns — Completed + InProgress.
+        var completedRun = new ProductionRun
+        {
+            RunNumber = "DEMO-RUN-001",
+            Kind = ProductionRunKind.Production,
+            WorkOrderId = firstAwWorkOrderId == 0 ? null : firstAwWorkOrderId,
+            StationId = firstStation,
+            Status = ProductionRunStatus.Completed,
+            PlannedStartAt = now.AddDays(-2),
+            ActualStartAt = now.AddDays(-2).AddMinutes(15),
+            ActualEndAt = now.AddDays(-1).AddHours(-3),
+            QuantityPlanned = 100m,
+            QuantityProduced = 98m,
+            QuantityScrapped = 2m,
+            Notes = "Seeded demo run — completed cleanly.",
+            PostedByUserId = "demo-seed",
+            ModifiedDate = now,
+        };
+        var inProgressRun = new ProductionRun
+        {
+            RunNumber = "DEMO-RUN-002",
+            Kind = ProductionRunKind.Production,
+            WorkOrderId = firstAwWorkOrderId == 0 ? null : firstAwWorkOrderId,
+            StationId = firstStation,
+            Status = ProductionRunStatus.InProgress,
+            PlannedStartAt = now.AddHours(-2),
+            ActualStartAt = now.AddHours(-2),
+            QuantityPlanned = 50m,
+            QuantityProduced = 24m,
+            QuantityScrapped = 0m,
+            Notes = "Seeded demo run — currently running.",
+            ModifiedDate = now,
+        };
+        db.ProductionRuns.AddRange(completedRun, inProgressRun);
+        await db.SaveChangesAsync(ct);
+        rows += 2;
+
+        // 2 DowntimeEvents — only if we have at least one DowntimeReason (auto-seeded on boot)
+        // and one Station. One closed (setup), one open (machine fault).
+        var setupReasonId = await db.DowntimeReasons.Where(r => r.Code == DowntimeReasonCodes.Setup).Select(r => (int?)r.Id).FirstOrDefaultAsync(ct);
+        var faultReasonId = await db.DowntimeReasons.Where(r => r.Code == DowntimeReasonCodes.MachineFault).Select(r => (int?)r.Id).FirstOrDefaultAsync(ct);
+        if (firstStation.HasValue && setupReasonId.HasValue && faultReasonId.HasValue)
+        {
+            db.DowntimeEvents.Add(new DowntimeEvent
+            {
+                ProductionRunId = completedRun.Id,
+                StationId = firstStation.Value,
+                DowntimeReasonId = setupReasonId.Value,
+                StartAt = now.AddDays(-2).AddMinutes(0),
+                EndAt = now.AddDays(-2).AddMinutes(15),
+                Notes = "Seeded demo downtime — startup setup before run.",
+                ModifiedDate = now,
+            });
+            db.DowntimeEvents.Add(new DowntimeEvent
+            {
+                ProductionRunId = inProgressRun.Id,
+                StationId = firstStation.Value,
+                DowntimeReasonId = faultReasonId.Value,
+                StartAt = now.AddMinutes(-30),
+                EndAt = null, // still open
+                Notes = "Seeded demo downtime — sensor fault under investigation.",
+                ModifiedDate = now,
+            });
+            rows += 2;
+        }
+
+        // 1 WorkInstruction tied to the engineering demo routing. The routing must exist —
+        // SeedEngineeringAsync runs before this method in SeedAllAsync, so it should always
+        // be present unless the engineering seed itself was skipped.
+        if (demoRoutingId.HasValue)
+        {
+            db.WorkInstructions.Add(new WorkInstruction
+            {
+                WorkOrderRoutingId = demoRoutingId.Value,
+                Title = "Demo work instruction — Road Frame routing",
+                IsActive = true,
+                ModifiedDate = now,
+            });
+            rows++;
+        }
+
+        await db.SaveChangesAsync(ct);
+        _logger.LogInformation("Seeded {Rows} MES demo rows.", rows);
+        return rows;
+    }
+
     private static async Task<int> EnsureScorecardKpisAsync(
         ApplicationDbContext db, int scorecardId, string[] kpiCodes,
         Dictionary<string, int> idByCode, DateTime now, CancellationToken ct)
@@ -1177,5 +1480,7 @@ public sealed class DemoSeedResult
     public int Performance { get; set; }
     public int Inventory { get; set; }
     public int Logistics { get; set; }
-    public int Total => Baseline + Workforce + Engineering + Maintenance + Performance + Inventory + Logistics;
+    public int Quality { get; set; }
+    public int Mes { get; set; }
+    public int Total => Baseline + Workforce + Engineering + Maintenance + Performance + Inventory + Logistics + Quality + Mes;
 }
