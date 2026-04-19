@@ -10,7 +10,7 @@
 A reference for extracting the useful ideas from ServiceStack's
 message-based, DTO-first architecture and translating them to the
 idiomatic .NET 10 / Blazor stack already in use in this repo
-(`AWBlazorApp/Endpoints`, `Models/`, `Validators/`, `Services/`).
+(`src/AWBlazorApp/Endpoints`, `Models/`, `Validators/`, `Services/`).
 This is **not** a proposal to adopt ServiceStack; it is a
 cherry-picking guide.
 
@@ -233,7 +233,7 @@ the raw `HttpContext` (headers, rate limits, logging).
 Aligns with the existing repo and just sharpens the conventions:
 
 ```
-AWBlazorApp/
+src/AWBlazorApp/
   Models/                         # DTOs (records) - the API contract
     Shared/
       PagedResult.cs

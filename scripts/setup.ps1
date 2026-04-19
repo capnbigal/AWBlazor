@@ -37,5 +37,5 @@ Write-Host "`nRunning tests..." -ForegroundColor Yellow
 dotnet test AWBlazorApp.slnx --no-build
 
 Write-Host "`n=== Setup Complete ===" -ForegroundColor Cyan
-Write-Host "Run 'dotnet run --project AWBlazorApp' to start the app." -ForegroundColor Green
+Write-Host "Run 'dotnet run --project src/AWBlazorApp' to start the app." -ForegroundColor Green
 Write-Host "Open https://localhost:5001/" -ForegroundColor Green

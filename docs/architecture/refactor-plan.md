@@ -10,7 +10,7 @@ owns one folder under `Features/<Name>/`.
 ## Target tree (single project)
 
 ```
-AWBlazorApp/
+src/AWBlazorApp/
 ├── App/                    # composition root (thin Program.cs + extensions)
 │   ├── Extensions/
 │   ├── Middleware/

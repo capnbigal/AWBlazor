@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AWBlazorApp\AWBlazorApp.csproj" />
+        <ProjectReference Include="..\src\AWBlazorApp\AWBlazorApp.csproj" />
 
         <PackageReference Include="NUnit" Version="4.*" />
         <PackageReference Include="NUnit3TestAdapter" Version="6.*" />

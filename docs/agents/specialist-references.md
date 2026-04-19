@@ -96,23 +96,23 @@ Quick links for future Claude sessions to find authoritative guidance fast.
 - Build: `dotnet build AWBlazorApp.slnx`
 - Test: `dotnet test AWBlazorApp.slnx`
 - Test single: `dotnet test AWBlazorApp.slnx --filter "FullyQualifiedName~Login_Form_Post"`
-- Run: `dotnet run --project AWBlazorApp` (https://localhost:5001)
-- EF migrations: `cd AWBlazorApp && dotnet ef migrations add <Name>` — but read [EF Core reference §5](../research/efcore-sqlserver-reference.md) first; most schema changes go through DatabaseInitializer instead
+- Run: `dotnet run --project src/AWBlazorApp` (https://localhost:5001)
+- EF migrations: `cd src/AWBlazorApp && dotnet ef migrations add <Name>` — but read [EF Core reference §5](../research/efcore-sqlserver-reference.md) first; most schema changes go through DatabaseInitializer instead
 
 ## Where things live
 
 | Need to find… | Look here |
 |---|---|
-| All endpoints | `AWBlazorApp/Endpoints/` |
-| All DTOs | `AWBlazorApp/Models/` |
-| All entities | `AWBlazorApp/Data/Entities/` |
-| All validators | `AWBlazorApp/Validators/` |
-| All Razor pages | `AWBlazorApp/Components/Pages/` |
-| All shared components | `AWBlazorApp/Components/Shared/` |
-| All services | `AWBlazorApp/Services/` |
-| Service registration | `AWBlazorApp/Startup/ServiceRegistration.cs` |
-| Middleware pipeline | `AWBlazorApp/Startup/MiddlewarePipeline.cs` |
-| Database initialization | `AWBlazorApp/Data/DatabaseInitializer.cs` |
-| Authentication handlers | `AWBlazorApp/Authentication/` |
+| All endpoints | `src/AWBlazorApp/Endpoints/` |
+| All DTOs | `src/AWBlazorApp/Models/` |
+| All entities | `src/AWBlazorApp/Data/Entities/` |
+| All validators | `src/AWBlazorApp/Validators/` |
+| All Razor pages | `src/AWBlazorApp/Components/Pages/` |
+| All shared components | `src/AWBlazorApp/Components/Shared/` |
+| All services | `src/AWBlazorApp/Services/` |
+| Service registration | `src/AWBlazorApp/Startup/ServiceRegistration.cs` |
+| Middleware pipeline | `src/AWBlazorApp/Startup/MiddlewarePipeline.cs` |
+| Database initialization | `src/AWBlazorApp/Data/DatabaseInitializer.cs` |
+| Authentication handlers | `src/AWBlazorApp/Authentication/` |
 | Tests | `AWBlazorApp.Tests/` |
 | Documentation | `docs/` (this folder) |

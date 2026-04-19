@@ -176,7 +176,7 @@ Because the codebase uses runtime model diffing for most tables (only 3 actual E
 ### Adding a new EF-managed table
 
 If you really need a migration:
-1. `cd AWBlazorApp && dotnet ef migrations add YourMigrationName`
+1. `cd src/AWBlazorApp && dotnet ef migrations add YourMigrationName`
 2. Inspect the generated migration file — if it includes more than your changes, regenerate from a fresh snapshot
 3. Add an entry to `DatabaseInitializer.MigrationMarkers` array with the marker table name
 4. Update `ApplicationDbContextModelSnapshot.cs` (auto-generated)

@@ -1,13 +1,13 @@
 # Folder structure — current state
 
 This is the authoritative reference for where code lives in
-`AWBlazorApp/`. If you're adding a new feature, see
+`src/AWBlazorApp/`. If you're adding a new feature, see
 [`adding-a-feature.md`](./adding-a-feature.md).
 
 ## Top level
 
 ```
-AWBlazorApp/
+src/AWBlazorApp/
 ├── App/                       # composition root (thin Program.cs + extensions)
 ├── Features/                  # vertical slices — one folder per business domain
 ├── Shared/                    # cross-feature code (widgets, base domain, helpers)
