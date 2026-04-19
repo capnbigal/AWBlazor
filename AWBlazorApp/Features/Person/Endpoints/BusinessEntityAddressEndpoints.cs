@@ -75,13 +75,7 @@ public static class BusinessEntityAddressEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.BusinessEntityAddresses.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.BusinessEntityAddressAuditLogs.Add(
-            BusinessEntityAddressAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => BusinessEntityAddressAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/business-entity-addresses/by-key?businessEntityId={entity.BusinessEntityId}&addressId={entity.AddressId}&addressTypeId={entity.AddressTypeId}",
             new CompositeKeyResponse(new Dictionary<string, object>

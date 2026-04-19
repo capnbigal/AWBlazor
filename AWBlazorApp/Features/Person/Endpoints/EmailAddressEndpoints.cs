@@ -65,12 +65,7 @@ public static class EmailAddressEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EmailAddresses.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.EmailAddressAuditLogs.Add(EmailAddressAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => EmailAddressAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/email-addresses/by-key?businessEntityId={entity.BusinessEntityId}&emailAddressId={entity.EmailAddressId}",
             new CompositeKeyResponse(new Dictionary<string, object>

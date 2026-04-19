@@ -56,12 +56,7 @@ public static class BusinessEntityEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.BusinessEntities.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.BusinessEntityAuditLogs.Add(BusinessEntityAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => BusinessEntityAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/aw/business-entities/{entity.Id}", new IdResponse(entity.Id));
     }
 
