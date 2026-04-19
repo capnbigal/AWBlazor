@@ -1,7 +1,6 @@
 using System.Net;
 using AWBlazorApp.Features.ToolSlots.Dtos;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Features.Identity.Domain;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Web;

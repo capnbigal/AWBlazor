@@ -7,7 +7,6 @@ using AWBlazorApp.App.Middleware;
 using AWBlazorApp.App.Routing;
 using AWBlazorApp.Features.Admin.Api;
 using AWBlazorApp.Infrastructure.Jobs;
-using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;

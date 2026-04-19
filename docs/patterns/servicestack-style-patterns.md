@@ -10,7 +10,7 @@
 A reference for extracting the useful ideas from ServiceStack's
 message-based, DTO-first architecture and translating them to the
 idiomatic .NET 10 / Blazor stack already in use in this repo
-(`src/AWBlazorApp/Endpoints`, `Models/`, `Validators/`, `Services/`).
+(`src/AWBlazorApp/Features/<Feature>/<Entity>/{Api,Dtos,Application/{Services,Validators}}/`).
 This is **not** a proposal to adopt ServiceStack; it is a
 cherry-picking guide.
 
@@ -234,28 +234,32 @@ Aligns with the existing repo and just sharpens the conventions:
 
 ```
 src/AWBlazorApp/
-  Models/                         # DTOs (records) - the API contract
-    Shared/
+  Shared/
+    Dtos/
       PagedResult.cs
       ApiError.cs                 # optional thin wrapper over ProblemDetails
-    AdventureWorks/
-      ProductDtos.cs              # record ProductDto, GetProductRequest, CreateProductRequest, UpdateProductRequest
-      ProductMappings.cs          # static ToDto / ToEntity / ApplyUpdate
-  Validators/
-    AdventureWorks/
-      ProductValidators.cs        # one AbstractValidator per Request DTO (or shared with RuleSets)
-  Services/                       # reusable domain logic (injected, used by endpoints AND Blazor components)
-    LookupService.cs
-    PermissionService.cs
-    ProductService.cs             # IProductService / ProductService
-  Endpoints/                      # minimal-API wiring only; no business logic
-    ProductEndpoints.cs           # static MapProductEndpoints(this IEndpointRouteBuilder app)
-    ValidationExtensions.cs       # .WithValidation<T>() filter
-    EndpointMappingExtensions.cs  # single MapAllEndpoints() call used by Program.cs
-  Startup/
-    ExceptionHandling.cs          # UseExceptionHandler + ProblemDetails mapping
-    AuthorizationPolicies.cs
-  Components/                     # Blazor - consumes IProductService directly, NOT the HTTP endpoint
+    Api/
+      ValidationExtensions.cs     # .WithValidation<T>() filter
+  Features/<Feature>/<Entity>/
+    Domain/
+      <Entity>.cs                 # entity
+    Dtos/
+      <Entity>Dtos.cs             # record EntityDto, Get/Create/UpdateRequest
+      <Entity>Mappings.cs         # static ToDto / ToEntity / ApplyUpdate
+    Application/
+      Validators/
+        <Entity>Validators.cs     # one AbstractValidator per Request DTO (or shared with RuleSets)
+      Services/
+        <Entity>Service.cs        # I<Entity>Service / <Entity>Service — used by endpoints AND Blazor pages
+    Api/
+      <Entity>Endpoints.cs        # static Map<Entity>Endpoints(this IEndpointRouteBuilder app)
+    UI/Pages/                     # Blazor — consumes I<Entity>Service directly, NOT the HTTP endpoint
+  App/
+    Routing/
+      EndpointMappingExtensions.cs # single MapAllEndpoints() call used by Program.cs
+    Extensions/
+      ServiceRegistration.cs       # AuthorizationPolicies + DI registration
+      MiddlewarePipeline.cs        # exception handler + ProblemDetails mapping
 ```
 
 Key rule: **Blazor components call services, not endpoints.**

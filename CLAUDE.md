@@ -85,7 +85,7 @@ This is the BL0008 analyzer warning's actual fix. Apply to every `[SupplyParamet
 
 ### 4. The `DatabaseInitializer` startup pipeline
 
-`Data/DatabaseInitializer.cs` runs five steps in order on every startup against SQL Server:
+`Infrastructure/Persistence/DatabaseInitializer.cs` runs five steps in order on every startup against SQL Server:
 
 1. **`ReconcileMigrationHistoryAsync`** — if the database already contains tables that one of our EF migrations would create (because someone ran an earlier prerelease), stamp the relevant migration as already-applied in `__EFMigrationsHistory` so `MigrateAsync` doesn't crash with "object already exists." Markers are in the `MigrationMarkers` array — **add a new entry whenever you generate a new EF migration**.
 2. **`MigrateAsync`** — apply genuinely-pending migrations.
@@ -97,7 +97,7 @@ All five steps run in both production (`AdventureWorks2022`) and dev/test (`Adve
 
 ### 5. `dbo.ToolSlotConfigurations` is externally managed
 
-The `ToolSlotConfiguration` entity in `Data/Entities/ToolSlotConfiguration.cs` is configured with `.ToTable("ToolSlotConfigurations", t => t.ExcludeFromMigrations())` in `ApplicationDbContext.OnModelCreating`. EF reads/writes the table but **never** creates, alters, or drops it.
+The `ToolSlotConfiguration` entity in `Features/ToolSlots/Domain/ToolSlotConfiguration.cs` is configured with `.ToTable("ToolSlotConfigurations", t => t.ExcludeFromMigrations())` in `ApplicationDbContext.OnModelCreating`. EF reads/writes the table but **never** creates, alters, or drops it.
 
 The C# property names are PascalCase but the real database columns are uppercase / snake_case (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, `Family` ↔ `FAMILY`, etc.). All columns have explicit `[Column("...")]` attributes mapping each property to its real column name. **If you change the entity, you must coordinate with the DBA who owns the table** — the EF migration will not propagate changes there.
 
@@ -121,13 +121,13 @@ Blazor interactive components must NOT inject the scoped `ApplicationDbContext` 
 
 ### 7. API key auth scheme
 
-External REST clients can authenticate via `X-Api-Key: ek_...` header. The handler is `Authentication/ApiKeyAuthenticationHandler.cs`. The `"ApiOrCookie"` authorization policy in `Program.cs` accepts either Identity cookies or the API key scheme — all `/api/*` minimal-API endpoints use this policy. API keys inherit the owning user's roles (so `[Authorize(Roles = "Admin")]` works via API key auth too).
+External REST clients can authenticate via `X-Api-Key: ek_...` header. The handler is `Infrastructure/Authentication/ApiKeyAuthenticationHandler.cs`. The `"ApiOrCookie"` authorization policy (registered in `App/Extensions/ServiceRegistration.cs`) accepts either Identity cookies or the API key scheme — all `/api/*` minimal-API endpoints use this policy. API keys inherit the owning user's roles (so `[Authorize(Roles = "Admin")]` works via API key auth too).
 
 Users manage their own keys at `/Account/Manage/ApiKeys`. Keys are stored plain-text in the `ApiKeys` table — there's no hash. (If that's not acceptable for production, see Phase 10 in `docs/phase-plan.md`.)
 
 ## Test infrastructure
 
-`AWBlazorApp.Tests/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`ELITE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `ELITE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
+`AWBlazorApp.Tests/Infrastructure/Testing/IntegrationTest.cs` uses `WebApplicationFactory<Program>` with `builder.UseEnvironment("Development")`, which means the test host reads `appsettings.Development.json` and points the EF `DbContextFactory` at **`ELITE / AdventureWorks2022_dev`**. Tests do not substitute a fake database — they run against the real SQL Server instance, so `ELITE` must be reachable and the current Windows user must have access to `AdventureWorks2022_dev`.
 
 The test fixture only overrides two feature flags via in-memory configuration:
 
@@ -161,7 +161,7 @@ Before starting non-trivial work, read these memory notes — they capture decis
 
 ## Analytics & data exploration (Phase 6-7)
 
-Four analytics dashboards at `/analytics/*` (Sales, Production, HR, Purchasing) use the shared `TimeSeriesChart` and `KpiCard` components in `Components/Shared/`. The Sales dashboard uses SQL-side GroupBy queries and `AnalyticsCacheService` (IMemoryCache, 5-minute TTL). The other dashboards still load data in-memory — migrate them to the cached/SQL pattern as they grow.
+Four analytics dashboards at `/analytics/*` (Sales, Production, HR, Purchasing) use the shared `TimeSeriesChart` and `KpiCard` components in `Shared/UI/Components/`. The Sales dashboard uses SQL-side GroupBy queries and `AnalyticsCacheService` (IMemoryCache, 5-minute TTL). The other dashboards still load data in-memory — migrate them to the cached/SQL pattern as they grow.
 
 Ten entity pages have `<HierarchyColumn>` + `<ChildRowContent>` with self-contained `*ExpandedRow.razor` components that load related data on expand. Cross-entity links (MudLink) in expanded rows navigate between related pages.
 
@@ -171,14 +171,14 @@ Ten entity pages have `<HierarchyColumn>` + `<ChildRowContent>` with self-contai
 
 ## Security (Phase 7)
 
-- **Rate limiting**: fixed-window 100 req/min via `AddRateLimiter` in Program.cs
-- **Security headers**: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy — inline middleware in Program.cs
-- **API key hashing**: `Authentication/ApiKeyHasher.cs` uses SHA-256. The auth handler checks both plain-text and hashed keys for backwards compatibility. New keys should be stored hashed.
+- **Rate limiting**: fixed-window 100 req/min via `AddRateLimiter` registered in `App/Extensions/ServiceRegistration.cs`
+- **Security headers**: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy — `App/Middleware/SecurityHeadersMiddleware.cs`
+- **API key hashing**: `Infrastructure/Authentication/ApiKeyHasher.cs` uses SHA-256. The auth handler checks both plain-text and hashed keys for backwards compatibility. New keys should be stored hashed.
 - **Logout antiforgery**: The `/Account/Logout` endpoint has `.DisableAntiforgery()` because the Blazor Server circuit's antiforgery token can desync with the HTTP pipeline.
 
 ### 8. Audited writes use `AddWithAuditAsync` / `DeleteWithAuditAsync`
 
-`Data/AuditedSaveExtensions.cs` provides helpers that wrap the entity insert + audit log insert
+`Infrastructure/Persistence/AuditedSaveExtensions.cs` provides helpers that wrap the entity insert + audit log insert
 in a single transaction. **All new CRUD code should use these** instead of two separate
 SaveChanges calls. The 67 existing AdventureWorks endpoints currently use an inline
 `BeginTransactionAsync` / `CommitAsync` pattern (added during the post-review hardening pass) —

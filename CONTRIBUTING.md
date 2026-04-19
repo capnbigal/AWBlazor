@@ -34,10 +34,10 @@ Open https://localhost:5001/
 - 4 spaces indentation (no tabs)
 - File-scoped namespaces
 - Top-level statements in Program.cs
-- Startup extensions in `Startup/` directory
-- Entities in `Data/Entities/`, DTOs in `Models/`, validators in `Validators/`
-- One endpoint group per entity in `Endpoints/`
-- Blazor pages in `Components/Pages/{Feature}/`
+- Startup extensions in `App/Extensions/` (`ServiceRegistration.cs`, `MiddlewarePipeline.cs`); endpoint mapping in `App/Routing/EndpointMappingExtensions.cs`
+- Entities in `Features/<Feature>/<Entity>/Domain/`, DTOs in `Features/<Feature>/<Entity>/Dtos/`, validators in `Features/<Feature>/<Entity>/Application/Validators/`
+- One endpoint group per entity in `Features/<Feature>/<Entity>/Api/`
+- Blazor pages in `Features/<Feature>/<Entity>/UI/Pages/`
 
 ## Branch naming
 
@@ -52,17 +52,17 @@ Use descriptive commit messages. Include Co-Authored-By for AI-assisted commits.
 
 ## Adding a new entity CRUD page
 
-1. Create entity in `Data/Entities/`
-2. Add `DbSet` to `ApplicationDbContext.cs`
-3. Create DTOs in `Models/` with `ToDto()` / `ToEntity()` mappings
-4. Create FluentValidation validators in `Validators/`
-5. Create Minimal API endpoints in `Endpoints/`
-6. Register endpoints in `EndpointMappingExtensions.cs`
-7. Create Blazor page in `Components/Pages/{Feature}/Index.razor`
-8. Create dialog in `Components/Pages/{Feature}/{Entity}Dialog.razor`
-9. Add nav link in `Components/Layout/NavMenu.razor`
-10. Add to global search in `Components/Shared/GlobalSearch.razor`
-11. Run `dotnet ef migrations add {Name}`
+1. Create entity in `Features/{Feature}/{Entity}/Domain/`
+2. Add `DbSet` to `Infrastructure/Persistence/ApplicationDbContext.cs`
+3. Create DTOs in `Features/{Feature}/{Entity}/Dtos/` with `ToDto()` / `ToEntity()` mappings
+4. Create FluentValidation validators in `Features/{Feature}/{Entity}/Application/Validators/`
+5. Create Minimal API endpoints in `Features/{Feature}/{Entity}/Api/`
+6. Register endpoints in `App/Routing/EndpointMappingExtensions.cs`
+7. Create Blazor page in `Features/{Feature}/{Entity}/UI/Pages/Index.razor`
+8. Create dialog in `Features/{Feature}/{Entity}/UI/Pages/{Entity}Dialog.razor`
+9. Add nav link in `Shared/UI/Layout/NavMenu.razor`
+10. Add to global search in `Shared/UI/Components/GlobalSearch.razor`
+11. Run `dotnet ef migrations add {Name}` from `src/AWBlazorApp/`
 
 ## Testing
 

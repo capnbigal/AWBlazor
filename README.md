@@ -50,7 +50,7 @@ Then open `https://localhost:5001/`.
 ## First-run database behavior
 
 The app talks to **ELITE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
-in `src/AWBlazorApp/Data/DatabaseInitializer.cs` runs four steps in order:
+in `src/AWBlazorApp/Infrastructure/Persistence/DatabaseInitializer.cs` runs four steps in order:
 
 1. **`ReconcileMigrationHistoryAsync`** — if your database already contains tables that one of
    our EF migrations would create (e.g. you ran an earlier prerelease and the `AspNetRoles`
@@ -144,38 +144,70 @@ SHA-256 hashes; legacy plain-text keys are supported for backwards compatibility
 
 ```
 src/AWBlazorApp/
-├── Authentication/             ApiKeyAuthenticationHandler, HangfireDashboardAuthFilter
-├── Components/
-│   ├── Account/                Identity scaffold pages (all static SSR)
-│   ├── Layout/                 MainLayout (dark mode, global search) + NavMenu
-│   ├── Shared/                 TimeSeriesChart, KpiCard, GlobalSearch, TrendDirection
-│   └── Pages/
-│       ├── Analytics/          Sales, Production, HR, Purchasing dashboards
-│       ├── AdventureWorks/     90+ CRUD pages with ExpandedRow drill-through components
-│       └── ...                 Home, Analytics, Forecasts, Guide, ToolSlots, Admin, Reports
-├── Data/
-│   ├── Entities/               Forecasting entities (ForecastDefinition, ForecastDataPoint, ForecastHistoricalSnapshot), ArticleRead, ToolSlotConfiguration, ApiKey + 90+ AdventureWorks entities
-│   ├── ApplicationDbContext.cs
-│   ├── ApplicationUser.cs      Extends IdentityUser with FirstName/LastName/DisplayName/ProfileUrl
-│   ├── AuditingInterceptor.cs  Populates audit fields via SaveChangesInterceptor
-│   ├── DatabaseInitializer.cs  Migrate/reconcile/patch/seed pipeline
-│   └── Migrations/             EF Core migrations (SQL Server)
-├── Endpoints/                  Minimal-API endpoint groups
-├── Models/                     Request/response DTOs (no entity coupling)
-├── Validators/                 FluentValidation rules + MudFormValidator adapter
-├── Services/                   UserGuideService, AnalyticsCacheService, NotificationService, Forecasting/*, SmtpEmailJob, HangfireSmtpEmailSender
-├── _posts/                     Markdown content for user guide (read at startup)
-├── _pages, _includes, _videos/ Other content folders (currently unused; reserved for future)
-├── wwwroot/
-│   ├── img/                    Static images
-│   └── css/account-forms.css   Shared styling for the static-SSR Identity forms
+├── App/                        Composition root: Program.cs extensions, middleware, routing
+├── Components/                 App.razor + Routes.razor + _Imports.razor (only)
+├── Features/                   Vertical slices — one folder per business domain
+│   ├── Admin/                  Admin dashboard, users, permissions, request log
+│   ├── Dashboard/              Cross-module plant dashboard (/dashboard/plant)
+│   ├── Engineering/            Routings, BOMs, ECOs, deviations, documents
+│   ├── Enterprise/             Org units, cost centers, stations, assets, product lines
+│   ├── Forecasting/            Forecast definitions + algorithms
+│   ├── Gallery/                Product photo gallery
+│   ├── Home/                   `/` landing page
+│   ├── HumanResources/         AW HR schema (employees, departments, shifts, …)
+│   ├── Identity/               ApiKey, SecurityAuditLog, login + manage UI
+│   ├── Insights/               Saved queries, KPIs, dashboards, reports, notifications
+│   ├── Inventory/              Items, lots, serials, locations, transactions
+│   ├── Logistics/              Receipts, shipments, transfers
+│   ├── Maintenance/            Work orders, PM schedules, spare parts, meter readings
+│   ├── Mes/                    Production runs, instructions, downtime
+│   ├── Performance/            OEE, KPIs, scorecards, reports, MetricsRollupJob
+│   ├── Person/                 AW Person schema
+│   ├── ProcessManagement/      Process definitions + scheduler
+│   ├── Production/             AW Production schema
+│   ├── Purchasing/             AW Purchasing schema
+│   ├── Quality/                Inspections, NCRs, CAPA, plans
+│   ├── Sales/                  AW Sales schema
+│   ├── ToolSlots/              Tool slot configurations + audit
+│   ├── UserGuide/              Guide articles + Content/_posts/_pages/_includes/_videos
+│   └── Workforce/              Training, qualifications, attendance, leave, comms
+│   Each feature follows the same shape internally:
+│     <Feature>/
+│       ├── Api/                Minimal-API endpoint groups
+│       ├── Domain/             Entities
+│       ├── Dtos/               Request/response records
+│       ├── Application/        Services, validators, hooks
+│       ├── Audit/              Per-entity audit log builders (optional)
+│       └── UI/Pages/           Blazor pages with @page routes
+├── Infrastructure/             Cross-cutting plumbing
+│   ├── Persistence/            ApplicationDbContext, DatabaseInitializer, AuditingInterceptor, AuditedSaveExtensions, Migrations/
+│   ├── Authentication/         ApiKeyAuthenticationHandler, ApiKeyHasher
+│   ├── Email/                  SmtpConfig, SmtpEmailJob, HangfireSmtpEmailSender
+│   ├── Hangfire/               HangfireDashboardAuthFilter
+│   ├── Jobs/                   Cleanup + hash-migration Hangfire jobs
+│   └── SignalR/                NotificationHub
+├── Shared/                     Cross-feature code (≥2 features depend on it)
+│   ├── Api/                    Hello, Export, ChartExport, Preferences, ValidationExtensions
+│   ├── Audit/                  Diff helpers
+│   ├── Domain/                 AuditableEntity base
+│   ├── Dtos/                   PagedResult<T>, AdminDataDto, common DTOs
+│   ├── Formatting/             Number formatting helpers
+│   ├── Services/               LookupService, AnalyticsCacheService, CsvExportService
+│   ├── Theming/                AppTheme, ChartPalettes
+│   ├── UI/                     Layout (MainLayout, NavMenu) + Components (KpiCard, TimeSeriesChart, GlobalSearch, …)
+│   └── Validation/             MudFormValidator adapter
+├── wwwroot/                    Static assets (img, css, js)
+├── Properties/                 launchSettings.json
+├── App_Data/                   Runtime — not in git
 ├── Program.cs
 └── AWBlazorApp.csproj
 
 AWBlazorApp.Tests/
-├── IntegrationTest.cs          213 tests covering pages, endpoints, form POSTs, API keys
-├── FormPostHelper.cs           GET → parse antiforgery → POST helper
-├── UnitTest.cs                 Standalone EF unit tests
+├── Infrastructure/
+│   ├── Testing/                IntegrationTest.cs, IntegrationTestFixtureBase.cs
+│   └── Api/                    ApiSmokeTests.cs (every /api/aw/* group)
+├── Shared/Testing/             FormPostHelper.cs
+├── Features/<Feature>/{Api,Application}/   Mirrors src/AWBlazorApp/Features layout
 └── AWBlazorApp.Tests.csproj
 ```
 
