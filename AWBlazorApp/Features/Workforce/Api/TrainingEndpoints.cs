@@ -161,7 +161,7 @@ public static class TrainingEndpoints
             ? now.AddMonths(course.RecurrenceMonths.Value)
             : (DateTime?)null;
 
-        var entity = new AWBlazorApp.Features.Workforce.Domain.TrainingRecord
+        var entity = new AWBlazorApp.Features.Workforce.TrainingRecords.Domain.TrainingRecord
         {
             TrainingCourseId = request.TrainingCourseId,
             BusinessEntityId = request.BusinessEntityId,

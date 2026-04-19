@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Performance.Dtos;
+using AWBlazorApp.Features.Performance.Kpis.Dtos; using AWBlazorApp.Features.Performance.ProductionMetrics.Dtos; using AWBlazorApp.Features.Performance.Scorecards.Dtos; 
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Performance.Validators;

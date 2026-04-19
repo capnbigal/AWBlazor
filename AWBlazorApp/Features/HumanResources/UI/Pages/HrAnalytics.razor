@@ -1,6 +1,11 @@
 @page "/analytics/hr"
 @attribute [Authorize]
-@using AWBlazorApp.Features.HumanResources.Domain
+@using AWBlazorApp.Features.HumanResources.Departments.Domain
+@using AWBlazorApp.Features.HumanResources.Employees.Domain
+@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain
+@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain
+@using AWBlazorApp.Features.HumanResources.JobCandidates.Domain
+@using AWBlazorApp.Features.HumanResources.Shifts.Domain
 @using AWBlazorApp.Shared.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AnalyticsCacheService Cache

@@ -1,0 +1,179 @@
+@page "/aw/phone-number-types"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Person.Addresses.Domain
+@using AWBlazorApp.Features.Person.AddressTypes.Domain
+@using AWBlazorApp.Features.Person.BusinessEntities.Domain
+@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain
+@using AWBlazorApp.Features.Person.BusinessEntityContacts.Domain
+@using AWBlazorApp.Features.Person.ContactTypes.Domain
+@using AWBlazorApp.Features.Person.CountryRegions.Domain
+@using AWBlazorApp.Features.Person.EmailAddresses.Domain
+@using AWBlazorApp.Features.Person.Persons.Domain
+@using AWBlazorApp.Features.Person.PersonPhones.Domain
+@using AWBlazorApp.Features.Person.PhoneNumberTypes.Domain
+@using AWBlazorApp.Features.Person.StateProvinces.Domain
+@using AWBlazorApp.Features.Person.Addresses.Dtos
+@using AWBlazorApp.Features.Person.AddressTypes.Dtos
+@using AWBlazorApp.Features.Person.BusinessEntities.Dtos
+@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos
+@using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos
+@using AWBlazorApp.Features.Person.ContactTypes.Dtos
+@using AWBlazorApp.Features.Person.CountryRegions.Dtos
+@using AWBlazorApp.Features.Person.EmailAddresses.Dtos
+@using AWBlazorApp.Features.Person.Persons.Dtos
+@using AWBlazorApp.Features.Person.PersonPhones.Dtos
+@using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
+@using AWBlazorApp.Features.Person.StateProvinces.Dtos
+@using AWBlazorApp.Features.Person.Addresses.Application.Services
+@using AWBlazorApp.Features.Person.AddressTypes.Application.Services
+@using AWBlazorApp.Features.Person.BusinessEntities.Application.Services
+@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Application.Services
+@using AWBlazorApp.Features.Person.BusinessEntityContacts.Application.Services
+@using AWBlazorApp.Features.Person.ContactTypes.Application.Services
+@using AWBlazorApp.Features.Person.CountryRegions.Application.Services
+@using AWBlazorApp.Features.Person.EmailAddresses.Application.Services
+@using AWBlazorApp.Features.Person.Persons.Application.Services
+@using AWBlazorApp.Features.Person.PersonPhones.Application.Services
+@using AWBlazorApp.Features.Person.PhoneNumberTypes.Application.Services
+@using AWBlazorApp.Features.Person.StateProvinces.Application.Services
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Phone number types</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Phone number types</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Person.PhoneNumberType</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/phone-number-types/history">View history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New phone type</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="PhoneNumberTypeDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="PhoneNumberType" PropertyName="@nameof(PhoneNumberTypeDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name">
+                <HeaderTemplate><GridColumnHeader TEntity="PhoneNumberType" PropertyName="@nameof(PhoneNumberTypeDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <HeaderTemplate><GridColumnHeader TEntity="PhoneNumberType" PropertyName="@nameof(PhoneNumberTypeDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History">
+                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
+                        </MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="PhoneNumberTypeDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<PhoneNumberTypeDto> grid = null!;
+    private bool _loading = true;
+    private string? filterName;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<PhoneNumberTypeDto>> LoadServerDataAsync(GridState<PhoneNumberTypeDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.PhoneNumberTypes.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterName))
+            {
+                var needle = filterName.Trim();
+                query = query.Where(x => x.Name.Contains(needle));
+            }
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(PhoneNumberTypeDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+                nameof(PhoneNumberTypeDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+                nameof(PhoneNumberTypeDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _                                       => query.OrderBy(x => x.Id),
+            };
+
+            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<PhoneNumberTypeDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<PhoneNumberTypeDialog>("New phone type", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Phone number type created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(PhoneNumberTypeDto row)
+    {
+        var parameters = new DialogParameters<PhoneNumberTypeDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<PhoneNumberTypeDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Phone number type updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(PhoneNumberTypeDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete phone type?", $"Permanently delete phone type #{row.Id} \"{row.Name}\"?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.PhoneNumberTypes.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Phone number type no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.PhoneNumberTypeAuditLogs.Add(PhoneNumberTypeAuditService.RecordDelete(entity, changedBy));
+        db.PhoneNumberTypes.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Phone number type deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(PhoneNumberTypeDto row) => Navigation.NavigateTo($"aw/phone-number-types/history/{row.Id}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

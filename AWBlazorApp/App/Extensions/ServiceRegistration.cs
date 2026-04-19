@@ -151,27 +151,27 @@ public static class ServiceRegistration
         services.AddScoped<AWBlazorApp.Features.Inventory.Services.IInventoryService, AWBlazorApp.Features.Inventory.Services.InventoryService>();
         services.AddSingleton<AWBlazorApp.Features.Inventory.Services.IInventoryOutboxPublisher, AWBlazorApp.Features.Inventory.Services.LoggingInventoryOutboxPublisher>();
         services.AddScoped<AWBlazorApp.Features.Logistics.Services.ILogisticsPostingService, AWBlazorApp.Features.Logistics.Services.LogisticsPostingService>();
-        services.AddScoped<AWBlazorApp.Features.Mes.Services.IProductionRunService, AWBlazorApp.Features.Mes.Services.ProductionRunService>();
-        services.AddScoped<AWBlazorApp.Features.Mes.Services.IWorkInstructionRevisionService, AWBlazorApp.Features.Mes.Services.WorkInstructionRevisionService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Services.IInspectionService, AWBlazorApp.Features.Quality.Services.InspectionService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Services.INonConformanceService, AWBlazorApp.Features.Quality.Services.NonConformanceService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Services.ICapaService, AWBlazorApp.Features.Quality.Services.CapaService>();
-        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Quality.Services.InspectionTriggerHook>();
-        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Workforce.Services.QualificationCheckHook>();
-        services.AddScoped<AWBlazorApp.Features.Workforce.Services.IQualificationService, AWBlazorApp.Features.Workforce.Services.QualificationService>();
-        services.AddScoped<AWBlazorApp.Features.Workforce.Services.ILeaveRequestService, AWBlazorApp.Features.Workforce.Services.LeaveRequestService>();
+        services.AddScoped<AWBlazorApp.Features.Mes.Runs.Application.Services.IProductionRunService, AWBlazorApp.Features.Mes.Runs.Application.Services.ProductionRunService>();
+        services.AddScoped<AWBlazorApp.Features.Mes.Instructions.Application.Services.IWorkInstructionRevisionService, AWBlazorApp.Features.Mes.Instructions.Application.Services.WorkInstructionRevisionService>();
+        services.AddScoped<AWBlazorApp.Features.Quality.Inspections.Application.Services.IInspectionService, AWBlazorApp.Features.Quality.Inspections.Application.Services.InspectionService>();
+        services.AddScoped<AWBlazorApp.Features.Quality.Ncrs.Application.Services.INonConformanceService, AWBlazorApp.Features.Quality.Ncrs.Application.Services.NonConformanceService>();
+        services.AddScoped<AWBlazorApp.Features.Quality.Capa.Application.Services.ICapaService, AWBlazorApp.Features.Quality.Capa.Application.Services.CapaService>();
+        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Quality.Inspections.Application.Services.InspectionTriggerHook>();
+        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Workforce.Qualifications.Application.Hooks.QualificationCheckHook>();
+        services.AddScoped<AWBlazorApp.Features.Workforce.Qualifications.Application.Services.IQualificationService, AWBlazorApp.Features.Workforce.Qualifications.Application.Services.QualificationService>();
+        services.AddScoped<AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services.ILeaveRequestService, AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services.LeaveRequestService>();
 
-        services.AddScoped<AWBlazorApp.Features.Engineering.Services.IEcoService, AWBlazorApp.Features.Engineering.Services.EcoService>();
-        services.AddScoped<AWBlazorApp.Features.Engineering.Services.IDeviationService, AWBlazorApp.Features.Engineering.Services.DeviationService>();
+        services.AddScoped<AWBlazorApp.Features.Engineering.Ecos.Application.Services.IEcoService, AWBlazorApp.Features.Engineering.Ecos.Application.Services.EcoService>();
+        services.AddScoped<AWBlazorApp.Features.Engineering.Deviations.Application.Services.IDeviationService, AWBlazorApp.Features.Engineering.Deviations.Application.Services.DeviationService>();
 
-        services.AddScoped<AWBlazorApp.Features.Maintenance.Services.IWorkOrderService, AWBlazorApp.Features.Maintenance.Services.WorkOrderService>();
-        services.AddScoped<AWBlazorApp.Features.Maintenance.Services.IPmScheduleService, AWBlazorApp.Features.Maintenance.Services.PmScheduleService>();
+        services.AddScoped<AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services.IWorkOrderService, AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services.WorkOrderService>();
+        services.AddScoped<AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services.IPmScheduleService, AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services.PmScheduleService>();
 
-        services.AddScoped<AWBlazorApp.Features.Performance.Services.IOeeService, AWBlazorApp.Features.Performance.Services.OeeService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Services.IProductionMetricsService, AWBlazorApp.Features.Performance.Services.ProductionMetricsService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Services.IMaintenanceMetricsService, AWBlazorApp.Features.Performance.Services.MaintenanceMetricsService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Services.IKpiEvaluationService, AWBlazorApp.Features.Performance.Services.KpiEvaluationService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Services.IPerformanceReportRunner, AWBlazorApp.Features.Performance.Services.PerformanceReportRunner>();
+        services.AddScoped<AWBlazorApp.Features.Performance.Oee.Application.Services.IOeeService, AWBlazorApp.Features.Performance.Oee.Application.Services.OeeService>();
+        services.AddScoped<AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services.IProductionMetricsService, AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services.ProductionMetricsService>();
+        services.AddScoped<AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services.IMaintenanceMetricsService, AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services.MaintenanceMetricsService>();
+        services.AddScoped<AWBlazorApp.Features.Performance.Kpis.Application.Services.IKpiEvaluationService, AWBlazorApp.Features.Performance.Kpis.Application.Services.KpiEvaluationService>();
+        services.AddScoped<AWBlazorApp.Features.Performance.Reports.Application.Services.IPerformanceReportRunner, AWBlazorApp.Features.Performance.Reports.Application.Services.PerformanceReportRunner>();
 
         services.AddScoped<AWBlazorApp.Features.Admin.Services.DemoDataSeeder>();
         services.AddScoped<AWBlazorApp.Features.Admin.Services.DemoDataFiller>();

@@ -1,0 +1,78 @@
+@using AWBlazorApp.Features.Inventory.Dtos
+@page "/inventory/transactions"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+
+<PageTitle>Transaction explorer</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Transaction explorer</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">inv.InventoryTransaction — append-only ledger, newest first</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterItemId" Label="Item" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterTypeId" Label="Type id" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3"><MudDatePicker @bind-Date="filterFrom" Label="From" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3"><MudDatePicker @bind-Date="filterTo" Label="To" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12"><MudStack Row="true" Spacing="2"><MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton></MudStack></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="InventoryTransactionDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.TransactionNumber" Title="Number" />
+            <PropertyColumn Property="x => x.OccurredAt" Title="Occurred" Format="yyyy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.TransactionTypeId" Title="Type" />
+            <PropertyColumn Property="x => x.InventoryItemId" Title="Item" />
+            <PropertyColumn Property="x => x.FromLocationId" Title="From" />
+            <PropertyColumn Property="x => x.ToLocationId" Title="To" />
+            <PropertyColumn Property="x => x.LotId" Title="Lot" />
+            <PropertyColumn Property="x => x.Quantity" Title="Qty" Format="N4" />
+            <PropertyColumn Property="x => x.UnitMeasureCode" Title="UoM" />
+            <PropertyColumn Property="x => x.ReferenceType" Title="Ref" />
+            <PropertyColumn Property="x => x.PostedByUserId" Title="By" />
+            <TemplateColumn Title="" Sortable="false"><CellTemplate><MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowDetailsAsync(context.Item))" /></CellTemplate></TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="InventoryTransactionDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<InventoryTransactionDto> grid = null!;
+    private bool _loading = true;
+    private int? filterItemId, filterTypeId;
+    private DateTime? filterFrom, filterTo;
+
+    private async Task<GridData<InventoryTransactionDto>> LoadAsync(GridState<InventoryTransactionDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.InventoryTransactions.AsNoTracking();
+            if (filterItemId.HasValue) query = query.Where(x => x.InventoryItemId == filterItemId.Value);
+            if (filterTypeId.HasValue) query = query.Where(x => x.TransactionTypeId == filterTypeId.Value);
+            if (filterFrom.HasValue) query = query.Where(x => x.OccurredAt >= filterFrom.Value);
+            if (filterTo.HasValue) query = query.Where(x => x.OccurredAt < filterTo.Value.AddDays(1));
+            var total = await query.CountAsync(ct);
+            var rows = await query.OrderByDescending(x => x.OccurredAt).ThenByDescending(x => x.Id)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<InventoryTransactionDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task ShowDetailsAsync(InventoryTransactionDto row)
+    {
+        await DialogService.ShowMessageBoxAsync("Transaction details",
+            (MarkupString)($"<pre style='white-space:pre-wrap;font-size:12px;'>{System.Text.Json.JsonSerializer.Serialize(row, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })}</pre>"),
+            yesText: "Close");
+    }
+}

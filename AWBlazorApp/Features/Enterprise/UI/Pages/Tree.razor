@@ -1,6 +1,11 @@
 @page "/enterprise/tree"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Enterprise.Domain
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
+@using AWBlazorApp.Features.Enterprise.CostCenters.Domain
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Domain
+@using AWBlazorApp.Features.Enterprise.Organizations.Domain
+@using AWBlazorApp.Features.Enterprise.ProductLines.Domain
+@using AWBlazorApp.Features.Enterprise.Stations.Domain
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 

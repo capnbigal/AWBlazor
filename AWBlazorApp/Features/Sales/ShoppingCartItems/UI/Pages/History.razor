@@ -1,0 +1,138 @@
+@page "/aw/shopping-cart-items/history"
+@page "/aw/shopping-cart-items/history/{SlotId:int}"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
+@using AWBlazorApp.Features.Sales.CreditCards.Dtos
+@using AWBlazorApp.Features.Sales.Currencies.Dtos
+@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
+@using AWBlazorApp.Features.Sales.Customers.Dtos
+@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
+@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
+@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
+@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
+@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
+@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
+@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
+@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
+@using AWBlazorApp.Features.Sales.Stores.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Cart item history@(SlotId is null ? "" : $" — #{SlotId}")</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/shopping-cart-items"))" />
+        <MudText Typo="Typo.h4">@(SlotId is null ? "Shopping cart item history" : $"History for cart item #{SlotId}")</MudText>
+        <MudSpacer />
+        @if (SlotId is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List" Href="aw/shopping-cart-items/history">All history</MudButton>
+        }
+    </MudStack>
+
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Every create, update, and delete of a <code>Sales.ShoppingCartItem</code> row is recorded here.</MudText>
+
+    @if (SlotId is null)
+    {
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                        <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                        <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4"><MudNumericField T="int?" @bind-Value="filterRowId" Label="Cart item id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+
+    <MudDataGrid T="ShoppingCartItemAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ShoppingCartItemId" Title="Id">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ShoppingCartItemId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ShoppingCartId" Title="Cart id">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ShoppingCartId)" Title="Cart id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductId" Title="Product">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Quantity" Title="Qty">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <HeaderTemplate><GridColumnHeader TEntity="ShoppingCartItemAuditLog" PropertyName="@nameof(ShoppingCartItemAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ShoppingCartItemAuditLogDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [Parameter] public int? SlotId { get; set; }
+
+    private MudDataGrid<ShoppingCartItemAuditLogDto> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+    private int? filterRowId;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<ShoppingCartItemAuditLogDto>> LoadServerDataAsync(GridState<ShoppingCartItemAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ShoppingCartItemAuditLogs.AsNoTracking();
+
+        var scopedId = SlotId ?? filterRowId;
+        if (scopedId.HasValue) query = query.Where(a => a.ShoppingCartItemId == scopedId.Value);
+        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var needle = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
+        }
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(ShoppingCartItemAuditLogDto.ChangedDate)        => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)        : query.OrderBy(a => a.ChangedDate),
+            nameof(ShoppingCartItemAuditLogDto.ShoppingCartItemId) => sort.Descending ? query.OrderByDescending(a => a.ShoppingCartItemId) : query.OrderBy(a => a.ShoppingCartItemId),
+            nameof(ShoppingCartItemAuditLogDto.ChangedBy)          => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)          : query.OrderBy(a => a.ChangedBy),
+            nameof(ShoppingCartItemAuditLogDto.ShoppingCartId)     => sort.Descending ? query.OrderByDescending(a => a.ShoppingCartId)     : query.OrderBy(a => a.ShoppingCartId),
+            nameof(ShoppingCartItemAuditLogDto.ProductId)          => sort.Descending ? query.OrderByDescending(a => a.ProductId)          : query.OrderBy(a => a.ProductId),
+            nameof(ShoppingCartItemAuditLogDto.Quantity)           => sort.Descending ? query.OrderByDescending(a => a.Quantity)           : query.OrderBy(a => a.Quantity),
+            nameof(ShoppingCartItemAuditLogDto.ChangeSummary)      => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)      : query.OrderBy(a => a.ChangeSummary),
+            _                                                      => query.OrderByDescending(a => a.ChangedDate),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<ShoppingCartItemAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
+    };
+}

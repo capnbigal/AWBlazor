@@ -3,24 +3,24 @@ using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Features.ToolSlots.Domain;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Shared.Domain;
-using AWBlazorApp.Features.Sales.Domain;
-using AWBlazorApp.Features.Production.Domain;
-using AWBlazorApp.Features.HumanResources.Domain;
-using AWBlazorApp.Features.Purchasing.Domain;
-using AWBlazorApp.Features.Person.Domain;
+using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain; using AWBlazorApp.Features.Sales.CreditCards.Domain; using AWBlazorApp.Features.Sales.Currencies.Domain; using AWBlazorApp.Features.Sales.CurrencyRates.Domain; using AWBlazorApp.Features.Sales.Customers.Domain; using AWBlazorApp.Features.Sales.PersonCreditCards.Domain; using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain; using AWBlazorApp.Features.Sales.SalesPeople.Domain; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain; using AWBlazorApp.Features.Sales.SalesReasons.Domain; using AWBlazorApp.Features.Sales.SalesTaxRates.Domain; using AWBlazorApp.Features.Sales.SalesTerritories.Domain; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain; using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain; using AWBlazorApp.Features.Sales.SpecialOffers.Domain; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain; using AWBlazorApp.Features.Sales.Stores.Domain; 
+using AWBlazorApp.Features.Production.Domain; using AWBlazorApp.Features.Production.Cultures.Domain; using AWBlazorApp.Features.Production.Documents.Domain; using AWBlazorApp.Features.Production.Illustrations.Domain; using AWBlazorApp.Features.Production.Locations.Domain; using AWBlazorApp.Features.Production.ProductCategories.Domain; using AWBlazorApp.Features.Production.ProductCostHistories.Domain; using AWBlazorApp.Features.Production.ProductDescriptions.Domain; using AWBlazorApp.Features.Production.ProductDocuments.Domain; using AWBlazorApp.Features.Production.ProductInventories.Domain; using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain; using AWBlazorApp.Features.Production.ProductModels.Domain; using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain; using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain; using AWBlazorApp.Features.Production.ProductPhotos.Domain; using AWBlazorApp.Features.Production.ProductProductPhotos.Domain; using AWBlazorApp.Features.Production.ProductReviews.Domain; using AWBlazorApp.Features.Production.Products.Domain; using AWBlazorApp.Features.Production.ProductSubcategories.Domain; using AWBlazorApp.Features.Production.ScrapReasons.Domain; using AWBlazorApp.Features.Production.TransactionHistories.Domain; using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain; using AWBlazorApp.Features.Production.UnitMeasures.Domain; using AWBlazorApp.Features.Production.WorkOrders.Domain; using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain; 
+using AWBlazorApp.Features.HumanResources.Departments.Domain; using AWBlazorApp.Features.HumanResources.Employees.Domain; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain; using AWBlazorApp.Features.HumanResources.JobCandidates.Domain; using AWBlazorApp.Features.HumanResources.Shifts.Domain; 
+using AWBlazorApp.Features.Purchasing.ProductVendors.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain; using AWBlazorApp.Features.Purchasing.ShipMethods.Domain; using AWBlazorApp.Features.Purchasing.Vendors.Domain; 
+using AWBlazorApp.Features.Person.Addresses.Domain; using AWBlazorApp.Features.Person.AddressTypes.Domain; using AWBlazorApp.Features.Person.BusinessEntities.Domain; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain; using AWBlazorApp.Features.Person.BusinessEntityContacts.Domain; using AWBlazorApp.Features.Person.ContactTypes.Domain; using AWBlazorApp.Features.Person.CountryRegions.Domain; using AWBlazorApp.Features.Person.EmailAddresses.Domain; using AWBlazorApp.Features.Person.Persons.Domain; using AWBlazorApp.Features.Person.PersonPhones.Domain; using AWBlazorApp.Features.Person.PhoneNumberTypes.Domain; using AWBlazorApp.Features.Person.StateProvinces.Domain; 
 using AWBlazorApp.Features.Identity.Domain;
 using AWBlazorApp.Features.Forecasting.Domain;
 using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
-using AWBlazorApp.Features.Enterprise.Domain;
-using AWBlazorApp.Features.Inventory.Domain;
-using AWBlazorApp.Features.Logistics.Domain;
-using AWBlazorApp.Features.Mes.Domain;
-using AWBlazorApp.Features.Quality.Domain;
-using AWBlazorApp.Features.Engineering.Domain;
-using AWBlazorApp.Features.Maintenance.Domain;
-using AWBlazorApp.Features.Performance.Domain;
-using AWBlazorApp.Features.Workforce.Domain;
+using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
+using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
+using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
+using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
+using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
+using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
+using AWBlazorApp.Features.Performance.Kpis.Domain; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain; using AWBlazorApp.Features.Performance.Oee.Domain; using AWBlazorApp.Features.Performance.ProductionMetrics.Domain; using AWBlazorApp.Features.Performance.Reports.Domain; using AWBlazorApp.Features.Performance.Scorecards.Domain; 
+using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -1974,7 +1974,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.HasIndex(x => x.AssetId).IsUnique();
             b.HasIndex(x => x.NextPmDueAt);
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
             b.Property(x => x.Criticality).HasConversion<byte>();
         });
@@ -1983,7 +1983,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.HasIndex(x => x.Code).IsUnique();
             b.HasIndex(x => new { x.AssetId, x.IsActive });
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Restrict);
             b.Property(x => x.IntervalKind).HasConversion<byte>();
             b.Property(x => x.DefaultPriority).HasConversion<byte>();
@@ -2003,7 +2003,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasIndex(x => new { x.AssetId, x.Status });
             b.HasIndex(x => x.ScheduledFor);
             b.HasIndex(x => x.RaisedAt).IsDescending();
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Restrict);
             b.HasOne<PmSchedule>().WithMany().HasForeignKey(x => x.PmScheduleId)
                 .OnDelete(DeleteBehavior.SetNull);
@@ -2039,7 +2039,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<MeterReading>(b =>
         {
             b.HasIndex(x => new { x.AssetId, x.Kind, x.RecordedAt }).IsDescending(false, false, true);
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
             b.Property(x => x.Kind).HasConversion<byte>();
         });
@@ -2048,7 +2048,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.HasIndex(x => new { x.AssetId, x.AuthoredAt }).IsDescending(false, true);
             b.HasIndex(x => x.MaintenanceWorkOrderId);
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
             b.HasOne<MaintenanceWorkOrder>().WithMany().HasForeignKey(x => x.MaintenanceWorkOrderId)
                 .OnDelete(DeleteBehavior.SetNull);
@@ -2092,7 +2092,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.HasIndex(x => new { x.StationId, x.PeriodKind, x.PeriodStart }).IsUnique();
             b.HasIndex(x => x.PeriodStart).IsDescending();
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Stations.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
                 .OnDelete(DeleteBehavior.Cascade);
             b.Property(x => x.PeriodKind).HasConversion<byte>();
         });
@@ -2101,14 +2101,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.HasIndex(x => new { x.StationId, x.Date }).IsUnique();
             b.HasIndex(x => x.Date).IsDescending();
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Stations.Domain.Station>().WithMany().HasForeignKey(x => x.StationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<MaintenanceMonthlyMetric>(b =>
         {
             b.HasIndex(x => new { x.AssetId, x.Year, x.Month }).IsUnique();
-            b.HasOne<AWBlazorApp.Features.Enterprise.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
+            b.HasOne<AWBlazorApp.Features.Enterprise.Assets.Domain.Asset>().WithMany().HasForeignKey(x => x.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

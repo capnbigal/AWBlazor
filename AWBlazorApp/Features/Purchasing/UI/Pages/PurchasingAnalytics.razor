@@ -1,6 +1,10 @@
 @page "/analytics/purchasing"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Purchasing.Domain
+@using AWBlazorApp.Features.Purchasing.ProductVendors.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain
+@using AWBlazorApp.Features.Purchasing.ShipMethods.Domain
+@using AWBlazorApp.Features.Purchasing.Vendors.Domain
 @using AWBlazorApp.Shared.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject AnalyticsCacheService Cache

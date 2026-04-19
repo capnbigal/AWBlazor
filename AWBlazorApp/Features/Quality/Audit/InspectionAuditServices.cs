@@ -1,5 +1,5 @@
 using AWBlazorApp.Shared.Audit;
-using AWBlazorApp.Features.Quality.Domain;
+using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
 using System.Text;
 
 namespace AWBlazorApp.Features.Quality.Audit;

@@ -1,0 +1,71 @@
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
+@using AWBlazorApp.Features.Enterprise.CostCenters.Domain
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Domain
+@using AWBlazorApp.Features.Enterprise.Organizations.Domain
+@using AWBlazorApp.Features.Enterprise.ProductLines.Domain
+@using AWBlazorApp.Features.Enterprise.Stations.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Info" Class="my-2" />
+}
+else
+{
+    <div class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Placement</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Organization: <strong>@(orgCode ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Org unit path: <code>@(orgUnitPath ?? "unassigned")</code></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Tree</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Parent asset: <strong>@(parentTag ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Sub-assemblies: <strong>@childCount</strong></MudText>
+                    <MudText Typo="Typo.body2">Stations using this asset: <strong>@stationCount</strong></MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Lifecycle</MudText>
+                <MudStack Spacing="1" Class="mt-1">
+                    <MudText Typo="Typo.body2">Commissioned: <strong>@(commissionedAt?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                    <MudText Typo="Typo.body2">Decommissioned: <strong>@(decommissionedAt?.ToString("yyyy-MM-dd") ?? "—")</strong></MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [Parameter] public int AssetId { get; set; }
+
+    private bool loading = true;
+    private string? orgCode;
+    private string? orgUnitPath;
+    private string? parentTag;
+    private int childCount, stationCount;
+    private DateTime? commissionedAt, decommissionedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var a = await db.Assets.AsNoTracking().FirstOrDefaultAsync(x => x.Id == AssetId);
+        if (a is not null)
+        {
+            commissionedAt = a.CommissionedAt;
+            decommissionedAt = a.DecommissionedAt;
+            orgCode = await db.Organizations.AsNoTracking().Where(o => o.Id == a.OrganizationId).Select(o => o.Code).FirstOrDefaultAsync();
+            if (a.OrgUnitId is not null)
+                orgUnitPath = await db.OrgUnits.AsNoTracking().Where(u => u.Id == a.OrgUnitId.Value).Select(u => u.Path).FirstOrDefaultAsync();
+            if (a.ParentAssetId is not null)
+                parentTag = await db.Assets.AsNoTracking().Where(p => p.Id == a.ParentAssetId.Value).Select(p => p.AssetTag).FirstOrDefaultAsync();
+        }
+        childCount   = await db.Assets.CountAsync(x => x.ParentAssetId == AssetId);
+        stationCount = await db.Stations.CountAsync(s => s.AssetId == AssetId);
+        loading = false;
+    }
+}

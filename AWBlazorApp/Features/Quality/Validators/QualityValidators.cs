@@ -1,5 +1,5 @@
-using AWBlazorApp.Features.Quality.Domain;
-using AWBlazorApp.Features.Quality.Dtos;
+using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
+using AWBlazorApp.Features.Quality.Capa.Dtos; using AWBlazorApp.Features.Quality.Inspections.Dtos; using AWBlazorApp.Features.Quality.Ncrs.Dtos; using AWBlazorApp.Features.Quality.Plans.Dtos; 
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Quality.Validators;

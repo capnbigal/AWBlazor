@@ -719,7 +719,7 @@ WHERE a.SpatialLocation IS NULL;";
         var alreadySeeded = await db.Organizations.AsNoTracking().AnyAsync(o => o.IsPrimary, ct);
         if (alreadySeeded) return;
 
-        var primary = new Features.Enterprise.Domain.Organization
+        var primary = new Features.Enterprise.Organizations.Domain.Organization
         {
             Code = "PRIMARY",
             Name = "Primary Organization",
@@ -772,7 +772,7 @@ WHERE a.SpatialLocation IS NULL;";
 
         var toAdd = seeds
             .Where(s => !existing.Contains(s.Code))
-            .Select(s => new Features.Inventory.Domain.InventoryTransactionType
+            .Select(s => new Features.Inventory.Types.Domain.InventoryTransactionType
             {
                 Id = s.Id,
                 Code = s.Code,
@@ -820,7 +820,7 @@ WHERE a.SpatialLocation IS NULL;";
 
         var toAdd = seeds
             .Where(s => !existing.Contains(s.Code))
-            .Select(s => new Features.Mes.Domain.DowntimeReason
+            .Select(s => new Features.Mes.Downtime.Domain.DowntimeReason
             {
                 Code = s.Code,
                 Name = s.Name,

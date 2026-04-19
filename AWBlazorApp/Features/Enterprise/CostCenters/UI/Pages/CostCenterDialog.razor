@@ -1,0 +1,136 @@
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
+@using AWBlazorApp.Features.Enterprise.CostCenters.Domain
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Domain
+@using AWBlazorApp.Features.Enterprise.Organizations.Domain
+@using AWBlazorApp.Features.Enterprise.ProductLines.Domain
+@using AWBlazorApp.Features.Enterprise.Stations.Domain
+@using AWBlazorApp.Features.Enterprise.Assets.Dtos
+@using AWBlazorApp.Features.Enterprise.CostCenters.Dtos
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos
+@using AWBlazorApp.Features.Enterprise.Organizations.Dtos
+@using AWBlazorApp.Features.Enterprise.ProductLines.Dtos
+@using AWBlazorApp.Features.Enterprise.Stations.Dtos
+@using AWBlazorApp.Features.Enterprise.Assets.Application.Services
+@using AWBlazorApp.Features.Enterprise.CostCenters.Application.Services
+@using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services
+@using AWBlazorApp.Features.Enterprise.Organizations.Application.Services
+@using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services
+@using AWBlazorApp.Features.Enterprise.Stations.Application.Services
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateCostCenterRequest> CreateValidator
+@inject MudFormValidator<UpdateCostCenterRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create cost center" : $"Edit cost center #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12">
+                        <MudSelect T="int" Value="@createModel.OrganizationId" ValueChanged="@((int v) => createModel = createModel with { OrganizationId = v })" Label="Organization" Variant="Variant.Outlined" Required="true">
+                            @foreach (var o in orgs) { <MudSelectItem T="int" Value="@o.Id">@o.Code — @o.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Code" ValueChanged="@((string? v) => createModel = createModel with { Code = v })" Label="Code" Variant="Variant.Outlined" Required="true" MaxLength="32" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="200" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@createModel.OwnerBusinessEntityId" ValueChanged="@((int? v) => createModel = createModel with { OwnerBusinessEntityId = v })" Label="Owner BE ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudSwitch T="bool" Value="@createModel.IsActive" ValueChanged="@((bool v) => createModel = createModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Code" ValueChanged="@((string? v) => updateModel = updateModel with { Code = v })" Label="Code" Variant="Variant.Outlined" MaxLength="32" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" MaxLength="200" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.OwnerBusinessEntityId" ValueChanged="@((int? v) => updateModel = updateModel with { OwnerBusinessEntityId = v })" Label="Owner BE ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudSwitch T="bool" Value="@(updateModel.IsActive ?? true)" ValueChanged="@((bool v) => updateModel = updateModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CostCenterDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateCostCenterRequest createModel = new();
+    private UpdateCostCenterRequest updateModel = new();
+    private bool saving;
+    private List<OrganizationDto> orgs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        orgs = await db.Organizations.AsNoTracking().Where(o => o.IsActive).OrderBy(o => o.Code).Select(o => o.ToDto()).ToListAsync();
+        if (Model is not null)
+        {
+            updateModel = new UpdateCostCenterRequest
+            {
+                Code = Model.Code, Name = Model.Name,
+                OwnerBusinessEntityId = Model.OwnerBusinessEntityId, IsActive = Model.IsActive,
+            };
+        }
+        else if (orgs.Count > 0)
+        {
+            var primary = orgs.FirstOrDefault(o => o.IsPrimary) ?? orgs[0];
+            createModel = createModel with { OrganizationId = primary.Id };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var by = await GetCurrentUserNameAsync();
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.CostCenters.Add(entity);
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                db.CostCenterAuditLogs.Add(CostCenterAuditService.RecordCreate(entity, by));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = await db.CostCenters.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = CostCenterAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.CostCenterAuditLogs.Add(CostCenterAuditService.RecordUpdate(before, entity, by));
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
