@@ -5,8 +5,9 @@ using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Performance.Application;
 
 /// <summary>
 /// Integration tests for the <see cref="PerformanceReportRunner"/> — verifies the runner

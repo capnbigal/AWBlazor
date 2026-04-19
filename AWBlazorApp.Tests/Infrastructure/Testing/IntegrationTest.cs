@@ -16,8 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Shared.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Infrastructure.Testing;
 
 /// <summary>
 /// Smoke-tests the Blazor host. The Blazor host runs in its registered Development configuration,

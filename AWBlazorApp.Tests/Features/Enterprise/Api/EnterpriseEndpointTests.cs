@@ -8,8 +8,9 @@ using AWBlazorApp.Features.Identity.Domain;
 using AWBlazorApp.Shared.Dtos;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Enterprise.Api;
 
 // IdResponse.Id is typed as `object` in the production code, so when System.Text.Json
 // deserializes it on the test client side the value arrives as a JsonElement. This helper

@@ -2,8 +2,9 @@ using AWBlazorApp.Features.Inventory.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Inventory.Application;
 
 /// <summary>
 /// Integration tests for the product-centric explorer service. Verifies the picker filter,
