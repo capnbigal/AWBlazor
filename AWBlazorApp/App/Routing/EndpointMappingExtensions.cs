@@ -170,6 +170,9 @@ public static class EndpointMappingExtensions
         AWBlazorApp.Features.Performance.Endpoints.ScorecardEndpoints.MapScorecardEndpoints(app);
         AWBlazorApp.Features.Performance.Endpoints.ReportEndpoints.MapReportEndpoints(app);
 
+        // Cross-module plant dashboard. Aggregates from every module schema.
+        AWBlazorApp.Features.Dashboard.Endpoints.DashboardEndpoints.MapDashboardEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 

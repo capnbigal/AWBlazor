@@ -1,0 +1,348 @@
+@page "/dashboard/plant"
+@attribute [Authorize]
+@inject IPlantDashboardService DashboardService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Plant dashboard</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.Factory" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Plant dashboard</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Cross-module live snapshot. Generated @(_dto?.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss") ?? "—") · cached 5 min
+            </MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudButton Color="Color.Primary" Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="RefreshAsync" Disabled="@_loading">
+            @(_loading ? "Loading..." : "Refresh")
+        </MudButton>
+    </MudStack>
+
+    @if (_dto is null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+    else
+    {
+        @* ── Critical alerts banner ───────────────────────────────────── *@
+        @if (_dto.CriticalAlerts.Count > 0)
+        {
+            <MudPaper Class="pa-3" Elevation="2" Style="border-left: 4px solid var(--mud-palette-error)">
+                <MudStack Spacing="1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
+                        <MudText Typo="Typo.h6">@_dto.CriticalAlerts.Count critical item@(_dto.CriticalAlerts.Count == 1 ? "" : "s") need attention</MudText>
+                    </MudStack>
+                    @foreach (var alert in _dto.CriticalAlerts.Take(8))
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudChip T="string" Size="Size.Small" Color="@SeverityColor(alert.Severity)" Variant="Variant.Filled">@alert.Source</MudChip>
+                            <MudText Typo="Typo.body2" Style="flex: 1">
+                                <strong>@alert.Title</strong>
+                                @if (!string.IsNullOrWhiteSpace(alert.Detail)) { <span> — @alert.Detail</span> }
+                            </MudText>
+                            @if (!string.IsNullOrWhiteSpace(alert.LinkHref))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo(alert.LinkHref))" />
+                            }
+                        </MudStack>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+
+        @* ── Headline KPIs ─────────────────────────────────────────────── *@
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Speed" Color="@OeeColor(_dto.Headlines.LatestOeeFraction)" Value="@FormatPct(_dto.Headlines.LatestOeeFraction)" Label="Latest OEE" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Value="@_dto.Headlines.ActiveProductionRuns.ToString("N0")" Label="Active runs" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Build" Color="@(_dto.Headlines.OpenMaintenanceWorkOrders > 0 ? Color.Warning : Color.Default)" Value="@_dto.Headlines.OpenMaintenanceWorkOrders.ToString("N0")" Label="Open work orders" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.NotificationsActive" Color="@(_dto.Headlines.OpenQualificationAlerts > 0 ? Color.Error : Color.Default)" Value="@_dto.Headlines.OpenQualificationAlerts.ToString("N0")" Label="Open qual alerts" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ReportProblem" Color="@(_dto.Headlines.OpenNonConformances > 0 ? Color.Error : Color.Default)" Value="@_dto.Headlines.OpenNonConformances.ToString("N0")" Label="Open NCRs" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ChangeCircle" Color="@(_dto.Headlines.EcosUnderReview > 0 ? Color.Warning : Color.Default)" Value="@_dto.Headlines.EcosUnderReview.ToString("N0")" Label="ECOs under review" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.EventBusy" Color="@(_dto.Headlines.PendingLeaveRequests > 0 ? Color.Info : Color.Default)" Value="@_dto.Headlines.PendingLeaveRequests.ToString("N0")" Label="Pending leave" /></MudItem>
+            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Campaign" Color="Color.Secondary" Value="@_dto.Headlines.ActiveAnnouncements.ToString("N0")" Label="Active announcements" /></MudItem>
+        </MudGrid>
+
+        @* ── 7-day trends ──────────────────────────────────────────────── *@
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                    <MudText Typo="Typo.h6">OEE last 7 days</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Average per day across all stations</MudText>
+                    @RenderSparkline(_dto.OeeTrend7d, valueFormat: v => $"{v * 100m:F0}%", scale: 100m)
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                    <MudText Typo="Typo.h6">Production units last 7 days</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Sum across all stations</MudText>
+                    @RenderSparkline(_dto.ProductionTrend7d, valueFormat: v => v.ToString("N0"), scale: null)
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                    <MudText Typo="Typo.h6">Work orders last 7 days</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Raised vs completed per day</MudText>
+                    @RenderWoBars(_dto.WorkOrderTrend7d)
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Module health cards ──────────────────────────────────────── *@
+        <MudText Typo="Typo.h5" Class="mt-3">Module health</MudText>
+        <MudGrid Spacing="3">
+            @foreach (var module in _dto.ModuleHealth)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.h6">@module.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@module.Subtitle</MudText>
+                            </MudStack>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo(module.LinkHref))" />
+                        </MudStack>
+                        <MudDivider Class="my-3" />
+                        <MudGrid Spacing="2">
+                            @foreach (var stat in module.Stats)
+                            {
+                                <MudItem xs="6">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@stat.Label</MudText>
+                                        <MudText Typo="Typo.h6" Color="@ColorFromString(stat.Color)">@stat.Value</MudText>
+                                    </MudStack>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+
+        @* ── Recent activity feed ─────────────────────────────────────── *@
+        <MudText Typo="Typo.h5" Class="mt-3">Recent activity</MudText>
+        <MudPaper Class="pa-2" Elevation="1">
+            @if (_dto.RecentActivity.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">No recent activity in the last 7 days.</MudText>
+            }
+            else
+            {
+                <MudList T="ActivityItemDto" Dense="true">
+                    @foreach (var item in _dto.RecentActivity)
+                    {
+                        <MudListItem T="ActivityItemDto" OnClick="@(() => MaybeNavigate(item.LinkHref))" Style="@(string.IsNullOrWhiteSpace(item.LinkHref) ? "" : "cursor: pointer")">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudChip T="string" Size="Size.Small" Color="@ModuleColor(item.Module)" Variant="Variant.Outlined">@item.Module</MudChip>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="min-width: 130px">@item.At.ToString("MM-dd HH:mm")</MudText>
+                                <MudText Typo="Typo.body2" Style="flex: 1">
+                                    <strong>@item.Title</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.Subtitle)) { <span style="color: var(--mud-palette-text-secondary)"> · @item.Subtitle</span> }
+                                </MudText>
+                                @if (!string.IsNullOrWhiteSpace(item.LinkHref))
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Secondary" />
+                                }
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private PlantDashboardDto? _dto;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _dto = await DashboardService.GetAsync(default);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load dashboard: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        DashboardService.Invalidate();
+        await LoadAsync();
+        Snackbar.Add("Dashboard refreshed.", Severity.Success);
+    }
+
+    private void MaybeNavigate(string? href)
+    {
+        if (!string.IsNullOrWhiteSpace(href))
+            Navigation.NavigateTo(href);
+    }
+
+    private static string FormatPct(decimal? value)
+        => value.HasValue ? $"{value.Value * 100m:F1}%" : "—";
+
+    private static Color OeeColor(decimal? value) => value switch
+    {
+        null => Color.Default,
+        >= 0.85m => Color.Success,
+        >= 0.60m => Color.Warning,
+        _ => Color.Error,
+    };
+
+    private static Color SeverityColor(string severity) => severity switch
+    {
+        "Error" => Color.Error,
+        "Warning" => Color.Warning,
+        _ => Color.Info,
+    };
+
+    private static Color ModuleColor(string module) => module switch
+    {
+        "Workforce" => Color.Info,
+        "Engineering" => Color.Tertiary,
+        "Maintenance" => Color.Warning,
+        "Performance" => Color.Primary,
+        "Quality" => Color.Success,
+        "Production exec." => Color.Secondary,
+        _ => Color.Default,
+    };
+
+    private static Color ColorFromString(string? color) => color switch
+    {
+        "Success" => Color.Success,
+        "Warning" => Color.Warning,
+        "Error" => Color.Error,
+        "Info" => Color.Info,
+        _ => Color.Default,
+    };
+
+    /// <summary>
+    /// Inline SVG sparkline. We hand-roll it instead of pulling in a chart library because
+    /// MudChart's setup overhead is heavy for a 7-point line and we want consistent styling.
+    /// </summary>
+    private RenderFragment RenderSparkline(IReadOnlyList<TrendPointDto> points, Func<decimal, string> valueFormat, decimal? scale) =>
+        builder =>
+        {
+            if (points.Count == 0)
+            {
+                builder.OpenComponent<MudText>(0);
+                builder.AddAttribute(1, "Typo", Typo.body2);
+                builder.AddAttribute(2, "Color", Color.Secondary);
+                builder.AddAttribute(3, "ChildContent", (RenderFragment)(b => b.AddContent(0, "No data yet — run the metrics rollup or wait for tomorrow's nightly job.")));
+                builder.CloseComponent();
+                return;
+            }
+
+            const int width = 320;
+            const int height = 80;
+            const int padding = 6;
+            var max = scale ?? Math.Max(1m, points.Max(p => p.Value));
+            var min = points.Min(p => p.Value);
+            var range = Math.Max(0.01m, max - min);
+
+            var coords = points.Select((p, i) =>
+            {
+                var x = padding + (decimal)i * (width - 2m * padding) / Math.Max(1m, points.Count - 1);
+                var y = height - padding - ((p.Value - min) / range) * (height - 2m * padding);
+                return ($"{x:F1}", $"{y:F1}");
+            }).ToList();
+
+            var path = string.Join(" ", coords.Select((c, i) => (i == 0 ? "M" : "L") + c.Item1 + "," + c.Item2));
+            var areaPath = path + $" L{coords[^1].Item1},{height - padding} L{coords[0].Item1},{height - padding} Z";
+
+            builder.AddMarkupContent(0, $@"
+<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:80px;display:block"">
+    <path d=""{areaPath}"" fill=""rgba(31,111,235,0.1)"" />
+    <path d=""{path}"" fill=""none"" stroke=""var(--mud-palette-primary)"" stroke-width=""2"" />
+</svg>");
+
+            builder.OpenComponent<MudStack>(10);
+            builder.AddAttribute(11, "Row", true);
+            builder.AddAttribute(12, "AlignItems", AlignItems.Baseline);
+            builder.AddAttribute(13, "ChildContent", (RenderFragment)(b =>
+            {
+                b.OpenComponent<MudText>(0);
+                b.AddAttribute(1, "Typo", Typo.h6);
+                b.AddAttribute(2, "ChildContent", (RenderFragment)(t => t.AddContent(0, valueFormat(points[^1].Value))));
+                b.CloseComponent();
+
+                b.OpenComponent<MudText>(10);
+                b.AddAttribute(11, "Typo", Typo.caption);
+                b.AddAttribute(12, "Color", Color.Secondary);
+                b.AddAttribute(13, "Class", "ml-2");
+                b.AddAttribute(14, "ChildContent", (RenderFragment)(t => t.AddContent(0, $"min {valueFormat(min)} · max {valueFormat(max)}")));
+                b.CloseComponent();
+            }));
+            builder.CloseComponent();
+        };
+
+    /// <summary>Inline SVG paired-bars (raised vs completed) for the work-order trend.</summary>
+    private RenderFragment RenderWoBars(IReadOnlyList<WorkOrderTrendDto> trend) =>
+        builder =>
+        {
+            if (trend.Count == 0)
+            {
+                builder.AddMarkupContent(0, "<span style=\"color: var(--mud-palette-text-secondary)\">No data yet.</span>");
+                return;
+            }
+
+            const int width = 320;
+            const int height = 80;
+            const int padding = 6;
+            var max = Math.Max(1, trend.Max(t => Math.Max(t.Raised, t.Completed)));
+            var bandW = (width - 2 * padding) / (double)trend.Count;
+            var sb = new System.Text.StringBuilder();
+            sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:80px;display:block"">");
+            for (var i = 0; i < trend.Count; i++)
+            {
+                var x = padding + i * bandW;
+                var raisedH = trend[i].Raised / (double)max * (height - 2 * padding);
+                var completedH = trend[i].Completed / (double)max * (height - 2 * padding);
+                sb.Append($@"<rect x=""{x:F1}"" y=""{height - padding - raisedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{raisedH:F1}"" fill=""var(--mud-palette-warning)""/>");
+                sb.Append($@"<rect x=""{x + bandW * 0.45:F1}"" y=""{height - padding - completedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{completedH:F1}"" fill=""var(--mud-palette-success)""/>");
+            }
+            sb.Append("</svg>");
+            builder.AddMarkupContent(0, sb.ToString());
+
+            builder.OpenComponent<MudStack>(10);
+            builder.AddAttribute(11, "Row", true);
+            builder.AddAttribute(12, "Spacing", 2);
+            builder.AddAttribute(13, "Class", "mt-1");
+            builder.AddAttribute(14, "ChildContent", (RenderFragment)(b =>
+            {
+                b.OpenComponent<MudChip<string>>(0);
+                b.AddAttribute(1, "Size", Size.Small);
+                b.AddAttribute(2, "Color", Color.Warning);
+                b.AddAttribute(3, "Variant", Variant.Outlined);
+                b.AddAttribute(4, "ChildContent", (RenderFragment)(t => t.AddContent(0, $"Raised {trend.Sum(t2 => t2.Raised)}")));
+                b.CloseComponent();
+
+                b.OpenComponent<MudChip<string>>(10);
+                b.AddAttribute(11, "Size", Size.Small);
+                b.AddAttribute(12, "Color", Color.Success);
+                b.AddAttribute(13, "Variant", Variant.Outlined);
+                b.AddAttribute(14, "ChildContent", (RenderFragment)(t => t.AddContent(0, $"Completed {trend.Sum(t2 => t2.Completed)}")));
+                b.CloseComponent();
+            }));
+            builder.CloseComponent();
+        };
+}

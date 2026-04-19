@@ -167,6 +167,9 @@ public static class PermissionAreaMapping
         ("/api/kpi-values", PermissionArea.Performance),
         ("/api/scorecards", PermissionArea.Performance),
         ("/api/performance-reports", PermissionArea.Performance),
+
+        // Cross-module plant dashboard.
+        ("/api/dashboard", PermissionArea.Analytics),
     ];
 
     /// <summary>
