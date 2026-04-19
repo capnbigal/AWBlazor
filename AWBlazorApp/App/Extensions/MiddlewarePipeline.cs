@@ -186,6 +186,11 @@ public static class MiddlewarePipeline
                 job => job.ExecuteAsync(),
                 "*/1 * * * *"); // every minute — cheap poll; only does work when outbox has Pending rows
 
+            RecurringJob.AddOrUpdate<AWBlazorApp.Features.Performance.Jobs.MetricsRollupJob>(
+                "performance-metrics-rollup",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(2, 0)); // 02:00 UTC — rolls up "yesterday" + on the 1st, the prior month
+
             // Note: ReportSchedule recurring jobs are registered by the /reports/schedule page
             // whenever a user saves or toggles a schedule. Hangfire's own SQL storage persists
             // them across restarts, so there's no need to re-register at startup. An earlier
