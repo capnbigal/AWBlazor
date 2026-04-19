@@ -30,6 +30,7 @@
                     <MudItem xs="12" sm="6"><MudSwitch T="bool" Value="@createModel.IsActive" ValueChanged="@((bool v) => createModel = createModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
                     <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@createModel.OperatorBusinessEntityId" ValueChanged="@((int? v) => createModel = createModel with { OperatorBusinessEntityId = v })" Label="Operator Business Entity ID" HelperText="Employee.BusinessEntityID — leave empty if unassigned" Variant="Variant.Outlined" Clearable="true" /></MudItem>
                     <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@createModel.AssetId" ValueChanged="@((int? v) => createModel = createModel with { AssetId = v })" Label="Asset ID" HelperText="Installed machine/tool — leave empty for manual stations" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal?" Value="@createModel.IdealCycleSeconds" ValueChanged="@((decimal? v) => createModel = createModel with { IdealCycleSeconds = v })" Label="Ideal cycle (s)" HelperText="Target seconds per unit at full speed — drives OEE Performance. Empty = use 60s default." Variant="Variant.Outlined" Clearable="true" /></MudItem>
                 </MudGrid>
             </MudForm>
         }
@@ -52,6 +53,7 @@
                     <MudItem xs="12" sm="6"><MudSwitch T="bool" Value="@(updateModel.IsActive ?? true)" ValueChanged="@((bool v) => updateModel = updateModel with { IsActive = v })" Label="Active" Color="Color.Primary" /></MudItem>
                     <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.OperatorBusinessEntityId" ValueChanged="@((int? v) => updateModel = updateModel with { OperatorBusinessEntityId = v })" Label="Operator BE ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
                     <MudItem xs="12" sm="6"><MudNumericField T="int?" Value="@updateModel.AssetId" ValueChanged="@((int? v) => updateModel = updateModel with { AssetId = v })" Label="Asset ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudNumericField T="decimal?" Value="@updateModel.IdealCycleSeconds" ValueChanged="@((decimal? v) => updateModel = updateModel with { IdealCycleSeconds = v })" Label="Ideal cycle (s)" HelperText="Empty = fall back to 60s default in OEE rollup" Variant="Variant.Outlined" Clearable="true" /></MudItem>
                 </MudGrid>
             </MudForm>
         }
@@ -85,6 +87,7 @@
                 OrgUnitId = Model.OrgUnitId, Code = Model.Code, Name = Model.Name,
                 StationKind = Model.StationKind,
                 OperatorBusinessEntityId = Model.OperatorBusinessEntityId, AssetId = Model.AssetId,
+                IdealCycleSeconds = Model.IdealCycleSeconds,
                 IsActive = Model.IsActive,
             };
         }

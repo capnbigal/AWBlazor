@@ -58,9 +58,19 @@
 </MudDialog>
 
 @code {
+    [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
+
     private MudDataGrid<EngineeringChangeOrderDto> grid = null!;
     private bool _loading = true;
     private EcoStatus? filterStatus;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(StatusQuery) && Enum.TryParse<EcoStatus>(StatusQuery, ignoreCase: true, out var s))
+        {
+            filterStatus = s;
+        }
+    }
 
     private bool dialogOpen, saving;
     private CreateEngineeringChangeOrderRequest newEco = new();

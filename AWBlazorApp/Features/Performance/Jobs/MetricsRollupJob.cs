@@ -49,98 +49,135 @@ public sealed class MetricsRollupJob
 
     /// <summary>
     /// Hangfire entry point — rolls up "yesterday" relative to UTC now. The optional
-    /// parameters let a manual call backfill a different date.
+    /// parameters on RunAsync let a manual call backfill a different date or a date range.
     /// </summary>
     public Task ExecuteAsync(CancellationToken cancellationToken = default)
-        => RunAsync(targetDate: null, idealCycleSeconds: null, cancellationToken);
+        => RunAsync(targetDate: null, days: null, idealCycleSeconds: null, cancellationToken);
 
     /// <summary>
     /// Real entry point — used by both the recurring job (with nulls) and the manual admin
-    /// trigger (with explicit overrides).
+    /// trigger (with explicit overrides). When <paramref name="days"/> &gt; 1, rolls up a
+    /// range ending on <paramref name="targetDate"/> (inclusive) and going back N-1 days.
+    /// Maintenance monthly rollups fire for every distinct (year, month) covered by the
+    /// range — useful for populating a fresh deploy with several months of history in one call.
     /// </summary>
     public async Task<MetricsRollupResult> RunAsync(
         DateOnly? targetDate,
+        int? days,
         decimal? idealCycleSeconds,
         CancellationToken cancellationToken)
     {
         var nowUtc = DateTime.UtcNow;
-        var date = targetDate ?? DateOnly.FromDateTime(nowUtc.AddDays(-1));
-        var ideal = idealCycleSeconds ?? DefaultIdealCycleSeconds;
+        var endDate = targetDate ?? DateOnly.FromDateTime(nowUtc.AddDays(-1));
+        var rangeDays = days ?? 1;
+        if (rangeDays < 1) rangeDays = 1;
+        if (rangeDays > 365) rangeDays = 365; // sanity cap so a typo can't hammer the DB
+        var startDate = endDate.AddDays(-(rangeDays - 1));
+        var fallbackIdeal = idealCycleSeconds ?? DefaultIdealCycleSeconds;
 
-        var result = new MetricsRollupResult { Date = date };
+        var result = new MetricsRollupResult
+        {
+            FromDate = startDate,
+            ToDate = endDate,
+            DaysCovered = rangeDays,
+        };
 
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
-        // ── Stations: OEE + production daily ────────────────────────────────
-        var activeStationIds = await db.Stations.AsNoTracking()
+        // Pull stations with their per-station IdealCycleSeconds (falls back to the supplied
+        // ideal — usually 60s — when the station hasn't been tuned).
+        var activeStations = await db.Stations.AsNoTracking()
             .Where(s => s.IsActive)
-            .Select(s => s.Id)
+            .Select(s => new { s.Id, s.IdealCycleSeconds })
             .ToListAsync(cancellationToken);
 
-        var periodStart = DateTime.SpecifyKind(date.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
-        var periodEnd = periodStart.AddDays(1);
-
-        foreach (var stationId in activeStationIds)
+        // ── Stations: OEE + production daily — looped over each day in the range ────
+        for (var d = startDate; d <= endDate; d = d.AddDays(1))
         {
-            try
-            {
-                await _oee.ComputeAsync(stationId, PerformancePeriodKind.Day, periodStart, periodEnd, ideal, cancellationToken);
-                result.OeeRollups++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "OEE rollup failed for station {StationId} on {Date}", stationId, date);
-                result.Failures++;
-            }
+            var periodStart = DateTime.SpecifyKind(d.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+            var periodEnd = periodStart.AddDays(1);
 
-            try
+            foreach (var st in activeStations)
             {
-                await _production.ComputeDailyAsync(stationId, date, cancellationToken);
-                result.ProductionRollups++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Production daily rollup failed for station {StationId} on {Date}", stationId, date);
-                result.Failures++;
+                var ideal = st.IdealCycleSeconds ?? fallbackIdeal;
+                try
+                {
+                    await _oee.ComputeAsync(st.Id, PerformancePeriodKind.Day, periodStart, periodEnd, ideal, cancellationToken);
+                    result.OeeRollups++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "OEE rollup failed for station {StationId} on {Date}", st.Id, d);
+                    result.Failures++;
+                }
+
+                try
+                {
+                    await _production.ComputeDailyAsync(st.Id, d, cancellationToken);
+                    result.ProductionRollups++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Production daily rollup failed for station {StationId} on {Date}", st.Id, d);
+                    result.Failures++;
+                }
             }
         }
 
-        // ── On the 1st: Assets monthly maintenance metrics for the previous month ────
-        // Backfill case: when a target date is passed, run the maintenance rollup if the
-        // target is the first of a month so callers can backfill on demand.
-        var runMaintenance = (date.Day == 1) || (targetDate is null && nowUtc.Day == 1);
-        if (runMaintenance)
+        // ── Maintenance monthly metrics ─────────────────────────────────────
+        // Recurring (single-day) call: only fires on the 1st, and rolls up the prior month.
+        // Backfill (multi-day) call: fires for every distinct prior-month covered by the
+        //   range. e.g. days=60 ending 2026-04-19 covers months that complete on
+        //   2026-03-01 (Feb) and 2026-04-01 (Mar) — both get rolled up.
+        var monthsToRoll = new HashSet<(int Year, int Month)>();
+        for (var d = startDate; d <= endDate; d = d.AddDays(1))
         {
-            // Previous month relative to the target date.
-            var monthDate = date.AddMonths(-1);
-            var year = monthDate.Year;
-            var month = monthDate.Month;
+            // For each first-of-month in the range, the month that just completed is (d - 1 month).
+            if (d.Day == 1)
+            {
+                var prior = d.AddMonths(-1);
+                monthsToRoll.Add((prior.Year, prior.Month));
+            }
+        }
+        // Recurring case: if no explicit date and today is the 1st, also fire for the prior month.
+        if (targetDate is null && nowUtc.Day == 1)
+        {
+            var prior = DateOnly.FromDateTime(nowUtc).AddMonths(-1);
+            monthsToRoll.Add((prior.Year, prior.Month));
+        }
 
+        if (monthsToRoll.Count > 0)
+        {
             var activeAssetIds = await db.Assets.AsNoTracking()
                 .Where(a => a.Status == AssetStatus.Active)
                 .Select(a => a.Id)
                 .ToListAsync(cancellationToken);
 
-            foreach (var assetId in activeAssetIds)
+            foreach (var (year, month) in monthsToRoll.OrderBy(m => m.Year).ThenBy(m => m.Month))
             {
-                try
+                foreach (var assetId in activeAssetIds)
                 {
-                    await _maintenance.ComputeMonthlyAsync(assetId, year, month, cancellationToken);
-                    result.MaintenanceRollups++;
+                    try
+                    {
+                        await _maintenance.ComputeMonthlyAsync(assetId, year, month, cancellationToken);
+                        result.MaintenanceRollups++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Maintenance monthly rollup failed for asset {AssetId} {Year}-{Month:D2}",
+                            assetId, year, month);
+                        result.Failures++;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Maintenance monthly rollup failed for asset {AssetId} {Year}-{Month:D2}",
-                        assetId, year, month);
-                    result.Failures++;
-                }
+                result.MaintenanceMonthsRolledUp.Add($"{year:D4}-{month:D2}");
             }
-            result.MaintenanceMonthRolledUp = $"{year:D4}-{month:D2}";
         }
 
         _logger.LogInformation(
-            "Metrics rollup for {Date}: oee={Oee} prod={Prod} maint={Maint} failures={Failures}",
-            date, result.OeeRollups, result.ProductionRollups, result.MaintenanceRollups, result.Failures);
+            "Metrics rollup {From}..{To} ({Days}d): oee={Oee} prod={Prod} maint={Maint} months={Months} failures={Failures}",
+            startDate, endDate, rangeDays,
+            result.OeeRollups, result.ProductionRollups, result.MaintenanceRollups,
+            result.MaintenanceMonthsRolledUp.Count, result.Failures);
 
         return result;
     }
@@ -148,11 +185,13 @@ public sealed class MetricsRollupJob
 
 public sealed class MetricsRollupResult
 {
-    public DateOnly Date { get; set; }
+    public DateOnly FromDate { get; set; }
+    public DateOnly ToDate { get; set; }
+    public int DaysCovered { get; set; }
     public int OeeRollups { get; set; }
     public int ProductionRollups { get; set; }
     public int MaintenanceRollups { get; set; }
-    public string? MaintenanceMonthRolledUp { get; set; }
+    public List<string> MaintenanceMonthsRolledUp { get; set; } = new();
     public int Failures { get; set; }
     public int Total => OeeRollups + ProductionRollups + MaintenanceRollups;
 }
