@@ -69,13 +69,7 @@ public static class SalesOrderHeaderSalesReasonEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.SalesOrderHeaderSalesReasons.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.SalesOrderHeaderSalesReasonAuditLogs.Add(
-            SalesOrderHeaderSalesReasonAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => SalesOrderHeaderSalesReasonAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/sales-order-header-sales-reasons/by-key?salesOrderId={entity.SalesOrderId}&salesReasonId={entity.SalesReasonId}",
             new CompositeKeyResponse(new Dictionary<string, object>
