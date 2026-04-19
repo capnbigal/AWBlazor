@@ -78,11 +78,21 @@
 </MudDialog>
 
 @code {
+    [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
+
     private MudDataGrid<ProductionRunDto> grid = null!;
     private bool _loading = true;
     private ProductionRunStatus? filterStatus;
     private ProductionRunKind? filterKind;
     private int? filterStation, filterWorkOrder;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(StatusQuery) && Enum.TryParse<ProductionRunStatus>(StatusQuery, ignoreCase: true, out var s))
+        {
+            filterStatus = s;
+        }
+    }
 
     private bool dialogOpen, saving;
     private CreateProductionRunRequest newRun = new();

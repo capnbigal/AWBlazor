@@ -13,6 +13,7 @@ public class StationAuditLog : AdventureWorksAuditLogBase
     public StationKind StationKind { get; set; }
     public int? OperatorBusinessEntityId { get; set; }
     public int? AssetId { get; set; }
+    public decimal? IdealCycleSeconds { get; set; }
     public bool IsActive { get; set; }
     public DateTime SourceModifiedDate { get; set; }
 }

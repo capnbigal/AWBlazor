@@ -35,6 +35,7 @@ public static class StationAuditService
             StationKind = e.StationKind,
             OperatorBusinessEntityId = e.OperatorBusinessEntityId,
             AssetId = e.AssetId,
+            IdealCycleSeconds = e.IdealCycleSeconds,
             IsActive = e.IsActive,
             SourceModifiedDate = e.ModifiedDate,
         };
@@ -48,16 +49,17 @@ public static class StationAuditService
         AuditDiffHelpers.AppendIfChanged(sb, "StationKind", before.StationKind, after.StationKind);
         AuditDiffHelpers.AppendIfChanged(sb, "OperatorBusinessEntityId", before.OperatorBusinessEntityId, after.OperatorBusinessEntityId);
         AuditDiffHelpers.AppendIfChanged(sb, "AssetId", before.AssetId, after.AssetId);
+        AuditDiffHelpers.AppendIfChanged(sb, "IdealCycleSeconds", before.IdealCycleSeconds, after.IdealCycleSeconds);
         AuditDiffHelpers.AppendIfChanged(sb, "IsActive", before.IsActive, after.IsActive);
         return sb.Length == 0 ? "No changes" : sb.ToString();
     }
 
     public readonly record struct Snapshot(
         int OrgUnitId, string Code, string Name, StationKind StationKind,
-        int? OperatorBusinessEntityId, int? AssetId, bool IsActive)
+        int? OperatorBusinessEntityId, int? AssetId, decimal? IdealCycleSeconds, bool IsActive)
     {
         public Snapshot(Station e) : this(
             e.OrgUnitId, e.Code, e.Name, e.StationKind,
-            e.OperatorBusinessEntityId, e.AssetId, e.IsActive) { }
+            e.OperatorBusinessEntityId, e.AssetId, e.IdealCycleSeconds, e.IsActive) { }
     }
 }

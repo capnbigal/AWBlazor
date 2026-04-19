@@ -62,14 +62,15 @@ public static class AdminEndpoints
         group.MapPost("/run-metrics-rollup", async Task<Ok<MetricsRollupResult>> (
             MetricsRollupJob job,
             DateOnly? date,
+            int? days,
             decimal? idealCycleSeconds,
             CancellationToken ct) =>
         {
-            var result = await job.RunAsync(date, idealCycleSeconds, ct);
+            var result = await job.RunAsync(date, days, idealCycleSeconds, ct);
             return TypedResults.Ok(result);
         })
         .WithName("RunMetricsRollup")
-        .WithSummary("Manually trigger the nightly performance metrics rollup. Same code path as the Hangfire 'performance-metrics-rollup' recurring job. Optional ?date=yyyy-MM-dd backfills a specific day; ?idealCycleSeconds=N overrides the default 60s used in OEE Performance computation. On the 1st of the chosen month, also rolls up the previous month's maintenance metrics for every active asset.");
+        .WithSummary("Manually trigger the performance metrics rollup. Same code path as the Hangfire 'performance-metrics-rollup' recurring job. Optional parameters: ?date=yyyy-MM-dd targets a specific end date (defaults to yesterday); ?days=N (1-365) backfills a range ending on the target date and going back N-1 days, useful for a fresh deploy that needs historical OEE/production charts; ?idealCycleSeconds=N overrides the default 60s when a station doesn't carry its own IdealCycleSeconds. Maintenance monthly metrics fire for every distinct prior-month covered by the range.");
 
         return app;
     }

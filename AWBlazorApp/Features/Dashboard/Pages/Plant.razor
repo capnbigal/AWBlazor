@@ -56,16 +56,16 @@
             </MudPaper>
         }
 
-        @* ── Headline KPIs ─────────────────────────────────────────────── *@
+        @* ── Headline KPIs (each tile click-through navigates to its source list) ───── *@
         <MudGrid Spacing="3">
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Speed" Color="@OeeColor(_dto.Headlines.LatestOeeFraction)" Value="@FormatPct(_dto.Headlines.LatestOeeFraction)" Label="Latest OEE" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Value="@_dto.Headlines.ActiveProductionRuns.ToString("N0")" Label="Active runs" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Build" Color="@(_dto.Headlines.OpenMaintenanceWorkOrders > 0 ? Color.Warning : Color.Default)" Value="@_dto.Headlines.OpenMaintenanceWorkOrders.ToString("N0")" Label="Open work orders" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.NotificationsActive" Color="@(_dto.Headlines.OpenQualificationAlerts > 0 ? Color.Error : Color.Default)" Value="@_dto.Headlines.OpenQualificationAlerts.ToString("N0")" Label="Open qual alerts" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ReportProblem" Color="@(_dto.Headlines.OpenNonConformances > 0 ? Color.Error : Color.Default)" Value="@_dto.Headlines.OpenNonConformances.ToString("N0")" Label="Open NCRs" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ChangeCircle" Color="@(_dto.Headlines.EcosUnderReview > 0 ? Color.Warning : Color.Default)" Value="@_dto.Headlines.EcosUnderReview.ToString("N0")" Label="ECOs under review" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.EventBusy" Color="@(_dto.Headlines.PendingLeaveRequests > 0 ? Color.Info : Color.Default)" Value="@_dto.Headlines.PendingLeaveRequests.ToString("N0")" Label="Pending leave" /></MudItem>
-            <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Campaign" Color="Color.Secondary" Value="@_dto.Headlines.ActiveAnnouncements.ToString("N0")" Label="Active announcements" /></MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.Speed, OeeColor(_dto.Headlines.LatestOeeFraction), FormatPct(_dto.Headlines.LatestOeeFraction), "Latest OEE", "performance/oee")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.PlayCircle, Color.Info, _dto.Headlines.ActiveProductionRuns.ToString("N0"), "Active runs", "mes/runs?status=InProgress")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.Build, _dto.Headlines.OpenMaintenanceWorkOrders > 0 ? Color.Warning : Color.Default, _dto.Headlines.OpenMaintenanceWorkOrders.ToString("N0"), "Open work orders", "maintenance/work-orders?status=Open")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.NotificationsActive, _dto.Headlines.OpenQualificationAlerts > 0 ? Color.Error : Color.Default, _dto.Headlines.OpenQualificationAlerts.ToString("N0"), "Open qual alerts", "workforce/qualification-alerts")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.ReportProblem, _dto.Headlines.OpenNonConformances > 0 ? Color.Error : Color.Default, _dto.Headlines.OpenNonConformances.ToString("N0"), "Open NCRs", "quality/ncrs")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.ChangeCircle, _dto.Headlines.EcosUnderReview > 0 ? Color.Warning : Color.Default, _dto.Headlines.EcosUnderReview.ToString("N0"), "ECOs under review", "engineering/ecos?status=UnderReview")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.EventBusy, _dto.Headlines.PendingLeaveRequests > 0 ? Color.Info : Color.Default, _dto.Headlines.PendingLeaveRequests.ToString("N0"), "Pending leave", "workforce/leave-requests")</MudItem>
+            <MudItem xs="12" sm="6" md="3">@RenderKpiTile(Icons.Material.Filled.Campaign, Color.Secondary, _dto.Headlines.ActiveAnnouncements.ToString("N0"), "Active announcements", "workforce/announcements")</MudItem>
         </MudGrid>
 
         @* ── 7-day trends ──────────────────────────────────────────────── *@
@@ -234,6 +234,26 @@
         "Info" => Color.Info,
         _ => Color.Default,
     };
+
+    /// <summary>
+    /// Wraps a KpiCard in a clickable surface that navigates to the source list page when
+    /// clicked. The href is relative to the app root (e.g. "performance/oee").
+    /// </summary>
+    private RenderFragment RenderKpiTile(string icon, Color color, string value, string label, string href) =>
+        builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", "cursor: pointer; height: 100%");
+            builder.AddAttribute(2, "title", $"Open {label}");
+            builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, () => Navigation.NavigateTo(href)));
+            builder.OpenComponent<KpiCard>(4);
+            builder.AddAttribute(5, "Icon", icon);
+            builder.AddAttribute(6, "Color", color);
+            builder.AddAttribute(7, "Value", value);
+            builder.AddAttribute(8, "Label", label);
+            builder.CloseComponent();
+            builder.CloseElement();
+        };
 
     /// <summary>
     /// Inline SVG sparkline. We hand-roll it instead of pulling in a chart library because

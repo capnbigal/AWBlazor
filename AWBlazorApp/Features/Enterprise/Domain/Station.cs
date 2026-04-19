@@ -38,6 +38,14 @@ public class Station
     /// <summary>Optional — a station is a location+operator first; machines are not required.</summary>
     public int? AssetId { get; set; }
 
+    /// <summary>
+    /// Target seconds-per-unit at full speed. Drives the Performance denominator in OEE
+    /// computation: Performance = (units × IdealCycleSeconds) / actualSeconds. Null means
+    /// "fall back to the caller-supplied default" (the nightly Hangfire rollup uses 60s).
+    /// </summary>
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal? IdealCycleSeconds { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTime ModifiedDate { get; set; }

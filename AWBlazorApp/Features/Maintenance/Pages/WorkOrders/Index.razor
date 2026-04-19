@@ -76,11 +76,31 @@
 </MudDialog>
 
 @code {
+    [SupplyParameterFromQuery(Name = "status")] public string? StatusQuery { get; set; }
+
     private MudDataGrid<MaintenanceWorkOrderDto> grid = null!;
     private bool _loading = true;
     private WorkOrderStatus? filterStatus;
     private WorkOrderType? filterType;
     private int? filterAsset;
+    // "Open" is a meta-status meaning any non-Completed and non-Cancelled WO. It comes from
+    // the plant dashboard drill-through (?status=Open) — the dashboard tile counts "open WOs"
+    // as that exact set, so we mirror it here.
+    private bool filterOpenOnly;
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrWhiteSpace(StatusQuery)) return;
+        if (StatusQuery.Equals("Open", StringComparison.OrdinalIgnoreCase))
+        {
+            filterOpenOnly = true;
+            filterStatus = null;
+        }
+        else if (Enum.TryParse<WorkOrderStatus>(StatusQuery, ignoreCase: true, out var s))
+        {
+            filterStatus = s;
+        }
+    }
 
     private bool dialogOpen, saving;
     private CreateMaintenanceWorkOrderRequest newWo = new();
@@ -114,6 +134,7 @@
             await using var db = await DbFactory.CreateDbContextAsync(ct);
             var q = db.MaintenanceWorkOrders.AsNoTracking();
             if (filterStatus.HasValue) q = q.Where(x => x.Status == filterStatus.Value);
+            else if (filterOpenOnly) q = q.Where(x => x.Status != WorkOrderStatus.Completed && x.Status != WorkOrderStatus.Cancelled);
             if (filterType.HasValue) q = q.Where(x => x.Type == filterType.Value);
             if (filterAsset.HasValue) q = q.Where(x => x.AssetId == filterAsset.Value);
             var total = await q.CountAsync(ct);
