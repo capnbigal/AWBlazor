@@ -42,8 +42,6 @@ src/AWBlazorApp/
 │   ├── Email/
 │   ├── Hangfire/
 │   └── SignalR/
-├── Scaffold/               # generated — don't hand-edit
-│   └── Identity/           # Identity UI scaffold lives here
 ├── wwwroot/
 ├── Properties/
 ├── App_Data/               # runtime only — ignored by git
@@ -51,19 +49,19 @@ src/AWBlazorApp/
 └── Program.cs
 ```
 
-Each feature folder has the same internal shape:
+Each feature folder has the same internal shape (per-entity for split features):
 
 ```
-Features/<Name>/
-├── Components/
-│   ├── Pages/              # Blazor pages
-│   └── Shared/             # feature-only widgets
-├── Domain/                 # entities
-├── Endpoints/              # minimal API
-├── Services/               # application services / use cases
-├── Audit/                  # per-entity audit logic (optional)
-├── Models/                 # DTOs
-└── Validators/             # FluentValidation
+Features/<Feature>/<Entity>/
+├── UI/Pages/               # Blazor pages with @page routes
+├── Domain/                 # entities (+ audit log entities)
+├── Api/                    # minimal-API endpoint group
+├── Application/
+│   ├── Services/           # application services / use cases
+│   ├── Validators/         # FluentValidation
+│   └── Hooks/              # cross-feature triggers (optional)
+├── Audit/                  # per-entity audit log builder (optional)
+└── Dtos/                   # request/response DTOs + Mappings
 ```
 
 ## Single-project decision
@@ -93,7 +91,7 @@ the app running.
 | 2     | Infrastructure extraction (DbContext, migrations, auth, email, hubs) |
 | 3     | Composition root: `Startup/` → `App/`                       |
 | 4     | Small features → `Features/` (Insights, Forecasting, etc.)  |
-| 5     | Identity UI scaffold → `Scaffold/Identity/`                 |
+| 5     | Identity UI scaffold → `Features/Identity/UI/Pages/Account/` |
 | 6     | AdventureWorks split by SQL schema (Sales/Production/HR/Purchasing/Person) |
 | 7     | `Analytics/*` pages distributed into their owning features  |
 | 8     | `Shared/` cleanup + delete empty layer folders              |
@@ -108,6 +106,6 @@ the app running.
    it stays in that feature.
 3. **`Infrastructure/` is the boundary.** Any code that talks to SQL, SMTP,
    Hangfire, or external auth lives here.
-4. **`Scaffold/` is off-limits for hand edits.** Re-run the scaffold.
+4. **Identity scaffold lives in `Features/Identity/UI/Pages/Account/`.** Re-scaffold there if you need to regenerate (don't hand-edit generated files).
 5. **Tests mirror `Features/` exactly.** New feature → new test folder of
-   the same name.
+   the same name under `AWBlazorApp.Tests/Features/`.

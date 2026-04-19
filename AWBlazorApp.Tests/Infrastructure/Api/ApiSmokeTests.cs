@@ -2,7 +2,6 @@ using System.Net;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Shared.Domain;
-using AWBlazorApp.Features.Identity.Domain;
 using AWBlazorApp.Tests.Infrastructure.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;

@@ -26,9 +26,12 @@ docs/
 
 # Dev/local files
 *.md
-!src/AWBlazorApp/_posts/**
-!src/AWBlazorApp/_pages/**
-!src/AWBlazorApp/_includes/**
+# UserGuide markdown content is read at runtime by MarkdownBlogService and copied to publish
+# output via the .csproj <Content Include=...> rules. Re-include it after the *.md exclude.
+!src/AWBlazorApp/Features/UserGuide/Content/_posts/**
+!src/AWBlazorApp/Features/UserGuide/Content/_pages/**
+!src/AWBlazorApp/Features/UserGuide/Content/_includes/**
+!src/AWBlazorApp/Features/UserGuide/Content/_videos/**
 
 # Secrets (never in image)
 .env

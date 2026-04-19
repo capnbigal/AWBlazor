@@ -21,18 +21,19 @@ Quick links for future Claude sessions to find authoritative guidance fast.
 ### Adding a new entity (CRUD page)
 
 1. Read `docs/architecture/conventions.md` for file naming
-2. Create entity in `Data/Entities/` with `[Table("...")]`, properties, `[MaxLength]`
-3. Add `DbSet<>` in `ApplicationDbContext`
-4. Configure in `OnModelCreating` (indexes, relationships)
-5. If new table, decide: migration vs runtime diffing (most are runtime — see `EnsureMissingTablesAsync`)
-6. Create DTOs in `Models/` (`{Entity}Dto`, `Create{Entity}Request`, `Update{Entity}Request`, `{Entity}Mappings`)
-7. Create validators in `Validators/` (`Create{Entity}Validator`, `Update{Entity}Validator`)
-8. Create audit log entity (`{Entity}AuditLog`) and audit service (`{Entity}AuditService`)
-9. Create endpoints in `Endpoints/` following the 6-handler pattern
-10. Register endpoints in `EndpointMappingExtensions.cs`
-11. Create Razor pages: `Index.razor`, `History.razor`, `{Entity}Dialog.razor`
-12. Add nav link to `NavMenu.razor`
-13. Add tests: GET smoke test in `ApiSmokeTests.cs` + form POST test if needed
+2. Pick the owning feature folder under `Features/<Feature>/<Entity>/`
+3. Create entity in `Features/<Feature>/<Entity>/Domain/` with `[Table("...")]`, properties, `[MaxLength]`
+4. Add `DbSet<>` in `ApplicationDbContext`
+5. Configure in `OnModelCreating` (indexes, relationships)
+6. If new table, decide: migration vs runtime diffing (most are runtime — see `EnsureMissingTablesAsync`)
+7. Create DTOs in `Features/<Feature>/<Entity>/Dtos/` (`{Entity}Dto`, `Create{Entity}Request`, `Update{Entity}Request`, `{Entity}Mappings`)
+8. Create validators in `Features/<Feature>/<Entity>/Application/Validators/` (`Create{Entity}Validator`, `Update{Entity}Validator`)
+9. Create audit log entity (`{Entity}AuditLog` in Domain/) and audit service (`{Entity}AuditService` in Application/Services/)
+10. Create endpoints in `Features/<Feature>/<Entity>/Api/` following the 6-handler pattern
+11. Register endpoints in `App/Routing/EndpointMappingExtensions.cs`
+12. Create Razor pages in `Features/<Feature>/<Entity>/UI/Pages/`: `Index.razor`, `History.razor`, `{Entity}Dialog.razor`
+13. Add nav link to `Shared/UI/Layout/NavMenu.razor`
+14. Add tests: GET smoke test in `AWBlazorApp.Tests/Infrastructure/Api/ApiSmokeTests.cs` + form POST test under `AWBlazorApp.Tests/Features/<Feature>/Api/` if needed
 
 ### Adding a new minimal API endpoint
 
@@ -62,7 +63,7 @@ Quick links for future Claude sessions to find authoritative guidance fast.
 2. Verify the endpoint has `RequireAuthorization` (not just `[Authorize]` on the page)
 3. Check if rate limiting applies (auth pages → `[EnableRateLimiting("auth")]`)
 4. Check if antiforgery is bypassed (`.DisableAntiforgery()`) and if so why
-5. Check the relevant CSP entry in `SecurityHeadersMiddleware.cs`
+5. Check the relevant CSP entry in `App/Middleware/SecurityHeadersMiddleware.cs`
 
 ### Diagnosing a Blazor render issue
 
@@ -103,16 +104,17 @@ Quick links for future Claude sessions to find authoritative guidance fast.
 
 | Need to find… | Look here |
 |---|---|
-| All endpoints | `src/AWBlazorApp/Endpoints/` |
-| All DTOs | `src/AWBlazorApp/Models/` |
-| All entities | `src/AWBlazorApp/Data/Entities/` |
-| All validators | `src/AWBlazorApp/Validators/` |
-| All Razor pages | `src/AWBlazorApp/Components/Pages/` |
-| All shared components | `src/AWBlazorApp/Components/Shared/` |
-| All services | `src/AWBlazorApp/Services/` |
-| Service registration | `src/AWBlazorApp/Startup/ServiceRegistration.cs` |
-| Middleware pipeline | `src/AWBlazorApp/Startup/MiddlewarePipeline.cs` |
-| Database initialization | `src/AWBlazorApp/Data/DatabaseInitializer.cs` |
-| Authentication handlers | `src/AWBlazorApp/Authentication/` |
-| Tests | `AWBlazorApp.Tests/` |
+| All endpoints | `src/AWBlazorApp/Features/<Feature>/<Entity>/Api/` (one group per entity) |
+| All DTOs | `src/AWBlazorApp/Features/<Feature>/<Entity>/Dtos/` + `src/AWBlazorApp/Shared/Dtos/` |
+| All entities | `src/AWBlazorApp/Features/<Feature>/<Entity>/Domain/` |
+| All validators | `src/AWBlazorApp/Features/<Feature>/<Entity>/Application/Validators/` + `src/AWBlazorApp/Shared/Validation/` |
+| All Razor pages | `src/AWBlazorApp/Features/<Feature>/<Entity>/UI/Pages/` |
+| All shared widgets | `src/AWBlazorApp/Shared/UI/Components/` |
+| All services | `src/AWBlazorApp/Features/<Feature>/<Entity>/Application/Services/` + `src/AWBlazorApp/Shared/Services/` |
+| Service registration | `src/AWBlazorApp/App/Extensions/ServiceRegistration.cs` |
+| Middleware pipeline | `src/AWBlazorApp/App/Extensions/MiddlewarePipeline.cs` |
+| Endpoint routing | `src/AWBlazorApp/App/Routing/EndpointMappingExtensions.cs` |
+| Database initialization | `src/AWBlazorApp/Infrastructure/Persistence/DatabaseInitializer.cs` |
+| Authentication handlers | `src/AWBlazorApp/Infrastructure/Authentication/` |
+| Tests | `AWBlazorApp.Tests/` (mirrors `Features/` layout — see `Infrastructure/Testing/IntegrationTestFixtureBase.cs` for the base) |
 | Documentation | `docs/` (this folder) |

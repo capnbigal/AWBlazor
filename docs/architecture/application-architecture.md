@@ -74,96 +74,65 @@ No NPM toolchain. No Tailwind. No Vue. No SQLite. Never reintroduce.
 
 ```
 src/AWBlazorApp/
-├── Authentication/         # API key auth handler, Hangfire dashboard auth filter
-├── Components/
-│   ├── Account/            # ASP.NET Identity scaffolded pages (static SSR)
-│   ├── Layout/             # MainLayout, NavMenu
-│   ├── Pages/              # All routable pages
-│   │   ├── AdventureWorks/ # 67 reference-data CRUD page sets
-│   │   ├── Analytics/      # Sales, Production, HR, Purchasing dashboards
-│   │   ├── Forecasts/      # Forecast definition + execution UI
-│   │   ├── ToolSlots/      # External-table CRUD
-│   │   ├── Processes/      # Process definition + execution
-│   │   ├── Admin/          # Users, Permissions, Audit, Activity
-│   │   ├── Reports/        # Database explorer
-│   │   └── Guide/          # Markdown-driven user guides
-│   ├── Shared/             # KpiCard, TimeSeriesChart, GlobalSearch, EmptyState, ...
-│   └── App.razor           # Root component
-├── Data/
-│   ├── ApplicationDbContext.cs
-│   ├── DatabaseInitializer.cs
-│   ├── AuditingInterceptor.cs
-│   ├── AuditedSaveExtensions.cs   # transactional audit helper (preferred for new code)
-│   ├── AppRoles.cs
-│   ├── PermissionArea*.cs
-│   └── Entities/
-│       ├── AdventureWorks/
-│       ├── Forecasting/
-│       ├── ProcessManagement/
-│       └── *.cs                   # ApiKey, SecurityAuditLog, etc.
-├── Endpoints/
-│   ├── AdventureWorks/             # 67 CRUD endpoint files (one per entity)
-│   ├── ToolSlotConfigurationEndpoints.cs
-│   ├── ForecastEndpoints.cs
-│   ├── PreferencesEndpoints.cs     # dark mode toggle
-│   ├── PermissionEndpoints.cs
-│   └── EndpointMappingExtensions.cs
-├── Hubs/
-│   └── NotificationHub.cs           # SignalR
-├── Migrations/                       # 3 migrations (most schema is runtime-diffed)
-├── Models/
-│   ├── AdventureWorks/              # 67 DTO files (Dto + CreateRequest + UpdateRequest + Mappings)
-│   ├── Common.cs                    # PagedResult<T>, IdResponse
-│   └── *.cs
-├── Services/
-│   ├── AdventureWorksAudit/         # 67 audit-log builder services
-│   ├── Forecasting/                 # Forecast algorithms (Linear, Exp Smoothing, Moving Avg)
-│   ├── LookupService.cs             # cached reference-data lookups
-│   ├── PermissionService.cs
-│   ├── NotificationService.cs
-│   ├── AuditLogCleanupJob.cs        # Hangfire daily prune
-│   ├── RequestLogCleanupJob.cs
-│   ├── ApiKeyHashMigrationJob.cs
-│   └── ProcessSchedulerJob.cs
-├── Startup/
-│   ├── ServiceRegistration.cs       # all AddX() helpers
-│   ├── MiddlewarePipeline.cs        # all UseX() + endpoint mappings
-│   └── SecurityHeadersMiddleware.cs
-├── Validators/
-│   ├── AdventureWorks/              # FluentValidation per entity
-│   ├── MudFormValidator.cs          # adapter MudForm ⇄ FluentValidation
-│   └── *Validators.cs
-├── _posts/                           # Markdown blog content (compiled into output)
-├── _pages/                           # Markdown user guides
-├── wwwroot/                          # static files (css, js, images)
-└── Program.cs                        # 80 lines, all setup is in Startup/*
+├── App/                            # composition root
+│   ├── Extensions/                 # ServiceRegistration, MiddlewarePipeline
+│   ├── Middleware/                 # SecurityHeadersMiddleware, AreaPermissionMiddleware
+│   └── Routing/                    # EndpointMappingExtensions
+├── Components/                     # App.razor + Routes.razor + _Imports.razor (only)
+├── Features/                       # vertical slices (one folder per business domain)
+│   └── <Feature>/<Entity>/         # Domain/, Dtos/, Api/, Application/{Services,Validators,Hooks}/, Audit/, UI/Pages/
+│   Features include: Admin, Dashboard, Engineering, Enterprise, Forecasting, Gallery,
+│   Home, HumanResources, Identity, Insights, Inventory, Logistics, Maintenance, Mes,
+│   Performance, Person, ProcessManagement, Production, Purchasing, Quality, Sales,
+│   ToolSlots, UserGuide, Workforce.
+├── Infrastructure/                 # cross-cutting plumbing
+│   ├── Persistence/                # ApplicationDbContext, DatabaseInitializer,
+│   │                               # AuditingInterceptor, AuditedSaveExtensions, Migrations/
+│   ├── Authentication/             # ApiKeyAuthenticationHandler, ApiKeyHasher
+│   ├── Email/                      # SmtpConfig, SmtpEmailJob, HangfireSmtpEmailSender
+│   ├── Hangfire/                   # HangfireDashboardAuthFilter
+│   ├── Jobs/                       # Cleanup + hash-migration Hangfire jobs
+│   └── SignalR/                    # NotificationHub
+├── Shared/                         # cross-feature code
+│   ├── Api/                        # Hello, Export, ChartExport, Preferences, ValidationExtensions
+│   ├── Audit/                      # diff helpers
+│   ├── Domain/                     # AuditableEntity base
+│   ├── Dtos/                       # PagedResult<T>, AdminDataDto, common DTOs
+│   ├── Formatting/                 # number/currency formatters
+│   ├── Services/                   # LookupService, AnalyticsCacheService, CsvExportService
+│   ├── Theming/                    # AppTheme, ChartPalettes
+│   ├── UI/                         # Layout (MainLayout, NavMenu) + Components (KpiCard, TimeSeriesChart, GlobalSearch, …)
+│   └── Validation/                 # MudFormValidator
+├── wwwroot/                        # static files (css, js, images)
+├── Properties/                     # launchSettings.json
+├── App_Data/                       # runtime — not in git
+└── Program.cs                      # composition root, calls App/Extensions/*
 ```
 
 ## Layer responsibilities
 
-### Components (UI)
-- Render UI, handle user input, dispatch to services or directly to `IDbContextFactory<T>`
-- Should NOT contain business logic — extract to services
-- Should NOT contain data validation rules — those live in FluentValidation validators
+### Features (UI + Api + Application + Domain)
+- Each feature owns its own pages, endpoints, services, validators, DTOs, and entities
+- Pages live in `<Feature>/<Entity>/UI/Pages/`; should NOT contain business logic
 - Inject `IDbContextFactory<ApplicationDbContext>`, NOT a scoped `ApplicationDbContext`
 
 ### Endpoints (REST API)
 - Map HTTP routes to handler functions
 - Call validators, then call services or write to DbContext directly
 - Map DTOs ⇄ entities via the `Mappings` static helpers
-- Wrap multi-step writes in transactions (use `AuditedSaveExtensions` for the entity+audit pattern)
+- Wrap multi-step writes via `AuditedSaveExtensions.AddWithAuditAsync` (preferred) or transactions
 
 ### Services
 - Pure business logic — no HTTP knowledge
-- Can be called from both Components and Endpoints
+- Can be called from both UI and Api layers
 - Stateless (singletons) where possible; scoped only when they hold per-request state
 
-### Data
-- DbContext, entities, migrations, interceptors
-- Entities contain the schema only — no business methods (anemic by design; logic lives in services)
+### Infrastructure
+- DbContext, entities, migrations, interceptors, auth handlers, email, Hangfire, SignalR
+- The boundary to external systems
 
-### Models (DTOs)
-- The contract between layers — never expose entities directly to Components or HTTP clients
+### DTOs
+- The contract between layers — never expose entities directly to UI or HTTP clients
 - Sealed records preferred
 - Mapping helpers in `static class {Entity}Mappings`
 
