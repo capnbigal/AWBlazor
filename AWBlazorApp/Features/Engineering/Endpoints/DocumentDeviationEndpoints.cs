@@ -82,12 +82,7 @@ public static class DocumentDeviationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EngineeringDocuments.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.EngineeringDocumentAuditLogs.Add(EngineeringDocumentAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => EngineeringDocumentAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/engineering-documents/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -112,11 +107,7 @@ public static class DocumentDeviationEndpoints
     {
         var entity = await db.EngineeringDocuments.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EngineeringDocuments.Remove(entity);
-        db.EngineeringDocumentAuditLogs.Add(EngineeringDocumentAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, EngineeringDocumentAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
@@ -164,12 +155,7 @@ public static class DocumentDeviationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.DeviationRequests.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.DeviationRequestAuditLogs.Add(DeviationRequestAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => DeviationRequestAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/deviation-requests/{entity.Id}", new IdResponse(entity.Id));
     }
 

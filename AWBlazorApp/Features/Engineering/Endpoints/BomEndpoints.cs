@@ -70,12 +70,7 @@ public static class BomEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.BomHeaders.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.BomHeaderAuditLogs.Add(BomHeaderAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => BomHeaderAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/boms/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -100,11 +95,7 @@ public static class BomEndpoints
     {
         var entity = await db.BomHeaders.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.BomHeaders.Remove(entity);
-        db.BomHeaderAuditLogs.Add(BomHeaderAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, BomHeaderAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
