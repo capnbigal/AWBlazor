@@ -28,22 +28,30 @@
     </MudStack>
 
     <MudGrid Spacing="3">
-        @* ── Left pane: product picker ───────────────────────────────────── *@
+        @* ── Left pane: product picker ─────────────────────────────────────
+           CSS grid with rows `auto 1fr` is more reliable than flex here:
+           flex on the MudPaper + MudBlazor's own flex styling on MudTextField /
+           MudText / MudDivider ended up distributing vertical space across the
+           "inert" rows, pushing the list down to ~25% of the pane height. The
+           grid approach pins the header to natural size and lets only the list
+           row consume remaining height, with overflow-y: auto for scroll. *@
         <MudItem xs="12" md="3">
-            <MudPaper Class="pa-2" Elevation="1" Style="height: calc(100vh - 220px); display: flex; flex-direction: column; min-height: 500px">
-                <MudTextField T="string" @bind-Value="_search" @bind-Value:after="OnSearchChangedAsync"
-                              Label="Search products" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              DebounceInterval="250" Clearable="true" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 mx-2">
-                    @_products.Count match@(_products.Count == 1 ? "" : "es") · ★ = inventory-managed
-                </MudText>
-                <MudDivider Class="my-1" />
-                @if (_pickerLoading)
-                {
-                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
-                }
-                <div style="flex: 1; overflow-y: auto">
+            <MudPaper Elevation="1" Style="height: calc(100vh - 200px); min-height: 500px; display: grid; grid-template-rows: auto 1fr; overflow: hidden">
+                <div style="padding: 8px 8px 4px 8px">
+                    <MudTextField T="string" @bind-Value="_search" @bind-Value:after="OnSearchChangedAsync"
+                                  Label="Search products" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                  DebounceInterval="250" Clearable="true" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">
+                        @_products.Count match@(_products.Count == 1 ? "" : "es") · ★ = inventory-managed
+                    </MudText>
+                    @if (_pickerLoading)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-1" />
+                    }
+                    <MudDivider Class="mt-2" />
+                </div>
+                <div style="overflow-y: auto; min-height: 0">
                     <MudList T="ProductPickerItemDto" Dense="true" SelectedValue="_selected" SelectedValueChanged="OnProductSelected">
                         @foreach (var p in _products)
                         {
