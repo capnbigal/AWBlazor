@@ -146,12 +146,7 @@ public static class CommunicationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.Announcements.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.AnnouncementAuditLogs.Add(AnnouncementAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => AnnouncementAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/announcements/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -176,11 +171,7 @@ public static class CommunicationEndpoints
     {
         var entity = await db.Announcements.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.Announcements.Remove(entity);
-        db.AnnouncementAuditLogs.Add(AnnouncementAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, AnnouncementAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

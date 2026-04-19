@@ -83,12 +83,7 @@ public static class AssetMaintenanceEndpoints
         var exists = await db.AssetMaintenanceProfiles.AnyAsync(p => p.AssetId == request.AssetId, ct);
         if (exists) return TypedResults.Conflict("This asset already has a maintenance profile.");
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.AssetMaintenanceProfiles.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.AssetMaintenanceProfileAuditLogs.Add(AssetMaintenanceProfileAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => AssetMaintenanceProfileAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/asset-maintenance-profiles/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -113,11 +108,7 @@ public static class AssetMaintenanceEndpoints
     {
         var entity = await db.AssetMaintenanceProfiles.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.AssetMaintenanceProfiles.Remove(entity);
-        db.AssetMaintenanceProfileAuditLogs.Add(AssetMaintenanceProfileAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, AssetMaintenanceProfileAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
