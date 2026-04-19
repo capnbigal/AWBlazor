@@ -1,5 +1,8 @@
 @page "/aw/bill-of-materials"
 @attribute [Authorize]
+@using AWBlazorApp.Features.Production.Boms.Domain
+@using AWBlazorApp.Features.Production.Boms.Dtos
+@using AWBlazorApp.Features.Production.Boms.Application.Services
 @using AWBlazorApp.Features.Production.Domain
 @using AWBlazorApp.Features.Production.Cultures.Domain
 @using AWBlazorApp.Features.Production.Documents.Domain
@@ -25,7 +28,6 @@
 @using AWBlazorApp.Features.Production.UnitMeasures.Domain
 @using AWBlazorApp.Features.Production.WorkOrders.Domain
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
-@using AWBlazorApp.Features.Production.Dtos
 @using AWBlazorApp.Features.Production.Cultures.Dtos
 @using AWBlazorApp.Features.Production.Documents.Dtos
 @using AWBlazorApp.Features.Production.Illustrations.Dtos
@@ -50,7 +52,6 @@
 @using AWBlazorApp.Features.Production.UnitMeasures.Dtos
 @using AWBlazorApp.Features.Production.WorkOrders.Dtos
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
-@using AWBlazorApp.Features.Production.Audit
 @using AWBlazorApp.Features.Production.Cultures.Application.Services
 @using AWBlazorApp.Features.Production.Documents.Application.Services
 @using AWBlazorApp.Features.Production.Illustrations.Application.Services
