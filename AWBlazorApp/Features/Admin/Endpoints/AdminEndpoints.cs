@@ -47,6 +47,17 @@ public static class AdminEndpoints
         .WithName("SeedDemoData")
         .WithSummary("Idempotent seed of representative demo data across M6-M9 modules. Safe to re-run — each module skips if already seeded.");
 
+        group.MapPost("/fill-demo-data", async Task<Ok<DemoFillResult>> (
+            DemoDataFiller filler,
+            int? count,
+            CancellationToken ct) =>
+        {
+            var result = await filler.FillAsync(count ?? 5, ct);
+            return TypedResults.Ok(result);
+        })
+        .WithName("FillDemoData")
+        .WithSummary("Additive — adds fresh transactional rows on every call across the new module tables (workforce attendance/leave/handover/announcements, engineering ECOs/docs/deviations, maintenance WOs/meter readings/logs, performance OEE/production-metric next-day, enterprise stations + assets). Pass ?count=N (1-50, default 5) to scale per-call volume. Skips if the seed baseline hasn't run.");
+
         return app;
     }
 }
