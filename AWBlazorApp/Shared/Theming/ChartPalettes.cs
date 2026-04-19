@@ -36,4 +36,26 @@ public static class ChartPalettes
     {
         ChartPalette = BlueScale,
     };
+
+    /// <summary>
+    /// Prebuilt <see cref="BarChartOptions"/> for inline bar charts that need rotated x-axis
+    /// labels so 12+ category labels (months, departments, etc.) actually fit on screen. At
+    /// the default 0° rotation MudChart silently drops overlapping labels, leaving the
+    /// series-name legend as the only on-screen text. 35° is the sweet spot — diagonal labels
+    /// fit ~24 month names side-by-side without collision and stay readable.
+    /// </summary>
+    public static readonly BarChartOptions RotatedAxisOptions = new()
+    {
+        ChartPalette = BlueScale,
+        XAxisLabelRotation = 35,
+    };
+
+    /// <summary>Same idea as <see cref="RotatedAxisOptions"/> but typed for line charts. The
+    /// rotation property only exists on the chart-type-specific option classes, not the base
+    /// <see cref="ChartOptions"/>, so we keep one instance per chart shape.</summary>
+    public static readonly LineChartOptions RotatedAxisLineOptions = new()
+    {
+        ChartPalette = BlueScale,
+        XAxisLabelRotation = 35,
+    };
 }
