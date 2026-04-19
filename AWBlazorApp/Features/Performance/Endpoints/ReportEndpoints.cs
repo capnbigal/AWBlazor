@@ -84,12 +84,7 @@ public static class ReportEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.PerformanceReports.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.PerformanceReportAuditLogs.Add(PerformanceReportAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => PerformanceReportAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/performance-reports/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -114,11 +109,7 @@ public static class ReportEndpoints
     {
         var entity = await db.PerformanceReports.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.PerformanceReports.Remove(entity);
-        db.PerformanceReportAuditLogs.Add(PerformanceReportAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, PerformanceReportAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

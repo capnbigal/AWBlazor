@@ -67,12 +67,7 @@ public static class ScorecardEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ScorecardDefinitions.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => ScorecardDefinitionAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/scorecards/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -97,11 +92,7 @@ public static class ScorecardEndpoints
     {
         var entity = await db.ScorecardDefinitions.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ScorecardDefinitions.Remove(entity);
-        db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, ScorecardDefinitionAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
