@@ -36,6 +36,8 @@ public class DemoDataSeederTests : IntegrationTestFixtureBase
             Assert.That(second.Engineering, Is.EqualTo(0), "Engineering seed must no-op on second run.");
             Assert.That(second.Maintenance, Is.EqualTo(0), "Maintenance seed must no-op on second run.");
             Assert.That(second.Performance, Is.EqualTo(0), "Performance seed must no-op on second run.");
+            Assert.That(second.Inventory, Is.EqualTo(0), "Inventory seed must no-op on second run.");
+            Assert.That(second.Logistics, Is.EqualTo(0), "Logistics seed must no-op on second run.");
         });
     }
 
@@ -63,5 +65,37 @@ public class DemoDataSeederTests : IntegrationTestFixtureBase
         var maintKpiCount = await db.ScorecardKpis.CountAsync(k => k.ScorecardDefinitionId == maintSc.Id);
         Assert.That(maintKpiCount, Is.EqualTo(5),
             "Maintenance Lead scorecard should host 5 reliability KPIs.");
+    }
+
+    [Test]
+    public async Task Seeder_Populates_Inventory_And_Logistics_Demo_Rows()
+    {
+        using var scope = Factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+
+        var result = await seeder.SeedAllAsync(CancellationToken.None);
+        if (result.Skipped) Assert.Ignore("Skipped — baseline FKs missing in dev DB.");
+
+        await using var db = await dbFactory.CreateDbContextAsync();
+
+        // Inventory: 1 warehouse + 2 bins = 3 demo locations. Items and adjustments are only
+        // asserted to be > 0 rather than exact counts because the InventoryItem loop silently
+        // skips products that already have an inventory record (idempotent per product).
+        var demoLocationCount = await db.InventoryLocations.CountAsync(l => l.Code.StartsWith("DEMO-LOC-"));
+        Assert.That(demoLocationCount, Is.EqualTo(3), "Expected 3 demo inventory locations (warehouse + 2 bins).");
+
+        var demoAdjustmentCount = await db.InventoryAdjustments.CountAsync(a => a.AdjustmentNumber.StartsWith("DEMO-ADJ-"));
+        Assert.That(demoAdjustmentCount, Is.GreaterThanOrEqualTo(2), "Expected at least 2 demo inventory adjustments.");
+
+        // Logistics: 2 of each document type.
+        var demoReceiptCount = await db.GoodsReceipts.CountAsync(r => r.ReceiptNumber.StartsWith("DEMO-GR-"));
+        Assert.That(demoReceiptCount, Is.EqualTo(2), "Expected 2 demo goods receipts.");
+
+        var demoShipmentCount = await db.Shipments.CountAsync(s => s.ShipmentNumber.StartsWith("DEMO-SH-"));
+        Assert.That(demoShipmentCount, Is.EqualTo(2), "Expected 2 demo shipments.");
+
+        var demoTransferCount = await db.StockTransfers.CountAsync(t => t.TransferNumber.StartsWith("DEMO-XF-"));
+        Assert.That(demoTransferCount, Is.EqualTo(2), "Expected 2 demo stock transfers.");
     }
 }

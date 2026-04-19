@@ -1,6 +1,8 @@
 using AWBlazorApp.Features.Engineering.Audit;
 using AWBlazorApp.Features.Engineering.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
+using AWBlazorApp.Features.Inventory.Domain;
+using AWBlazorApp.Features.Logistics.Domain;
 using AWBlazorApp.Features.Maintenance.Audit;
 using AWBlazorApp.Features.Maintenance.Domain;
 using AWBlazorApp.Features.Performance.Audit;
@@ -58,9 +60,11 @@ public sealed class DemoDataSeeder
         result.Engineering = await SeedEngineeringAsync(productIds, stationIds, cancellationToken);
         result.Maintenance = await SeedMaintenanceAsync(assetIds, productIds, cancellationToken);
         result.Performance = await SeedPerformanceAsync(stationIds, assetIds, cancellationToken);
+        result.Inventory = await SeedInventoryAsync(productIds, cancellationToken);
+        result.Logistics = await SeedLogisticsAsync(cancellationToken);
 
-        _logger.LogInformation("Demo seed complete: baseline={Base} wf={Wf} eng={Eng} maint={Maint} perf={Perf}",
-            result.Baseline, result.Workforce, result.Engineering, result.Maintenance, result.Performance);
+        _logger.LogInformation("Demo seed complete: baseline={Base} wf={Wf} eng={Eng} maint={Maint} perf={Perf} inv={Inv} lgx={Lgx}",
+            result.Baseline, result.Workforce, result.Engineering, result.Maintenance, result.Performance, result.Inventory, result.Logistics);
         return result;
     }
 
@@ -887,6 +891,253 @@ public sealed class DemoDataSeeder
         return rows;
     }
 
+    // ────────────────────────────────────────────────────────────────
+    //  INVENTORY — seed locations + items + a couple of adjustments
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds representative inventory master data (3 locations, up to 5 InventoryItem rows
+    /// bound to the first few makeflag products, and a couple of InventoryAdjustment rows).
+    /// Idempotent — keyed off the "DEMO-LOC-WH1" warehouse code.
+    /// </summary>
+    public async Task<int> SeedInventoryAsync(List<int> productIds, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        if (await db.InventoryLocations.AnyAsync(l => l.Code == "DEMO-LOC-WH1", ct))
+        {
+            _logger.LogInformation("Inventory demo seed: already present, skipping.");
+            return 0;
+        }
+
+        var now = DateTime.UtcNow;
+        var rows = 0;
+
+        var org = await db.Organizations.OrderBy(o => o.Id).Select(o => o.Id).FirstOrDefaultAsync(ct);
+        if (org == 0)
+        {
+            _logger.LogWarning("Inventory demo seed: no organization — skipping.");
+            return 0;
+        }
+
+        // Locations: a warehouse with two child bins. The real app builds a deeper tree, but
+        // three rows are enough to show the list page and anchor inventory items / adjustments.
+        var warehouse = new InventoryLocation
+        {
+            OrganizationId = org, Code = "DEMO-LOC-WH1", Name = "Demo Warehouse 1",
+            Kind = InventoryLocationKind.Warehouse, Path = "DEMO-LOC-WH1", Depth = 0,
+            IsActive = true, ModifiedDate = now,
+        };
+        db.InventoryLocations.Add(warehouse);
+        await db.SaveChangesAsync(ct);
+        rows++;
+
+        var binA = new InventoryLocation
+        {
+            OrganizationId = org, Code = "DEMO-LOC-BIN-A1", Name = "Bin A1",
+            Kind = InventoryLocationKind.Bin, ParentLocationId = warehouse.Id,
+            Path = $"{warehouse.Code}/DEMO-LOC-BIN-A1", Depth = 1,
+            IsActive = true, ModifiedDate = now,
+        };
+        var binB = new InventoryLocation
+        {
+            OrganizationId = org, Code = "DEMO-LOC-BIN-B2", Name = "Bin B2",
+            Kind = InventoryLocationKind.Bin, ParentLocationId = warehouse.Id,
+            Path = $"{warehouse.Code}/DEMO-LOC-BIN-B2", Depth = 1,
+            IsActive = true, ModifiedDate = now,
+        };
+        db.InventoryLocations.AddRange(binA, binB);
+        await db.SaveChangesAsync(ct);
+        rows += 2;
+
+        // InventoryItems — bind the first handful of AW products into the inventory layer so
+        // the /inventory/items page renders rows and the Product Explorer flags those products
+        // as "inventory-managed".
+        var itemProducts = productIds.Take(Math.Min(5, productIds.Count)).ToList();
+        var rnd = new Random(17);
+        var createdItems = new List<InventoryItem>();
+        foreach (var pid in itemProducts)
+        {
+            if (await db.InventoryItems.AnyAsync(i => i.ProductId == pid, ct)) continue;
+            var item = new InventoryItem
+            {
+                ProductId = pid,
+                TracksLot = rnd.Next(2) == 0,  // roughly half the items track lots for variety
+                TracksSerial = false,
+                DefaultLocationId = binA.Id,
+                MinQty = 10m, MaxQty = 500m, ReorderPoint = 50m, ReorderQty = 100m,
+                IsActive = true, ModifiedDate = now,
+            };
+            db.InventoryItems.Add(item);
+            createdItems.Add(item);
+            rows++;
+        }
+        await db.SaveChangesAsync(ct);
+
+        // Two adjustment rows — one Draft, one Posted — so the list has both open and closed
+        // entries and the status chip filter on the page can be exercised.
+        if (createdItems.Count > 0)
+        {
+            db.InventoryAdjustments.Add(new InventoryAdjustment
+            {
+                AdjustmentNumber = "DEMO-ADJ-001",
+                InventoryItemId = createdItems[0].Id, LocationId = binA.Id,
+                QuantityDelta = -3m, ReasonCode = AdjustmentReason.Damaged,
+                Reason = "Forklift damage during unload.",
+                Status = AdjustmentStatus.Draft,
+                RequestedByUserId = "demo-seed", RequestedAt = now.AddDays(-2),
+                ModifiedDate = now,
+            });
+            db.InventoryAdjustments.Add(new InventoryAdjustment
+            {
+                AdjustmentNumber = "DEMO-ADJ-002",
+                InventoryItemId = createdItems[Math.Min(1, createdItems.Count - 1)].Id, LocationId = binB.Id,
+                QuantityDelta = 5m, ReasonCode = AdjustmentReason.Found,
+                Reason = "Count variance resolved — 5 extra found in Bin B2.",
+                Status = AdjustmentStatus.Posted,
+                RequestedByUserId = "demo-seed", RequestedAt = now.AddDays(-7),
+                ApprovedByUserId = "demo-seed", ApprovedAt = now.AddDays(-6),
+                ModifiedDate = now,
+            });
+            rows += 2;
+        }
+
+        await db.SaveChangesAsync(ct);
+        _logger.LogInformation("Seeded {Rows} inventory demo rows.", rows);
+        return rows;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  LOGISTICS — seed a goods receipt, a shipment, a stock transfer
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Seeds one of each logistics document so the three list pages render. Pulls PO/vendor
+    /// FKs from AW data and location FKs from the inventory demo seed. Idempotent — keyed off
+    /// the "DEMO-GR-001" receipt number.
+    /// </summary>
+    public async Task<int> SeedLogisticsAsync(CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        if (await db.GoodsReceipts.AnyAsync(r => r.ReceiptNumber == "DEMO-GR-001", ct))
+        {
+            _logger.LogInformation("Logistics demo seed: already present, skipping.");
+            return 0;
+        }
+
+        // All three logistics documents need at least one inventory location. If the inventory
+        // seed hasn't populated any, skip — caller should run SeedInventoryAsync first.
+        var anyLocation = await db.InventoryLocations.OrderBy(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync(ct);
+        if (anyLocation == 0)
+        {
+            _logger.LogWarning("Logistics demo seed: no inventory locations — run SeedInventoryAsync first. Skipping.");
+            return 0;
+        }
+        var fromBin = await db.InventoryLocations.Where(l => l.Kind == InventoryLocationKind.Bin)
+            .OrderBy(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync(ct);
+        var toBin = await db.InventoryLocations.Where(l => l.Kind == InventoryLocationKind.Bin)
+            .OrderByDescending(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync(ct);
+        if (fromBin == 0 || toBin == 0 || fromBin == toBin)
+        {
+            // Fall back to the first two locations we have — the transfer still shows rows,
+            // just with source == destination which the UI permits.
+            fromBin = anyLocation;
+            toBin = anyLocation;
+        }
+
+        // Grab any real PO/vendor/sales-order from AW so the FK targets are valid.
+        var firstPo = await db.Database
+            .SqlQueryRaw<int>("SELECT TOP 1 PurchaseOrderID AS Value FROM Purchasing.PurchaseOrderHeader ORDER BY PurchaseOrderID")
+            .FirstOrDefaultAsync(ct);
+        var firstVendor = await db.Database
+            .SqlQueryRaw<int>("SELECT TOP 1 BusinessEntityID AS Value FROM Purchasing.Vendor ORDER BY BusinessEntityID")
+            .FirstOrDefaultAsync(ct);
+        var firstSo = await db.Database
+            .SqlQueryRaw<int>("SELECT TOP 1 SalesOrderID AS Value FROM Sales.SalesOrderHeader ORDER BY SalesOrderID")
+            .FirstOrDefaultAsync(ct);
+
+        var now = DateTime.UtcNow;
+        var rows = 0;
+
+        db.GoodsReceipts.Add(new GoodsReceipt
+        {
+            ReceiptNumber = "DEMO-GR-001",
+            PurchaseOrderId = firstPo == 0 ? null : firstPo,
+            VendorBusinessEntityId = firstVendor == 0 ? null : firstVendor,
+            ReceivedLocationId = anyLocation,
+            Status = GoodsReceiptStatus.Posted,
+            ReceivedAt = now.AddDays(-3),
+            PostedAt = now.AddDays(-3).AddHours(2),
+            PostedByUserId = "demo-seed",
+            Notes = "Demo inbound receipt — PO fully received.",
+            ModifiedDate = now,
+        });
+        db.GoodsReceipts.Add(new GoodsReceipt
+        {
+            ReceiptNumber = "DEMO-GR-002",
+            PurchaseOrderId = firstPo == 0 ? null : firstPo,
+            VendorBusinessEntityId = firstVendor == 0 ? null : firstVendor,
+            ReceivedLocationId = anyLocation,
+            Status = GoodsReceiptStatus.Draft,
+            ReceivedAt = now.AddHours(-4),
+            Notes = "Demo inbound receipt — awaiting count verification.",
+            ModifiedDate = now,
+        });
+        rows += 2;
+
+        db.Shipments.Add(new Shipment
+        {
+            ShipmentNumber = "DEMO-SH-001",
+            SalesOrderId = firstSo == 0 ? null : firstSo,
+            ShippedFromLocationId = anyLocation,
+            Status = ShipmentStatus.Shipped,
+            ShippedAt = now.AddDays(-1),
+            PostedAt = now.AddDays(-1).AddMinutes(30),
+            PostedByUserId = "demo-seed",
+            TrackingNumber = "DEMO1Z999AA10123456784",
+            Notes = "Demo outbound shipment.",
+            ModifiedDate = now,
+        });
+        db.Shipments.Add(new Shipment
+        {
+            ShipmentNumber = "DEMO-SH-002",
+            SalesOrderId = firstSo == 0 ? null : firstSo,
+            ShippedFromLocationId = anyLocation,
+            Status = ShipmentStatus.Packed,
+            Notes = "Demo outbound shipment — packed, awaiting carrier pickup.",
+            ModifiedDate = now,
+        });
+        rows += 2;
+
+        db.StockTransfers.Add(new StockTransfer
+        {
+            TransferNumber = "DEMO-XF-001",
+            FromLocationId = fromBin,
+            ToLocationId = toBin,
+            Status = StockTransferStatus.Completed,
+            CorrelationId = Guid.NewGuid(),
+            InitiatedAt = now.AddDays(-5),
+            CompletedAt = now.AddDays(-5).AddHours(3),
+            PostedByUserId = "demo-seed",
+            Notes = "Demo internal transfer — bin rebalance.",
+            ModifiedDate = now,
+        });
+        db.StockTransfers.Add(new StockTransfer
+        {
+            TransferNumber = "DEMO-XF-002",
+            FromLocationId = fromBin,
+            ToLocationId = toBin,
+            Status = StockTransferStatus.InTransit,
+            InitiatedAt = now.AddHours(-6),
+            Notes = "Demo transfer — in transit.",
+            ModifiedDate = now,
+        });
+        rows += 2;
+
+        await db.SaveChangesAsync(ct);
+        _logger.LogInformation("Seeded {Rows} logistics demo rows.", rows);
+        return rows;
+    }
+
     private static async Task<int> EnsureScorecardKpisAsync(
         ApplicationDbContext db, int scorecardId, string[] kpiCodes,
         Dictionary<string, int> idByCode, DateTime now, CancellationToken ct)
@@ -924,5 +1175,7 @@ public sealed class DemoSeedResult
     public int Engineering { get; set; }
     public int Maintenance { get; set; }
     public int Performance { get; set; }
-    public int Total => Baseline + Workforce + Engineering + Maintenance + Performance;
+    public int Inventory { get; set; }
+    public int Logistics { get; set; }
+    public int Total => Baseline + Workforce + Engineering + Maintenance + Performance + Inventory + Logistics;
 }
