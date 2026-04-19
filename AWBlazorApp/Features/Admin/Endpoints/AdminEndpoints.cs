@@ -1,5 +1,6 @@
 using AWBlazorApp.Data;
 using AWBlazorApp.Features.Admin.Services;
+using AWBlazorApp.Features.Performance.Jobs;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Models;
 using AWBlazorApp.Shared.Services;
@@ -57,6 +58,18 @@ public static class AdminEndpoints
         })
         .WithName("FillDemoData")
         .WithSummary("Additive — adds fresh transactional rows on every call across the new module tables (workforce attendance/leave/handover/announcements, engineering ECOs/docs/deviations, maintenance WOs/meter readings/logs, performance OEE/production-metric next-day, enterprise stations + assets). Pass ?count=N (1-50, default 5) to scale per-call volume. Skips if the seed baseline hasn't run.");
+
+        group.MapPost("/run-metrics-rollup", async Task<Ok<MetricsRollupResult>> (
+            MetricsRollupJob job,
+            DateOnly? date,
+            decimal? idealCycleSeconds,
+            CancellationToken ct) =>
+        {
+            var result = await job.RunAsync(date, idealCycleSeconds, ct);
+            return TypedResults.Ok(result);
+        })
+        .WithName("RunMetricsRollup")
+        .WithSummary("Manually trigger the nightly performance metrics rollup. Same code path as the Hangfire 'performance-metrics-rollup' recurring job. Optional ?date=yyyy-MM-dd backfills a specific day; ?idealCycleSeconds=N overrides the default 60s used in OEE Performance computation. On the 1st of the chosen month, also rolls up the previous month's maintenance metrics for every active asset.");
 
         return app;
     }
