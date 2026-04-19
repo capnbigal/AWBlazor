@@ -1,0 +1,86 @@
+@page "/inventory/balances"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Inventory balances</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Inventory balances</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">inv.InventoryBalance — live on-hand by item, location, lot, and status. Looking for a product-centric view? Try the new <MudLink Href="inventory">Product explorer</MudLink>.</MudText>
+        <MudSpacer />
+        <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small">@totalQty.ToString("N0") units on file</MudChip>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterItemId" Label="InventoryItemId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterLocationId" Label="LocationId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterLotId" Label="LotId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect T="BalanceStatus?" @bind-Value="filterStatus" Label="Status" Variant="Variant.Outlined" Clearable="true">
+                    <MudSelectItem T="BalanceStatus?" Value="@null">(any)</MudSelectItem>
+                    @foreach (var s in Enum.GetValues<BalanceStatus>())
+                    {
+                        <MudSelectItem T="BalanceStatus?" Value="@s">@s</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="3"><MudCheckBox T="bool" @bind-Value="filterNonZero" Label="Non-zero quantities only" /></MudItem>
+            <MudItem xs="12" sm="9"><MudStack Row="true" Spacing="2"><MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton><MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="ClearFilter">Clear</MudButton></MudStack></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="InventoryBalanceDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn Property="x => x.InventoryItemId" Title="Item" />
+            <PropertyColumn Property="x => x.LocationId" Title="Location" />
+            <PropertyColumn Property="x => x.LotId" Title="Lot" />
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.Quantity" Title="Quantity" Format="N4" />
+            <PropertyColumn Property="x => x.LastTransactionAt" Title="Last tx" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="x => x.LastCountedAt" Title="Last count" Format="yyyy-MM-dd HH:mm" />
+        </Columns>
+        <PagerContent><MudDataGridPager T="InventoryBalanceDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<InventoryBalanceDto> grid = null!;
+    private bool _loading = true;
+    private int? filterItemId, filterLocationId, filterLotId;
+    private BalanceStatus? filterStatus;
+    private bool filterNonZero = true;
+    private decimal totalQty;
+
+    private async Task<GridData<InventoryBalanceDto>> LoadAsync(GridState<InventoryBalanceDto> state, CancellationToken ct)
+    {
+        _loading = true; await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.InventoryBalances.AsNoTracking();
+            if (filterItemId.HasValue) query = query.Where(x => x.InventoryItemId == filterItemId.Value);
+            if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
+            if (filterLotId.HasValue) query = query.Where(x => x.LotId == filterLotId.Value);
+            if (filterStatus.HasValue) query = query.Where(x => x.Status == filterStatus.Value);
+            if (filterNonZero) query = query.Where(x => x.Quantity != 0);
+
+            var total = await query.CountAsync(ct);
+            totalQty = await query.SumAsync(x => (decimal?)x.Quantity, ct) ?? 0m;
+            var rows = await query.OrderBy(x => x.InventoryItemId).ThenBy(x => x.LocationId)
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<InventoryBalanceDto> { Items = rows, TotalItems = total };
+        }
+        finally { _loading = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private async Task ClearFilter()
+    {
+        filterItemId = filterLocationId = filterLotId = null;
+        filterStatus = null; filterNonZero = true;
+        await grid.ReloadServerData();
+    }
+}

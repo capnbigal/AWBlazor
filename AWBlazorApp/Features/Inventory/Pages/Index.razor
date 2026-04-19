@@ -1,86 +1,421 @@
 @page "/inventory"
 @attribute [Authorize]
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@using AWBlazorApp.Features.Inventory.Services
+@inject IProductInsightsService Insights
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
 
-<PageTitle>Inventory explorer</PageTitle>
+<PageTitle>Product explorer — Inventory</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Inventory explorer</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">inv.InventoryBalance — live on-hand by item, location, lot, and status</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Product explorer</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Pick a product on the left to see live inventory + 12-month activity across purchasing, production, and engineering. Raw lists at <MudLink Href="inventory/balances">Balances</MudLink> and <MudLink Href="inventory/transactions">Transactions</MudLink>.
+            </MudText>
+        </MudStack>
         <MudSpacer />
-        <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small">@totalQty.ToString("N0") units on file</MudChip>
+        @if (_selectedProductId.HasValue)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="RefreshAsync" Disabled="@_loading">
+                @(_loading ? "Loading..." : "Refresh")
+            </MudButton>
+        }
     </MudStack>
 
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterItemId" Label="InventoryItemId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterLocationId" Label="LocationId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="filterLotId" Label="LotId" Variant="Variant.Outlined" Clearable="true" /></MudItem>
-            <MudItem xs="12" sm="3">
-                <MudSelect T="BalanceStatus?" @bind-Value="filterStatus" Label="Status" Variant="Variant.Outlined" Clearable="true">
-                    <MudSelectItem T="BalanceStatus?" Value="@null">(any)</MudSelectItem>
-                    @foreach (var s in Enum.GetValues<BalanceStatus>())
-                    {
-                        <MudSelectItem T="BalanceStatus?" Value="@s">@s</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="3"><MudCheckBox T="bool" @bind-Value="filterNonZero" Label="Non-zero quantities only" /></MudItem>
-            <MudItem xs="12" sm="9"><MudStack Row="true" Spacing="2"><MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ApplyFilter">Apply</MudButton><MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="ClearFilter">Clear</MudButton></MudStack></MudItem>
-        </MudGrid>
-    </MudPaper>
+    <MudGrid Spacing="3">
+        @* ── Left pane: product picker ───────────────────────────────────── *@
+        <MudItem xs="12" md="3">
+            <MudPaper Class="pa-2" Elevation="1" Style="height: calc(100vh - 220px); display: flex; flex-direction: column; min-height: 500px">
+                <MudTextField T="string" @bind-Value="_search" @bind-Value:after="OnSearchChangedAsync"
+                              Label="Search products" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              DebounceInterval="250" Clearable="true" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 mx-2">
+                    @_products.Count match@(_products.Count == 1 ? "" : "es") · ★ = inventory-managed
+                </MudText>
+                <MudDivider Class="my-1" />
+                @if (_pickerLoading)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+                }
+                <div style="flex: 1; overflow-y: auto">
+                    <MudList T="ProductPickerItemDto" Dense="true" SelectedValue="_selected" SelectedValueChanged="OnProductSelected">
+                        @foreach (var p in _products)
+                        {
+                            <MudListItem T="ProductPickerItemDto" Value="@p">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    @if (p.IsManaged)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Primary" Size="Size.Small" />
+                                    }
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2"
+                                                 Style="@(p.DiscontinuedOrEnded ? "text-decoration: line-through; opacity: 0.65" : "")">@p.Name</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@p.ProductNumber</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudListItem>
+                        }
+                        @if (!_pickerLoading && _products.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">No products match "@_search".</MudText>
+                        }
+                    </MudList>
+                </div>
+            </MudPaper>
+        </MudItem>
 
-    <MudDataGrid T="InventoryBalanceDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="50">
-        <Columns>
-            <PropertyColumn Property="x => x.InventoryItemId" Title="Item" />
-            <PropertyColumn Property="x => x.LocationId" Title="Location" />
-            <PropertyColumn Property="x => x.LotId" Title="Lot" />
-            <PropertyColumn Property="x => x.Status" Title="Status" />
-            <PropertyColumn Property="x => x.Quantity" Title="Quantity" Format="N4" />
-            <PropertyColumn Property="x => x.LastTransactionAt" Title="Last tx" Format="yyyy-MM-dd HH:mm" />
-            <PropertyColumn Property="x => x.LastCountedAt" Title="Last count" Format="yyyy-MM-dd HH:mm" />
-        </Columns>
-        <PagerContent><MudDataGridPager T="InventoryBalanceDto" /></PagerContent>
-    </MudDataGrid>
+        @* ── Right pane: per-product insights ────────────────────────────── *@
+        <MudItem xs="12" md="9">
+            @if (_dto is null && !_loading)
+            {
+                <MudPaper Class="pa-8" Elevation="1" Style="text-align: center">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Secondary" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">Pick a product on the left</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Search by name or product number, then click a row to see its full insights.</MudText>
+                </MudPaper>
+            }
+            else if (_loading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+            }
+            else if (_dto is not null)
+            {
+                @* Product header card *@
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Start">
+                        <MudStack Spacing="1" Style="flex: 1">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudText Typo="Typo.h5">@_dto.Header.Name</MudText>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_dto.Header.ProductNumber</MudChip>
+                                @if (_dto.Header.MakeFlag) { <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Filled">Make</MudChip> }
+                                else { <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Filled">Buy</MudChip> }
+                                @if (_dto.Header.FinishedGoodsFlag) { <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Finished good</MudChip> }
+                                @if (_dto.Header.DiscontinuedDate.HasValue) { <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">Discontinued</MudChip> }
+                                @if (_dto.Header.InventoryItemId.HasValue) { <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Star">Inventory-managed</MudChip> }
+                                else { <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">No inventory record</MudChip> }
+                            </MudStack>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @(_dto.Header.ProductLine ?? "—") · class @(_dto.Header.Class ?? "—") · style @(_dto.Header.Style ?? "—") · color @(_dto.Header.Color ?? "—")
+                            </MudText>
+                        </MudStack>
+                        <MudStack Spacing="0" AlignItems="AlignItems.End">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Generated</MudText>
+                            <MudText Typo="Typo.caption">@_dto.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</MudText>
+                        </MudStack>
+                    </MudStack>
+                    <MudDivider Class="my-3" />
+                    <MudGrid Spacing="2">
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">List price</MudText><MudText Typo="Typo.h6">@_dto.Header.ListPrice.ToString("C2")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Standard cost</MudText><MudText Typo="Typo.h6">@_dto.Header.StandardCost.ToString("C2")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Reorder point</MudText><MudText Typo="Typo.h6">@_dto.Header.ReorderPoint.ToString("N0")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Safety stock</MudText><MudText Typo="Typo.h6">@_dto.Header.SafetyStockLevel.ToString("N0")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Days to mfg</MudText><MudText Typo="Typo.h6">@_dto.Header.DaysToManufacture</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Sell start</MudText><MudText Typo="Typo.body1">@_dto.Header.SellStartDate.ToString("yyyy-MM-dd")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Sell end</MudText><MudText Typo="Typo.body1">@(_dto.Header.SellEndDate?.ToString("yyyy-MM-dd") ?? "—")</MudText></MudItem>
+                        <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Tracks</MudText><MudText Typo="Typo.body1">@(_dto.Header.TracksLot ? "Lot" : "")@(_dto.Header.TracksLot && _dto.Header.TracksSerial ? " + " : "")@(_dto.Header.TracksSerial ? "Serial" : "")@(!_dto.Header.TracksLot && !_dto.Header.TracksSerial ? "—" : "")</MudText></MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                @* Inventory snapshot + lots *@
+                <MudGrid Spacing="3" Class="mt-1">
+                    <MudItem xs="12" md="8">
+                        <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.h6">Inventory snapshot</MudText>
+                                <MudSpacer />
+                                @if (_dto.Inventory.BelowReorderPoint)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Warning">Below reorder point</MudChip>
+                                }
+                            </MudStack>
+                            @if (_dto.Header.InventoryItemId is null)
+                            {
+                                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">This product has no inventory record. Create one at <MudLink Href="inventory/items">Inventory items</MudLink> to track on-hand balances.</MudAlert>
+                            }
+                            else if (_dto.Inventory.LocationCount == 0)
+                            {
+                                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">No on-hand stock for this product yet.</MudAlert>
+                            }
+                            else
+                            {
+                                <MudGrid Spacing="2" Class="mt-2">
+                                    <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">On-hand</MudText><MudText Typo="Typo.h5">@_dto.Inventory.TotalOnHand.ToString("N0")</MudText></MudItem>
+                                    <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Available</MudText><MudText Typo="Typo.h5" Color="@(_dto.Inventory.BelowReorderPoint ? Color.Error : Color.Success)">@_dto.Inventory.TotalAvailable.ToString("N0")</MudText></MudItem>
+                                    <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Hold</MudText><MudText Typo="Typo.h5" Color="@(_dto.Inventory.TotalHold > 0 ? Color.Warning : Color.Default)">@_dto.Inventory.TotalHold.ToString("N0")</MudText></MudItem>
+                                    <MudItem xs="6" sm="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Quarantine</MudText><MudText Typo="Typo.h5" Color="@(_dto.Inventory.TotalQuarantine > 0 ? Color.Error : Color.Default)">@_dto.Inventory.TotalQuarantine.ToString("N0")</MudText></MudItem>
+                                </MudGrid>
+                                <MudDivider Class="my-3" />
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">By location (@_dto.Inventory.LocationCount)</MudText>
+                                <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto">
+                                    <thead>
+                                        <tr><th>Code</th><th>Name</th><th style="text-align: right">Qty on-hand</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var l in _dto.Inventory.ByLocation)
+                                        {
+                                            <tr>
+                                                <td>@l.LocationCode</td>
+                                                <td>@l.LocationName</td>
+                                                <td style="text-align: right">@l.QtyOnHand.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            }
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                            <MudText Typo="Typo.h6">Lots</MudText>
+                            @if (!_dto.Header.TracksLot)
+                            {
+                                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">Lot tracking is not enabled for this product.</MudAlert>
+                            }
+                            else if (_dto.Lots.ActiveLotCount == 0)
+                            {
+                                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">No active lots with stock on hand.</MudAlert>
+                            }
+                            else
+                            {
+                                <MudStack Row="true" Spacing="2" Class="my-2">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled">@_dto.Lots.ActiveLotCount active</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@_dto.Lots.TotalLotQty.ToString("N0") units</MudChip>
+                                </MudStack>
+                                <MudSimpleTable Dense="true" Hover="true" Style="overflow-x: auto">
+                                    <thead>
+                                        <tr><th>Lot</th><th style="text-align: right">Qty</th><th>Status</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var l in _dto.Lots.TopLots)
+                                        {
+                                            <tr>
+                                                <td>@l.LotCode</td>
+                                                <td style="text-align: right">@l.QtyOnHand.ToString("N2")</td>
+                                                <td><MudChip T="string" Size="Size.Small" Color="@LotStatusColor(l.Status)" Variant="Variant.Outlined">@l.Status</MudChip></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            }
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                @* 12-month activity *@
+                <MudText Typo="Typo.h6" Class="mt-4 mb-1">Last 12 months of activity</MudText>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6" md="3">@RenderActivityCard("Inventory transactions", _dto.InventoryActivity12m, v => v.ToString("N0"), "qty net of in/out (signed)")</MudItem>
+                    <MudItem xs="12" sm="6" md="3">@RenderActivityCard("Purchase orders", _dto.PurchaseOrders12m, v => v.ToString("N0"), "ordered qty per month")</MudItem>
+                    <MudItem xs="12" sm="6" md="3">@RenderActivityCard("Work orders", _dto.WorkOrders12m, v => v.ToString("N0"), "ordered qty per month")</MudItem>
+                    <MudItem xs="12" sm="6" md="3">@RenderActivityCard("Production runs", _dto.ProductionRuns12m, v => v.ToString("N0"), "runs / mo · WO-linked only")</MudItem>
+                </MudGrid>
+
+                @* ECOs *@
+                <MudPaper Class="pa-4 mt-4" Elevation="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">Engineering changes</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@_dto.RecentEcos.Count recent</MudChip>
+                    </MudStack>
+                    @if (_dto.RecentEcos.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">No ECOs reference this product.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                            <thead>
+                                <tr><th>Code</th><th>Title</th><th>Status</th><th>Raised</th><th>Decided</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in _dto.RecentEcos)
+                                {
+                                    <tr>
+                                        <td>@e.Code</td>
+                                        <td>@e.Title</td>
+                                        <td><MudChip T="string" Size="Size.Small" Color="@EcoStatusColor(e.Status)" Variant="Variant.Filled">@e.Status</MudChip></td>
+                                        <td>@e.RaisedAt.ToString("yyyy-MM-dd")</td>
+                                        <td>@(e.DecidedAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                        <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"engineering/ecos/{e.Id}"))" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                </MudPaper>
+
+                @* Forecast empty-state *@
+                <MudPaper Class="pa-4 mt-4" Elevation="2">
+                    <MudText Typo="Typo.h6">Forecast</MudText>
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Text" Class="mt-2">
+                        Forecasts are not yet linked to specific products in this build. Configure forecasts at <MudLink Href="forecasts">/forecasts</MudLink>.
+                    </MudAlert>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
 </MudStack>
 
 @code {
-    private MudDataGrid<InventoryBalanceDto> grid = null!;
-    private bool _loading = true;
-    private int? filterItemId, filterLocationId, filterLotId;
-    private BalanceStatus? filterStatus;
-    private bool filterNonZero = true;
-    private decimal totalQty;
+    [SupplyParameterFromQuery(Name = "productId")] public int? ProductIdQuery { get; set; }
 
-    private async Task<GridData<InventoryBalanceDto>> LoadAsync(GridState<InventoryBalanceDto> state, CancellationToken ct)
+    private string? _search;
+    private List<ProductPickerItemDto> _products = new();
+    private bool _pickerLoading;
+
+    private int? _selectedProductId;
+    private ProductPickerItemDto? _selected;
+    private ProductInsightsDto? _dto;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
     {
-        _loading = true; await InvokeAsync(StateHasChanged);
-        try
+        await LoadPickerAsync();
+        if (ProductIdQuery.HasValue)
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.InventoryBalances.AsNoTracking();
-            if (filterItemId.HasValue) query = query.Where(x => x.InventoryItemId == filterItemId.Value);
-            if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
-            if (filterLotId.HasValue) query = query.Where(x => x.LotId == filterLotId.Value);
-            if (filterStatus.HasValue) query = query.Where(x => x.Status == filterStatus.Value);
-            if (filterNonZero) query = query.Where(x => x.Quantity != 0);
-
-            var total = await query.CountAsync(ct);
-            totalQty = await query.SumAsync(x => (decimal?)x.Quantity, ct) ?? 0m;
-            var rows = await query.OrderBy(x => x.InventoryItemId).ThenBy(x => x.LocationId)
-                .Skip(state.Page * state.PageSize).Take(state.PageSize)
-                .Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<InventoryBalanceDto> { Items = rows, TotalItems = total };
+            _selectedProductId = ProductIdQuery.Value;
+            _selected = _products.FirstOrDefault(p => p.ProductId == ProductIdQuery.Value);
+            await LoadInsightsAsync();
         }
-        finally { _loading = false; await InvokeAsync(StateHasChanged); }
     }
 
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-    private async Task ClearFilter()
+    private async Task LoadPickerAsync()
     {
-        filterItemId = filterLocationId = filterLotId = null;
-        filterStatus = null; filterNonZero = true;
-        await grid.ReloadServerData();
+        _pickerLoading = true;
+        try
+        {
+            _products = (await Insights.ListProductsAsync(_search, take: 100, default)).ToList();
+        }
+        finally { _pickerLoading = false; }
+    }
+
+    private async Task OnSearchChangedAsync() => await LoadPickerAsync();
+
+    private async Task OnProductSelected(ProductPickerItemDto? value)
+    {
+        _selected = value;
+        _selectedProductId = value?.ProductId;
+        if (value is not null)
+        {
+            // Keep the URL shareable so a tab can deep-link to a specific product.
+            Navigation.NavigateTo($"inventory?productId={value.ProductId}", replace: true);
+        }
+        await LoadInsightsAsync();
+    }
+
+    private async Task LoadInsightsAsync()
+    {
+        if (!_selectedProductId.HasValue) { _dto = null; return; }
+        _loading = true;
+        try
+        {
+            _dto = await Insights.GetAsync(_selectedProductId.Value, default);
+            if (_dto is null) Snackbar.Add($"Product #{_selectedProductId} not found.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load product insights: {ex.Message}", Severity.Error);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!_selectedProductId.HasValue) return;
+        Insights.Invalidate(_selectedProductId.Value);
+        await LoadInsightsAsync();
+        Snackbar.Add("Refreshed.", Severity.Success);
+    }
+
+    private static Color LotStatusColor(string status) => status switch
+    {
+        "Available" => Color.Success,
+        "Hold" => Color.Warning,
+        "Quarantine" => Color.Error,
+        "Scrap" => Color.Dark,
+        _ => Color.Default,
+    };
+
+    private static Color EcoStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "UnderReview" => Color.Warning,
+        "Approved" => Color.Success,
+        "Rejected" => Color.Error,
+        "Cancelled" => Color.Dark,
+        _ => Color.Default,
+    };
+
+    /// <summary>Renders one of the four monthly bar-chart cards on the activity row.</summary>
+    private RenderFragment RenderActivityCard(string title, IReadOnlyList<MonthlyActivityDto> bins, Func<decimal, string> format, string subtitle) =>
+        builder =>
+        {
+            builder.OpenComponent<MudPaper>(0);
+            builder.AddAttribute(1, "Class", "pa-3");
+            builder.AddAttribute(2, "Elevation", 2);
+            builder.AddAttribute(3, "Style", "height: 100%");
+            builder.AddAttribute(4, "ChildContent", (RenderFragment)(b =>
+            {
+                b.OpenComponent<MudText>(0);
+                b.AddAttribute(1, "Typo", Typo.subtitle2);
+                b.AddAttribute(2, "ChildContent", (RenderFragment)(t => t.AddContent(0, title)));
+                b.CloseComponent();
+
+                b.OpenComponent<MudText>(10);
+                b.AddAttribute(11, "Typo", Typo.caption);
+                b.AddAttribute(12, "Color", Color.Secondary);
+                b.AddAttribute(13, "ChildContent", (RenderFragment)(t => t.AddContent(0, subtitle)));
+                b.CloseComponent();
+
+                b.AddMarkupContent(20, BuildMonthlyBarsSvg(bins));
+
+                var total = bins.Sum(x => x.Value);
+                var nonZero = bins.Count(x => x.Value != 0);
+                b.OpenComponent<MudText>(30);
+                b.AddAttribute(31, "Typo", Typo.body2);
+                b.AddAttribute(32, "Class", "mt-1");
+                b.AddAttribute(33, "ChildContent", (RenderFragment)(t => t.AddContent(0,
+                    $"Total {format(total)} · {nonZero} of 12 months had activity")));
+                b.CloseComponent();
+            }));
+            builder.CloseComponent();
+        };
+
+    /// <summary>
+    /// Inline SVG monthly bar chart — 12 bars, scaled to the max value in the window. Mirrors
+    /// the helper used on Plant.razor; kept inline rather than shared so the styling can drift
+    /// per page without coupling.
+    /// </summary>
+    private static string BuildMonthlyBarsSvg(IReadOnlyList<MonthlyActivityDto> bins)
+    {
+        if (bins.Count == 0 || bins.All(b => b.Value == 0))
+        {
+            return @"<svg width=""100%"" viewBox=""0 0 320 60"" preserveAspectRatio=""none"" style=""max-height:60px;display:block;margin-top:4px""><text x=""160"" y=""32"" text-anchor=""middle"" fill=""var(--mud-palette-text-secondary)"" font-size=""11"">No activity in window</text></svg>";
+        }
+        const int width = 320;
+        const int height = 60;
+        const int padding = 4;
+        var max = bins.Max(b => Math.Abs(b.Value));
+        if (max == 0) max = 1m;
+        var bandW = (width - 2.0 * padding) / bins.Count;
+        var sb = new System.Text.StringBuilder();
+        sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:60px;display:block;margin-top:4px"">");
+        for (var i = 0; i < bins.Count; i++)
+        {
+            var value = bins[i].Value;
+            if (value == 0) continue;
+            var x = padding + i * bandW;
+            var h = (double)Math.Abs(value) / (double)max * (height - 2 * padding);
+            var fill = value < 0 ? "var(--mud-palette-error)" : "var(--mud-palette-primary)";
+            sb.Append($@"<rect x=""{x:F1}"" y=""{height - padding - h:F1}"" width=""{bandW * 0.85:F1}"" height=""{h:F1}"" fill=""{fill}"" opacity=""0.75""/>");
+        }
+        sb.Append("</svg>");
+        return sb.ToString();
     }
 }
