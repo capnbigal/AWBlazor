@@ -38,6 +38,8 @@ public class DemoDataSeederTests : IntegrationTestFixtureBase
             Assert.That(second.Performance, Is.EqualTo(0), "Performance seed must no-op on second run.");
             Assert.That(second.Inventory, Is.EqualTo(0), "Inventory seed must no-op on second run.");
             Assert.That(second.Logistics, Is.EqualTo(0), "Logistics seed must no-op on second run.");
+            Assert.That(second.Quality, Is.EqualTo(0), "Quality seed must no-op on second run.");
+            Assert.That(second.Mes, Is.EqualTo(0), "MES seed must no-op on second run.");
         });
     }
 
@@ -97,5 +99,47 @@ public class DemoDataSeederTests : IntegrationTestFixtureBase
 
         var demoTransferCount = await db.StockTransfers.CountAsync(t => t.TransferNumber.StartsWith("DEMO-XF-"));
         Assert.That(demoTransferCount, Is.EqualTo(2), "Expected 2 demo stock transfers.");
+    }
+
+    [Test]
+    public async Task Seeder_Populates_Quality_Mes_And_Training_Demo_Rows()
+    {
+        using var scope = Factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+
+        var result = await seeder.SeedAllAsync(CancellationToken.None);
+        if (result.Skipped) Assert.Ignore("Skipped — baseline FKs missing in dev DB.");
+
+        await using var db = await dbFactory.CreateDbContextAsync();
+
+        // Quality: 2 plans + 2 inspections always; NCR + CAPA depend on at least one
+        // InventoryItem (which the inventory seed creates), so assert >= 1 there.
+        var demoPlanCount = await db.InspectionPlans.CountAsync(p => p.PlanCode.StartsWith("DEMO-QA-PLAN-"));
+        Assert.That(demoPlanCount, Is.EqualTo(2), "Expected 2 demo inspection plans.");
+
+        var demoInspectionCount = await db.Inspections.CountAsync(i => i.InspectionNumber.StartsWith("DEMO-INSP-"));
+        Assert.That(demoInspectionCount, Is.EqualTo(2), "Expected 2 demo inspections.");
+
+        var demoNcrCount = await db.NonConformances.CountAsync(n => n.NcrNumber.StartsWith("DEMO-NCR-"));
+        Assert.That(demoNcrCount, Is.GreaterThanOrEqualTo(1), "Expected at least 1 demo NCR (anchored to seeded InventoryItem).");
+
+        var demoCapaCount = await db.CapaCases.CountAsync(c => c.CaseNumber.StartsWith("DEMO-CAPA-"));
+        Assert.That(demoCapaCount, Is.GreaterThanOrEqualTo(1), "Expected at least 1 demo CAPA case.");
+
+        // MES: 2 production runs always; downtime + work instruction depend on FK targets
+        // (DowntimeReason and engineering ManufacturingRouting) that should both exist.
+        var demoRunCount = await db.ProductionRuns.CountAsync(r => r.RunNumber.StartsWith("DEMO-RUN-"));
+        Assert.That(demoRunCount, Is.EqualTo(2), "Expected 2 demo production runs.");
+
+        var demoDowntimeCount = await db.DowntimeEvents.CountAsync(d => d.Notes != null && d.Notes.StartsWith("Seeded demo"));
+        Assert.That(demoDowntimeCount, Is.GreaterThanOrEqualTo(1), "Expected demo downtime events.");
+
+        var demoInstructionCount = await db.WorkInstructions.CountAsync(w => w.Title.StartsWith("Demo work instruction"));
+        Assert.That(demoInstructionCount, Is.GreaterThanOrEqualTo(1), "Expected at least 1 demo work instruction.");
+
+        // Workforce: training records (anchored to seeded TrainingCourses + AW employees).
+        var demoTrainingCount = await db.TrainingRecords.CountAsync(t => t.RecordedByUserId == "demo-seed");
+        Assert.That(demoTrainingCount, Is.GreaterThanOrEqualTo(1), "Expected demo training-record completions.");
     }
 }
