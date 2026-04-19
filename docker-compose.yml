@@ -9,6 +9,14 @@ services:
       MSSQL_SA_PASSWORD: "${SA_PASSWORD:?set SA_PASSWORD in .env}"
       MSSQL_PID: Developer
       MSSQL_COLLATION: SQL_Latin1_General_CP1_CI_AS
+      # Cap SQL Server's max server memory at 2 GB. Without this, SQL Server tries to grow
+      # to all available RAM and starves the OS / app container during the brief moment when
+      # both old and new app containers are alive during a `docker compose up -d --force-recreate`.
+      # That spike OOM'd SQL Server on the 4 GB DigitalOcean droplet on 2026-04-19 (Error 701,
+      # "insufficient system memory in resource pool 'internal'"). 2 GB leaves comfortable room
+      # for the OS (~500 MB), Docker overhead (~200 MB), and the app container (~600 MB) on a
+      # 4 GB droplet. Tune up if you move to a bigger droplet.
+      MSSQL_MEMORY_LIMIT_MB: "${MSSQL_MEMORY_LIMIT_MB:-2048}"
     ports:
       # Bind to localhost only. Public access is deliberately blocked — use `ufw deny 1433`
       # on the host as defense-in-depth.
