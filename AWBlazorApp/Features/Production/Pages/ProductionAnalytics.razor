@@ -44,7 +44,9 @@
                          Labels="@woLabels"
                          Series="@woSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="work order count" />
 
         @* ── Scrap rate trend ─────────────────────────────────────────────── *@
         <TimeSeriesChart Title="Monthly scrap rate (%)"
@@ -52,7 +54,9 @@
                          Labels="@scrapLabels"
                          Series="@scrapSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="scrap qty as % of WO total" />
 
         @* ── Manufacturing throughput ─────────────────────────────────────── *@
         <TimeSeriesChart Title="Average manufacturing duration (days) by month"
@@ -60,7 +64,9 @@
                          Labels="@throughputLabels"
                          Series="@throughputSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month started"
+                         YAxisCaption="avg days from WO start to end" />
 
         @* ── Product lifecycle ────────────────────────────────────────────── *@
         <MudPaper Class="pa-4" Elevation="2">

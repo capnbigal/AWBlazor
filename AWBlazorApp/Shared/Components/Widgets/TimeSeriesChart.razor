@@ -50,6 +50,24 @@
                   XAxisLabels="@FilteredLabels"
                   Width="100%" Height="@Height"
                   ChartOptions="@Options" />
+        @* Axis-context captions render below the chart so readers always know what the axes
+           represent — MudChart's built-in tick labels can be decimated or hidden on narrow
+           widths, leaving the series-name legend ("Headcount", "Employees", etc.) as the only
+           on-screen text. These captions are the backstop. Both default to empty so existing
+           call sites that don't set them keep working. *@
+        @if (!string.IsNullOrWhiteSpace(XAxisCaption) || !string.IsNullOrWhiteSpace(YAxisCaption))
+        {
+            <MudStack Row="true" Spacing="3" Class="mt-2">
+                @if (!string.IsNullOrWhiteSpace(XAxisCaption))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> @XAxisCaption</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(YAxisCaption))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> @YAxisCaption</MudText>
+                }
+            </MudStack>
+        }
     }
 </MudPaper>
 
@@ -63,6 +81,12 @@
     [Parameter] public string[] Labels { get; set; } = [];
     [Parameter] public List<ChartSeries<double>> Series { get; set; } = [];
     [Parameter] public string[] Periods { get; set; } = ["6M", "12M", "24M", "All"];
+    /// <summary>What the X-axis represents in plain English (e.g., "month", "tenure bucket").
+    /// Rendered as a short caption below the chart. Empty = no caption.</summary>
+    [Parameter] public string? XAxisCaption { get; set; }
+    /// <summary>What the Y-axis represents in plain English (e.g., "cumulative headcount", "USD").
+    /// Rendered as a short caption below the chart. Empty = no caption.</summary>
+    [Parameter] public string? YAxisCaption { get; set; }
     [Parameter] public EventCallback<PeriodChangedArgs> OnPeriodChanged { get; set; }
     /// <summary>Optional pre-built chart options. When null, options are derived from ChartType + YAxisFormat.</summary>
     [Parameter] public IChartOptions? ChartOptions { get; set; }

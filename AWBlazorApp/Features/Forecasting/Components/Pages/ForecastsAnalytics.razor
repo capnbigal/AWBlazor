@@ -45,7 +45,9 @@
                          Series="@data.AccuracyTrendSeries"
                          Periods="@(new[] { "6M", "12M", "All" })"
                          ShowGranularity="false"
-                         YAxisFormat="N1" />
+                         YAxisFormat="N1"
+                         XAxisCaption="month evaluated"
+                         YAxisCaption="absolute variance % (forecast vs actual)" />
 
         @* ── Accuracy by method ─────────────────────────────────────────────── *@
         <MudPaper Class="pa-4" Elevation="2">
@@ -57,6 +59,10 @@
                           XAxisLabels="@data.AccuracyByMethodLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="100%" Height="320px" />
+                <MudStack Row="true" Spacing="3" Class="mt-2">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> forecast method — @string.Join(" · ", data.AccuracyByMethodLabels)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> avg absolute variance %</MudText>
+                </MudStack>
             }
             else
             {
