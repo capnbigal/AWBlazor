@@ -4,16 +4,17 @@
     <MudNavLink Href="guide" Icon="@Icons.Material.Filled.MenuBook">User Guide</MudNavLink>
 
     @* ─── Operations ──────────────────────────────────────────────────────────────
-       The 9 manufacturing modules in workflow order: Enterprise (master data) →
-       Engineering (designs) → Workforce (people) → Production execution (runs) →
-       Quality (control) → Maintenance (reliability) → Logistics (movement) →
-       Inventory (stock) → Performance (measurement). Promoted out of the legacy
-       "Reference data" umbrella because each module has summary dashboards and
-       active CRUD pages — they are not reference. *@
+       The 9 manufacturing modules in workflow order plus Sales and Purchasing as
+       additional business-domain groups. The legacy AdventureWorks reference
+       tables are folded into the closest natural module (employees → Workforce,
+       persons → Enterprise master data, products → Inventory, etc.). The
+       per-domain analytics dashboards live as the "* analytics" link near the top
+       of each group instead of in a separate Analytics section. *@
     <AuthorizeView>
         <Authorized>
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.overline" Class="px-4">Operations</MudText>
+
             <MudNavGroup Title="Enterprise" Icon="@Icons.Material.Filled.Domain" Expanded="false">
                 <MudNavLink Href="enterprise/tree" Icon="@Icons.Material.Filled.AccountTree">Org tree explorer</MudNavLink>
                 <MudNavLink Href="enterprise/organizations" Icon="@Icons.Material.Filled.Business">Organizations</MudNavLink>
@@ -22,123 +23,7 @@
                 <MudNavLink Href="enterprise/assets" Icon="@Icons.Material.Filled.PrecisionManufacturing">Assets / machines</MudNavLink>
                 <MudNavLink Href="enterprise/cost-centers" Icon="@Icons.Material.Filled.AccountBalance">Cost centers</MudNavLink>
                 <MudNavLink Href="enterprise/product-lines" Icon="@Icons.Material.Filled.Category">Product lines</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Engineering" Icon="@Icons.Material.Filled.Architecture" Expanded="false">
-                <MudNavLink Href="engineering" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Engineering summary</MudNavLink>
-                <MudNavLink Href="engineering/ecos" Icon="@Icons.Material.Filled.ChangeCircle">Change orders</MudNavLink>
-                <MudNavLink Href="engineering/routings" Icon="@Icons.Material.Filled.Timeline">Routings</MudNavLink>
-                <MudNavLink Href="engineering/boms" Icon="@Icons.Material.Filled.AccountTree">Bills of materials</MudNavLink>
-                <MudNavLink Href="engineering/documents" Icon="@Icons.Material.Filled.Description">Documents</MudNavLink>
-                <MudNavLink Href="engineering/deviations" Icon="@Icons.Material.Filled.RuleFolder">Deviations</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Workforce" Icon="@Icons.Material.Filled.Groups" Expanded="false">
-                <MudNavLink Href="workforce" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Workforce summary</MudNavLink>
-                <MudNavLink Href="workforce/qualification-alerts" Icon="@Icons.Material.Filled.NotificationsActive">Alert inbox</MudNavLink>
-                <MudNavLink Href="workforce/training-courses" Icon="@Icons.Material.Filled.School">Training courses</MudNavLink>
-                <MudNavLink Href="workforce/training-records" Icon="@Icons.Material.Filled.History">Training records</MudNavLink>
-                <MudNavLink Href="workforce/qualifications" Icon="@Icons.Material.Filled.Badge">Qualifications</MudNavLink>
-                <MudNavLink Href="workforce/employee-qualifications" Icon="@Icons.Material.Filled.CardMembership">Employee quals</MudNavLink>
-                <MudNavLink Href="workforce/station-qualifications" Icon="@Icons.Material.Filled.WorkspacePremium">Station requirements</MudNavLink>
-                <MudNavLink Href="workforce/attendance" Icon="@Icons.Material.Filled.HowToReg">Attendance</MudNavLink>
-                <MudNavLink Href="workforce/leave-requests" Icon="@Icons.Material.Filled.EventBusy">Leave requests</MudNavLink>
-                <MudNavLink Href="workforce/handover-notes" Icon="@Icons.Material.Filled.EditNote">Shift handover</MudNavLink>
-                <MudNavLink Href="workforce/announcements" Icon="@Icons.Material.Filled.Campaign">Announcements</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Production execution" Icon="@Icons.Material.Filled.Engineering" Expanded="false">
-                <MudNavLink Href="mes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">MES summary</MudNavLink>
-                <MudNavLink Href="mes/runs" Icon="@Icons.Material.Filled.PlayCircle">Production runs</MudNavLink>
-                <MudNavLink Href="mes/downtime" Icon="@Icons.Material.Filled.Timer">Downtime events</MudNavLink>
-                <MudNavLink Href="mes/downtime/reasons" Icon="@Icons.Material.Filled.Rule">Downtime reason codes</MudNavLink>
-                <MudNavLink Href="mes/instructions" Icon="@Icons.Material.Filled.MenuBook">Work instructions</MudNavLink>
-                <MudNavLink Href="mes/oee" Icon="@Icons.Material.Filled.Speed">OEE rollup</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Quality" Icon="@Icons.Material.Filled.Verified" Expanded="false">
-                <MudNavLink Href="quality" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Quality summary</MudNavLink>
-                <MudNavLink Href="quality/inspection-plans" Icon="@Icons.Material.Filled.Rule">Inspection plans</MudNavLink>
-                <MudNavLink Href="quality/inspections" Icon="@Icons.Material.Filled.FactCheck">Inspections</MudNavLink>
-                <MudNavLink Href="quality/ncrs" Icon="@Icons.Material.Filled.Warning">Non-conformances</MudNavLink>
-                <MudNavLink Href="quality/capa" Icon="@Icons.Material.Filled.Engineering">CAPA cases</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Maintenance" Icon="@Icons.Material.Filled.Build" Expanded="false">
-                <MudNavLink Href="maintenance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Maintenance summary</MudNavLink>
-                <MudNavLink Href="maintenance/work-orders" Icon="@Icons.Material.Filled.Assignment">Work orders</MudNavLink>
-                <MudNavLink Href="maintenance/pm-schedules" Icon="@Icons.Material.Filled.Schedule">PM schedules</MudNavLink>
-                <MudNavLink Href="maintenance/asset-profiles" Icon="@Icons.Material.Filled.PrecisionManufacturing">Asset profiles</MudNavLink>
-                <MudNavLink Href="maintenance/spare-parts" Icon="@Icons.Material.Filled.Inventory">Spare parts</MudNavLink>
-                <MudNavLink Href="maintenance/meter-readings" Icon="@Icons.Material.Filled.Speed">Meter readings</MudNavLink>
-                <MudNavLink Href="maintenance/logs" Icon="@Icons.Material.Filled.EventNote">Maintenance log</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Logistics" Icon="@Icons.Material.Filled.LocalShipping" Expanded="false">
-                <MudNavLink Href="logistics" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Logistics summary</MudNavLink>
-                <MudNavLink Href="logistics/receipts" Icon="@Icons.Material.Filled.Inbox">Goods receipts</MudNavLink>
-                <MudNavLink Href="logistics/shipments" Icon="@Icons.Material.Filled.Outbox">Shipments</MudNavLink>
-                <MudNavLink Href="logistics/transfers" Icon="@Icons.Material.Filled.SyncAlt">Stock transfers</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Inventory" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
-                <MudNavLink Href="inventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Inventory">Inventory explorer</MudNavLink>
-                <MudNavLink Href="inventory/transactions" Icon="@Icons.Material.Filled.ReceiptLong">Transaction explorer</MudNavLink>
-                <MudNavLink Href="inventory/adjustments" Icon="@Icons.Material.Filled.Edit">Adjustments</MudNavLink>
-                <MudNavLink Href="inventory/reports" Icon="@Icons.Material.Filled.Assessment">Status reports</MudNavLink>
-                <MudNavLink Href="inventory/items" Icon="@Icons.Material.Filled.Category">Items</MudNavLink>
-                <MudNavLink Href="inventory/locations" Icon="@Icons.Material.Filled.Warehouse">Locations</MudNavLink>
-                <MudNavLink Href="inventory/transaction-types" Icon="@Icons.Material.Filled.Rule">Transaction types</MudNavLink>
-                <MudNavLink Href="inventory/outbox" Icon="@Icons.Material.Filled.Outbox">Outbox</MudNavLink>
-                <MudNavLink Href="inventory/queue" Icon="@Icons.Material.Filled.QueuePlayNext">Inbound queue</MudNavLink>
-            </MudNavGroup>
-            <MudNavGroup Title="Performance" Icon="@Icons.Material.Filled.Insights" Expanded="false">
-                <MudNavLink Href="performance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Performance summary</MudNavLink>
-                <MudNavLink Href="performance/oee" Icon="@Icons.Material.Filled.Speed">OEE snapshots</MudNavLink>
-                <MudNavLink Href="performance/production-metrics" Icon="@Icons.Material.Filled.Factory">Production metrics</MudNavLink>
-                <MudNavLink Href="performance/maintenance-metrics" Icon="@Icons.Material.Filled.Handyman">Maintenance metrics</MudNavLink>
-                <MudNavLink Href="performance/kpis" Icon="@Icons.Material.Filled.ShowChart">KPIs</MudNavLink>
-                <MudNavLink Href="performance/scorecards" Icon="@Icons.Material.Filled.Dashboard">Scorecards</MudNavLink>
-                <MudNavLink Href="performance/reports" Icon="@Icons.Material.Filled.Description">Reports</MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
-
-    @* ─── Planning ───────────────────────────────────────────────────────────────
-       Forward-looking + cross-cutting tools. The four admin-only items at the
-       bottom of this section run un-bounded queries via SavedQueryRunner — they
-       remain Admin-gated until per-user query timeouts + indexes land. The
-       "Admin tools" caption gives that fence a visible explanation. *@
-    <AuthorizeView>
-        <Authorized>
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.overline" Class="px-4">Planning</MudText>
-            <MudNavLink Href="forecasts" Icon="@Icons.Material.Filled.TrendingUp">Forecasts</MudNavLink>
-            <MudNavLink Href="processes" Icon="@Icons.Material.Filled.AccountTree">Processes</MudNavLink>
-            <MudNavLink Href="tool-slots" Icon="@Icons.Material.Filled.Build">Tool slots</MudNavLink>
-        </Authorized>
-    </AuthorizeView>
-    <AuthorizeView Roles="@AppRoles.Admin">
-        <Authorized>
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-4 mt-2">— Admin tools —</MudText>
-            <MudNavLink Href="queries" Icon="@Icons.Material.Filled.QueryStats">Saved queries</MudNavLink>
-            <MudNavLink Href="kpis" Icon="@Icons.Material.Filled.Dashboard">KPI editor</MudNavLink>
-            <MudNavLink Href="dashboard" Icon="@Icons.Material.Filled.Dashboard">Insights dashboard</MudNavLink>
-            <MudNavLink Href="reports/schedule" Icon="@Icons.Material.Filled.Schedule">Scheduled reports</MudNavLink>
-        </Authorized>
-    </AuthorizeView>
-
-    @* ─── Analytics (AdventureWorks) ───────────────────────────────────────────── *@
-    <AuthorizeView>
-        <Authorized>
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.overline" Class="px-4">Analytics (AdventureWorks)</MudText>
-            <MudNavLink Href="analytics/sales" Icon="@Icons.Material.Filled.AttachMoney">Sales</MudNavLink>
-            <MudNavLink Href="analytics/production" Icon="@Icons.Material.Filled.Factory">Production</MudNavLink>
-            <MudNavLink Href="analytics/hr" Icon="@Icons.Material.Filled.Groups">Human Resources</MudNavLink>
-            <MudNavLink Href="analytics/purchasing" Icon="@Icons.Material.Filled.ShoppingBag">Purchasing</MudNavLink>
-            <MudNavLink Href="analytics/forecasts" Icon="@Icons.Material.Filled.Analytics">Forecasts</MudNavLink>
-            <MudNavLink Href="analytics/processes" Icon="@Icons.Material.Filled.Assessment">Processes</MudNavLink>
-
-            @* ─── Reference data (AdventureWorks) ───────────────────────────────────
-               Only the legacy raw-table groups live here. The 9 manufacturing modules
-               were promoted to "Operations" above. *@
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.overline" Class="px-4">Reference data (AdventureWorks)</MudText>
-            <MudNavGroup Title="Person" Icon="@Icons.Material.Filled.Person" Expanded="false">
+                <MudDivider Class="my-1" />
                 <MudNavLink Href="aw/business-entities" Icon="@Icons.Material.Filled.Fingerprint">Business entities</MudNavLink>
                 <MudNavLink Href="aw/persons" Icon="@Icons.Material.Filled.Person">Persons</MudNavLink>
                 <MudNavLink Href="aw/email-addresses" Icon="@Icons.Material.Filled.Email">Email addresses</MudNavLink>
@@ -152,62 +37,45 @@
                 <MudNavLink Href="aw/phone-number-types" Icon="@Icons.Material.Filled.Phone">Phone number types</MudNavLink>
                 <MudNavLink Href="aw/state-provinces" Icon="@Icons.Material.Filled.Map">State / provinces</MudNavLink>
             </MudNavGroup>
-            <MudNavGroup Title="Production" Icon="@Icons.Material.Filled.Factory" Expanded="false">
-                <MudNavLink Href="aw/products" Icon="@Icons.Material.Filled.Inventory2">Products</MudNavLink>
-                <MudNavLink Href="aw/product-models" Icon="@Icons.Material.Filled.Layers">Product models</MudNavLink>
-                <MudNavLink Href="aw/product-photos" Icon="@Icons.Material.Filled.Image">Product photos</MudNavLink>
-                <MudNavLink Href="aw/product-product-photos" Icon="@Icons.Material.Filled.PhotoLibrary">Product ↔ photo</MudNavLink>
-                <MudNavLink Href="aw/product-model-illustrations" Icon="@Icons.Material.Filled.Draw">Model ↔ illustration</MudNavLink>
-                <MudNavLink Href="aw/product-model-product-description-cultures" Icon="@Icons.Material.Filled.Translate">Model ↔ desc ↔ culture</MudNavLink>
-                <MudNavLink Href="aw/product-reviews" Icon="@Icons.Material.Filled.RateReview">Product reviews</MudNavLink>
-                <MudNavLink Href="aw/product-inventories" Icon="@Icons.Material.Filled.Warehouse">Product inventory</MudNavLink>
-                <MudNavLink Href="aw/product-list-price-histories" Icon="@Icons.Material.Filled.Sell">List price history</MudNavLink>
+
+            <MudNavGroup Title="Engineering" Icon="@Icons.Material.Filled.Architecture" Expanded="false">
+                <MudNavLink Href="engineering" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Engineering summary</MudNavLink>
+                <MudNavLink Href="engineering/ecos" Icon="@Icons.Material.Filled.ChangeCircle">Change orders</MudNavLink>
+                <MudNavLink Href="engineering/routings" Icon="@Icons.Material.Filled.Timeline">Routings</MudNavLink>
+                <MudNavLink Href="engineering/boms" Icon="@Icons.Material.Filled.AccountTree">Bills of materials</MudNavLink>
+                <MudNavLink Href="engineering/documents" Icon="@Icons.Material.Filled.Description">Documents</MudNavLink>
+                <MudNavLink Href="engineering/deviations" Icon="@Icons.Material.Filled.RuleFolder">Deviations</MudNavLink>
+                <MudDivider Class="my-1" />
+                <MudNavLink Href="aw/bill-of-materials" Icon="@Icons.Material.Filled.AccountTree">Bill of materials (catalog)</MudNavLink>
                 <MudNavLink Href="aw/illustrations" Icon="@Icons.Material.Filled.Brush">Illustrations</MudNavLink>
                 <MudNavLink Href="aw/cultures" Icon="@Icons.Material.Filled.Translate">Cultures</MudNavLink>
-                <MudNavLink Href="aw/locations" Icon="@Icons.Material.Filled.Place">Locations</MudNavLink>
-                <MudNavLink Href="aw/product-categories" Icon="@Icons.Material.Filled.Category">Product categories</MudNavLink>
-                <MudNavLink Href="aw/product-subcategories" Icon="@Icons.Material.Filled.Segment">Product subcategories</MudNavLink>
-                <MudNavLink Href="aw/product-descriptions" Icon="@Icons.Material.Filled.Description">Product descriptions</MudNavLink>
-                <MudNavLink Href="aw/product-cost-histories" Icon="@Icons.Material.Filled.PriceChange">Product cost history</MudNavLink>
-                <MudNavLink Href="aw/bill-of-materials" Icon="@Icons.Material.Filled.AccountTree">Bill of materials</MudNavLink>
-                <MudNavLink Href="aw/work-orders" Icon="@Icons.Material.Filled.Construction">Work orders</MudNavLink>
-                <MudNavLink Href="aw/work-order-routings" Icon="@Icons.Material.Filled.Route">Work order routings</MudNavLink>
-                <MudNavLink Href="aw/transaction-histories" Icon="@Icons.Material.Filled.Receipt">Transaction history</MudNavLink>
-                <MudNavLink Href="aw/transaction-history-archives" Icon="@Icons.Material.Filled.Archive">Transaction archive</MudNavLink>
-                <MudNavLink Href="aw/documents" Icon="@Icons.Material.Filled.InsertDriveFile">Documents</MudNavLink>
-                <MudNavLink Href="aw/product-documents" Icon="@Icons.Material.Filled.FolderOpen">Product ↔ document</MudNavLink>
-                <MudNavLink Href="aw/scrap-reasons" Icon="@Icons.Material.Filled.RemoveCircle">Scrap reasons</MudNavLink>
                 <MudNavLink Href="aw/unit-measures" Icon="@Icons.Material.Filled.Straighten">Units of measure</MudNavLink>
             </MudNavGroup>
-            <MudNavGroup Title="Sales" Icon="@Icons.Material.Filled.AttachMoney" Expanded="false">
-                <MudNavLink Href="aw/sales-order-headers" Icon="@Icons.Material.Filled.Receipt">Sales orders</MudNavLink>
-                <MudNavLink Href="aw/sales-order-details" Icon="@Icons.Material.Filled.ListAlt">Order details</MudNavLink>
-                <MudNavLink Href="aw/credit-cards" Icon="@Icons.Material.Filled.CreditCard">Credit cards</MudNavLink>
-                <MudNavLink Href="aw/person-credit-cards" Icon="@Icons.Material.Filled.PersonAdd">Person ↔ credit card</MudNavLink>
-                <MudNavLink Href="aw/stores" Icon="@Icons.Material.Filled.Store">Stores</MudNavLink>
-                <MudNavLink Href="aw/sales-territory-histories" Icon="@Icons.Material.Filled.Timeline">Territory history</MudNavLink>
-                <MudNavLink Href="aw/special-offer-products" Icon="@Icons.Material.Filled.Loyalty">Offer ↔ product</MudNavLink>
-                <MudNavLink Href="aw/customers" Icon="@Icons.Material.Filled.PeopleAlt">Customers</MudNavLink>
-                <MudNavLink Href="aw/sales-persons" Icon="@Icons.Material.Filled.Badge">Sales persons</MudNavLink>
-                <MudNavLink Href="aw/sales-person-quota-histories" Icon="@Icons.Material.Filled.TrendingUp">Quota history</MudNavLink>
-                <MudNavLink Href="aw/sales-order-header-sales-reasons" Icon="@Icons.Material.Filled.Link">Order ↔ reason</MudNavLink>
-                <MudNavLink Href="aw/currencies" Icon="@Icons.Material.Filled.Payments">Currencies</MudNavLink>
-                <MudNavLink Href="aw/currency-rates" Icon="@Icons.Material.Filled.CurrencyExchange">Currency rates</MudNavLink>
-                <MudNavLink Href="aw/country-region-currencies" Icon="@Icons.Material.Filled.Public">Country ↔ currency</MudNavLink>
-                <MudNavLink Href="aw/sales-reasons" Icon="@Icons.Material.Filled.QuestionAnswer">Sales reasons</MudNavLink>
-                <MudNavLink Href="aw/sales-territories" Icon="@Icons.Material.Filled.Map">Sales territories</MudNavLink>
-                <MudNavLink Href="aw/sales-tax-rates" Icon="@Icons.Material.Filled.Percent">Sales tax rates</MudNavLink>
-                <MudNavLink Href="aw/special-offers" Icon="@Icons.Material.Filled.LocalOffer">Special offers</MudNavLink>
-                <MudNavLink Href="aw/shopping-cart-items" Icon="@Icons.Material.Filled.ShoppingCart">Shopping cart items</MudNavLink>
-            </MudNavGroup>
+
             <MudNavGroup Title="Purchasing" Icon="@Icons.Material.Filled.ShoppingBag" Expanded="false">
+                <MudNavLink Href="analytics/purchasing" Icon="@Icons.Material.Filled.Analytics">Purchasing analytics</MudNavLink>
+                <MudDivider Class="my-1" />
                 <MudNavLink Href="aw/vendors" Icon="@Icons.Material.Filled.Business">Vendors</MudNavLink>
                 <MudNavLink Href="aw/product-vendors" Icon="@Icons.Material.Filled.Link">Product ↔ vendor</MudNavLink>
                 <MudNavLink Href="aw/purchase-order-headers" Icon="@Icons.Material.Filled.Receipt">Purchase orders</MudNavLink>
                 <MudNavLink Href="aw/purchase-order-details" Icon="@Icons.Material.Filled.ListAlt">PO details</MudNavLink>
                 <MudNavLink Href="aw/ship-methods" Icon="@Icons.Material.Filled.LocalShipping">Ship methods</MudNavLink>
             </MudNavGroup>
-            <MudNavGroup Title="Human Resources" Icon="@Icons.Material.Filled.Groups" Expanded="false">
+
+            <MudNavGroup Title="Workforce" Icon="@Icons.Material.Filled.Groups" Expanded="false">
+                <MudNavLink Href="workforce" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Workforce summary</MudNavLink>
+                <MudNavLink Href="analytics/hr" Icon="@Icons.Material.Filled.Analytics">HR analytics</MudNavLink>
+                <MudNavLink Href="workforce/qualification-alerts" Icon="@Icons.Material.Filled.NotificationsActive">Alert inbox</MudNavLink>
+                <MudNavLink Href="workforce/training-courses" Icon="@Icons.Material.Filled.School">Training courses</MudNavLink>
+                <MudNavLink Href="workforce/training-records" Icon="@Icons.Material.Filled.History">Training records</MudNavLink>
+                <MudNavLink Href="workforce/qualifications" Icon="@Icons.Material.Filled.Badge">Qualifications</MudNavLink>
+                <MudNavLink Href="workforce/employee-qualifications" Icon="@Icons.Material.Filled.CardMembership">Employee quals</MudNavLink>
+                <MudNavLink Href="workforce/station-qualifications" Icon="@Icons.Material.Filled.WorkspacePremium">Station requirements</MudNavLink>
+                <MudNavLink Href="workforce/attendance" Icon="@Icons.Material.Filled.HowToReg">Attendance</MudNavLink>
+                <MudNavLink Href="workforce/leave-requests" Icon="@Icons.Material.Filled.EventBusy">Leave requests</MudNavLink>
+                <MudNavLink Href="workforce/handover-notes" Icon="@Icons.Material.Filled.EditNote">Shift handover</MudNavLink>
+                <MudNavLink Href="workforce/announcements" Icon="@Icons.Material.Filled.Campaign">Announcements</MudNavLink>
+                <MudDivider Class="my-1" />
                 <MudNavLink Href="aw/employees" Icon="@Icons.Material.Filled.Badge">Employees</MudNavLink>
                 <MudNavLink Href="aw/employee-pay-histories" Icon="@Icons.Material.Filled.Payments">Pay history</MudNavLink>
                 <MudNavLink Href="aw/job-candidates" Icon="@Icons.Material.Filled.PersonSearch">Job candidates</MudNavLink>
@@ -216,9 +84,142 @@
                 <MudNavLink Href="aw/employee-department-histories" Icon="@Icons.Material.Filled.History">Employee dept history</MudNavLink>
             </MudNavGroup>
 
-            @* ─── Tools ─────────────────────────────────────────────────────────────
-               Browsing / dev / import utilities. Renamed from "Explore" to better
-               reflect what these actually do. *@
+            <MudNavGroup Title="Production execution" Icon="@Icons.Material.Filled.Engineering" Expanded="false">
+                <MudNavLink Href="mes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">MES summary</MudNavLink>
+                <MudNavLink Href="analytics/production" Icon="@Icons.Material.Filled.Analytics">Production analytics</MudNavLink>
+                <MudNavLink Href="mes/runs" Icon="@Icons.Material.Filled.PlayCircle">Production runs</MudNavLink>
+                <MudNavLink Href="mes/downtime" Icon="@Icons.Material.Filled.Timer">Downtime events</MudNavLink>
+                <MudNavLink Href="mes/downtime/reasons" Icon="@Icons.Material.Filled.Rule">Downtime reason codes</MudNavLink>
+                <MudNavLink Href="mes/instructions" Icon="@Icons.Material.Filled.MenuBook">Work instructions</MudNavLink>
+                <MudNavLink Href="mes/oee" Icon="@Icons.Material.Filled.Speed">OEE rollup</MudNavLink>
+                <MudDivider Class="my-1" />
+                <MudNavLink Href="aw/work-orders" Icon="@Icons.Material.Filled.Construction">Manufacturing work orders</MudNavLink>
+                <MudNavLink Href="aw/work-order-routings" Icon="@Icons.Material.Filled.Route">Work order routings</MudNavLink>
+                <MudNavLink Href="aw/transaction-histories" Icon="@Icons.Material.Filled.Receipt">Transaction history</MudNavLink>
+                <MudNavLink Href="aw/transaction-history-archives" Icon="@Icons.Material.Filled.Archive">Transaction archive</MudNavLink>
+                <MudNavLink Href="aw/scrap-reasons" Icon="@Icons.Material.Filled.RemoveCircle">Scrap reasons</MudNavLink>
+                <MudNavLink Href="aw/documents" Icon="@Icons.Material.Filled.InsertDriveFile">Product documents</MudNavLink>
+                <MudNavLink Href="aw/product-documents" Icon="@Icons.Material.Filled.FolderOpen">Product ↔ document</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Quality" Icon="@Icons.Material.Filled.Verified" Expanded="false">
+                <MudNavLink Href="quality" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Quality summary</MudNavLink>
+                <MudNavLink Href="quality/inspection-plans" Icon="@Icons.Material.Filled.Rule">Inspection plans</MudNavLink>
+                <MudNavLink Href="quality/inspections" Icon="@Icons.Material.Filled.FactCheck">Inspections</MudNavLink>
+                <MudNavLink Href="quality/ncrs" Icon="@Icons.Material.Filled.Warning">Non-conformances</MudNavLink>
+                <MudNavLink Href="quality/capa" Icon="@Icons.Material.Filled.Engineering">CAPA cases</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Maintenance" Icon="@Icons.Material.Filled.Build" Expanded="false">
+                <MudNavLink Href="maintenance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Maintenance summary</MudNavLink>
+                <MudNavLink Href="maintenance/work-orders" Icon="@Icons.Material.Filled.Assignment">Work orders</MudNavLink>
+                <MudNavLink Href="maintenance/pm-schedules" Icon="@Icons.Material.Filled.Schedule">PM schedules</MudNavLink>
+                <MudNavLink Href="maintenance/asset-profiles" Icon="@Icons.Material.Filled.PrecisionManufacturing">Asset profiles</MudNavLink>
+                <MudNavLink Href="maintenance/spare-parts" Icon="@Icons.Material.Filled.Inventory">Spare parts</MudNavLink>
+                <MudNavLink Href="maintenance/meter-readings" Icon="@Icons.Material.Filled.Speed">Meter readings</MudNavLink>
+                <MudNavLink Href="maintenance/logs" Icon="@Icons.Material.Filled.EventNote">Maintenance log</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Inventory" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
+                <MudNavLink Href="inventory" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Inventory">Inventory explorer</MudNavLink>
+                <MudNavLink Href="inventory/transactions" Icon="@Icons.Material.Filled.ReceiptLong">Transaction explorer</MudNavLink>
+                <MudNavLink Href="inventory/adjustments" Icon="@Icons.Material.Filled.Edit">Adjustments</MudNavLink>
+                <MudNavLink Href="inventory/reports" Icon="@Icons.Material.Filled.Assessment">Status reports</MudNavLink>
+                <MudNavLink Href="inventory/items" Icon="@Icons.Material.Filled.Category">Items</MudNavLink>
+                <MudNavLink Href="inventory/locations" Icon="@Icons.Material.Filled.Warehouse">Locations</MudNavLink>
+                <MudNavLink Href="inventory/transaction-types" Icon="@Icons.Material.Filled.Rule">Transaction types</MudNavLink>
+                <MudNavLink Href="inventory/outbox" Icon="@Icons.Material.Filled.Outbox">Outbox</MudNavLink>
+                <MudNavLink Href="inventory/queue" Icon="@Icons.Material.Filled.QueuePlayNext">Inbound queue</MudNavLink>
+                <MudDivider Class="my-1" />
+                <MudNavLink Href="aw/products" Icon="@Icons.Material.Filled.Inventory2">Products</MudNavLink>
+                <MudNavLink Href="aw/product-models" Icon="@Icons.Material.Filled.Layers">Product models</MudNavLink>
+                <MudNavLink Href="aw/product-categories" Icon="@Icons.Material.Filled.Category">Product categories</MudNavLink>
+                <MudNavLink Href="aw/product-subcategories" Icon="@Icons.Material.Filled.Segment">Product subcategories</MudNavLink>
+                <MudNavLink Href="aw/product-descriptions" Icon="@Icons.Material.Filled.Description">Product descriptions</MudNavLink>
+                <MudNavLink Href="aw/product-model-product-description-cultures" Icon="@Icons.Material.Filled.Translate">Model ↔ desc ↔ culture</MudNavLink>
+                <MudNavLink Href="aw/product-model-illustrations" Icon="@Icons.Material.Filled.Draw">Model ↔ illustration</MudNavLink>
+                <MudNavLink Href="aw/product-photos" Icon="@Icons.Material.Filled.Image">Product photos</MudNavLink>
+                <MudNavLink Href="aw/product-product-photos" Icon="@Icons.Material.Filled.PhotoLibrary">Product ↔ photo</MudNavLink>
+                <MudNavLink Href="aw/product-reviews" Icon="@Icons.Material.Filled.RateReview">Product reviews</MudNavLink>
+                <MudNavLink Href="aw/product-inventories" Icon="@Icons.Material.Filled.Warehouse">Product inventory</MudNavLink>
+                <MudNavLink Href="aw/product-list-price-histories" Icon="@Icons.Material.Filled.Sell">List price history</MudNavLink>
+                <MudNavLink Href="aw/product-cost-histories" Icon="@Icons.Material.Filled.PriceChange">Product cost history</MudNavLink>
+                <MudNavLink Href="aw/locations" Icon="@Icons.Material.Filled.Place">Storage locations</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Logistics" Icon="@Icons.Material.Filled.LocalShipping" Expanded="false">
+                <MudNavLink Href="logistics" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Logistics summary</MudNavLink>
+                <MudNavLink Href="logistics/receipts" Icon="@Icons.Material.Filled.Inbox">Goods receipts</MudNavLink>
+                <MudNavLink Href="logistics/shipments" Icon="@Icons.Material.Filled.Outbox">Shipments</MudNavLink>
+                <MudNavLink Href="logistics/transfers" Icon="@Icons.Material.Filled.SyncAlt">Stock transfers</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Sales" Icon="@Icons.Material.Filled.AttachMoney" Expanded="false">
+                <MudNavLink Href="analytics/sales" Icon="@Icons.Material.Filled.Analytics">Sales analytics</MudNavLink>
+                <MudDivider Class="my-1" />
+                <MudNavLink Href="aw/sales-order-headers" Icon="@Icons.Material.Filled.Receipt">Sales orders</MudNavLink>
+                <MudNavLink Href="aw/sales-order-details" Icon="@Icons.Material.Filled.ListAlt">Order details</MudNavLink>
+                <MudNavLink Href="aw/customers" Icon="@Icons.Material.Filled.PeopleAlt">Customers</MudNavLink>
+                <MudNavLink Href="aw/sales-persons" Icon="@Icons.Material.Filled.Badge">Sales persons</MudNavLink>
+                <MudNavLink Href="aw/stores" Icon="@Icons.Material.Filled.Store">Stores</MudNavLink>
+                <MudNavLink Href="aw/sales-territories" Icon="@Icons.Material.Filled.Map">Sales territories</MudNavLink>
+                <MudNavLink Href="aw/sales-territory-histories" Icon="@Icons.Material.Filled.Timeline">Territory history</MudNavLink>
+                <MudNavLink Href="aw/sales-person-quota-histories" Icon="@Icons.Material.Filled.TrendingUp">Quota history</MudNavLink>
+                <MudNavLink Href="aw/sales-reasons" Icon="@Icons.Material.Filled.QuestionAnswer">Sales reasons</MudNavLink>
+                <MudNavLink Href="aw/sales-order-header-sales-reasons" Icon="@Icons.Material.Filled.Link">Order ↔ reason</MudNavLink>
+                <MudNavLink Href="aw/currencies" Icon="@Icons.Material.Filled.Payments">Currencies</MudNavLink>
+                <MudNavLink Href="aw/currency-rates" Icon="@Icons.Material.Filled.CurrencyExchange">Currency rates</MudNavLink>
+                <MudNavLink Href="aw/country-region-currencies" Icon="@Icons.Material.Filled.Public">Country ↔ currency</MudNavLink>
+                <MudNavLink Href="aw/sales-tax-rates" Icon="@Icons.Material.Filled.Percent">Sales tax rates</MudNavLink>
+                <MudNavLink Href="aw/special-offers" Icon="@Icons.Material.Filled.LocalOffer">Special offers</MudNavLink>
+                <MudNavLink Href="aw/special-offer-products" Icon="@Icons.Material.Filled.Loyalty">Offer ↔ product</MudNavLink>
+                <MudNavLink Href="aw/shopping-cart-items" Icon="@Icons.Material.Filled.ShoppingCart">Shopping cart items</MudNavLink>
+                <MudNavLink Href="aw/credit-cards" Icon="@Icons.Material.Filled.CreditCard">Credit cards</MudNavLink>
+                <MudNavLink Href="aw/person-credit-cards" Icon="@Icons.Material.Filled.PersonAdd">Person ↔ credit card</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Performance" Icon="@Icons.Material.Filled.Insights" Expanded="false">
+                <MudNavLink Href="performance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Performance summary</MudNavLink>
+                <MudNavLink Href="performance/oee" Icon="@Icons.Material.Filled.Speed">OEE snapshots</MudNavLink>
+                <MudNavLink Href="performance/production-metrics" Icon="@Icons.Material.Filled.Factory">Production metrics</MudNavLink>
+                <MudNavLink Href="performance/maintenance-metrics" Icon="@Icons.Material.Filled.Handyman">Maintenance metrics</MudNavLink>
+                <MudNavLink Href="performance/kpis" Icon="@Icons.Material.Filled.ShowChart">KPIs</MudNavLink>
+                <MudNavLink Href="performance/scorecards" Icon="@Icons.Material.Filled.Dashboard">Scorecards</MudNavLink>
+                <MudNavLink Href="performance/reports" Icon="@Icons.Material.Filled.Description">Reports</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    @* ─── Planning ───────────────────────────────────────────────────────────────
+       Forecasts and processes pair with their analytics dashboards. The four
+       admin-only items at the bottom run un-bounded queries via SavedQueryRunner —
+       Admin-gated until per-user query timeouts + indexes land. *@
+    <AuthorizeView>
+        <Authorized>
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.overline" Class="px-4">Planning</MudText>
+            <MudNavLink Href="forecasts" Icon="@Icons.Material.Filled.TrendingUp">Forecasts</MudNavLink>
+            <MudNavLink Href="analytics/forecasts" Icon="@Icons.Material.Filled.Analytics">Forecast analytics</MudNavLink>
+            <MudNavLink Href="processes" Icon="@Icons.Material.Filled.AccountTree">Processes</MudNavLink>
+            <MudNavLink Href="analytics/processes" Icon="@Icons.Material.Filled.Assessment">Process analytics</MudNavLink>
+            <MudNavLink Href="tool-slots" Icon="@Icons.Material.Filled.Build">Tool slots</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="@AppRoles.Admin">
+        <Authorized>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-4 mt-2">— Admin tools —</MudText>
+            <MudNavLink Href="queries" Icon="@Icons.Material.Filled.QueryStats">Saved queries</MudNavLink>
+            <MudNavLink Href="kpis" Icon="@Icons.Material.Filled.Dashboard">KPI editor</MudNavLink>
+            <MudNavLink Href="dashboard" Icon="@Icons.Material.Filled.Dashboard">Insights dashboard</MudNavLink>
+            <MudNavLink Href="reports/schedule" Icon="@Icons.Material.Filled.Schedule">Scheduled reports</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    @* ─── Tools ─────────────────────────────────────────────────────────────────
+       Browsing / dev / import utilities. Geo map and product gallery used to be
+       mixed with analytics; they're better grouped here as standalone tools. *@
+    <AuthorizeView>
+        <Authorized>
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.overline" Class="px-4">Tools</MudText>
             <MudNavLink Href="analytics/geo" Icon="@Icons.Material.Filled.Map">Geographic map</MudNavLink>
@@ -246,11 +247,7 @@
         </Authorized>
     </AuthorizeView>
 
-    @* ─── Account ───────────────────────────────────────────────────────────────
-       Personal-only items at the bottom: insights into your own usage + your
-       saved queries / notification preferences / account settings. Database
-       explorer lives here because it's the user-defined-query workbench, not
-       a global navigation target. *@
+    @* ─── Account ─────────────────────────────────────────────────────────────── *@
     <AuthorizeView>
         <Authorized>
             <MudDivider Class="my-2" />
