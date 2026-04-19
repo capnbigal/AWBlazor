@@ -305,23 +305,32 @@
     /// <summary>
     /// Bar-style sparkline for a 30-day per-module count series. Bars instead of a line so
     /// sparse activity (most days zero) is still readable — flat-line sparklines hide that.
+    /// Labels "30d ago" / "15d" / "today" anchor the x-axis without cluttering the chart;
+    /// per-bar dates would overlap at 30 bars across a 320px-wide card.
     /// </summary>
     private static string BuildModuleTrendSvg(IReadOnlyList<int> bins)
     {
         const int width = 320;
-        const int height = 36;
+        const int chartHeight = 36;
+        const int labelStripHeight = 14;
+        const int height = chartHeight + labelStripHeight;
         const int padding = 2;
         var max = Math.Max(1, bins.Max());
         var bandW = (width - 2.0 * padding) / bins.Count;
         var sb = new System.Text.StringBuilder();
-        sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:36px;display:block;margin-top:4px"">");
+        sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""xMidYMid meet"" style=""max-height:{height}px;display:block;margin-top:4px"">");
         for (var i = 0; i < bins.Count; i++)
         {
             if (bins[i] == 0) continue;
             var x = padding + i * bandW;
-            var h = bins[i] / (double)max * (height - 2 * padding);
-            sb.Append($@"<rect x=""{x:F1}"" y=""{height - padding - h:F1}"" width=""{bandW * 0.85:F1}"" height=""{h:F1}"" fill=""var(--mud-palette-primary)"" opacity=""0.7""/>");
+            var h = bins[i] / (double)max * (chartHeight - 2 * padding);
+            sb.Append($@"<rect x=""{x:F1}"" y=""{chartHeight - padding - h:F1}"" width=""{bandW * 0.85:F1}"" height=""{h:F1}"" fill=""var(--mud-palette-primary)"" opacity=""0.7""/>");
         }
+        // Three anchor labels along the x-axis so users can orient the timeline at a glance.
+        var labelY = chartHeight + 10;
+        sb.Append($@"<text x=""{padding}"" y=""{labelY}"" text-anchor=""start"" font-size=""8"" fill=""var(--mud-palette-text-secondary)"">30d ago</text>");
+        sb.Append($@"<text x=""{width / 2}"" y=""{labelY}"" text-anchor=""middle"" font-size=""8"" fill=""var(--mud-palette-text-secondary)"">15d</text>");
+        sb.Append($@"<text x=""{width - padding}"" y=""{labelY}"" text-anchor=""end"" font-size=""8"" fill=""var(--mud-palette-text-secondary)"">today</text>");
         sb.Append("</svg>");
         return sb.ToString();
     }
@@ -364,7 +373,9 @@
             }
 
             const int width = 320;
-            const int height = 80;
+            const int chartHeight = 80;
+            const int labelStripHeight = 14;
+            const int height = chartHeight + labelStripHeight;
             const int padding = 6;
             var max = scale ?? Math.Max(1m, points.Max(p => p.Value));
             var min = points.Min(p => p.Value);
@@ -373,17 +384,27 @@
             var coords = points.Select((p, i) =>
             {
                 var x = padding + (decimal)i * (width - 2m * padding) / Math.Max(1m, points.Count - 1);
-                var y = height - padding - ((p.Value - min) / range) * (height - 2m * padding);
+                var y = chartHeight - padding - ((p.Value - min) / range) * (chartHeight - 2m * padding);
                 return ($"{x:F1}", $"{y:F1}");
             }).ToList();
 
             var path = string.Join(" ", coords.Select((c, i) => (i == 0 ? "M" : "L") + c.Item1 + "," + c.Item2));
-            var areaPath = path + $" L{coords[^1].Item1},{height - padding} L{coords[0].Item1},{height - padding} Z";
+            var areaPath = path + $" L{coords[^1].Item1},{chartHeight - padding} L{coords[0].Item1},{chartHeight - padding} Z";
+
+            // One MM-dd label per point — at 7 points spread across 320px there's ~45px per
+            // label which comfortably fits "04-19" at 9px font.
+            var labels = new System.Text.StringBuilder();
+            var labelY = chartHeight + 10;
+            for (var i = 0; i < coords.Count; i++)
+            {
+                labels.Append($@"<text x=""{coords[i].Item1}"" y=""{labelY}"" text-anchor=""middle"" font-size=""9"" fill=""var(--mud-palette-text-secondary)"">{points[i].Date:MM-dd}</text>");
+            }
 
             builder.AddMarkupContent(0, $@"
-<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:80px;display:block"">
+<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""xMidYMid meet"" style=""max-height:{height}px;display:block"">
     <path d=""{areaPath}"" fill=""rgba(31,111,235,0.1)"" />
     <path d=""{path}"" fill=""none"" stroke=""var(--mud-palette-primary)"" stroke-width=""2"" />
+    {labels}
 </svg>");
 
             builder.OpenComponent<MudStack>(10);
@@ -417,19 +438,25 @@
             }
 
             const int width = 320;
-            const int height = 80;
+            const int chartHeight = 80;
+            const int labelStripHeight = 14;
+            const int height = chartHeight + labelStripHeight;
             const int padding = 6;
             var max = Math.Max(1, trend.Max(t => Math.Max(t.Raised, t.Completed)));
             var bandW = (width - 2 * padding) / (double)trend.Count;
+            var labelY = chartHeight + 10;
             var sb = new System.Text.StringBuilder();
-            sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:80px;display:block"">");
+            sb.Append($@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""xMidYMid meet"" style=""max-height:{height}px;display:block"">");
             for (var i = 0; i < trend.Count; i++)
             {
                 var x = padding + i * bandW;
-                var raisedH = trend[i].Raised / (double)max * (height - 2 * padding);
-                var completedH = trend[i].Completed / (double)max * (height - 2 * padding);
-                sb.Append($@"<rect x=""{x:F1}"" y=""{height - padding - raisedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{raisedH:F1}"" fill=""var(--mud-palette-warning)""/>");
-                sb.Append($@"<rect x=""{x + bandW * 0.45:F1}"" y=""{height - padding - completedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{completedH:F1}"" fill=""var(--mud-palette-success)""/>");
+                var raisedH = trend[i].Raised / (double)max * (chartHeight - 2 * padding);
+                var completedH = trend[i].Completed / (double)max * (chartHeight - 2 * padding);
+                sb.Append($@"<rect x=""{x:F1}"" y=""{chartHeight - padding - raisedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{raisedH:F1}"" fill=""var(--mud-palette-warning)""/>");
+                sb.Append($@"<rect x=""{x + bandW * 0.45:F1}"" y=""{chartHeight - padding - completedH:F1}"" width=""{bandW * 0.4:F1}"" height=""{completedH:F1}"" fill=""var(--mud-palette-success)""/>");
+                // MM-dd label centred beneath each paired-bar group.
+                var labelX = x + bandW / 2.0;
+                sb.Append($@"<text x=""{labelX:F1}"" y=""{labelY}"" text-anchor=""middle"" font-size=""9"" fill=""var(--mud-palette-text-secondary)"">{trend[i].Date:MM-dd}</text>");
             }
             sb.Append("</svg>");
             builder.AddMarkupContent(0, sb.ToString());
