@@ -282,80 +282,140 @@ public sealed class PlantDashboardService : IPlantDashboardService
         var assets = await db.Assets.AsNoTracking()
             .CountAsync(a => a.Status == AWBlazorApp.Features.Enterprise.Domain.AssetStatus.Active, ct);
 
+        // ── 30-day per-module trends ─────────────────────────────────────────
+        // Pull only the date column from each table for the trailing 30 days, then bin in
+        // memory. Cheap because the per-module windows are small and the dashboard is
+        // cached 5 min — most page loads don't run these queries at all.
+        var thirtyDaysAgo = nowUtc.AddDays(-30);
+        var enterpriseEmpty = new int[30]; // Enterprise has no obvious time series; show flat.
+
+        var attendance30 = BinByDay(await db.AttendanceEvents.AsNoTracking()
+            .Where(a => a.ShiftDate >= DateOnly.FromDateTime(thirtyDaysAgo))
+            .Select(a => a.ShiftDate.ToDateTime(TimeOnly.MinValue))
+            .ToListAsync(ct), thirtyDaysAgo);
+
+        var ecos30 = BinByDay(await db.EngineeringChangeOrders.AsNoTracking()
+            .Where(e => e.RaisedAt >= thirtyDaysAgo).Select(e => e.RaisedAt).ToListAsync(ct), thirtyDaysAgo);
+
+        var wos30 = BinByDay(await db.MaintenanceWorkOrders.AsNoTracking()
+            .Where(w => w.RaisedAt >= thirtyDaysAgo).Select(w => w.RaisedAt).ToListAsync(ct), thirtyDaysAgo);
+
+        var oeeSnap30 = BinByDay(await db.OeeSnapshots.AsNoTracking()
+            .Where(s => s.PeriodKind == PerformancePeriodKind.Day && s.PeriodStart >= thirtyDaysAgo)
+            .Select(s => s.PeriodStart).ToListAsync(ct), thirtyDaysAgo);
+
+        var ncrs30 = BinByDay(await db.NonConformances.AsNoTracking()
+            .Where(n => n.ModifiedDate >= thirtyDaysAgo).Select(n => n.ModifiedDate).ToListAsync(ct), thirtyDaysAgo);
+
+        var runs30 = BinByDay(await db.ProductionRuns.AsNoTracking()
+            .Where(r => r.ActualStartAt != null && r.ActualStartAt >= thirtyDaysAgo)
+            .Select(r => r.ActualStartAt!.Value).ToListAsync(ct), thirtyDaysAgo);
+
+        var receipts30 = BinByDay(await db.GoodsReceipts.AsNoTracking()
+            .Where(r => r.ReceivedAt >= thirtyDaysAgo).Select(r => r.ReceivedAt).ToListAsync(ct), thirtyDaysAgo);
+
+        var invTxns30 = BinByDay(await db.InventoryTransactions.AsNoTracking()
+            .Where(t => t.PostedAt >= thirtyDaysAgo).Select(t => t.PostedAt).ToListAsync(ct), thirtyDaysAgo);
+
         return new List<ModuleHealthDto>
         {
             new("Workforce", iconWorkforce, "workforce", "Training, qualifications, attendance, comms",
                 new[]
                 {
-                    new MiniStatDto("Present today", attendanceTodayPresent.ToString("N0"), "Success"),
-                    new MiniStatDto("Open alerts", workforceCriticality.ToString("N0"), workforceCriticality > 0 ? "Error" : null),
-                    new MiniStatDto("Pending leave", workforcePendingLeaves.ToString("N0"), workforcePendingLeaves > 0 ? "Warning" : null),
-                }),
+                    new MiniStatDto("Present today", attendanceTodayPresent.ToString("N0"), "Success", "workforce/attendance"),
+                    new MiniStatDto("Open alerts", workforceCriticality.ToString("N0"), workforceCriticality > 0 ? "Error" : null, "workforce/qualification-alerts"),
+                    new MiniStatDto("Pending leave", workforcePendingLeaves.ToString("N0"), workforcePendingLeaves > 0 ? "Warning" : null, "workforce/leave-requests"),
+                },
+                attendance30, "Attendance / day"),
 
             new("Engineering", iconEngineering, "engineering", "ECOs, routings, BOMs, deviations",
                 new[]
                 {
-                    new MiniStatDto("Draft ECOs", ecosDraft.ToString("N0"), null),
-                    new MiniStatDto("Under review", ecosReview.ToString("N0"), ecosReview > 0 ? "Warning" : null),
-                    new MiniStatDto("Active BOMs", activeBoms.ToString("N0"), null),
-                    new MiniStatDto("Pending deviations", pendingDeviations.ToString("N0"), pendingDeviations > 0 ? "Warning" : null),
-                }),
+                    new MiniStatDto("Draft ECOs", ecosDraft.ToString("N0"), null, "engineering/ecos?status=Draft"),
+                    new MiniStatDto("Under review", ecosReview.ToString("N0"), ecosReview > 0 ? "Warning" : null, "engineering/ecos?status=UnderReview"),
+                    new MiniStatDto("Active BOMs", activeBoms.ToString("N0"), null, "engineering/boms"),
+                    new MiniStatDto("Pending deviations", pendingDeviations.ToString("N0"), pendingDeviations > 0 ? "Warning" : null, "engineering/deviations"),
+                },
+                ecos30, "ECOs raised / day"),
 
             new("Maintenance", iconMaintenance, "maintenance", "Work orders, PM schedules, spares",
                 new[]
                 {
-                    new MiniStatDto("In progress", woInProgress.ToString("N0"), woInProgress > 0 ? "Warning" : null),
-                    new MiniStatDto("Scheduled", woScheduled.ToString("N0"), null),
-                    new MiniStatDto("Active PMs", pmsActive.ToString("N0"), null),
-                }),
+                    new MiniStatDto("In progress", woInProgress.ToString("N0"), woInProgress > 0 ? "Warning" : null, "maintenance/work-orders?status=InProgress"),
+                    new MiniStatDto("Scheduled", woScheduled.ToString("N0"), null, "maintenance/work-orders?status=Scheduled"),
+                    new MiniStatDto("Active PMs", pmsActive.ToString("N0"), null, "maintenance/pm-schedules"),
+                },
+                wos30, "WOs raised / day"),
 
             new("Performance", iconPerformance, "performance", "OEE, KPIs, scorecards",
                 new[]
                 {
-                    new MiniStatDto("KPIs on target", kpisOnTarget.ToString("N0"), "Success"),
-                    new MiniStatDto("KPIs warning", kpisWarning.ToString("N0"), kpisWarning > 0 ? "Warning" : null),
-                    new MiniStatDto("KPIs critical", kpisCritical.ToString("N0"), kpisCritical > 0 ? "Error" : null),
-                }),
+                    new MiniStatDto("KPIs on target", kpisOnTarget.ToString("N0"), "Success", "performance/kpis"),
+                    new MiniStatDto("KPIs warning", kpisWarning.ToString("N0"), kpisWarning > 0 ? "Warning" : null, "performance/kpis"),
+                    new MiniStatDto("KPIs critical", kpisCritical.ToString("N0"), kpisCritical > 0 ? "Error" : null, "performance/kpis"),
+                },
+                oeeSnap30, "OEE snapshots / day"),
 
             new("Quality", iconQuality, "quality", "Inspections, NCRs, CAPA",
                 new[]
                 {
-                    new MiniStatDto("Pending insp", inspectionsPending.ToString("N0"), null),
-                    new MiniStatDto("In-progress insp", inspectionsInProgress.ToString("N0"), inspectionsInProgress > 0 ? "Info" : null),
-                    new MiniStatDto("Open NCRs", ncrsOpen.ToString("N0"), ncrsOpen > 0 ? "Error" : null),
-                    new MiniStatDto("Active CAPA", capaActive.ToString("N0"), capaActive > 0 ? "Warning" : null),
-                }),
+                    new MiniStatDto("Pending insp", inspectionsPending.ToString("N0"), null, "quality/inspections?status=Pending"),
+                    new MiniStatDto("In-progress insp", inspectionsInProgress.ToString("N0"), inspectionsInProgress > 0 ? "Info" : null, "quality/inspections?status=InProgress"),
+                    new MiniStatDto("Open NCRs", ncrsOpen.ToString("N0"), ncrsOpen > 0 ? "Error" : null, "quality/ncrs"),
+                    new MiniStatDto("Active CAPA", capaActive.ToString("N0"), capaActive > 0 ? "Warning" : null, "quality/capa"),
+                },
+                ncrs30, "NCR activity / day"),
 
             new("Production exec.", iconMes, "mes", "Production runs, downtime, OEE",
                 new[]
                 {
-                    new MiniStatDto("Runs in progress", runsInProgress.ToString("N0"), runsInProgress > 0 ? "Info" : null),
-                    new MiniStatDto("Completed today", runsCompletedToday.ToString("N0"), null),
-                    new MiniStatDto("Open downtime", openDowntime.ToString("N0"), openDowntime > 0 ? "Error" : null),
-                }),
+                    new MiniStatDto("Runs in progress", runsInProgress.ToString("N0"), runsInProgress > 0 ? "Info" : null, "mes/runs?status=InProgress"),
+                    new MiniStatDto("Completed today", runsCompletedToday.ToString("N0"), null, "mes/runs?status=Completed"),
+                    new MiniStatDto("Open downtime", openDowntime.ToString("N0"), openDowntime > 0 ? "Error" : null, "mes/downtime"),
+                },
+                runs30, "Runs started / day"),
 
             new("Logistics", iconLogistics, "logistics", "Receipts, shipments, transfers",
                 new[]
                 {
-                    new MiniStatDto("Receipts (24h)", receiptsToday.ToString("N0"), null),
-                    new MiniStatDto("Shipments (24h)", shipmentsToday.ToString("N0"), null),
-                }),
+                    new MiniStatDto("Receipts (24h)", receiptsToday.ToString("N0"), null, "logistics/receipts"),
+                    new MiniStatDto("Shipments (24h)", shipmentsToday.ToString("N0"), null, "logistics/shipments"),
+                },
+                receipts30, "Receipts / day"),
 
             new("Inventory", iconInventory, "inventory", "Items, balances, transactions",
                 new[]
                 {
-                    new MiniStatDto("Active items", inventoryItems.ToString("N0"), null),
-                    new MiniStatDto("Txns (24h)", transactionsToday.ToString("N0"), null),
-                }),
+                    new MiniStatDto("Active items", inventoryItems.ToString("N0"), null, "inventory/items"),
+                    new MiniStatDto("Txns (24h)", transactionsToday.ToString("N0"), null, "inventory/transactions"),
+                },
+                invTxns30, "Inventory txns / day"),
 
             new("Enterprise", iconEnterprise, "enterprise/tree", "Org tree, stations, assets",
                 new[]
                 {
-                    new MiniStatDto("Org units", orgUnits.ToString("N0"), null),
-                    new MiniStatDto("Active stations", stations.ToString("N0"), null),
-                    new MiniStatDto("Active assets", assets.ToString("N0"), null),
-                }),
+                    new MiniStatDto("Org units", orgUnits.ToString("N0"), null, "enterprise/tree"),
+                    new MiniStatDto("Active stations", stations.ToString("N0"), null, "enterprise/stations"),
+                    new MiniStatDto("Active assets", assets.ToString("N0"), null, "enterprise/assets"),
+                },
+                enterpriseEmpty, ""),
         };
+    }
+
+    /// <summary>
+    /// Buckets a sequence of timestamps into 30 daily counts ending at "today" (UTC).
+    /// Index 0 = oldest day (29 days ago), index 29 = today. Output length is always 30.
+    /// </summary>
+    private static int[] BinByDay(IReadOnlyCollection<DateTime> timestamps, DateTime windowStartUtc)
+    {
+        var bins = new int[30];
+        var startDate = windowStartUtc.Date;
+        foreach (var ts in timestamps)
+        {
+            var dayIndex = (ts.Date - startDate).Days;
+            if (dayIndex >= 0 && dayIndex < 30) bins[dayIndex]++;
+        }
+        return bins;
     }
 
     private async Task<List<ActivityItemDto>> BuildRecentActivityAsync(

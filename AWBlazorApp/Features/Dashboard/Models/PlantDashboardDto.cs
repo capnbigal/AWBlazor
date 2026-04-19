@@ -44,13 +44,16 @@ public sealed record ModuleHealthDto(
     string Icon,        // MudBlazor SVG path string
     string LinkHref,
     string Subtitle,
-    IReadOnlyList<MiniStatDto> Stats);
+    IReadOnlyList<MiniStatDto> Stats,
+    IReadOnlyList<int> Trend30d,         // count per day for the trailing 30 days; primary metric per module
+    string Trend30dLabel);                // e.g. "WOs raised / day"
 
 /// <summary>Single label/value pair shown as a tiny stat inside a ModuleHealth card.</summary>
 public sealed record MiniStatDto(
     string Label,
     string Value,
-    string? Color);     // MudBlazor color name string ("Success" / "Warning" / "Error" / null = default)
+    string? Color,        // MudBlazor color name string ("Success" / "Warning" / "Error" / null = default)
+    string? LinkHref = null);   // Optional drill-through to a pre-filtered list page
 
 /// <summary>An entry in the recent-activity feed across all modules.</summary>
 public sealed record ActivityItemDto(

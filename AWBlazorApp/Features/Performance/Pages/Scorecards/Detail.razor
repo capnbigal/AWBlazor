@@ -53,7 +53,15 @@ else
                             @if (row.Target.HasValue)
                             { <MudText Typo="Typo.caption" Color="Color.Secondary">target @row.Target.Value.ToString("F2")</MudText> }
                         </MudStack>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@row.Visual</MudText>
+                        @if (row.History.Count >= 2)
+                        {
+                            @((MarkupString)BuildSparklineSvg(row.History, row.Status))
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">last @row.History.Count days · min @row.History.Min().ToString("F2") · max @row.History.Max().ToString("F2")</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">No daily history yet — run "Evaluate all KPIs" or wait for the nightly rollup</MudText>
+                        }
                         <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
                             <MudSpacer />
                             <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
@@ -105,7 +113,8 @@ else
     private sealed record ScorecardKpiRow(
         int ScorecardKpiId, string KpiCode, string KpiName, string? Unit,
         ScorecardKpiVisual Visual,
-        decimal? Value, decimal? Target, KpiStatus Status);
+        decimal? Value, decimal? Target, KpiStatus Status,
+        IReadOnlyList<decimal> History);
 
     private static Color StatusColor(KpiStatus s) => s switch
     {
@@ -130,7 +139,8 @@ else
                             select new { sk.Id, k.Code, k.Name, k.Unit, sk.Visual, k.TargetValue, KpiId = k.Id })
             .ToListAsync();
 
-        // Pick the latest computed KpiValue per KPI for display.
+        // Pick the latest computed KpiValue per KPI for display, plus the trailing 30 days of
+        // Daily values for the inline sparkline.
         var kpiIds = joined.Select(j => j.KpiId).ToList();
         var latestValues = await db.KpiValues.AsNoTracking()
             .Where(v => kpiIds.Contains(v.KpiDefinitionId))
@@ -138,13 +148,29 @@ else
             .Select(g => g.OrderByDescending(v => v.PeriodStart).First())
             .ToListAsync();
 
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var dailyHistory = await db.KpiValues.AsNoTracking()
+            .Where(v => kpiIds.Contains(v.KpiDefinitionId)
+                     && v.PeriodKind == PerformancePeriodKind.Day
+                     && v.PeriodStart >= thirtyDaysAgo
+                     && v.Value != null)
+            .Select(v => new { v.KpiDefinitionId, v.PeriodStart, v.Value })
+            .ToListAsync();
+        var historyByKpi = dailyHistory
+            .GroupBy(v => v.KpiDefinitionId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<decimal>)g.OrderBy(x => x.PeriodStart).Select(x => x.Value!.Value).ToList());
+
         kpiRows = joined.Select(j =>
         {
             var latest = latestValues.FirstOrDefault(v => v.KpiDefinitionId == j.KpiId);
+            var history = historyByKpi.TryGetValue(j.KpiId, out var h) ? h : Array.Empty<decimal>();
             return new ScorecardKpiRow(
                 j.Id, j.Code, j.Name, j.Unit, j.Visual,
                 latest?.Value, j.TargetValue,
-                latest?.Status ?? KpiStatus.Unknown);
+                latest?.Status ?? KpiStatus.Unknown,
+                history);
         }).ToList();
 
         var usedKpiIds = kpiRows.Select(r => r.ScorecardKpiId).ToHashSet();
@@ -193,6 +219,41 @@ else
             await ReloadAsync();
         }
         catch (Exception ex) { Snackbar.Add($"Remove failed: {ex.Message}", Severity.Error); }
+    }
+
+    /// <summary>
+    /// Inline SVG sparkline for the trailing N daily values. Stroke colour is driven by the
+    /// latest status so a Critical KPI's sparkline reads red even if the line itself is flat.
+    /// Hand-rolled rather than using MudChart so the output stays under 500 bytes per card.
+    /// </summary>
+    private static string BuildSparklineSvg(IReadOnlyList<decimal> points, KpiStatus status)
+    {
+        const int width = 280;
+        const int height = 40;
+        const int padding = 4;
+        var max = points.Max();
+        var min = points.Min();
+        var range = Math.Max(0.01m, max - min);
+
+        var strokeColor = status switch
+        {
+            KpiStatus.OnTarget => "var(--mud-palette-success)",
+            KpiStatus.Warning => "var(--mud-palette-warning)",
+            KpiStatus.Critical => "var(--mud-palette-error)",
+            _ => "var(--mud-palette-primary)",
+        };
+
+        var coords = new List<(string X, string Y)>(points.Count);
+        for (var i = 0; i < points.Count; i++)
+        {
+            var x = padding + (decimal)i * (width - 2m * padding) / Math.Max(1m, points.Count - 1);
+            var y = height - padding - ((points[i] - min) / range) * (height - 2m * padding);
+            coords.Add(($"{x:F1}", $"{y:F1}"));
+        }
+        var path = string.Join(" ", coords.Select((c, i) => (i == 0 ? "M" : "L") + c.X + "," + c.Y));
+        return $@"<svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""none"" style=""max-height:40px;display:block;margin-top:4px"">
+    <path d=""{path}"" fill=""none"" stroke=""{strokeColor}"" stroke-width=""1.5"" />
+</svg>";
     }
 
     private async Task EvaluateAll()

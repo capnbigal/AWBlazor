@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthStateProvider
+@inject AWBlazorApp.Features.Insights.Services.NotificationService NotificationService
 
 <PageTitle>Maintenance work orders</PageTitle>
 
@@ -166,6 +167,7 @@
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.WorkOrderNumber}.", Severity.Success);
+            await NotificationService.NotifyDashboardChangedAsync("Maintenance");
             dialogOpen = false;
             Navigation.NavigateTo($"maintenance/work-orders/{entity.Id}");
         }
