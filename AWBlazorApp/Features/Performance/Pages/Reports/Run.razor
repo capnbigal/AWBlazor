@@ -1,0 +1,143 @@
+@page "/performance/reports/{Id:int}/run"
+@attribute [Authorize]
+@using System.Text
+@using AWBlazorApp.Features.Performance.Services
+@using Microsoft.JSInterop
+@inject IPerformanceReportRunner Runner
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<PageTitle>Run report — @(_result?.ReportCode ?? Id.ToString())</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("performance/reports"))" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">@(_result?.ReportName ?? "Loading…")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @if (_result is not null)
+                {
+                    <span>@_result.ReportCode · @_result.Kind · @_result.RangeStart.ToString("yyyy-MM-dd") → @_result.RangeEnd.ToString("yyyy-MM-dd") · @_result.Rows.Count rows · @_result.DurationMs ms</span>
+                }
+                else
+                {
+                    <span>Performance report runner</span>
+                }
+            </MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="RunAsync" Disabled="@_running">
+            @(_running ? "Running…" : "Re-run")
+        </MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="DownloadCsv" Disabled="@(_result is null || _result.Rows.Count == 0)">
+            Download CSV
+        </MudButton>
+    </MudStack>
+
+    @if (_running && _result is null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error">
+            <strong>Run failed:</strong> @_error
+        </MudAlert>
+    }
+    else if (_result is not null)
+    {
+        @if (_result.Rows.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No rows in the selected range — the underlying data may be empty. Try the rollup at <MudLink Href="admin/rollup">/admin/rollup</MudLink> to backfill.</MudAlert>
+        }
+        else
+        {
+            <MudPaper Class="pa-2" Elevation="1">
+                <MudSimpleTable Dense="true" Hover="true" Striped="true" Bordered="false" Style="overflow-x:auto">
+                    <thead>
+                        <tr>
+                            @foreach (var col in _result.Columns)
+                            {
+                                <th>@col.Label</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _result.Rows)
+                        {
+                            <tr>
+                                @for (var i = 0; i < row.Count; i++)
+                                {
+                                    <td>@row[i]</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        }
+    }
+</MudStack>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private PerformanceReportResultDto? _result;
+    private bool _running;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await RunAsync();
+
+    private async Task RunAsync()
+    {
+        _running = true;
+        _error = null;
+        try
+        {
+            var state = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            _result = await Runner.RunAsync(Id, userId, default);
+            Snackbar.Add($"Ran in {_result.DurationMs} ms — {_result.Rows.Count} rows.", Severity.Success);
+        }
+        catch (KeyNotFoundException)
+        {
+            _error = "Report not found.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Snackbar.Add($"Run failed: {ex.Message}", Severity.Error);
+        }
+        finally { _running = false; }
+    }
+
+    private async Task DownloadCsv()
+    {
+        if (_result is null || _result.Rows.Count == 0) return;
+        var sb = new StringBuilder();
+        sb.AppendLine(string.Join(",", _result.Columns.Select(c => CsvField(c.Label))));
+        foreach (var row in _result.Rows)
+        {
+            sb.AppendLine(string.Join(",", row.Select(CsvField)));
+        }
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        var fileName = $"{_result.ReportCode}_{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+        await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
+    }
+
+    private static string CsvField(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+        {
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+}

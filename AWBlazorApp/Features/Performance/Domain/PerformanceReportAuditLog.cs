@@ -11,6 +11,9 @@ public class PerformanceReportAuditLog : AdventureWorksAuditLogBase
     [MaxLength(200)] public string? Name { get; set; }
     [MaxLength(2000)] public string? Description { get; set; }
     public PerformanceReportKind Kind { get; set; }
+    public ReportRangePreset RangePreset { get; set; }
+    public int? StationId { get; set; }
+    public int? AssetId { get; set; }
     public string? DefinitionJson { get; set; }
     public DateTime? LastRunAt { get; set; }
     public bool IsActive { get; set; }

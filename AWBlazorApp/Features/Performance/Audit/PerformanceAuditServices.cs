@@ -96,7 +96,9 @@ public static class PerformanceReportAuditService
         Action = action, ChangedBy = by, ChangedDate = DateTime.UtcNow,
         ChangeSummary = AuditDiffHelpers.Truncate(summary, 2048),
         Code = e.Code, Name = e.Name, Description = e.Description,
-        Kind = e.Kind, DefinitionJson = e.DefinitionJson, LastRunAt = e.LastRunAt,
+        Kind = e.Kind,
+        RangePreset = e.RangePreset, StationId = e.StationId, AssetId = e.AssetId,
+        DefinitionJson = e.DefinitionJson, LastRunAt = e.LastRunAt,
         IsActive = e.IsActive, SourceModifiedDate = e.ModifiedDate,
     };
 
@@ -105,12 +107,15 @@ public static class PerformanceReportAuditService
         var sb = new StringBuilder();
         AuditDiffHelpers.AppendIfChanged(sb, "Name", b.Name, a.Name);
         AuditDiffHelpers.AppendIfChanged(sb, "Kind", b.Kind, a.Kind);
+        AuditDiffHelpers.AppendIfChanged(sb, "RangePreset", b.RangePreset, a.RangePreset);
+        AuditDiffHelpers.AppendIfChanged(sb, "StationId", b.StationId, a.StationId);
+        AuditDiffHelpers.AppendIfChanged(sb, "AssetId", b.AssetId, a.AssetId);
         AuditDiffHelpers.AppendIfChanged(sb, "IsActive", b.IsActive, a.IsActive);
         return sb.Length == 0 ? "No changes" : sb.ToString();
     }
 
-    public readonly record struct Snapshot(string Name, PerformanceReportKind Kind, bool IsActive)
+    public readonly record struct Snapshot(string Name, PerformanceReportKind Kind, ReportRangePreset RangePreset, int? StationId, int? AssetId, bool IsActive)
     {
-        public Snapshot(PerformanceReport e) : this(e.Name, e.Kind, e.IsActive) { }
+        public Snapshot(PerformanceReport e) : this(e.Name, e.Kind, e.RangePreset, e.StationId, e.AssetId, e.IsActive) { }
     }
 }
