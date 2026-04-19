@@ -68,12 +68,7 @@ public static class PersonCreditCardEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.PersonCreditCards.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.PersonCreditCardAuditLogs.Add(PersonCreditCardAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => PersonCreditCardAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/person-credit-cards/by-key?businessEntityId={entity.BusinessEntityId}&creditCardId={entity.CreditCardId}",
             new CompositeKeyResponse(new Dictionary<string, object>
