@@ -1,0 +1,261 @@
+@using AWBlazorApp.Features.Forecasting.Domain
+@using AWBlazorApp.Shared.Dtos
+@using AWBlazorApp.Shared.Validation
+@using System.Text.Json
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateForecastRequest> Validator
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsNew ? "Create forecast" : $"Edit forecast: {Model?.Name}")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@formModel" Validation="@Validator.ValidateField" ValidationDelay="0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="ForecastDataSource" @bind-Value="selectedDataSource" Label="Data source" Variant="Variant.Outlined" Disabled="@(!IsNew)">
+                        @foreach (var ds in Enum.GetValues<ForecastDataSource>())
+                        {
+                            <MudSelectItem T="ForecastDataSource" Value="@ds">@ds</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="ForecastMethod" @bind-Value="selectedMethod" Label="Method" Variant="Variant.Outlined">
+                        @foreach (var m in Enum.GetValues<ForecastMethod>())
+                        {
+                            <MudSelectItem T="ForecastMethod" Value="@m">@m</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="ForecastGranularity" @bind-Value="selectedGranularity" Label="Granularity" Variant="Variant.Outlined" Disabled="@(!IsNew)">
+                        @foreach (var g in Enum.GetValues<ForecastGranularity>())
+                        {
+                            <MudSelectItem T="ForecastGranularity" Value="@g">@g</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="formModel.LookbackMonths" Label="Lookback months" Variant="Variant.Outlined" Min="3" Max="60" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="formModel.HorizonPeriods" Label="Horizon periods" Variant="Variant.Outlined" Min="1" Max="24" />
+                </MudItem>
+
+                @* ── Method-specific parameters ──────────────────────────────── *@
+                @if (UsesWindowSize(selectedMethod))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" @bind-Value="windowSize" Label="Window size" Variant="Variant.Outlined" Min="2" Max="24" />
+                    </MudItem>
+                }
+                @if (UsesAlpha(selectedMethod))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double" @bind-Value="alpha" Label="Alpha (level smoothing)" Variant="Variant.Outlined" Min="0.01" Max="0.99" Step="0.01" />
+                    </MudItem>
+                }
+                @if (UsesBeta(selectedMethod))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double" @bind-Value="beta" Label="Beta (trend smoothing)" Variant="Variant.Outlined" Min="0.01" Max="0.99" Step="0.01" />
+                    </MudItem>
+                }
+                @if (UsesGamma(selectedMethod))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double" @bind-Value="gamma" Label="Gamma (seasonal smoothing)" Variant="Variant.Outlined" Min="0.01" Max="0.99" Step="0.01" />
+                    </MudItem>
+                }
+                @if (UsesSeasonLength(selectedMethod))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int" @bind-Value="seasonLength" Label="Season length" Variant="Variant.Outlined" Min="2" Max="24" HelperText="@SeasonLengthHelper(selectedGranularity)" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">
+            @(saving ? "Saving..." : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ForecastDefinitionDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+
+    private MudForm form = null!;
+    private FormModel formModel = new();
+    private ForecastDataSource selectedDataSource;
+    private ForecastMethod selectedMethod;
+    private ForecastGranularity selectedGranularity;
+    private int windowSize = 3;
+    private double alpha = 0.3;
+    private double beta = 0.1;
+    private double gamma = 0.1;
+    private int seasonLength = 12;
+    private bool saving;
+
+    private static bool UsesWindowSize(ForecastMethod m) => m
+        is ForecastMethod.SimpleMovingAverage
+        or ForecastMethod.WeightedMovingAverage
+        or ForecastMethod.MedianSmoothing;
+
+    private static bool UsesAlpha(ForecastMethod m) => m
+        is ForecastMethod.ExponentialSmoothing
+        or ForecastMethod.DoubleExponentialSmoothing
+        or ForecastMethod.HoltWinters
+        or ForecastMethod.Croston
+        or ForecastMethod.Theta;
+
+    private static bool UsesBeta(ForecastMethod m) => m
+        is ForecastMethod.DoubleExponentialSmoothing
+        or ForecastMethod.HoltWinters;
+
+    private static bool UsesGamma(ForecastMethod m) => m is ForecastMethod.HoltWinters;
+
+    private static bool UsesSeasonLength(ForecastMethod m) => m
+        is ForecastMethod.SeasonalNaive
+        or ForecastMethod.HoltWinters;
+
+    private static string SeasonLengthHelper(ForecastGranularity g)
+        => g == ForecastGranularity.Quarterly ? "Try 4 for yearly seasonality" : "Try 12 for yearly seasonality";
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            formModel = new FormModel
+            {
+                Name = Model.Name,
+                Description = Model.Description,
+                LookbackMonths = Model.LookbackMonths,
+                HorizonPeriods = Model.HorizonPeriods,
+            };
+            selectedDataSource = Model.DataSource;
+            selectedMethod = Model.Method;
+            selectedGranularity = Model.Granularity;
+
+            // Parse method parameters
+            if (!string.IsNullOrEmpty(Model.MethodParametersJson))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(Model.MethodParametersJson);
+                    if (doc.RootElement.TryGetProperty("windowSize", out var ws))
+                        windowSize = ws.GetInt32();
+                    if (doc.RootElement.TryGetProperty("alpha", out var a))
+                        alpha = a.GetDouble();
+                    if (doc.RootElement.TryGetProperty("beta", out var b))
+                        beta = b.GetDouble();
+                    if (doc.RootElement.TryGetProperty("gamma", out var g))
+                        gamma = g.GetDouble();
+                    if (doc.RootElement.TryGetProperty("seasonLength", out var sl))
+                        seasonLength = sl.GetInt32();
+                }
+                catch { /* ignore parse errors */ }
+            }
+        }
+        else
+        {
+            // Default season length tracks the granularity choice (12 monthly, 4 quarterly).
+            seasonLength = selectedGranularity == ForecastGranularity.Quarterly ? 4 : 12;
+        }
+    }
+
+    private string? BuildMethodParametersJson()
+    {
+        var parts = new Dictionary<string, object>();
+        if (UsesWindowSize(selectedMethod)) parts["windowSize"] = windowSize;
+        if (UsesAlpha(selectedMethod)) parts["alpha"] = alpha;
+        if (UsesBeta(selectedMethod)) parts["beta"] = beta;
+        if (UsesGamma(selectedMethod)) parts["gamma"] = gamma;
+        if (UsesSeasonLength(selectedMethod)) parts["seasonLength"] = seasonLength;
+        return parts.Count == 0 ? null : JsonSerializer.Serialize(parts);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var request = new CreateForecastRequest
+            {
+                Name = formModel.Name,
+                Description = formModel.Description,
+                DataSource = selectedDataSource,
+                Method = selectedMethod,
+                Granularity = selectedGranularity,
+                LookbackMonths = formModel.LookbackMonths,
+                HorizonPeriods = formModel.HorizonPeriods,
+                MethodParametersJson = BuildMethodParametersJson(),
+            };
+
+            if (!await Validator.ValidateAllAsync(request))
+            {
+                Snackbar.Add("Please fix validation errors.", Severity.Error);
+                return;
+            }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                var entity = request.ToEntity();
+                db.ForecastDefinitions.Add(entity);
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                var entity = await db.ForecastDefinitions.FirstOrDefaultAsync(f => f.Id == Model!.Id);
+                if (entity is null)
+                {
+                    MudDialog.Close(DialogResult.Cancel());
+                    return;
+                }
+
+                var update = new UpdateForecastRequest
+                {
+                    Name = request.Name,
+                    Description = request.Description,
+                    Method = request.Method,
+                    LookbackMonths = request.LookbackMonths,
+                    HorizonPeriods = request.HorizonPeriods,
+                    MethodParametersJson = request.MethodParametersJson,
+                };
+                update.ApplyTo(entity);
+                await db.SaveChangesAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private sealed class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int LookbackMonths { get; set; } = 12;
+        public int HorizonPeriods { get; set; } = 6;
+    }
+}

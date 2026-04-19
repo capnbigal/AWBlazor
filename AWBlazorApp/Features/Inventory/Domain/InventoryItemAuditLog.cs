@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 
 namespace AWBlazorApp.Features.Inventory.Domain;
 

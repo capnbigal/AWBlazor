@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Audit;
+using AWBlazorApp.Shared.Audit;
 using System.Text;
 using AWBlazorApp.Features.Person.Domain;
 

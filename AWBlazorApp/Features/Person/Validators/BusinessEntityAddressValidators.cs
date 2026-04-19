@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Person.Models;
+using AWBlazorApp.Features.Person.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Person.Validators;

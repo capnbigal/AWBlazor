@@ -1,0 +1,189 @@
+@page "/aw/documents"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Documents</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Documents</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Document · hierarchyid PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/documents/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New document</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterTitle" Label="Title contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6"><MudNumericField T="int?" @bind-Value="filterOwner" Label="Owner (employee id)" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="DocumentDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.DocumentNode" Title="Node">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.DocumentNode)" Title="Node" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DocumentLevel" Title="Level">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.DocumentLevel)" Title="Level" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Title" Title="Title">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FileName" Title="File">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.FileName)" Title="File" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FileExtension" Title="Ext">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.FileExtension)" Title="Ext" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Revision" Title="Rev">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.Revision)" Title="Rev" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Status" Title="Status">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.Status)" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Owner" Title="Owner">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.Owner)" Title="Owner" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.FolderFlag" Title="Folder?">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.FolderFlag)" Title="Folder?" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.HasDocumentContent" Title="Has content?" />
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <HeaderTemplate><GridColumnHeader TEntity="Document" PropertyName="@nameof(DocumentDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
+                        </AuthorizeView>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="DocumentDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<DocumentDto> grid = null!;
+    private bool _loading = true;
+    private string? filterTitle;
+    private int? filterOwner;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<DocumentDto>> LoadServerDataAsync(GridState<DocumentDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.Documents.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(filterTitle))
+            {
+                var t = filterTitle.Trim();
+                query = query.Where(x => x.Title.Contains(t));
+            }
+            if (filterOwner.HasValue) query = query.Where(x => x.Owner == filterOwner.Value);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(DocumentDto.DocumentNode) => sort.Descending ? query.OrderByDescending(x => x.DocumentNode) : query.OrderBy(x => x.DocumentNode),
+                nameof(DocumentDto.DocumentLevel) => sort.Descending ? query.OrderByDescending(x => x.DocumentLevel) : query.OrderBy(x => x.DocumentLevel),
+                nameof(DocumentDto.Title) => sort.Descending ? query.OrderByDescending(x => x.Title) : query.OrderBy(x => x.Title),
+                nameof(DocumentDto.FileName) => sort.Descending ? query.OrderByDescending(x => x.FileName) : query.OrderBy(x => x.FileName),
+                nameof(DocumentDto.FileExtension) => sort.Descending ? query.OrderByDescending(x => x.FileExtension) : query.OrderBy(x => x.FileExtension),
+                nameof(DocumentDto.Revision) => sort.Descending ? query.OrderByDescending(x => x.Revision) : query.OrderBy(x => x.Revision),
+                nameof(DocumentDto.Status) => sort.Descending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
+                nameof(DocumentDto.Owner) => sort.Descending ? query.OrderByDescending(x => x.Owner) : query.OrderBy(x => x.Owner),
+                nameof(DocumentDto.FolderFlag) => sort.Descending ? query.OrderByDescending(x => x.FolderFlag) : query.OrderBy(x => x.FolderFlag),
+                nameof(DocumentDto.HasDocumentContent) => sort.Descending ? query.OrderByDescending(x => x.DocumentContent != null && x.DocumentContent.Length > 0) : query.OrderBy(x => x.DocumentContent != null && x.DocumentContent.Length > 0),
+                nameof(DocumentDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.DocumentNode),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                .Select(x => new DocumentDto(
+                    x.DocumentNode.ToString()!, x.DocumentLevel, x.Title, x.Owner, x.FolderFlag,
+                    x.FileName, x.FileExtension, x.Revision, x.ChangeNumber, x.Status,
+                    x.DocumentSummary, x.DocumentContent != null && x.DocumentContent.Length > 0,
+                    x.RowGuid, x.ModifiedDate))
+                .ToListAsync(ct);
+            return new GridData<DocumentDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<DocumentDialog>("New document", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Document created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task OpenEditAsync(DocumentDto row)
+    {
+        var parameters = new DialogParameters<DocumentDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<DocumentDialog>($"Edit {row.DocumentNode}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Document updated.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(DocumentDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete document?", $"Permanently delete document {row.DocumentNode} ({row.Title})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var node = HierarchyId.Parse(row.DocumentNode);
+        var entity = await db.Documents.FirstOrDefaultAsync(t => t.DocumentNode == node);
+        if (entity is null) { Snackbar.Add("Document no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.DocumentAuditLogs.Add(DocumentAuditService.RecordDelete(entity, changedBy));
+        db.Documents.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Document deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(DocumentDto row)
+        => Navigation.NavigateTo($"aw/documents/history?documentNode={Uri.EscapeDataString(row.DocumentNode)}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

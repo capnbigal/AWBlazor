@@ -1,5 +1,5 @@
 using AWBlazorApp.Features.Quality.Domain;
-using AWBlazorApp.Features.Quality.Models;
+using AWBlazorApp.Features.Quality.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Quality.Validators;

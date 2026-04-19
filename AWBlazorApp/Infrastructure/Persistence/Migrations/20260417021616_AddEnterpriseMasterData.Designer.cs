@@ -26,7 +26,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AWBlazorApp.Data.ApplicationUser", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Identity.Domain.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -8323,7 +8323,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.Identity.Domain.ApiKey", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8334,7 +8334,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.Identity.Domain.UserAreaPermission", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "User")
                         .WithMany("AreaPermissions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8345,7 +8345,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.Process", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "DefaultProcessor")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "DefaultProcessor")
                         .WithMany()
                         .HasForeignKey("DefaultProcessorUserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -8363,7 +8363,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "AssignedUser")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "AssignedUser")
                         .WithMany()
                         .HasForeignKey("AssignedUserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -8392,7 +8392,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessStepExecution", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "CompletedByUser")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "CompletedByUser")
                         .WithMany()
                         .HasForeignKey("CompletedByUserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -8418,7 +8418,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AWBlazorApp.Features.UserGuide.Domain.ArticleRead", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", "User")
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8438,7 +8438,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", null)
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8447,7 +8447,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", null)
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8462,7 +8462,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", null)
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -8471,14 +8471,14 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("AWBlazorApp.Data.ApplicationUser", null)
+                    b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Data.ApplicationUser", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Identity.Domain.ApplicationUser", b =>
                 {
                     b.Navigation("AreaPermissions");
                 });

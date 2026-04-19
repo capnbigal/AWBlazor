@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Purchasing.Domain;
 
 /// <summary>Audit log for <see cref="PurchaseOrderHeader"/>. EF-managed table <c>dbo.PurchaseOrderHeaderAuditLogs</c>.</summary>

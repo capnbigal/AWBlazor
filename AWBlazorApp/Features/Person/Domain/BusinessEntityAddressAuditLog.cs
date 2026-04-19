@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Person.Domain;
 
 /// <summary>Audit log for <see cref="BusinessEntityAddress"/>. EF-managed table <c>dbo.BusinessEntityAddressAuditLogs</c>. 3-column composite key.</summary>

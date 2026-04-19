@@ -1,8 +1,8 @@
 using AWBlazorApp.Shared.Domain;
 using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Features.ToolSlots.Domain;
-using AWBlazorApp.Data;
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Shared.Domain;
 using AWBlazorApp.Features.Sales.Domain;
 using AWBlazorApp.Features.Production.Domain;
 using AWBlazorApp.Features.HumanResources.Domain;

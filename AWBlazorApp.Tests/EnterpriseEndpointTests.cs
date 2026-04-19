@@ -1,11 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Features.Enterprise.Domain;
-using AWBlazorApp.Features.Enterprise.Models;
+using AWBlazorApp.Features.Enterprise.Dtos;
 using AWBlazorApp.Features.Identity.Domain;
-using AWBlazorApp.Shared.Models;
+using AWBlazorApp.Shared.Dtos;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

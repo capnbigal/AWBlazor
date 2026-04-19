@@ -1,5 +1,5 @@
 namespace AWBlazorApp.Features.Identity.Domain;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 
 /// <summary>
 /// Explicit per-area permission grant for a user. One row per (UserId, Area).

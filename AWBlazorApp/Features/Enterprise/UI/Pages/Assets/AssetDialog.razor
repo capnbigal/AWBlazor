@@ -1,0 +1,167 @@
+@using AWBlazorApp.Features.Enterprise.Domain
+@using AWBlazorApp.Features.Enterprise.Dtos
+@using AWBlazorApp.Features.Enterprise.Audit
+@using AWBlazorApp.Shared.Validation
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject MudFormValidator<CreateAssetRequest> CreateValidator
+@inject MudFormValidator<UpdateAssetRequest> UpdateValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent><MudText Typo="Typo.h6">@(IsNew ? "Create asset" : $"Edit asset #{Model!.Id}")</MudText></TitleContent>
+    <DialogContent>
+        @if (IsNew)
+        {
+            <MudForm @ref="form" Model="@createModel" Validation="@CreateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int" Value="@createModel.OrganizationId" ValueChanged="@((int v) => createModel = createModel with { OrganizationId = v })" Label="Organization" Variant="Variant.Outlined" Required="true">
+                            @foreach (var o in orgs) { <MudSelectItem T="int" Value="@o.Id">@o.Code — @o.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int?" Value="@createModel.OrgUnitId" ValueChanged="@((int? v) => createModel = createModel with { OrgUnitId = v })" Label="Org unit (location)" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="int?" Value="@null">(unassigned)</MudSelectItem>
+                            @foreach (var u in units.Where(u => u.OrganizationId == createModel.OrganizationId)) { <MudSelectItem T="int?" Value="@u.Id">@u.Path — @u.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.AssetTag" ValueChanged="@((string? v) => createModel = createModel with { AssetTag = v })" Label="Asset tag" Variant="Variant.Outlined" Required="true" MaxLength="64" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@createModel.Name" ValueChanged="@((string? v) => createModel = createModel with { Name = v })" Label="Name" Variant="Variant.Outlined" Required="true" MaxLength="200" /></MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AssetType" Value="@createModel.AssetType" ValueChanged="@((AssetType v) => createModel = createModel with { AssetType = v })" Label="Type" Variant="Variant.Outlined">
+                            @foreach (var k in Enum.GetValues<AssetType>()) { <MudSelectItem T="AssetType" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AssetStatus" Value="@createModel.Status" ValueChanged="@((AssetStatus v) => createModel = createModel with { Status = v })" Label="Status" Variant="Variant.Outlined">
+                            @foreach (var k in Enum.GetValues<AssetStatus>()) { <MudSelectItem T="AssetStatus" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@createModel.ParentAssetId" ValueChanged="@((int? v) => createModel = createModel with { ParentAssetId = v })" Label="Parent asset ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.Manufacturer" ValueChanged="@((string? v) => createModel = createModel with { Manufacturer = v })" Label="Manufacturer" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.Model" ValueChanged="@((string? v) => createModel = createModel with { Model = v })" Label="Model" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@createModel.SerialNumber" ValueChanged="@((string? v) => createModel = createModel with { SerialNumber = v })" Label="Serial number" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@createModel.CommissionedAt" DateChanged="@((DateTime? v) => createModel = createModel with { CommissionedAt = v })" Label="Commissioned" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@createModel.DecommissionedAt" DateChanged="@((DateTime? v) => createModel = createModel with { DecommissionedAt = v })" Label="Decommissioned" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+        else
+        {
+            <MudForm @ref="form" Model="@updateModel" Validation="@UpdateValidator.ValidateField" ValidationDelay="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int?" Value="@updateModel.OrgUnitId" ValueChanged="@((int? v) => updateModel = updateModel with { OrgUnitId = v })" Label="Org unit" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="int?" Value="@null">(unassigned)</MudSelectItem>
+                            @foreach (var u in units.Where(u => u.OrganizationId == Model!.OrganizationId)) { <MudSelectItem T="int?" Value="@u.Id">@u.Path — @u.Name</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6"><MudTextField Value="@updateModel.AssetTag" ValueChanged="@((string? v) => updateModel = updateModel with { AssetTag = v })" Label="Asset tag" Variant="Variant.Outlined" MaxLength="64" /></MudItem>
+                    <MudItem xs="12"><MudTextField Value="@updateModel.Name" ValueChanged="@((string? v) => updateModel = updateModel with { Name = v })" Label="Name" Variant="Variant.Outlined" MaxLength="200" /></MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AssetType?" Value="@updateModel.AssetType" ValueChanged="@((AssetType? v) => updateModel = updateModel with { AssetType = v })" Label="Type" Variant="Variant.Outlined">
+                            @foreach (var k in Enum.GetValues<AssetType>()) { <MudSelectItem T="AssetType?" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="AssetStatus?" Value="@updateModel.Status" ValueChanged="@((AssetStatus? v) => updateModel = updateModel with { Status = v })" Label="Status" Variant="Variant.Outlined">
+                            @foreach (var k in Enum.GetValues<AssetStatus>()) { <MudSelectItem T="AssetStatus?" Value="@k">@k</MudSelectItem> }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4"><MudNumericField T="int?" Value="@updateModel.ParentAssetId" ValueChanged="@((int? v) => updateModel = updateModel with { ParentAssetId = v })" Label="Parent asset ID" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@updateModel.Manufacturer" ValueChanged="@((string? v) => updateModel = updateModel with { Manufacturer = v })" Label="Manufacturer" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@updateModel.Model" ValueChanged="@((string? v) => updateModel = updateModel with { Model = v })" Label="Model" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="4"><MudTextField Value="@updateModel.SerialNumber" ValueChanged="@((string? v) => updateModel = updateModel with { SerialNumber = v })" Label="Serial number" Variant="Variant.Outlined" MaxLength="128" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@updateModel.CommissionedAt" DateChanged="@((DateTime? v) => updateModel = updateModel with { CommissionedAt = v })" Label="Commissioned" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                    <MudItem xs="12" sm="6"><MudDatePicker Date="@updateModel.DecommissionedAt" DateChanged="@((DateTime? v) => updateModel = updateModel with { DecommissionedAt = v })" Label="Decommissioned" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+                </MudGrid>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@saving">@(saving ? "Saving..." : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public AssetDto? Model { get; set; }
+
+    private bool IsNew => Model is null;
+    private MudForm form = null!;
+    private CreateAssetRequest createModel = new();
+    private UpdateAssetRequest updateModel = new();
+    private bool saving;
+    private List<OrganizationDto> orgs = [];
+    private List<OrgUnitDto> units = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        orgs = await db.Organizations.AsNoTracking().Where(o => o.IsActive).OrderBy(o => o.Code).Select(o => o.ToDto()).ToListAsync();
+        units = await db.OrgUnits.AsNoTracking().OrderBy(u => u.Path).Select(u => u.ToDto()).ToListAsync();
+
+        if (Model is not null)
+        {
+            updateModel = new UpdateAssetRequest
+            {
+                OrgUnitId = Model.OrgUnitId, AssetTag = Model.AssetTag, Name = Model.Name,
+                Manufacturer = Model.Manufacturer, Model = Model.Model, SerialNumber = Model.SerialNumber,
+                AssetType = Model.AssetType, Status = Model.Status,
+                CommissionedAt = Model.CommissionedAt, DecommissionedAt = Model.DecommissionedAt,
+                ParentAssetId = Model.ParentAssetId,
+            };
+        }
+        else if (orgs.Count > 0)
+        {
+            var primary = orgs.FirstOrDefault(o => o.IsPrimary) ?? orgs[0];
+            createModel = createModel with { OrganizationId = primary.Id };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            var by = await GetCurrentUserNameAsync();
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = createModel.ToEntity();
+                await using var tx = await db.Database.BeginTransactionAsync();
+                db.Assets.Add(entity);
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                db.AssetAuditLogs.Add(AssetAuditService.RecordCreate(entity, by));
+                await db.SaveChangesAsync();
+                await tx.CommitAsync();
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+            else
+            {
+                if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
+                var entity = await db.Assets.FirstOrDefaultAsync(t => t.Id == Model!.Id);
+                if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
+                var before = AssetAuditService.CaptureSnapshot(entity);
+                updateModel.ApplyTo(entity);
+                db.AssetAuditLogs.Add(AssetAuditService.RecordUpdate(before, entity, by));
+                try { await db.SaveChangesAsync(); }
+                catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
+                MudDialog.Close(DialogResult.Ok(entity.Id));
+            }
+        }
+        finally { saving = false; }
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}

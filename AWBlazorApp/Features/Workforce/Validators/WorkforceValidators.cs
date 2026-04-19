@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Workforce.Models;
+using AWBlazorApp.Features.Workforce.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Workforce.Validators;

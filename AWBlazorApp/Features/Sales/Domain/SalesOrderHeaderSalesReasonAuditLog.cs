@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Sales.Domain;
 
 /// <summary>Audit log for <see cref="SalesOrderHeaderSalesReason"/>. EF-managed table <c>dbo.SalesOrderHeaderSalesReasonAuditLogs</c>. A pure junction table — audit rows only carry the composite key plus timestamp.</summary>

@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Production.Domain;
 
 /// <summary>Audit log for <see cref="ProductProductPhoto"/>. EF-managed table <c>dbo.ProductProductPhotoAuditLogs</c>. Carries both composite-key components.</summary>

@@ -1,6 +1,6 @@
 using AWBlazorApp.Features.Engineering.Domain;
 using AWBlazorApp.Features.Inventory.Domain;
-using AWBlazorApp.Features.Inventory.Models;
+using AWBlazorApp.Features.Inventory.Dtos;
 using AWBlazorApp.Features.Mes.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

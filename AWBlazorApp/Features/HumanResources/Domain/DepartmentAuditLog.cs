@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 using System.ComponentModel.DataAnnotations;
 
 namespace AWBlazorApp.Features.HumanResources.Domain;

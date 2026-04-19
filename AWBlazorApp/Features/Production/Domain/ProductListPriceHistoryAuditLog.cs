@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Production.Domain;
 
 /// <summary>Audit log for <see cref="ProductListPriceHistory"/>. EF-managed table <c>dbo.ProductListPriceHistoryAuditLogs</c>. Carries both composite-key components.</summary>

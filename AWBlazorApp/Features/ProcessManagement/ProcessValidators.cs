@@ -1,9 +1,9 @@
 using Cronos;
-using AWBlazorApp.Features.ProcessManagement.Models;
-using AWBlazorApp.Shared.Models;
+using AWBlazorApp.Features.ProcessManagement.Dtos;
+using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 
-namespace AWBlazorApp.Shared.Validators;
+namespace AWBlazorApp.Shared.Validation;
 
 public sealed class CreateProcessValidator : AbstractValidator<CreateProcessRequest>
 {

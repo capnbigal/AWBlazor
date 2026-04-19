@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Identity;

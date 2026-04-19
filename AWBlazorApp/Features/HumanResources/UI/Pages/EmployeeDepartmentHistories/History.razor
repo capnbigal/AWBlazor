@@ -1,0 +1,127 @@
+@page "/aw/employee-department-histories/history"
+@attribute [Authorize]
+@using AWBlazorApp.Features.HumanResources.Domain
+@using AWBlazorApp.Features.HumanResources.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Employee department history audit</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/employee-department-histories"))" />
+        <MudText Typo="Typo.h4">Employee department history audit</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="BusinessEntityId" Label="Employee id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="short?" @bind-Value="DepartmentId" Label="Department id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="byte?" @bind-Value="ShiftId" Label="Shift id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="3"><MudDatePicker @bind-Date="StartDate" Label="Start date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="EmployeeDepartmentHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DepartmentId" Title="Dept">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.DepartmentId)" Title="Dept" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ShiftId" Title="Shift">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.ShiftId)" Title="Shift" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.StartDate" Title="Start" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.StartDate)" Title="Start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.EndDate" Title="End" Format="yyyy-MM-dd">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.EndDate)" Title="End" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
+                <HeaderTemplate><GridColumnHeader TEntity="EmployeeDepartmentHistoryAuditLog" PropertyName="@nameof(EmployeeDepartmentHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="EmployeeDepartmentHistoryAuditLogDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    [SupplyParameterFromQuery] public int? BusinessEntityId { get; set; }
+    [SupplyParameterFromQuery] public short? DepartmentId { get; set; }
+    [SupplyParameterFromQuery] public byte? ShiftId { get; set; }
+    [SupplyParameterFromQuery] public DateTime? StartDate { get; set; }
+
+    private MudDataGrid<EmployeeDepartmentHistoryAuditLogDto> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<EmployeeDepartmentHistoryAuditLogDto>> LoadServerDataAsync(GridState<EmployeeDepartmentHistoryAuditLogDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.EmployeeDepartmentHistoryAuditLogs.AsNoTracking();
+
+        if (BusinessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == BusinessEntityId.Value);
+        if (DepartmentId.HasValue) query = query.Where(a => a.DepartmentId == DepartmentId.Value);
+        if (ShiftId.HasValue) query = query.Where(a => a.ShiftId == ShiftId.Value);
+        if (StartDate.HasValue)
+        {
+            var key = StartDate.Value.Date;
+            query = query.Where(a => a.StartDate == key);
+        }
+        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var needle = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
+        }
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(EmployeeDepartmentHistoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.DepartmentId) => sort.Descending ? query.OrderByDescending(a => a.DepartmentId) : query.OrderBy(a => a.DepartmentId),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.ShiftId) => sort.Descending ? query.OrderByDescending(a => a.ShiftId) : query.OrderBy(a => a.ShiftId),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.StartDate) => sort.Descending ? query.OrderByDescending(a => a.StartDate) : query.OrderBy(a => a.StartDate),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.EndDate) => sort.Descending ? query.OrderByDescending(a => a.EndDate) : query.OrderBy(a => a.EndDate),
+            nameof(EmployeeDepartmentHistoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
+            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
+        };
+
+        var rows = await query
+            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<EmployeeDepartmentHistoryAuditLogDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
+    };
+}

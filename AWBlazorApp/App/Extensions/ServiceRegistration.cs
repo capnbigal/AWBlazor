@@ -1,4 +1,5 @@
-using AWBlazorApp.Scaffold.Identity.Account;
+using AWBlazorApp.Features.Identity.Application.Services;
+using AWBlazorApp.Features.Identity.Application;
 using AWBlazorApp.Features.ProcessManagement.Services;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Forecasting.Services;
@@ -8,7 +9,7 @@ using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Features.Insights.Services;
 using AWBlazorApp.Infrastructure.Email;
 using AWBlazorApp.Features.Admin.Services;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Services;
 using AWBlazorApp.Features.Forecasting.Services;
@@ -236,7 +237,7 @@ public static class ServiceRegistration
         services.AddScoped<IForecastAlgorithm, ThetaAlgorithm>();
         services.AddTransient<ForecastEvaluationJob>();
         services.AddScoped<AWBlazorApp.Features.Admin.Services.AdventureWorksDateShifter>();
-        services.AddScoped<AWBlazorApp.Shared.Components.Grid.IDistinctValuesProvider, AWBlazorApp.Shared.Components.Grid.DistinctValuesProvider>();
+        services.AddScoped<AWBlazorApp.Shared.UI.Components.IDistinctValuesProvider, AWBlazorApp.Shared.UI.Components.DistinctValuesProvider>();
         return services;
     }
 
@@ -306,7 +307,7 @@ public static class ServiceRegistration
         services.AddScoped<IPermissionService, PermissionService>();
 
         services.AddValidatorsFromAssemblyContaining<Program>();
-        services.AddTransient(typeof(AWBlazorApp.Shared.Validators.MudFormValidator<>));
+        services.AddTransient(typeof(AWBlazorApp.Shared.Validation.MudFormValidator<>));
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>

@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.Sales.Domain;
 
 /// <summary>Audit log for <see cref="SalesPersonQuotaHistory"/>. EF-managed table <c>dbo.SalesPersonQuotaHistoryAuditLogs</c>. Stores both composite key components as separate columns.</summary>

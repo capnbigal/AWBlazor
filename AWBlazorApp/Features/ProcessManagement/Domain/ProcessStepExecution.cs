@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using AWBlazorApp.Data;
+using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 
 namespace AWBlazorApp.Features.ProcessManagement.Domain;
 

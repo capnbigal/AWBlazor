@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.Purchasing.Models;
+using AWBlazorApp.Features.Purchasing.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Features.Purchasing.Validators;

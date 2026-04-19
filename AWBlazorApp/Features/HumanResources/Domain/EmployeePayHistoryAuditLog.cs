@@ -1,4 +1,4 @@
-using AWBlazorApp.Features.AdventureWorks.Domain;
+using AWBlazorApp.Shared.Domain;
 namespace AWBlazorApp.Features.HumanResources.Domain;
 
 /// <summary>Audit log for <see cref="EmployeePayHistory"/>. EF-managed table <c>dbo.EmployeePayHistoryAuditLogs</c>.</summary>

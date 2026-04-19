@@ -1,0 +1,138 @@
+@page "/aw/product-model-product-description-cultures"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Production.Domain
+@using AWBlazorApp.Features.Production.Dtos
+@using AWBlazorApp.Features.Production.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Model ↔ description ↔ culture</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Model ↔ description ↔ culture</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductModelProductDescriptionCulture · 3-col PK</MudText>
+        <MudSpacer />
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-model-product-description-cultures/history">View audit history</MudButton>
+        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
+        </AuthorizeView>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
+    </MudPaper>
+
+    <MudDataGrid T="ProductModelProductDescriptionCultureDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.ProductModelId" Title="Model id">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ProductModelId)" Title="Model id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ProductDescriptionId" Title="Description id">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId)" Title="Description id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.CultureId" Title="Culture">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.CultureId)" Title="Culture" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+                <HeaderTemplate><GridColumnHeader TEntity="ProductModelProductDescriptionCulture" PropertyName="@nameof(ProductModelProductDescriptionCultureDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
+                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
+                        </AuthorizeView>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="ProductModelProductDescriptionCultureDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<ProductModelProductDescriptionCultureDto> grid = null!;
+    private bool _loading = true;
+    private int? filterProductModelId;
+    private readonly ColumnFilterState columnFilters = new();
+
+    private async Task<GridData<ProductModelProductDescriptionCultureDto>> LoadServerDataAsync(GridState<ProductModelProductDescriptionCultureDto> state, CancellationToken ct)
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync(ct);
+            var query = db.ProductModelProductDescriptionCultures.AsNoTracking();
+            if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
+            query = query.ApplyColumnFilters(columnFilters);
+
+            var total = await query.CountAsync(ct);
+
+            var sort = state.SortDefinitions.FirstOrDefault();
+            query = sort?.SortBy switch
+            {
+                nameof(ProductModelProductDescriptionCultureDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
+                nameof(ProductModelProductDescriptionCultureDto.ProductDescriptionId) => sort.Descending ? query.OrderByDescending(x => x.ProductDescriptionId) : query.OrderBy(x => x.ProductDescriptionId),
+                nameof(ProductModelProductDescriptionCultureDto.CultureId) => sort.Descending ? query.OrderByDescending(x => x.CultureId) : query.OrderBy(x => x.CultureId),
+                nameof(ProductModelProductDescriptionCultureDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+                _ => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.ProductDescriptionId).ThenBy(x => x.CultureId),
+            };
+
+            var rows = await query
+                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+            return new GridData<ProductModelProductDescriptionCultureDto> { Items = rows, TotalItems = total };
+            }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }}
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<ProductModelProductDescriptionCultureDialog>("Link model ↔ description ↔ culture", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+    }
+
+    private async Task DeleteAsync(ProductModelProductDescriptionCultureDto row)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete link?", $"Permanently delete link ({row.ProductModelId}, {row.ProductDescriptionId}, {row.CultureId})?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.ProductModelProductDescriptionCultures
+            .FirstOrDefaultAsync(t => t.ProductModelId == row.ProductModelId && t.ProductDescriptionId == row.ProductDescriptionId && t.CultureId == row.CultureId);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
+
+        var changedBy = await GetCurrentUserNameAsync();
+        db.ProductModelProductDescriptionCultureAuditLogs.Add(ProductModelProductDescriptionCultureAuditService.RecordDelete(entity, changedBy));
+        db.ProductModelProductDescriptionCultures.Remove(entity);
+        try
+        {
+            await db.SaveChangesAsync();
+            Snackbar.Add("Link deleted.", Severity.Success);
+        }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+        await grid.ReloadServerData();
+    }
+
+    private void OpenHistory(ProductModelProductDescriptionCultureDto row)
+        => Navigation.NavigateTo($"aw/product-model-product-description-cultures/history?productModelId={row.ProductModelId}&productDescriptionId={row.ProductDescriptionId}&cultureId={row.CultureId}");
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+    }
+}
