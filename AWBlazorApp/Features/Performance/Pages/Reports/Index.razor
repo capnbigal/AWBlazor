@@ -1,6 +1,7 @@
 @page "/performance/reports"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -28,8 +29,14 @@
             <PropertyColumn Property="x => x.Code" Title="Code" />
             <PropertyColumn Property="x => x.Name" Title="Name" />
             <PropertyColumn Property="x => x.Kind" Title="Kind" />
+            <PropertyColumn Property="x => x.RangePreset" Title="Range" />
             <PropertyColumn Property="x => x.LastRunAt" Title="Last run" Format="yyyy-MM-dd HH:mm" />
             <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" Size="Size.Small" Title="Run report" OnClick="@(() => Navigation.NavigateTo($"performance/reports/{context.Item.Id}/run"))" />
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="PerformanceReportDto" /></PagerContent>
     </MudDataGrid>
@@ -45,7 +52,21 @@
             <MudSelect T="PerformanceReportKind" @bind-Value="newRow.Kind" Label="Kind" Variant="Variant.Outlined">
                 @foreach (var k in Enum.GetValues<PerformanceReportKind>()) { <MudSelectItem T="PerformanceReportKind" Value="@k">@k</MudSelectItem> }
             </MudSelect>
-            <MudTextField @bind-Value="newRow.DefinitionJson" Label="Definition (JSON)" Variant="Variant.Outlined" Lines="6" HelperText="Free-form query spec interpreted by the report runner." />
+            <MudSelect T="ReportRangePreset" @bind-Value="newRow.RangePreset" Label="Date range" Variant="Variant.Outlined" HelperText="Resolved at run time so the report stays rolling.">
+                @foreach (var r in Enum.GetValues<ReportRangePreset>()) { <MudSelectItem T="ReportRangePreset" Value="@r">@r</MudSelectItem> }
+            </MudSelect>
+            @if (newRow.Kind == PerformanceReportKind.OeeSummary || newRow.Kind == PerformanceReportKind.ProductionTrend)
+            {
+                <MudNumericField T="int?" @bind-Value="newRow.StationId" Label="Station ID (optional)" Variant="Variant.Outlined" Clearable="true" HelperText="Empty = all stations" />
+            }
+            @if (newRow.Kind == PerformanceReportKind.MaintenanceScorecard)
+            {
+                <MudNumericField T="int?" @bind-Value="newRow.AssetId" Label="Asset ID (optional)" Variant="Variant.Outlined" Clearable="true" HelperText="Empty = all assets" />
+            }
+            @if (newRow.Kind == PerformanceReportKind.KpiRollup || newRow.Kind == PerformanceReportKind.Custom)
+            {
+                <MudTextField @bind-Value="newRow.DefinitionJson" Label="Definition (JSON)" Variant="Variant.Outlined" Lines="4" HelperText="Free-form spec — runner does not yet interpret these kinds." />
+            }
             <MudCheckBox T="bool" @bind-Value="newRow.IsActive" Label="Active" />
         </MudStack>
     </DialogContent>
@@ -82,7 +103,7 @@
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
 
-    private void OpenCreate() { newRow = new CreatePerformanceReportRequest { Kind = PerformanceReportKind.OeeSummary, DefinitionJson = "{}", IsActive = true }; dialogOpen = true; }
+    private void OpenCreate() { newRow = new CreatePerformanceReportRequest { Kind = PerformanceReportKind.OeeSummary, RangePreset = ReportRangePreset.Last7Days, DefinitionJson = "{}", IsActive = true }; dialogOpen = true; }
 
     private async Task CreateAsync()
     {

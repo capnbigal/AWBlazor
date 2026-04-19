@@ -2,6 +2,7 @@ using System.Security.Claims;
 using AWBlazorApp.Data;
 using AWBlazorApp.Features.Performance.Audit;
 using AWBlazorApp.Features.Performance.Models;
+using AWBlazorApp.Features.Performance.Services;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Models;
 using FluentValidation;
@@ -29,8 +30,29 @@ public static class ReportEndpoints
             .RequireAuthorization(p => p.RequireRole(AppRoles.Admin));
         group.MapGet("/{id:int}/history", HistoryAsync).WithName("ListPerformanceReportHistory");
         group.MapGet("/{id:int}/runs", ListRunsAsync).WithName("ListPerformanceReportRuns");
+        group.MapPost("/{id:int}/run", RunAsync).WithName("RunPerformanceReport")
+            .RequireAuthorization(p => p.RequireRole(AppRoles.Employee, AppRoles.Manager, AppRoles.Admin));
 
         return app;
+    }
+
+    private static async Task<Results<Ok<PerformanceReportResultDto>, NotFound, ProblemHttpResult>> RunAsync(
+        int id, IPerformanceReportRunner runner, ClaimsPrincipal user, CancellationToken ct)
+    {
+        try
+        {
+            var result = await runner.RunAsync(id, user.FindFirst(ClaimTypes.NameIdentifier)?.Value, ct);
+            return TypedResults.Ok(result);
+        }
+        catch (KeyNotFoundException) { return TypedResults.NotFound(); }
+        catch (NotSupportedException ex)
+        {
+            return TypedResults.Problem(detail: ex.Message, statusCode: StatusCodes.Status501NotImplemented, title: "Report kind not supported");
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError, title: "Report run failed");
+        }
     }
 
     private static async Task<Ok<PagedResult<PerformanceReportDto>>> ListAsync(

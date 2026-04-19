@@ -40,7 +40,8 @@ public sealed record CreateScorecardKpiRequest
 
 public sealed record PerformanceReportDto(
     int Id, string Code, string Name, string? Description,
-    PerformanceReportKind Kind, string DefinitionJson,
+    PerformanceReportKind Kind, ReportRangePreset RangePreset,
+    int? StationId, int? AssetId, string DefinitionJson,
     DateTime? LastRunAt, bool IsActive, DateTime ModifiedDate);
 
 public sealed record CreatePerformanceReportRequest
@@ -49,6 +50,9 @@ public sealed record CreatePerformanceReportRequest
     public string? Name { get; set; }
     public string? Description { get; set; }
     public PerformanceReportKind Kind { get; set; } = PerformanceReportKind.OeeSummary;
+    public ReportRangePreset RangePreset { get; set; } = ReportRangePreset.Last7Days;
+    public int? StationId { get; set; }
+    public int? AssetId { get; set; }
     public string DefinitionJson { get; set; } = "{}";
     public bool IsActive { get; set; } = true;
 }
@@ -57,6 +61,9 @@ public sealed record UpdatePerformanceReportRequest
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
+    public ReportRangePreset? RangePreset { get; set; }
+    public int? StationId { get; set; }
+    public int? AssetId { get; set; }
     public string? DefinitionJson { get; set; }
     public bool? IsActive { get; set; }
 }
@@ -64,8 +71,31 @@ public sealed record UpdatePerformanceReportRequest
 public sealed record PerformanceReportAuditLogDto(
     int Id, int PerformanceReportId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
     string? Code, string? Name, string? Description,
-    PerformanceReportKind Kind, string? DefinitionJson,
+    PerformanceReportKind Kind, ReportRangePreset RangePreset,
+    int? StationId, int? AssetId, string? DefinitionJson,
     DateTime? LastRunAt, bool IsActive, DateTime SourceModifiedDate);
+
+/// <summary>
+/// Result of running a <see cref="PerformanceReport"/>. Generic shape (column metadata +
+/// row arrays) so the same UI can render every report kind without per-kind branches.
+/// </summary>
+public sealed record PerformanceReportResultDto(
+    int ReportId,
+    string ReportCode,
+    string ReportName,
+    PerformanceReportKind Kind,
+    DateTime RangeStart,
+    DateTime RangeEnd,
+    IReadOnlyList<PerformanceReportColumnDto> Columns,
+    IReadOnlyList<IReadOnlyList<string>> Rows,
+    DateTime GeneratedAt,
+    int DurationMs);
+
+/// <summary>One column in a <see cref="PerformanceReportResultDto"/>.</summary>
+public sealed record PerformanceReportColumnDto(
+    string Key,           // stable identifier — used for CSV header / sort key
+    string Label,         // human-readable column header
+    string DataType);     // "string", "int", "decimal", "date" — drives client-side formatting
 
 public sealed record PerformanceReportRunDto(
     long Id, int PerformanceReportId, DateTime RunAt, string? RunByUserId,
@@ -119,7 +149,7 @@ public static class ScorecardMappings
 
     public static PerformanceReportDto ToDto(this PerformanceReport e) => new(
         e.Id, e.Code, e.Name, e.Description,
-        e.Kind, e.DefinitionJson,
+        e.Kind, e.RangePreset, e.StationId, e.AssetId, e.DefinitionJson,
         e.LastRunAt, e.IsActive, e.ModifiedDate);
 
     public static PerformanceReport ToEntity(this CreatePerformanceReportRequest r) => new()
@@ -128,6 +158,9 @@ public static class ScorecardMappings
         Name = (r.Name ?? string.Empty).Trim(),
         Description = r.Description?.Trim(),
         Kind = r.Kind,
+        RangePreset = r.RangePreset,
+        StationId = r.StationId,
+        AssetId = r.AssetId,
         DefinitionJson = r.DefinitionJson ?? "{}",
         IsActive = r.IsActive,
         ModifiedDate = DateTime.UtcNow,
@@ -137,6 +170,13 @@ public static class ScorecardMappings
     {
         if (r.Name is not null) e.Name = r.Name.Trim();
         if (r.Description is not null) e.Description = r.Description.Trim();
+        if (r.RangePreset is not null) e.RangePreset = r.RangePreset.Value;
+        // StationId and AssetId are intentionally Patch-style overwrites: a non-null value sets,
+        // null means "no change". To clear a value, callers must update via a different code path
+        // (or send the create request again). Same convention the rest of the codebase uses for
+        // nullable foreign-key fields.
+        if (r.StationId is not null) e.StationId = r.StationId;
+        if (r.AssetId is not null) e.AssetId = r.AssetId;
         if (r.DefinitionJson is not null) e.DefinitionJson = r.DefinitionJson;
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
@@ -145,7 +185,7 @@ public static class ScorecardMappings
     public static PerformanceReportAuditLogDto ToDto(this PerformanceReportAuditLog a) => new(
         a.Id, a.PerformanceReportId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
         a.Code, a.Name, a.Description,
-        a.Kind, a.DefinitionJson,
+        a.Kind, a.RangePreset, a.StationId, a.AssetId, a.DefinitionJson,
         a.LastRunAt, a.IsActive, a.SourceModifiedDate);
 
     public static PerformanceReportRunDto ToDto(this PerformanceReportRun e) => new(

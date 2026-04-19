@@ -754,8 +754,8 @@ public sealed class DemoDataSeeder
         // Reports.
         var reports = new[]
         {
-            new PerformanceReport { Code = "DEMO-RPT-OEE-WEEK", Name = "Weekly OEE by station", Description = "OEE for all stations for the last 7 days.", Kind = PerformanceReportKind.OeeSummary, DefinitionJson = "{\"range\":\"last7\"}", IsActive = true, ModifiedDate = now },
-            new PerformanceReport { Code = "DEMO-RPT-MAINT-SC", Name = "Monthly maintenance scorecard", Description = "MTBF / MTTR / availability per asset for the month.", Kind = PerformanceReportKind.MaintenanceScorecard, DefinitionJson = "{\"range\":\"lastMonth\"}", IsActive = true, ModifiedDate = now },
+            new PerformanceReport { Code = "DEMO-RPT-OEE-WEEK", Name = "Weekly OEE by station", Description = "OEE for all stations for the last 7 days.", Kind = PerformanceReportKind.OeeSummary, RangePreset = ReportRangePreset.Last7Days, IsActive = true, ModifiedDate = now },
+            new PerformanceReport { Code = "DEMO-RPT-MAINT-SC", Name = "Monthly maintenance scorecard", Description = "MTBF / MTTR / availability per asset for the month.", Kind = PerformanceReportKind.MaintenanceScorecard, RangePreset = ReportRangePreset.LastMonth, IsActive = true, ModifiedDate = now },
         };
         db.PerformanceReports.AddRange(reports);
         await db.SaveChangesAsync(ct);

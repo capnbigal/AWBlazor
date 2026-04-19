@@ -97,6 +97,8 @@ public sealed class CreatePerformanceReportValidator : AbstractValidator<CreateP
         RuleFor(x => x.Code).NotEmpty().MaximumLength(32).Matches("^[A-Z0-9][A-Z0-9_-]*$");
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).MaximumLength(2000);
+        When(x => x.StationId.HasValue, () => RuleFor(x => x.StationId!.Value).GreaterThan(0));
+        When(x => x.AssetId.HasValue, () => RuleFor(x => x.AssetId!.Value).GreaterThan(0));
     }
 }
 
@@ -106,5 +108,7 @@ public sealed class UpdatePerformanceReportValidator : AbstractValidator<UpdateP
     {
         When(x => x.Name is not null, () => RuleFor(x => x.Name!).NotEmpty().MaximumLength(200));
         When(x => x.Description is not null, () => RuleFor(x => x.Description!).MaximumLength(2000));
+        When(x => x.StationId.HasValue, () => RuleFor(x => x.StationId!.Value).GreaterThan(0));
+        When(x => x.AssetId.HasValue, () => RuleFor(x => x.AssetId!.Value).GreaterThan(0));
     }
 }
