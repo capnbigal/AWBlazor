@@ -15,7 +15,7 @@ cd AWBlazor
 dotnet restore AWBlazorApp.slnx
 dotnet build AWBlazorApp.slnx
 dotnet test AWBlazorApp.slnx
-dotnet run --project AWBlazorApp
+dotnet run --project src/AWBlazorApp
 ```
 
 Open https://localhost:5001/

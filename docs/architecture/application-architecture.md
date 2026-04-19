@@ -73,7 +73,7 @@ No NPM toolchain. No Tailwind. No Vue. No SQLite. Never reintroduce.
 ## Project layout
 
 ```
-AWBlazorApp/
+src/AWBlazorApp/
 ├── Authentication/         # API key auth handler, Hangfire dashboard auth filter
 ├── Components/
 │   ├── Account/            # ASP.NET Identity scaffolded pages (static SSR)

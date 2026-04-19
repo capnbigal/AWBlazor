@@ -118,7 +118,7 @@ scp C:/Temp/AdventureWorks2022.bak user@droplet-ip:/opt/awblazor/backups/
 # Alternative: build locally and push to GHCR, then `docker pull` on droplet.
 rsync -av --delete \
     --exclude='.git' --exclude='bin/' --exclude='obj/' --exclude='.vs/' \
-    AWBlazorApp AWBlazorApp.slnx \
+    src AWBlazorApp.slnx \
     user@droplet-ip:/opt/awblazor/
 ```
 

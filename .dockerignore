@@ -26,9 +26,9 @@ docs/
 
 # Dev/local files
 *.md
-!AWBlazorApp/_posts/**
-!AWBlazorApp/_pages/**
-!AWBlazorApp/_includes/**
+!src/AWBlazorApp/_posts/**
+!src/AWBlazorApp/_pages/**
+!src/AWBlazorApp/_includes/**
 
 # Secrets (never in image)
 .env

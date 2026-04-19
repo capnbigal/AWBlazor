@@ -12,11 +12,11 @@ WORKDIR /src
 # Restore as a distinct layer — cache-friendly. Only the main .csproj is needed.
 # The Tests project and .slnx are excluded from the build context by .dockerignore
 # and aren't required to build the shipped image.
-COPY AWBlazorApp/AWBlazorApp.csproj AWBlazorApp/
+COPY src/AWBlazorApp/AWBlazorApp.csproj AWBlazorApp/
 RUN dotnet restore AWBlazorApp/AWBlazorApp.csproj
 
 # Copy the rest of the source and publish.
-COPY AWBlazorApp/ AWBlazorApp/
+COPY src/AWBlazorApp/ AWBlazorApp/
 WORKDIR /src/AWBlazorApp
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 

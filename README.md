@@ -38,11 +38,11 @@ phases. The current state is documented below.
 
 ```pwsh
 git clone <this repo>
-cd AWBlazorApp
+cd AWBlazor
 dotnet restore AWBlazorApp.slnx
 dotnet build  AWBlazorApp.slnx
 dotnet test   AWBlazorApp.slnx       # 213 integration + unit tests
-dotnet run --project AWBlazorApp
+dotnet run --project src/AWBlazorApp
 ```
 
 Then open `https://localhost:5001/`.
@@ -50,7 +50,7 @@ Then open `https://localhost:5001/`.
 ## First-run database behavior
 
 The app talks to **ELITE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
-in `AWBlazorApp/Data/DatabaseInitializer.cs` runs four steps in order:
+in `src/AWBlazorApp/Data/DatabaseInitializer.cs` runs four steps in order:
 
 1. **`ReconcileMigrationHistoryAsync`** — if your database already contains tables that one of
    our EF migrations would create (e.g. you ran an earlier prerelease and the `AspNetRoles`
@@ -96,7 +96,7 @@ to the real database column casing (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, etc.
 Use user secrets in development to keep your SMTP credentials out of source control:
 
 ```pwsh
-cd AWBlazorApp
+cd src/AWBlazorApp
 dotnet user-secrets set "Smtp:Host" "smtp.example.com"
 dotnet user-secrets set "Smtp:Username" "myuser"
 dotnet user-secrets set "Smtp:Password" "mypassword"
@@ -143,7 +143,7 @@ SHA-256 hashes; legacy plain-text keys are supported for backwards compatibility
 ## Project layout
 
 ```
-AWBlazorApp/
+src/AWBlazorApp/
 ├── Authentication/             ApiKeyAuthenticationHandler, HangfireDashboardAuthFilter
 ├── Components/
 │   ├── Account/                Identity scaffold pages (all static SSR)

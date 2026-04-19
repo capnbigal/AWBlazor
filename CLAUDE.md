@@ -9,13 +9,13 @@ dotnet restore AWBlazorApp.slnx
 dotnet build   AWBlazorApp.slnx
 dotnet test    AWBlazorApp.slnx                        # all 213 tests
 dotnet test    AWBlazorApp.slnx --filter "FullyQualifiedName~Login_Form_Post"   # single test by name pattern
-dotnet run     --project AWBlazorApp                   # https://localhost:5001
+dotnet run     --project src/AWBlazorApp                # https://localhost:5001
 ```
 
 EF Core migrations:
 
 ```pwsh
-cd AWBlazorApp
+cd src/AWBlazorApp
 dotnet ef migrations add <Name>
 dotnet ef migrations script --idempotent --output ../schema.sql   # generate idempotent SQL
 ```
