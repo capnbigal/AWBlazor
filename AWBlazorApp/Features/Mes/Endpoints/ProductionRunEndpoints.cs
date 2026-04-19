@@ -88,12 +88,7 @@ public static class ProductionRunEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductionRuns.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductionRunAuditLogs.Add(ProductionRunAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => ProductionRunAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/production-runs/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -124,11 +119,7 @@ public static class ProductionRunEndpoints
         if (entity.Status == ProductionRunStatus.Completed)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a completed run; cancel it instead."] });
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductionRuns.Remove(entity);
-        db.ProductionRunAuditLogs.Add(ProductionRunAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, ProductionRunAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

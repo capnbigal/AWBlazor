@@ -165,12 +165,7 @@ public static class ShopFloorEndpoints
             var v = await validator.ValidateAsync(request, ct);
             if (!v.IsValid) return Results.ValidationProblem(v.ToDictionary());
             var entity = request.ToEntity();
-            await using var tx = await db.Database.BeginTransactionAsync(ct);
-            db.DowntimeReasons.Add(entity);
-            await db.SaveChangesAsync(ct);
-            db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordCreate(entity, user.Identity?.Name));
-            await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
+            await db.AddWithAuditAsync(entity, e => DowntimeReasonAuditService.RecordCreate(e, user.Identity?.Name), ct);
             return Results.Created($"/api/downtime-reasons/{entity.Id}", new IdResponse(entity.Id));
         }).WithName("CreateDowntimeReason")
           .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
@@ -199,11 +194,7 @@ public static class ShopFloorEndpoints
             if (entity is null) return Results.NotFound();
             var inUse = await db.DowntimeEvents.AnyAsync(d => d.DowntimeReasonId == id, ct);
             if (inUse) return Results.BadRequest("Reason is referenced by downtime events; deactivate instead.");
-            await using var tx = await db.Database.BeginTransactionAsync(ct);
-            db.DowntimeReasons.Remove(entity);
-            db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordDelete(entity, user.Identity?.Name));
-            await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
+            await db.DeleteWithAuditAsync(entity, DowntimeReasonAuditService.RecordDelete(entity, user.Identity?.Name), ct);
             return Results.NoContent();
         }).WithName("DeleteDowntimeReason")
           .RequireAuthorization(p => p.RequireRole(AppRoles.Admin));

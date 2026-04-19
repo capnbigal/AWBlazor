@@ -77,12 +77,7 @@ public static class WorkInstructionEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.WorkInstructions.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.WorkInstructionAuditLogs.Add(WorkInstructionAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => WorkInstructionAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/work-instructions/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -107,11 +102,7 @@ public static class WorkInstructionEndpoints
     {
         var entity = await db.WorkInstructions.FirstOrDefaultAsync(w => w.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.WorkInstructions.Remove(entity);
-        db.WorkInstructionAuditLogs.Add(WorkInstructionAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, WorkInstructionAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

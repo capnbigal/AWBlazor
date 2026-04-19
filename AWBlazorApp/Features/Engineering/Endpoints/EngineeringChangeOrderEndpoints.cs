@@ -74,12 +74,7 @@ public static class EngineeringChangeOrderEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EngineeringChangeOrders.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.EngineeringChangeOrderAuditLogs.Add(EngineeringChangeOrderAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => EngineeringChangeOrderAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/engineering-change-orders/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -106,11 +101,7 @@ public static class EngineeringChangeOrderEndpoints
     {
         var entity = await db.EngineeringChangeOrders.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.EngineeringChangeOrders.Remove(entity);
-        db.EngineeringChangeOrderAuditLogs.Add(EngineeringChangeOrderAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, EngineeringChangeOrderAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

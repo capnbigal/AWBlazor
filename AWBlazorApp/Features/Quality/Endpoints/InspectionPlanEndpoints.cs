@@ -76,12 +76,7 @@ public static class InspectionPlanEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.InspectionPlans.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.InspectionPlanAuditLogs.Add(InspectionPlanAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => InspectionPlanAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/inspection-plans/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -106,11 +101,7 @@ public static class InspectionPlanEndpoints
     {
         var entity = await db.InspectionPlans.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.InspectionPlans.Remove(entity);
-        db.InspectionPlanAuditLogs.Add(InspectionPlanAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, InspectionPlanAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

@@ -71,12 +71,7 @@ public static class NonConformanceEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.NonConformances.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.NonConformanceAuditLogs.Add(NonConformanceAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => NonConformanceAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/non-conformances/{entity.Id}", new IdResponse(entity.Id));
     }
 
