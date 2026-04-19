@@ -78,12 +78,7 @@ public static class GoodsReceiptEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.GoodsReceipts.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.GoodsReceiptAuditLogs.Add(GoodsReceiptAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => GoodsReceiptAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/goods-receipts/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -115,11 +110,7 @@ public static class GoodsReceiptEndpoints
         if (entity.Status == GoodsReceiptStatus.Posted)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a posted receipt."] });
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.GoodsReceipts.Remove(entity);
-        db.GoodsReceiptAuditLogs.Add(GoodsReceiptAuditService.RecordDelete(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.DeleteWithAuditAsync(entity, GoodsReceiptAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 

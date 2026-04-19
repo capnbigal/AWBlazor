@@ -77,12 +77,7 @@ public static class OrgUnitEndpoints
         var entity = request.ToEntity();
         await ResolvePathAndDepthAsync(db, entity, ct);
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.OrgUnits.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.OrgUnitAuditLogs.Add(OrgUnitAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => OrgUnitAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/org-units/{entity.Id}", new IdResponse(entity.Id));
     }
 
