@@ -72,12 +72,7 @@ public static class ProductDocumentEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductDocuments.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductDocumentAuditLogs.Add(ProductDocumentAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => ProductDocumentAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/product-documents/by-key?productId={entity.ProductId}&documentNode={Uri.EscapeDataString(entity.DocumentNode.ToString())}",
             new CompositeKeyResponse(new Dictionary<string, object>

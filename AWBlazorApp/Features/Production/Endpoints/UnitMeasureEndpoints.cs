@@ -61,12 +61,7 @@ public static class UnitMeasureEndpoints
             return TypedResults.Conflict($"Unit measure code '{code}' already exists.");
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.UnitMeasures.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.UnitMeasureAuditLogs.Add(UnitMeasureAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => UnitMeasureAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/aw/unit-measures/{entity.UnitMeasureCode}", new StringIdResponse(entity.UnitMeasureCode));
     }
 

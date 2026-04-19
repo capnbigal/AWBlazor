@@ -73,13 +73,7 @@ public static class ProductModelProductDescriptionCultureEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductModelProductDescriptionCultures.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductModelProductDescriptionCultureAuditLogs.Add(
-            ProductModelProductDescriptionCultureAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => ProductModelProductDescriptionCultureAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/product-model-product-description-cultures/by-key?productModelId={entity.ProductModelId}&productDescriptionId={entity.ProductDescriptionId}&cultureId={entity.CultureId}",
             new CompositeKeyResponse(new Dictionary<string, object>

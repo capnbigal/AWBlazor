@@ -61,12 +61,7 @@ public static class CultureEndpoints
             return TypedResults.Conflict($"Culture ID '{id}' already exists.");
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.Cultures.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.CultureAuditLogs.Add(CultureAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => CultureAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/aw/cultures/{entity.CultureId}", new StringIdResponse(entity.CultureId));
     }
 
