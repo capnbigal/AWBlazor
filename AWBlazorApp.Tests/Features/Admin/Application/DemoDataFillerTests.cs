@@ -1,8 +1,9 @@
 using AWBlazorApp.Features.Admin.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Admin.Application;
 
 /// <summary>
 /// Companion to <see cref="DemoDataSeederTests"/> — exercises <see cref="DemoDataFiller"/>.

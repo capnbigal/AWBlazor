@@ -4,8 +4,9 @@ using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Performance.Application;
 
 /// <summary>
 /// Exercises <see cref="MetricsRollupJob"/> — the nightly Hangfire job that pre-computes

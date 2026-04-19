@@ -3,13 +3,14 @@ using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Shared.Domain;
 using AWBlazorApp.Features.Identity.Domain;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Infrastructure.Api;
 
 /// <summary>
 /// Parameterized smoke tests for every AdventureWorks REST endpoint group. These tests verify
@@ -158,49 +159,5 @@ public class ApiSmokeTests : IntegrationTestFixtureBase
 
         _smokeTestApiKey = rawKey;
         return rawKey;
-    }
-}
-
-/// <summary>
-/// Shared fixture base — provides Factory and GetDbContextAsync without each test class
-/// rebuilding the WebApplicationFactory (host startup is slow against the real SQL Server).
-/// Test classes inherit this; NUnit reuses the OneTimeSetUp across [TestCaseSource] enumerations.
-/// </summary>
-public abstract class IntegrationTestFixtureBase
-{
-    private static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>? _sharedFactory;
-    private static readonly object _factoryLock = new();
-
-    protected Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> Factory
-    {
-        get
-        {
-            if (_sharedFactory is not null) return _sharedFactory;
-            lock (_factoryLock)
-            {
-                _sharedFactory ??= new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>()
-                    .WithWebHostBuilder(builder =>
-                    {
-                        builder.UseEnvironment("Development");
-                        builder.ConfigureAppConfiguration((_, config) =>
-                        {
-                            config.AddInMemoryCollection(new Dictionary<string, string?>
-                            {
-                                ["Features:Hangfire"] = "false",
-                                ["RequestLogs:Enabled"] = "false",
-                                ["Features:RateLimiting"] = "false",
-                            });
-                        });
-                    });
-                return _sharedFactory;
-            }
-        }
-    }
-
-    protected async Task<ApplicationDbContext> GetDbContextAsync()
-    {
-        var scope = Factory.Services.CreateScope();
-        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
-        return await dbFactory.CreateDbContextAsync();
     }
 }

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Shared.Testing;
 
 /// <summary>
 /// Helper for testing Blazor static-SSR forms. Performs the standard browser flow:

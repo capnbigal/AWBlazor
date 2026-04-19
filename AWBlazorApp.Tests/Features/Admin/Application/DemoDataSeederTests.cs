@@ -3,8 +3,9 @@ using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Admin.Application;
 
 /// <summary>
 /// Exercises <see cref="DemoDataSeeder"/> — the droplet-demo seeder. Verifies it writes rows

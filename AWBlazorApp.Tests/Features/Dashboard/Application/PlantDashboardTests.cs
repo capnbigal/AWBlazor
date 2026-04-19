@@ -7,8 +7,9 @@ using AWBlazorApp.Features.Identity.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Net.Http.Json;
+using AWBlazorApp.Tests.Infrastructure.Testing;
 
-namespace AWBlazorApp.Tests;
+namespace AWBlazorApp.Tests.Features.Dashboard.Application;
 
 /// <summary>
 /// Integration tests for the cross-module plant dashboard. Verifies the service aggregates
