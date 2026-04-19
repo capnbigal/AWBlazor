@@ -44,7 +44,9 @@
                          Labels="@data.VolumeLabels"
                          Series="@data.VolumeSeries"
                          Periods="@(new[] { "6M", "12M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="execution count" />
 
         @* -- Completion vs. overdue trend ------------------------------------- *@
         <TimeSeriesChart Title="Completed vs. overdue executions per month"
@@ -52,7 +54,9 @@
                          Labels="@data.OutcomeLabels"
                          Series="@data.OutcomeSeries"
                          Periods="@(new[] { "6M", "12M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="execution count by outcome" />
 
         @* -- Top processes by execution count --------------------------------- *@
         @if (data.TopProcesses.Count > 0)

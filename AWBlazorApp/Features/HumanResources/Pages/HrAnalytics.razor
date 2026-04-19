@@ -43,7 +43,9 @@
                          Labels="@hireLabels"
                          Series="@hireSeries"
                          Periods="@(new[] { "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month of hire"
+                         YAxisCaption="cumulative headcount" />
 
         <MudGrid>
             @* ── Tenure distribution ──────────────────────────────────────── *@
@@ -56,6 +58,10 @@
                                   ChartSeries="@tenureSeries"
                                   XAxisLabels="@tenureLabels"
                                   Width="100%" Height="280px" />
+                        <MudStack Row="true" Spacing="3" Class="mt-2">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> tenure bucket — @string.Join(" · ", tenureLabels)</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> employee count</MudText>
+                        </MudStack>
                     }
                     else
                     {
@@ -92,7 +98,9 @@
                          Labels="@payLabels"
                          Series="@paySeries"
                          Periods="@(new[] { "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="USD per hour (avg across all employees)" />
 
         @* ── Department headcount ─────────────────────────────────────────── *@
         <MudPaper Class="pa-4" Elevation="2">
@@ -104,6 +112,10 @@
                           XAxisLabels="@deptLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="100%" Height="320px" />
+                <MudStack Row="true" Spacing="3" Class="mt-2">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> department</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> active headcount</MudText>
+                </MudStack>
             }
             else
             {
@@ -119,7 +131,9 @@
                          Labels="@deptGrowthLabels"
                          Series="@deptGrowthSeries"
                          Periods="@(new[] { "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="new assignments per dept" />
 
         @* ── Salaried vs hourly ───────────────────────────────────────────── *@
         <MudGrid>

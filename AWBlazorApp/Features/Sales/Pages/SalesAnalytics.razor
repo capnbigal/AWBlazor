@@ -48,7 +48,9 @@
                          Series="@revenueSeries"
                          Periods="@(new[] { "12M", "24M", "36M", "All" })"
                          ShowGranularity="false"
-                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))"
+                         XAxisCaption="month"
+                         YAxisCaption="USD revenue (compact)" />
 
         @* ── Orders & shipments over time ───────────────────────────────────── *@
         <TimeSeriesChart Title="Orders placed vs. shipped per month"
@@ -56,7 +58,9 @@
                          Labels="@ordersLabels"
                          Series="@ordersSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="order count" />
 
         <MudGrid>
             @* ── Revenue by territory ──────────────────────────────────────── *@
@@ -142,7 +146,9 @@
                          Series="@quotaSeries"
                          Periods="@(new[] { "12M", "All" })"
                          ShowGranularity="false"
-                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))"
+                         XAxisCaption="quarter"
+                         YAxisCaption="USD (quota vs actual)" />
     }
 </MudStack>
 

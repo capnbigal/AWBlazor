@@ -48,7 +48,9 @@
                          Series="@spendSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
                          ShowGranularity="false"
-                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))" />
+                         YAxisToStringFunc="@(v => NumberFormat.CompactCurrency(v, 0))"
+                         XAxisCaption="month"
+                         YAxisCaption="USD spend (compact)" />
 
         @* ── POs placed vs completed ────────────────────────────────────────── *@
         <TimeSeriesChart Title="POs placed vs. completed per month"
@@ -56,7 +58,9 @@
                          Labels="@poCountLabels"
                          Series="@poCountSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
-                         ShowGranularity="false" />
+                         ShowGranularity="false"
+                         XAxisCaption="month"
+                         YAxisCaption="purchase order count" />
 
         @* ── Top 10 vendors by spend ────────────────────────────────────────── *@
         <MudPaper Class="pa-4" Elevation="2">
