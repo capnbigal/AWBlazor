@@ -61,11 +61,8 @@ else if (definition is not null)
                 <MudChart T="double" ChartType="ChartType.Line"
                           ChartSeries="@chartSeries"
                           XAxisLabels="@chartLabels"
+                          ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.RotatedAxisLineOptions"
                           Width="100%" Height="320px" />
-                <MudStack Row="true" Spacing="3" Class="mt-2">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> period</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> forecast value vs actual (same units as the underlying metric)</MudText>
-                </MudStack>
             </MudPaper>
         }
 

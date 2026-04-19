@@ -50,24 +50,6 @@
                   XAxisLabels="@FilteredLabels"
                   Width="100%" Height="@Height"
                   ChartOptions="@Options" />
-        @* Axis-context captions render below the chart so readers always know what the axes
-           represent — MudChart's built-in tick labels can be decimated or hidden on narrow
-           widths, leaving the series-name legend ("Headcount", "Employees", etc.) as the only
-           on-screen text. These captions are the backstop. Both default to empty so existing
-           call sites that don't set them keep working. *@
-        @if (!string.IsNullOrWhiteSpace(XAxisCaption) || !string.IsNullOrWhiteSpace(YAxisCaption))
-        {
-            <MudStack Row="true" Spacing="3" Class="mt-2">
-                @if (!string.IsNullOrWhiteSpace(XAxisCaption))
-                {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>X:</strong> @XAxisCaption</MudText>
-                }
-                @if (!string.IsNullOrWhiteSpace(YAxisCaption))
-                {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary"><strong>Y:</strong> @YAxisCaption</MudText>
-                }
-            </MudStack>
-        }
     }
 </MudPaper>
 
@@ -81,13 +63,10 @@
     [Parameter] public string[] Labels { get; set; } = [];
     [Parameter] public List<ChartSeries<double>> Series { get; set; } = [];
     [Parameter] public string[] Periods { get; set; } = ["6M", "12M", "24M", "All"];
-    /// <summary>What the X-axis represents in plain English (e.g., "month", "tenure bucket").
-    /// Rendered as a short caption below the chart. Empty = no caption.</summary>
-    [Parameter] public string? XAxisCaption { get; set; }
-    /// <summary>What the Y-axis represents in plain English (e.g., "cumulative headcount", "USD").
-    /// Rendered as a short caption below the chart. Empty = no caption.</summary>
-    [Parameter] public string? YAxisCaption { get; set; }
     [Parameter] public EventCallback<PeriodChangedArgs> OnPeriodChanged { get; set; }
+    /// <summary>X-axis label rotation in degrees. Defaults to 35 — diagonal labels fit ~24 month
+    /// names without overlap. Override per-call (set to 0) for charts with very few short labels.</summary>
+    [Parameter] public int XAxisLabelRotation { get; set; } = 35;
     /// <summary>Optional pre-built chart options. When null, options are derived from ChartType + YAxisFormat.</summary>
     [Parameter] public IChartOptions? ChartOptions { get; set; }
 
@@ -132,12 +111,15 @@
             // Use chart-type-specific options so YAxisFormat / YAxisToStringFunc take effect.
             // Seed ChartPalette with the app-wide blue/slate scale so auto-assigned series
             // colors stay on-brand instead of falling back to MudBlazor's rainbow default.
+            // XAxisLabelRotation is set to 35° by default — at 0° MudChart silently drops
+            // overlapping x-axis labels, leaving the user without month/category context.
+            // Diagonal labels fit ~24 month names side-by-side without collision.
             var palette = AWBlazorApp.Shared.Theming.ChartPalettes.BlueScale;
             return ChartType switch
             {
-                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
-                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
-                ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette },
+                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
+                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
+                ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
                 _                    => new ChartOptions            { ChartPalette = palette },
             };
         }
