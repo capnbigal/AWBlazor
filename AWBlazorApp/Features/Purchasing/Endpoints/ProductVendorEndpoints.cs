@@ -69,12 +69,7 @@ public static class ProductVendorEndpoints
         }
 
         var entity = request.ToEntity();
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.ProductVendors.Add(entity);
-        await db.SaveChangesAsync(ct);
-        db.ProductVendorAuditLogs.Add(ProductVendorAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await db.AddWithAuditAsync(entity, e => ProductVendorAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/product-vendors/by-key?productId={entity.ProductId}&businessEntityId={entity.BusinessEntityId}",
             new CompositeKeyResponse(new Dictionary<string, object>
