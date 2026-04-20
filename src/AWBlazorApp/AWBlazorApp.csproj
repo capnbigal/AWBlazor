@@ -5,6 +5,24 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>aspnet-AWBlazorApp-7b2ab71a-0b50-423f-969d-e35a9402b1b5</UserSecretsId>
+
+        <!--
+          Suppress two tooling-only warning categories that flood the build log without
+          surfacing any actionable issue in source code:
+
+          CS8669 — emitted from Razor source generator output (obj/.../*Razor*Generator/*.g.cs).
+            The generator emits nullable-annotated types (T?) into the generated .g.cs files but
+            does not prepend a `#nullable enable` directive at the top of those files. With
+            <Nullable>enable</Nullable> on the project, the C# compiler then complains that the
+            annotation is in a "disabled" nullable annotations context. Source has no way to
+            address this — the only fix is at the SDK generator level. ~2,900 occurrences pre-W1.
+
+          AD0001 — `Microsoft.AspNetCore.Analyzers.RouteHandlers.RouteHandlerAnalyzer` throws an
+            internal NullReferenceException 4× per build. Tooling defect in the ASP.NET Core 10
+            analyzer; not caused by anything in our minimal-API endpoints. Removing the suppression
+            once the analyzer ships a fix is fine; until then it just adds noise.
+        -->
+        <NoWarn>$(NoWarn);CS8669;AD0001</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

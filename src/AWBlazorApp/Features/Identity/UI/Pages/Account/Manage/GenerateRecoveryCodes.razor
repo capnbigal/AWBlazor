@@ -44,7 +44,7 @@
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private object dummy { get; set; } = new();
+    private object? dummy { get; set; }
 
     private string[]? recoveryCodes;
     private string? message;

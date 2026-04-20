@@ -110,12 +110,12 @@
                     {
                         rank++;
                         var pct = totalRows > 0 ? (double)e.RowCount!.Value / totalRows * 100 : 0;
-                        var maxPct = top10Max > 0 ? (double)e.RowCount.Value / top10Max * 100 : 0;
+                        var maxPct = top10Max > 0 ? (double)e.RowCount!.Value / top10Max * 100 : 0;
                         <tr>
                             <td><MudText Typo="Typo.body2" Color="Color.Secondary">@rank</MudText></td>
                             <td><MudChip T="string" Size="Size.Small" Color="@SchemaColor(e.Schema)" Variant="Variant.Filled">@e.Schema</MudChip></td>
                             <td><strong>@e.DisplayName</strong></td>
-                            <td style="text-align: right;">@e.RowCount.Value.ToString("N0")</td>
+                            <td style="text-align: right;">@e.RowCount!.Value.ToString("N0")</td>
                             <td style="text-align: right;">@pct.ToString("N1")%</td>
                             <td style="min-width: 200px;">
                                 <MudProgressLinear Value="@maxPct" Color="@SchemaColor(e.Schema)" Rounded="true" Size="Size.Small" />

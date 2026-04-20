@@ -50,7 +50,7 @@
     private string? message;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
+    private InputModel Input { get; set; } = null!;
 
     protected override void OnInitialized() => Input ??= new();
 

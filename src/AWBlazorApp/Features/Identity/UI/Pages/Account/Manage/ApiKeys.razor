@@ -126,10 +126,10 @@
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm(FormName = "generate-key")]
-    private GenerateInputModel GenerateInput { get; set; } = new();
+    private GenerateInputModel GenerateInput { get; set; } = null!;
 
     [SupplyParameterFromForm]
-    private RevokeInputModel RevokeInput { get; set; } = new();
+    private RevokeInputModel RevokeInput { get; set; } = null!;
 
     [SupplyParameterFromQuery(Name = "new")]
     private string? newlyGeneratedKey { get; set; }

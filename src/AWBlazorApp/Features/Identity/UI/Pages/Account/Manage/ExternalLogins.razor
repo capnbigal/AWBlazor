@@ -87,7 +87,7 @@
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private RemoveLoginInput RemoveInput { get; set; } = new();
+    private RemoveLoginInput RemoveInput { get; set; } = null!;
 
     private ApplicationUser user = default!;
     private IList<UserLoginInfo>? currentLogins;

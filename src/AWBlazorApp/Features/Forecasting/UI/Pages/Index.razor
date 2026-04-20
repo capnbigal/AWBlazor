@@ -33,13 +33,13 @@
             <PropertyColumn Property="x => x.Name" Title="Name">
                 <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="Data source" SortLabel="DataSource">
+            <TemplateColumn Title="Data source">
                 <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="DataSource" Title="Data source" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     @context.Item.DataSource
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Method" SortLabel="Method">
+            <TemplateColumn Title="Method">
                 <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="Method" Title="Method" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     @context.Item.Method
@@ -48,7 +48,7 @@
             <PropertyColumn Property="x => x.Granularity" Title="Granularity">
                 <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="@nameof(ForecastDefinitionDto.Granularity)" Title="Granularity" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="Status" SortLabel="Status">
+            <TemplateColumn Title="Status">
                 <HeaderTemplate><GridColumnHeader TEntity="ForecastDefinition" PropertyName="Status" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">
