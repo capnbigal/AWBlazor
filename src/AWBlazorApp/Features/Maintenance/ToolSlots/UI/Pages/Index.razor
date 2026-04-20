@@ -1,3 +1,5 @@
+@page "/maintenance/tool-slots"
+@* Legacy alias. Preserved for existing bookmarks; new code should use /maintenance/tool-slots. *@
 @page "/tool-slots"
 @attribute [Authorize]
 @using AWBlazorApp.Features.Maintenance.ToolSlots.UI.Pages
@@ -18,7 +20,7 @@
         <MudButton Color="Color.Secondary"
                    Variant="Variant.Outlined"
                    StartIcon="@Icons.Material.Filled.History"
-                   Href="tool-slots/history">
+                   Href="maintenance/tool-slots/history">
             View history
         </MudButton>
         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
@@ -224,7 +226,7 @@
     }
 
     private void OpenHistory(ToolSlotConfigurationDto slot)
-        => Navigation.NavigateTo($"tool-slots/history/{slot.Id}");
+        => Navigation.NavigateTo($"maintenance/tool-slots/history/{slot.Id}");
 
     private async Task<string?> GetCurrentUserNameAsync()
     {
