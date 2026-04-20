@@ -6,7 +6,7 @@ category: how-to
 author: AWBlazor
 ---
 
-The Database Explorer provides a structural overview of the AdventureWorks2022 database directly within AWBlazor. Accessible from the Reports section in the navigation drawer, it shows table counts, row counts, and size information organized by schema. This is useful for understanding the shape of the data you are working with, identifying large tables that may need indexing attention, and getting a quick inventory of what exists in the database.
+The Database Explorer provides a structural overview of the AdventureWorks2022 database directly within AWBlazor. Accessible from the My workspace section in the navigation drawer as "Database explorer", it shows table counts, row counts, and size information organized by schema. This is useful for understanding the shape of the data you are working with, identifying large tables that may need indexing attention, and getting a quick inventory of what exists in the database.
 
 ## Schema Distribution
 

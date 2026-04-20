@@ -6,7 +6,7 @@ category: how-to
 author: AWBlazor
 ---
 
-The Forecast Analytics Dashboard brings together all your active forecasts in one place, showing how well each one predicts actual outcomes and helping you choose the best method for each data source. It is accessible from the Analytics section in the navigation drawer and updates as new evaluation runs complete.
+The Forecast Analytics Dashboard brings together all your active forecasts in one place, showing how well each one predicts actual outcomes and helping you choose the best method for each data source. It is accessible from the Insights section in the navigation drawer and updates as new evaluation runs complete.
 
 ## Accuracy Metrics
 

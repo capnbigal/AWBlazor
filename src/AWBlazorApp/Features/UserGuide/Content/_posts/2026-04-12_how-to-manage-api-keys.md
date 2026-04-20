@@ -10,7 +10,7 @@ API keys let you authenticate against AWBlazor's REST API from scripts, external
 
 ## Creating a Key
 
-Navigate to Account > Manage > API Keys from the user menu in the top-right corner. The page displays a list of your existing keys with their creation date, last-used timestamp, and status (active or revoked). Click the Create New Key button to generate a fresh key. You will be prompted to provide an optional description — use something like "CI/CD Pipeline" or "Power BI Refresh" to remind yourself what the key is for. After clicking Create, the full key value (prefixed with `ek_`) is displayed exactly once. Copy it immediately and store it in a secure location such as a password manager or a secrets vault. Once you navigate away from the page, the raw key value cannot be retrieved again — only the SHA-256 hash is stored in the database.
+Navigate to Account > My account from the Account section at the bottom of the left navigation drawer, then open the API Keys tab. The page displays a list of your existing keys with their creation date, last-used timestamp, and status (active or revoked). Click the Create New Key button to generate a fresh key. You will be prompted to provide an optional description — use something like "CI/CD Pipeline" or "Power BI Refresh" to remind yourself what the key is for. After clicking Create, the full key value (prefixed with `ek_`) is displayed exactly once. Copy it immediately and store it in a secure location such as a password manager or a secrets vault. Once you navigate away from the page, the raw key value cannot be retrieved again — only the SHA-256 hash is stored in the database.
 
 ## Using a Key in HTTP Requests
 
