@@ -1,3 +1,6 @@
+@page "/maintenance/tool-slots/history"
+@page "/maintenance/tool-slots/history/{SlotId:int}"
+@* Legacy aliases. Preserved for existing bookmarks; new code should use /maintenance/tool-slots/*. *@
 @page "/tool-slots/history"
 @page "/tool-slots/history/{SlotId:int}"
 @attribute [Authorize]
@@ -11,7 +14,7 @@
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back"
                        Size="Size.Medium"
-                       OnClick="@(() => Navigation.NavigateTo("tool-slots"))" />
+                       OnClick="@(() => Navigation.NavigateTo("maintenance/tool-slots"))" />
         <MudText Typo="Typo.h4">
             @(SlotId is null ? "Tool slot history" : $"History for tool slot #{SlotId}")
         </MudText>
@@ -21,7 +24,7 @@
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Secondary"
                        StartIcon="@Icons.Material.Filled.List"
-                       Href="tool-slots/history">
+                       Href="maintenance/tool-slots/history">
                 All history
             </MudButton>
         }
