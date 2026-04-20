@@ -1,22 +1,25 @@
-using AWBlazorApp.Features.Identity.Application.Services;
+using AWBlazorApp.Features.Admin;
+using AWBlazorApp.Features.Dashboard;
+using AWBlazorApp.Features.Engineering;
+using AWBlazorApp.Features.Forecasting;
 using AWBlazorApp.Features.Identity.Application;
-using AWBlazorApp.Features.ProcessManagement.Services;
-using AWBlazorApp.Features.Insights.Services;
-using AWBlazorApp.Features.Forecasting.Services;
-using AWBlazorApp.Features.UserGuide.Services;
-using AWBlazorApp.Infrastructure.Jobs;
-using AWBlazorApp.Infrastructure.Email;
-using AWBlazorApp.Features.Admin.Services;
-using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Features.Identity.Application.Services;
+using AWBlazorApp.Features.Identity.Domain;
+using AWBlazorApp.Features.Insights;
+using AWBlazorApp.Features.Inventory;
+using AWBlazorApp.Features.Logistics;
+using AWBlazorApp.Features.Maintenance;
+using AWBlazorApp.Features.Mes;
+using AWBlazorApp.Features.Performance;
+using AWBlazorApp.Features.ProcessManagement;
+using AWBlazorApp.Features.Quality;
+using AWBlazorApp.Features.UserGuide;
+using AWBlazorApp.Features.Workforce;
 using AWBlazorApp.Infrastructure.Persistence;
-using AWBlazorApp.Shared.Services;
-using FluentValidation;
-using Hangfire;
-using Hangfire.SqlServer;
+using AWBlazorApp.Shared;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -26,8 +29,8 @@ using MudBlazor.Services;
 namespace AWBlazorApp.App.Extensions;
 
 /// <summary>
-/// Extension methods that register services in the DI container.
-/// Extracted from Program.cs for readability and testability.
+/// Platform-level registration extensions. Feature services are owned by per-feature
+/// registration classes and composed through <see cref="AddFeatureServices"/>.
 /// </summary>
 public static class ServiceRegistration
 {
@@ -135,106 +138,33 @@ public static class ServiceRegistration
         return services;
     }
 
-    public static IServiceCollection AddHangfireServices(
-        this IServiceCollection services, IConfiguration configuration, string connectionString)
+    /// <summary>
+    /// Composes every feature- and shared-owned service registration. Each feature owns its
+    /// own <c>AddXxxServices</c> extension next to the feature; this method is only responsible
+    /// for the invocation order.
+    /// </summary>
+    public static IServiceCollection AddFeatureServices(this IServiceCollection services)
     {
-        services.Configure<SmtpConfig>(configuration.GetSection("Smtp"));
-        services.AddTransient<SmtpEmailJob>();
-        services.AddTransient<RequestLogCleanupJob>();
-        services.AddTransient<AuditLogCleanupJob>();
-        services.AddTransient<ApiKeyHashMigrationJob>();
-        services.AddTransient<ProcessSchedulerJob>();
-        services.AddTransient<AWBlazorApp.Features.Inventory.Services.InventoryOutboxEmitterJob>();
-        services.AddScoped<AWBlazorApp.Features.Inventory.Services.IInventoryService, AWBlazorApp.Features.Inventory.Services.InventoryService>();
-        services.AddSingleton<AWBlazorApp.Features.Inventory.Services.IInventoryOutboxPublisher, AWBlazorApp.Features.Inventory.Services.LoggingInventoryOutboxPublisher>();
-        services.AddScoped<AWBlazorApp.Features.Logistics.Services.ILogisticsPostingService, AWBlazorApp.Features.Logistics.Services.LogisticsPostingService>();
-        services.AddScoped<AWBlazorApp.Features.Mes.Runs.Application.Services.IProductionRunService, AWBlazorApp.Features.Mes.Runs.Application.Services.ProductionRunService>();
-        services.AddScoped<AWBlazorApp.Features.Mes.Instructions.Application.Services.IWorkInstructionRevisionService, AWBlazorApp.Features.Mes.Instructions.Application.Services.WorkInstructionRevisionService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Inspections.Application.Services.IInspectionService, AWBlazorApp.Features.Quality.Inspections.Application.Services.InspectionService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Ncrs.Application.Services.INonConformanceService, AWBlazorApp.Features.Quality.Ncrs.Application.Services.NonConformanceService>();
-        services.AddScoped<AWBlazorApp.Features.Quality.Capa.Application.Services.ICapaService, AWBlazorApp.Features.Quality.Capa.Application.Services.CapaService>();
-        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Quality.Inspections.Application.Services.InspectionTriggerHook>();
-        services.AddScoped<AWBlazorApp.Shared.Services.IPostingTriggerHook, AWBlazorApp.Features.Workforce.Qualifications.Application.Hooks.QualificationCheckHook>();
-        services.AddScoped<AWBlazorApp.Features.Workforce.Qualifications.Application.Services.IQualificationService, AWBlazorApp.Features.Workforce.Qualifications.Application.Services.QualificationService>();
-        services.AddScoped<AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services.ILeaveRequestService, AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services.LeaveRequestService>();
+        services.AddSharedServices();
 
-        services.AddScoped<AWBlazorApp.Features.Engineering.Ecos.Application.Services.IEcoService, AWBlazorApp.Features.Engineering.Ecos.Application.Services.EcoService>();
-        services.AddScoped<AWBlazorApp.Features.Engineering.Deviations.Application.Services.IDeviationService, AWBlazorApp.Features.Engineering.Deviations.Application.Services.DeviationService>();
+        services.AddAdminServices();
+        services.AddDashboardServices();
+        services.AddInventoryServices();
+        services.AddLogisticsServices();
+        services.AddMesServices();
 
-        services.AddScoped<AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services.IWorkOrderService, AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services.WorkOrderService>();
-        services.AddScoped<AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services.IPmScheduleService, AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services.PmScheduleService>();
+        // Quality must be registered before Workforce so that the existing
+        // IEnumerable<IPostingTriggerHook> order (Inspection, then QualificationCheck) is preserved.
+        services.AddQualityServices();
+        services.AddWorkforceServices();
 
-        services.AddScoped<AWBlazorApp.Features.Performance.Oee.Application.Services.IOeeService, AWBlazorApp.Features.Performance.Oee.Application.Services.OeeService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services.IProductionMetricsService, AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services.ProductionMetricsService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services.IMaintenanceMetricsService, AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services.MaintenanceMetricsService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Kpis.Application.Services.IKpiEvaluationService, AWBlazorApp.Features.Performance.Kpis.Application.Services.KpiEvaluationService>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Reports.Application.Services.IPerformanceReportRunner, AWBlazorApp.Features.Performance.Reports.Application.Services.PerformanceReportRunner>();
-
-        services.AddScoped<AWBlazorApp.Features.Admin.Services.DemoDataSeeder>();
-        services.AddScoped<AWBlazorApp.Features.Admin.Services.DemoDataFiller>();
-        services.AddScoped<AWBlazorApp.Features.Performance.Jobs.MetricsRollupJob>();
-
-        services.AddScoped<AWBlazorApp.Features.Dashboard.Services.IPlantDashboardService, AWBlazorApp.Features.Dashboard.Services.PlantDashboardService>();
-        services.AddScoped<AWBlazorApp.Features.Inventory.Services.IProductInsightsService, AWBlazorApp.Features.Inventory.Services.ProductInsightsService>();
-
-        var hangfireEnabled = configuration.GetValue("Features:Hangfire", defaultValue: true);
-        var smtpHost = configuration["Smtp:Host"];
-
-        if (hangfireEnabled)
-        {
-            services.AddHangfire(cfg => cfg
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks = true,
-                    SchemaName = "HangFire",
-                }));
-            services.AddHangfireServer(options =>
-            {
-                options.WorkerCount = Environment.ProcessorCount * 2;
-            });
-
-            services.AddSingleton<IEmailSender<ApplicationUser>>(
-                !string.IsNullOrWhiteSpace(smtpHost)
-                    ? sp => ActivatorUtilities.CreateInstance<HangfireSmtpEmailSender>(sp)
-                    : sp => ActivatorUtilities.CreateInstance<IdentityNoOpEmailSender>(sp));
-        }
-        else
-        {
-            services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-        }
-
-        return services;
-    }
-
-    public static IServiceCollection AddForecastingServices(this IServiceCollection services)
-    {
-        services.AddScoped<IForecastDataSourceProvider, ForecastDataSourceProvider>();
-        services.AddScoped<IForecastComputationService, ForecastComputationService>();
-        services.AddScoped<IForecastAlgorithm, SimpleMovingAverageAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, WeightedMovingAverageAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, ExponentialSmoothingAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, LinearRegressionAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, NaiveAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, SeasonalNaiveAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, DriftAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, HistoricalAverageAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, MedianSmoothingAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, DoubleExponentialSmoothingAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, HoltWintersAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, QuadraticRegressionAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, LogarithmicRegressionAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, ExponentialRegressionAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, CrostonAlgorithm>();
-        services.AddScoped<IForecastAlgorithm, ThetaAlgorithm>();
-        services.AddTransient<ForecastEvaluationJob>();
-        services.AddScoped<AWBlazorApp.Features.Admin.Services.AdventureWorksDateShifter>();
-        services.AddScoped<AWBlazorApp.Shared.UI.Components.IDistinctValuesProvider, AWBlazorApp.Shared.UI.Components.DistinctValuesProvider>();
+        services.AddEngineeringServices();
+        services.AddMaintenanceServices();
+        services.AddPerformanceServices();
+        services.AddInsightsServices();
+        services.AddForecastingServices();
+        services.AddProcessManagementServices();
+        services.AddUserGuideServices();
         return services;
     }
 
@@ -285,6 +215,10 @@ public static class ServiceRegistration
         return services;
     }
 
+    /// <summary>
+    /// Blazor host + MudBlazor + in-memory cache + OpenAPI. Pure platform wiring; feature
+    /// services live in per-feature registration extensions composed by <see cref="AddFeatureServices"/>.
+    /// </summary>
     public static IServiceCollection AddBlazorAndServices(this IServiceCollection services)
     {
         services.AddRazorComponents()
@@ -292,19 +226,6 @@ public static class ServiceRegistration
 
         services.AddMudServices();
         services.AddMemoryCache();
-        services.AddSingleton<AnalyticsCacheService>();
-        services.AddSingleton<NotificationService>();
-        services.AddScoped<NotificationRuleEvaluator>();
-        services.AddScoped<SavedQueryRunner>();
-        services.AddScoped<KpiSnapshotJob>();
-        services.AddScoped<ReportDispatcher>();
-        services.AddScoped<ReportScheduleRegistry>();
-        services.AddSingleton<UserGuideService>();
-        services.AddSingleton<LookupService>();
-        services.AddScoped<IPermissionService, PermissionService>();
-
-        services.AddValidatorsFromAssemblyContaining<Program>();
-        services.AddTransient(typeof(AWBlazorApp.Shared.Validation.MudFormValidator<>));
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>

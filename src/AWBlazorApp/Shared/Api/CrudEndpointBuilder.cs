@@ -65,12 +65,10 @@ public static class CrudEndpointBuilder
             if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
             var entity = toEntity(request);
-            await using var tx = await db.Database.BeginTransactionAsync(ct);
-            entitySet(db).Add(entity);
-            await db.SaveChangesAsync(ct);
-            auditSet(db).Add(recordCreate(entity, user.Identity?.Name));
-            await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
+            await db.AddWithAuditAsync<TEntity, TAuditLog>(
+                entity,
+                e => recordCreate(e, user.Identity?.Name),
+                ct);
             var newId = getId(entity);
             return TypedResults.Created($"{routePrefix}/{newId}", new IdResponse(newId!));
         })
@@ -104,9 +102,10 @@ public static class CrudEndpointBuilder
             var entity = await entitySet(db).FirstOrDefaultAsync(predicate, ct);
             if (entity is null) return TypedResults.NotFound();
 
-            auditSet(db).Add(recordDelete(entity, user.Identity?.Name));
-            entitySet(db).Remove(entity);
-            await db.SaveChangesAsync(ct);
+            await db.DeleteWithAuditAsync<TEntity, TAuditLog>(
+                entity,
+                recordDelete(entity, user.Identity?.Name),
+                ct);
             return TypedResults.NoContent();
         })
         .WithName($"Delete{entityName}")

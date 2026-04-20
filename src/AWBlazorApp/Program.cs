@@ -1,5 +1,6 @@
 using System.Globalization;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Infrastructure;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.App.Extensions;
 using AWBlazorApp.App.Middleware;
@@ -73,8 +74,8 @@ Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App
 
 services.AddApplicationDatabase(connectionString);
 services.AddApplicationIdentity(configuration);
-services.AddHangfireServices(configuration, connectionString);
-services.AddForecastingServices();
+services.AddInfrastructureServices(configuration, connectionString);
+services.AddFeatureServices();
 services.AddApplicationRateLimiting();
 services.AddApplicationHsts();
 services.AddApplicationCookieHardening();
