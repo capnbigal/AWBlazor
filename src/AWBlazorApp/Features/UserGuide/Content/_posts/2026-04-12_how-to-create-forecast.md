@@ -10,7 +10,7 @@ Creating a forecast in AWBlazor involves selecting a data source, choosing a sta
 
 ## Step 1: Navigate to the Forecasts Page
 
-Open the left navigation drawer and click on Forecasts under the Analytics section. The Forecasts page displays a MudDataGrid listing all existing forecasts with their name, data source, method, status, and last evaluation date. From here you can view, edit, or create forecasts.
+Open the left navigation drawer and click on Forecasts under the Insights section. The Forecasts page displays a MudDataGrid listing all existing forecasts with their name, data source, method, status, and last evaluation date. From here you can view, edit, or create forecasts.
 
 ## Step 2: Create a New Forecast
 
