@@ -103,7 +103,7 @@
 
     // Dummy form model for the "Forget browser" button — no fields needed.
     [SupplyParameterFromForm]
-    private object forgetInput { get; set; } = new();
+    private object forgetInput { get; set; } = null!;
 
     private bool canTrack;
     private bool is2faEnabled;

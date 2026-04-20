@@ -35,7 +35,7 @@
             <PropertyColumn Property="x => x.DepartmentId" Title="Department ID">
                 <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="@nameof(ProcessDto.DepartmentId)" Title="Department ID" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="Recurring" SortLabel="IsRecurring">
+            <TemplateColumn Title="Recurring">
                 <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="IsRecurring" Title="Recurring" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.IsRecurring ? Color.Success : Color.Default)" Size="Size.Small">
@@ -46,7 +46,7 @@
             <PropertyColumn Property="x => x.CronSchedule" Title="Cron schedule">
                 <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="@nameof(ProcessDto.CronSchedule)" Title="Cron schedule" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="Status" SortLabel="Status">
+            <TemplateColumn Title="Status">
                 <HeaderTemplate><GridColumnHeader TEntity="Process" PropertyName="Status" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
                 <CellTemplate>
                     <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">

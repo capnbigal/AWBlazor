@@ -39,7 +39,7 @@
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private object dummy { get; set; } = new();
+    private object? dummy { get; set; }
 
     protected override void OnInitialized() => dummy ??= new();
 
