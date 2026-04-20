@@ -89,8 +89,8 @@
             @if (data.StatusLabels.Length > 0)
             {
                 <MudChart T="double" ChartType="ChartType.Pie"
-                          InputData="@data.StatusData"
-                          InputLabels="@data.StatusLabels"
+                          ChartSeries="@data.StatusSeries"
+                          ChartLabels="@data.StatusLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="320px" Height="320px" />
             }
@@ -205,7 +205,7 @@
         if (statusCounts.Count > 0)
         {
             result.StatusLabels = statusCounts.Select(s => s.Status.ToString()).ToArray();
-            result.StatusData = statusCounts.Select(s => (double)s.Count).ToArray();
+            result.StatusSeries = [new ChartSeries<double> { Name = "Executions", Data = statusCounts.Select(s => (double)s.Count).ToArray() }];
         }
 
         return result;
@@ -223,7 +223,7 @@
         public List<ChartSeries<double>> OutcomeSeries { get; set; } = [];
         public List<TopProcessRow> TopProcesses { get; set; } = [];
         public string[] StatusLabels { get; set; } = [];
-        public double[] StatusData { get; set; } = [];
+        public List<ChartSeries<double>> StatusSeries { get; set; } = [];
     }
 
     private sealed class TopProcessRow

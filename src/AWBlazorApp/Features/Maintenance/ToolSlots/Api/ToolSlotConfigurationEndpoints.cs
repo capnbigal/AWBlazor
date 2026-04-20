@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using AWBlazorApp.Features.ToolSlots.Services;
-using AWBlazorApp.Features.ToolSlots.Domain;
-using AWBlazorApp.Features.ToolSlots.Dtos;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Application.Services;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Domain;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Dtos;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AWBlazorApp.Features.ToolSlots.Api;
+namespace AWBlazorApp.Features.Maintenance.ToolSlots.Api;
 
 public static class ToolSlotConfigurationEndpoints
 {

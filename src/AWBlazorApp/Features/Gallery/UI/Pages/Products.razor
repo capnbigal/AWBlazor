@@ -58,13 +58,15 @@
             <MudText Typo="Typo.caption" Color="Color.Secondary">
                 POC — selected files are previewed below but not persisted to the database.
             </MudText>
-            <MudFileUpload T="IBrowserFile" FilesChanged="OnFilesSelected" Accept="image/*" MaximumFileCount="1">
-                <ActivatorContent>
-                    <MudButton HtmlTag="label" Variant="Variant.Outlined" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.CloudUpload">
+            @* MudFileUpload 9.x: ActivatorContent → CustomContent + picker.OpenFilePickerAsync(). *@
+            <MudFileUpload T="IBrowserFile" FilesChanged="OnFilesSelected" Accept="image/*" MaximumFileCount="1" Hidden="true">
+                <CustomContent Context="picker">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               OnClick="@picker.OpenFilePickerAsync">
                         Choose image
                     </MudButton>
-                </ActivatorContent>
+                </CustomContent>
             </MudFileUpload>
             @if (!string.IsNullOrEmpty(uploadPreview))
             {
