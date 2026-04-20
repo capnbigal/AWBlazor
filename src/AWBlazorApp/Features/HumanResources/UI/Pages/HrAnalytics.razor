@@ -78,8 +78,8 @@
                     @if (genderLabels.Length > 0)
                     {
                         <MudChart T="double" ChartType="ChartType.Pie"
-                                  InputData="@genderData"
-                                  InputLabels="@genderLabels"
+                                  ChartSeries="@genderSeries"
+                                  ChartLabels="@genderLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
@@ -133,8 +133,8 @@
                 <MudPaper Class="pa-4" Elevation="2">
                     <MudText Typo="Typo.h6" Class="mb-3">Salaried vs. hourly</MudText>
                     <MudChart T="double" ChartType="ChartType.Pie"
-                              InputData="@salaryTypeData"
-                              InputLabels="@salaryTypeLabels"
+                              ChartSeries="@salaryTypeSeries"
+                              ChartLabels="@salaryTypeLabels"
                               ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                               Width="100%" Height="240px" />
                 </MudPaper>
@@ -143,8 +143,8 @@
                 <MudPaper Class="pa-4" Elevation="2">
                     <MudText Typo="Typo.h6" Class="mb-3">Marital status</MudText>
                     <MudChart T="double" ChartType="ChartType.Pie"
-                              InputData="@maritalData"
-                              InputLabels="@maritalLabels"
+                              ChartSeries="@maritalSeries"
+                              ChartLabels="@maritalLabels"
                               ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                               Width="100%" Height="240px" />
                 </MudPaper>
@@ -172,7 +172,7 @@
 
     // Gender
     private string[] genderLabels = [];
-    private double[] genderData = [];
+    private List<ChartSeries<double>> genderSeries = [];
 
     // Compensation trend
     private string[] payLabels = [];
@@ -188,11 +188,11 @@
 
     // Salaried vs hourly
     private string[] salaryTypeLabels = [];
-    private double[] salaryTypeData = [];
+    private List<ChartSeries<double>> salaryTypeSeries = [];
 
     // Marital status
     private string[] maritalLabels = [];
-    private double[] maritalData = [];
+    private List<ChartSeries<double>> maritalSeries = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -206,7 +206,7 @@
         tenureLabels = data.TenureLabels;
         tenureSeries = data.TenureSeries;
         genderLabels = data.GenderLabels;
-        genderData = data.GenderData;
+        genderSeries = [new ChartSeries<double> { Name = "Headcount", Data = data.GenderData }];
         payLabels = data.PayLabels;
         paySeries = data.PaySeries;
         deptLabels = data.DeptLabels;
@@ -214,9 +214,9 @@
         deptGrowthLabels = data.DeptGrowthLabels;
         deptGrowthSeries = data.DeptGrowthSeries;
         salaryTypeLabels = data.SalaryTypeLabels;
-        salaryTypeData = data.SalaryTypeData;
+        salaryTypeSeries = [new ChartSeries<double> { Name = "Headcount", Data = data.SalaryTypeData }];
         maritalLabels = data.MaritalLabels;
-        maritalData = data.MaritalData;
+        maritalSeries = [new ChartSeries<double> { Name = "Headcount", Data = data.MaritalData }];
         loading = false;
     }
 

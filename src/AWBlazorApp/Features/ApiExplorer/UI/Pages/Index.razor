@@ -97,7 +97,7 @@
                                 </MudChip>
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">@response.ElapsedMs ms · @response.ContentType</MudText>
                                 <MudSpacer />
-                                <MudToggleGroup T="string" @bind-Value="viewMode" Color="Color.Primary" Size="Size.Small" Dense="true" SelectionMode="SelectionMode.SingleSelection">
+                                <MudToggleGroup T="string" @bind-Value="viewMode" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection">
                                     <MudToggleItem T="string" Value="@("grid")"  Text="Grid"  />
                                     <MudToggleItem T="string" Value="@("json")"  Text="JSON" />
                                 </MudToggleGroup>

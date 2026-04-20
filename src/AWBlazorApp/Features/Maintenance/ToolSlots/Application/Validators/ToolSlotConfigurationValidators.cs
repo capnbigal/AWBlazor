@@ -1,5 +1,5 @@
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.ToolSlots.Dtos;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Dtos;
 using FluentValidation;
 
 namespace AWBlazorApp.Shared.Validation;

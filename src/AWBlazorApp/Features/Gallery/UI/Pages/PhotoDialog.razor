@@ -8,7 +8,7 @@
         }
         else
         {
-            <MudCarousel T="int" ItemsSource="@PhotoIds" Style="height: 480px;" AutoCycle="false" ShowBullets="@(PhotoIds.Count > 1)" ShowArrows="@(PhotoIds.Count > 1)">
+            <MudCarousel ItemsSource="@PhotoIds" Style="height: 480px;" AutoCycle="false" ShowBullets="@(PhotoIds.Count > 1)" ShowArrows="@(PhotoIds.Count > 1)">
                 <ItemTemplate>
                     <div class="d-flex align-center justify-center" style="height: 100%; background-color: var(--mud-palette-background-grey);">
                         <img src="@($"/api/gallery/photos/{context}/large")" alt="product photo"

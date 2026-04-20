@@ -105,8 +105,8 @@
                     @if (vendorConcentrationLabels.Length > 0)
                     {
                         <MudChart T="double" ChartType="ChartType.Donut"
-                                  InputData="@vendorConcentrationData"
-                                  InputLabels="@vendorConcentrationLabels"
+                                  ChartSeries="@vendorConcentrationSeries"
+                                  ChartLabels="@vendorConcentrationLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
@@ -125,8 +125,8 @@
                     @if (statusLabels.Length > 0)
                     {
                         <MudChart T="double" ChartType="ChartType.Pie"
-                                  InputData="@statusData"
-                                  InputLabels="@statusLabels"
+                                  ChartSeries="@statusSeries"
+                                  ChartLabels="@statusLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
@@ -168,11 +168,11 @@
 
     // Vendor concentration
     private string[] vendorConcentrationLabels = [];
-    private double[] vendorConcentrationData = [];
+    private List<ChartSeries<double>> vendorConcentrationSeries = [];
 
     // Spend by status
     private string[] statusLabels = [];
-    private double[] statusData = [];
+    private List<ChartSeries<double>> statusSeries = [];
 
     private static readonly Dictionary<byte, string> StatusNames = new()
     {
@@ -200,9 +200,9 @@
         topVendors = data.TopVendors;
         topVendorsTotal = data.TopVendorsTotal;
         vendorConcentrationLabels = data.VendorConcentrationLabels;
-        vendorConcentrationData = data.VendorConcentrationData;
+        vendorConcentrationSeries = [new ChartSeries<double> { Name = "Spend", Data = data.VendorConcentrationData }];
         statusLabels = data.StatusLabels;
-        statusData = data.StatusData;
+        statusSeries = [new ChartSeries<double> { Name = "Spend", Data = data.StatusData }];
         loading = false;
     }
 

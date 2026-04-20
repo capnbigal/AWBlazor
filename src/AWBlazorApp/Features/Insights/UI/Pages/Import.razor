@@ -23,7 +23,7 @@
     <MudStepper @ref="stepper" NonLinear="false">
         <ChildContent>
             @* ── Step 1 — pick target + upload ───────────────────────────────── *@
-            <MudStep Title="Upload" Icon="@Icons.Material.Filled.CloudUpload">
+            <MudStep Title="Upload" >
                 <ChildContent>
                     <MudStack Spacing="3">
                         <MudSelect T="int" @bind-Value="forecastId" Label="Forecast definition" Variant="Variant.Outlined">
@@ -42,14 +42,17 @@
 2026-02-01,1250.00,
 2026-03-01,1300.00,</pre>
 
+                        @* MudFileUpload 9.x: ActivatorContent was replaced by CustomContent.
+                           The context exposes OpenFilePickerAsync which the custom button calls. *@
                         <MudFileUpload T="IBrowserFile" FilesChanged="OnFileChosen" Accept=".csv,text/csv"
-                                       MaximumFileCount="1">
-                            <ActivatorContent>
-                                <MudButton HtmlTag="label" Variant="Variant.Outlined" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.CloudUpload">
+                                       MaximumFileCount="1" Hidden="true">
+                            <CustomContent Context="picker">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.CloudUpload"
+                                           OnClick="@picker.OpenFilePickerAsync">
                                     Choose CSV file
                                 </MudButton>
-                            </ActivatorContent>
+                            </CustomContent>
                         </MudFileUpload>
 
                         @if (!string.IsNullOrEmpty(fileName))
@@ -63,7 +66,7 @@
             </MudStep>
 
             @* ── Step 2 — column mapping ─────────────────────────────────────── *@
-            <MudStep Title="Map columns" Icon="@Icons.Material.Filled.SwapHoriz">
+            <MudStep Title="Map columns" >
                 <ChildContent>
                     @if (headers.Count == 0)
                     {
@@ -100,7 +103,7 @@
             </MudStep>
 
             @* ── Step 3 — validate ───────────────────────────────────────────── *@
-            <MudStep Title="Validate" Icon="@Icons.Material.Filled.FactCheck">
+            <MudStep Title="Validate" >
                 <ChildContent>
                     @if (preview.Count == 0)
                     {
@@ -156,7 +159,7 @@
             </MudStep>
 
             @* ── Step 4 — commit ─────────────────────────────────────────────── *@
-            <MudStep Title="Commit" Icon="@Icons.Material.Filled.Check">
+            <MudStep Title="Commit" >
                 <ChildContent>
                     <MudStack Spacing="3">
                         @if (!committed)

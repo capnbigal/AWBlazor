@@ -34,7 +34,7 @@
             <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" Size="Size.Small" Title="Run report" OnClick="@(() => Navigation.NavigateTo($"performance/reports/{context.Item.Id}/run"))" />
+                    <MudTooltip Text="Run report"><MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"performance/reports/{context.Item.Id}/run"))" /></MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

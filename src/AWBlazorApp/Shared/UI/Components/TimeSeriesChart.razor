@@ -19,14 +19,14 @@
         @if (ShowGranularity)
         {
             <MudToggleGroup T="Granularity" @bind-Value="SelectedGranularity" Color="Color.Primary" Size="Size.Small"
-                            SelectionMode="SelectionMode.SingleSelection" Dense="true">
+                            SelectionMode="SelectionMode.SingleSelection">
                 <MudToggleItem T="Granularity" Value="Granularity.Monthly" Text="Month" />
                 <MudToggleItem T="Granularity" Value="Granularity.Quarterly" Text="Quarter" />
                 <MudToggleItem T="Granularity" Value="Granularity.Yearly" Text="Year" />
             </MudToggleGroup>
         }
         <MudToggleGroup T="string" @bind-Value="SelectedPeriod" Color="Color.Primary" Size="Size.Small"
-                        SelectionMode="SelectionMode.SingleSelection" Dense="true">
+                        SelectionMode="SelectionMode.SingleSelection">
             @foreach (var p in Periods)
             {
                 <MudToggleItem T="string" Value="@p" Text="@p" />

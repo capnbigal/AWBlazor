@@ -1,5 +1,5 @@
 using System.Net;
-using AWBlazorApp.Features.ToolSlots.Dtos;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Dtos;
 using AWBlazorApp.Infrastructure.Persistence;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;

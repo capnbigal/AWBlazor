@@ -132,8 +132,8 @@
             @if (methodLabels.Length > 0)
             {
                 <MudChart T="double" ChartType="ChartType.Pie"
-                          InputData="@methodData"
-                          InputLabels="@methodLabels"
+                          ChartSeries="@methodSeries"
+                          ChartLabels="@methodLabels"
                           ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                           Width="300px" Height="300px" />
             }
@@ -204,9 +204,10 @@
     // Top users
     private List<UserStat> topUsers = [];
 
-    // HTTP method pie chart
+    // HTTP method pie chart. MudChart 9.x dropped InputData/InputLabels — pie/donut charts now
+    // take ChartSeries (List<ChartSeries<T>>) + ChartLabels just like the line/bar charts.
     private string[] methodLabels = [];
-    private double[] methodData = [];
+    private List<ChartSeries<double>> methodSeries = [];
 
     // Recent errors
     private List<ErrorRow> recentErrors = [];
@@ -392,7 +393,7 @@
                 if (methods.Count > 0)
                 {
                     methodLabels = methods.Select(m => m.Method).ToArray();
-                    methodData = methods.Select(m => (double)m.Count).ToArray();
+                    methodSeries = [new ChartSeries<double> { Name = "Requests", Data = methods.Select(m => (double)m.Count).ToArray() }];
                 }
             }
 

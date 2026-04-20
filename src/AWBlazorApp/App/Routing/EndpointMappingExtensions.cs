@@ -5,7 +5,7 @@ using AWBlazorApp.Features.Purchasing.ProductVendors.Api; using AWBlazorApp.Feat
 using AWBlazorApp.Features.Person.Addresses.Api; using AWBlazorApp.Features.Person.AddressTypes.Api; using AWBlazorApp.Features.Person.BusinessEntities.Api; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Api; using AWBlazorApp.Features.Person.BusinessEntityContacts.Api; using AWBlazorApp.Features.Person.ContactTypes.Api; using AWBlazorApp.Features.Person.CountryRegions.Api; using AWBlazorApp.Features.Person.EmailAddresses.Api; using AWBlazorApp.Features.Person.Persons.Api; using AWBlazorApp.Features.Person.PersonPhones.Api; using AWBlazorApp.Features.Person.PhoneNumberTypes.Api; using AWBlazorApp.Features.Person.StateProvinces.Api; 
 using AWBlazorApp.Features.Forecasting.Api;
 using AWBlazorApp.Features.ProcessManagement.Api;
-using AWBlazorApp.Features.ToolSlots.Api;
+using AWBlazorApp.Features.Maintenance.ToolSlots.Api;
 using AWBlazorApp.Features.Gallery.Api;
 using AWBlazorApp.Features.UserGuide.Services;
 using AWBlazorApp.Shared.Api;

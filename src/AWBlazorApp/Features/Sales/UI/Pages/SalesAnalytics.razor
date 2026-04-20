@@ -84,8 +84,8 @@
                     @if (territoryLabels.Length > 0)
                     {
                         <MudChart T="double" ChartType="ChartType.Donut"
-                                  InputData="@territoryData"
-                                  InputLabels="@territoryLabels"
+                                  ChartSeries="@territorySeries"
+                                  ChartLabels="@territoryLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
@@ -105,8 +105,8 @@
                     @if (channelLabels.Length > 0)
                     {
                         <MudChart T="double" ChartType="ChartType.Pie"
-                                  InputData="@channelData"
-                                  InputLabels="@channelLabels"
+                                  ChartSeries="@channelSeries"
+                                  ChartLabels="@channelLabels"
                                   ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.BlueOptions"
                                   Width="100%" Height="280px" />
                     }
@@ -187,11 +187,11 @@
 
     // Territory
     private string[] territoryLabels = [];
-    private double[] territoryData = [];
+    private List<ChartSeries<double>> territorySeries = [];
 
     // Online vs reseller
     private string[] channelLabels = [];
-    private double[] channelData = [];
+    private List<ChartSeries<double>> channelSeries = [];
 
     // Top products
     private List<ProductRevenue> topProducts = [];
@@ -217,9 +217,9 @@
         ordersLabels = data.OrdersLabels;
         ordersSeries = data.OrdersSeries;
         territoryLabels = data.TerritoryLabels;
-        territoryData = data.TerritoryData;
+        territorySeries = [new ChartSeries<double> { Name = "Revenue", Data = data.TerritoryData }];
         channelLabels = data.ChannelLabels;
-        channelData = data.ChannelData;
+        channelSeries = [new ChartSeries<double> { Name = "Orders", Data = data.ChannelData }];
         topProducts = data.TopProducts;
         topProductsTotal = data.TopProductsTotal;
         quotaLabels = data.QuotaLabels;

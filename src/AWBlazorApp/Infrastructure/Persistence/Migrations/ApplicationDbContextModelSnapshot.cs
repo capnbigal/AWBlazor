@@ -13307,7 +13307,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StoreAuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.ToolSlots.Domain.ToolSlotAuditLog", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.ToolSlots.Domain.ToolSlotAuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -13418,7 +13418,7 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ToolSlotAuditLogs");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.ToolSlots.Domain.ToolSlotConfiguration", b =>
+            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.ToolSlots.Domain.ToolSlotConfiguration", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
