@@ -22,7 +22,7 @@
             <PropertyColumn Property="x => x.Code" Title="Code" />
             <PropertyColumn Property="x => x.Name" Title="Name" />
             <PropertyColumn Property="x => x.OwnerUserId" Title="Owner" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"performance/scorecards/{context.Item.Id}"))" /></CellTemplate>
             </TemplateColumn>

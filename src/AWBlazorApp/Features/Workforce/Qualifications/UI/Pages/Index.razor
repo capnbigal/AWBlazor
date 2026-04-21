@@ -33,7 +33,7 @@
             <PropertyColumn Property="x => x.Code" Title="Code" />
             <PropertyColumn Property="x => x.Name" Title="Name" />
             <PropertyColumn Property="x => x.Category" Title="Category" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="QualificationDto" /></PagerContent>
     </MudDataGrid>

@@ -45,7 +45,7 @@
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"quality/inspection-plans/{context.Item.Id}"))" /></CellTemplate>
             </TemplateColumn>

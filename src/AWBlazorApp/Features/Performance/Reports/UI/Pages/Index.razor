@@ -31,7 +31,7 @@
             <PropertyColumn Property="x => x.Kind" Title="Kind" />
             <PropertyColumn Property="x => x.RangePreset" Title="Range" />
             <PropertyColumn Property="x => x.LastRunAt" Title="Last run" Format="yyyy-MM-dd HH:mm" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <MudTooltip Text="Run report"><MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"performance/reports/{context.Item.Id}/run"))" /></MudTooltip>

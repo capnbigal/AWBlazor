@@ -34,7 +34,7 @@
             <PropertyColumn Property="x => x.Depth" Title="Depth" />
             <PropertyColumn Property="x => x.ParentLocationId" Title="Parent" />
             <PropertyColumn Property="x => x.OrgUnitId" Title="OrgUnit" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="InventoryLocationDto" /></PagerContent>
     </MudDataGrid>

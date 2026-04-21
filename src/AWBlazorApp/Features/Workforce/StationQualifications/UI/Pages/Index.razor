@@ -28,7 +28,7 @@
         <Columns>
             <PropertyColumn Property="x => x.StationId" Title="Station" />
             <PropertyColumn Property="x => x.QualificationId" Title="Qualification" />
-            <TemplateColumn Title="Required" Sortable="false"><CellTemplate>@(context.Item.IsRequired ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Required" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsRequired" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">

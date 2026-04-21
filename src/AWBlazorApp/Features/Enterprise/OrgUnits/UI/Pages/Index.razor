@@ -69,7 +69,7 @@
             <PropertyColumn Property="x => x.Path" Title="Path" />
             <PropertyColumn Property="x => x.Depth" Title="Depth" />
             <TemplateColumn Title="Active" Sortable="false">
-                <CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate>
+                <CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>

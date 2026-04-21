@@ -32,7 +32,7 @@
             <PropertyColumn Property="x => x.StandardCost" Title="Std cost" />
             <PropertyColumn Property="x => x.ReorderPoint" Title="Reorder pt" />
             <PropertyColumn Property="x => x.ProductId" Title="Product link" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="SparePartDto" /></PagerContent>
     </MudDataGrid>

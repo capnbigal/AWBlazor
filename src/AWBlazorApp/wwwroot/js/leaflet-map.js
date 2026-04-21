@@ -4,11 +4,11 @@
 (function () {
     const instances = new Map();   // elementId -> { map, cluster }
 
-    // Palette picked to be visible in both light and dark themes.
+    // Mirrors ChartPalettes.BlueScale (see src/AWBlazorApp/Shared/Theming/ChartPalettes.cs).
+    // Keep in sync when the chart palette changes so map markers match the rest of the app.
     const territoryColors = [
-        '#e53935', '#1e88e5', '#43a047', '#8e24aa', '#fb8c00',
-        '#3949ab', '#00acc1', '#c0ca33', '#6d4c41', '#f4511e',
-        '#5e35b1', '#039be5', '#d81b60',
+        '#1F6FEB', '#475569', '#0B3D91', '#94A3B8', '#4A90E2',
+        '#1F2937', '#77B0F2', '#64748B', '#93C5FD', '#0F172A',
     ];
 
     // Poll for Leaflet (loaded from unpkg). In Blazor Server, OnAfterRenderAsync(firstRender)

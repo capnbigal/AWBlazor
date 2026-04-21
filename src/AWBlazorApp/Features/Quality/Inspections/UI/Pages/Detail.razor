@@ -52,10 +52,29 @@ else
                     {
                         var latest = results.Where(r => r.InspectionPlanCharacteristicId == c.Id).OrderByDescending(r => r.RecordedAt).FirstOrDefault();
                         <tr>
-                            <td><strong>@c.SequenceNumber. @c.Name</strong>@(c.IsCritical ? " ⚠" : "")</td>
+                            <td>
+                                <strong>@c.SequenceNumber. @c.Name</strong>
+                                @if (c.IsCritical)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" Class="ml-1" Style="vertical-align: middle" />
+                                }
+                            </td>
                             <td>@FormatSpec(c)</td>
                             <td>@(latest is null ? "—" : (c.Kind == CharacteristicKind.Numeric ? latest.NumericResult?.ToString("N4") : latest.AttributeResult))</td>
-                            <td>@(latest is null ? "—" : (latest.Passed ? "✓" : "✕"))</td>
+                            <td>
+                                @if (latest is null)
+                                {
+                                    <text>—</text>
+                                }
+                                else if (latest.Passed)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Error" />
+                                }
+                            </td>
                             <td>
                                 @if (header.Status is InspectionStatus.Pending or InspectionStatus.InProgress)
                                 {

@@ -68,7 +68,7 @@ else
                                 <td>@(c.TargetValue?.ToString("N4") ?? "—")</td>
                                 <td>@(c.UnitMeasureCode ?? "—")</td>
                                 <td>@(c.ExpectedValue ?? "—")</td>
-                                <td>@(c.IsCritical ? "✓" : "")</td>
+                                <td><BoolIndicator Value="c.IsCritical" /></td>
                                 <td>
                                     <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteCharAsync(c.Id))" />

@@ -639,7 +639,6 @@ WHERE a.SpatialLocation IS NULL;";
             FirstName = "Test",
             LastName = "User",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user1.svg",
         }, "p@55wOrd");
 
         await EnsureUserAsync(userManager, new ApplicationUser
@@ -650,7 +649,6 @@ WHERE a.SpatialLocation IS NULL;";
             FirstName = "Test",
             LastName = "Employee",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user2.svg",
         }, "p@55wOrd", AppRoles.Employee);
 
         await EnsureUserAsync(userManager, new ApplicationUser
@@ -661,7 +659,6 @@ WHERE a.SpatialLocation IS NULL;";
             FirstName = "Test",
             LastName = "Manager",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user3.svg",
         }, "p@55wOrd", AppRoles.Manager, AppRoles.Employee);
 
         await EnsureUserAsync(userManager, new ApplicationUser

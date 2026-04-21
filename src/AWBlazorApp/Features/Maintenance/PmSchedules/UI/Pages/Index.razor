@@ -35,7 +35,7 @@
             <PropertyColumn Property="x => x.IntervalKind" Title="Kind" />
             <PropertyColumn Property="x => x.IntervalValue" Title="Interval" />
             <PropertyColumn Property="x => x.LastCompletedAt" Title="Last run" Format="yyyy-MM-dd" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"maintenance/pm-schedules/{context.Item.Id}"))" /></CellTemplate>
             </TemplateColumn>

@@ -64,13 +64,13 @@
                 <HeaderTemplate><GridColumnHeader TEntity="Organization" PropertyName="@nameof(OrganizationDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Primary" Sortable="false">
-                <CellTemplate>@(context.Item.IsPrimary ? "✓" : "")</CellTemplate>
+                <CellTemplate><BoolIndicator Value="context.Item.IsPrimary" /></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ExternalRef" Title="External ref">
                 <HeaderTemplate><GridColumnHeader TEntity="Organization" PropertyName="@nameof(OrganizationDto.ExternalRef)" Title="External ref" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Active" Sortable="false">
-                <CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate>
+                <CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
                 <HeaderTemplate><GridColumnHeader TEntity="Organization" PropertyName="@nameof(OrganizationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>

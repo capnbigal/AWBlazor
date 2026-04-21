@@ -42,7 +42,7 @@
                     { <MudLink Href="@context.Item.Url" Target="_blank">open</MudLink> }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="EngineeringDocumentDto" /></PagerContent>
     </MudDataGrid>
