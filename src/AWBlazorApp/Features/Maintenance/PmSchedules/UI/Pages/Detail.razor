@@ -47,7 +47,14 @@ else
                     <PropertyColumn Property="x => x.SequenceNumber" Title="#" />
                     <PropertyColumn Property="x => x.TaskName" Title="Task" />
                     <PropertyColumn Property="x => x.EstimatedMinutes" Title="Est min" />
-                    <TemplateColumn Title="Signoff" Sortable="false"><CellTemplate>@(context.Item.RequiresSignoff ? "⚠" : "")</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="Signoff" Sortable="false">
+                        <CellTemplate>
+                            @if (context.Item.RequiresSignoff)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="" Sortable="false">
                         <CellTemplate>
                             <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">

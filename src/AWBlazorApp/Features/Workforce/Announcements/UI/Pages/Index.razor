@@ -42,7 +42,7 @@
             <PropertyColumn Property="x => x.OrgUnitId" Title="Unit" />
             <PropertyColumn Property="x => x.PublishedAt" Title="Published" Format="yyyy-MM-dd HH:mm" />
             <PropertyColumn Property="x => x.ExpiresAt" Title="Expires" Format="yyyy-MM-dd HH:mm" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="AnnouncementDto" /></PagerContent>
     </MudDataGrid>

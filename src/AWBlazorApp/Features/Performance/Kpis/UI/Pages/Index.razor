@@ -37,7 +37,7 @@
             <PropertyColumn Property="x => x.TargetValue" Title="Target" />
             <PropertyColumn Property="x => x.Unit" Title="Unit" />
             <PropertyColumn Property="x => x.Direction" Title="Dir" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">

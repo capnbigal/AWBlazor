@@ -37,12 +37,9 @@
         @* ── Critical alerts banner ───────────────────────────────────── *@
         @if (_dto.CriticalAlerts.Count > 0)
         {
-            <MudPaper Class="pa-3" Elevation="2" Style="border-left: 4px solid var(--mud-palette-error)">
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Warning">
                 <MudStack Spacing="1">
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
-                        <MudText Typo="Typo.h6">@_dto.CriticalAlerts.Count critical item@(_dto.CriticalAlerts.Count == 1 ? "" : "s") need attention</MudText>
-                    </MudStack>
+                    <MudText Typo="Typo.h6">@_dto.CriticalAlerts.Count critical item@(_dto.CriticalAlerts.Count == 1 ? "" : "s") need attention</MudText>
                     @foreach (var alert in _dto.CriticalAlerts.Take(8))
                     {
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -58,7 +55,7 @@
                         </MudStack>
                     }
                 </MudStack>
-            </MudPaper>
+            </MudAlert>
         }
 
         @* ── Headline KPIs (each tile click-through navigates to its source list) ───── *@
@@ -402,7 +399,7 @@
 
             builder.AddMarkupContent(0, $@"
 <svg width=""100%"" viewBox=""0 0 {width} {height}"" preserveAspectRatio=""xMidYMid meet"" style=""max-height:{height}px;display:block"">
-    <path d=""{areaPath}"" fill=""rgba(31,111,235,0.1)"" />
+    <path d=""{areaPath}"" fill=""color-mix(in srgb, var(--mud-palette-primary) 10%, transparent)"" />
     <path d=""{path}"" fill=""none"" stroke=""var(--mud-palette-primary)"" stroke-width=""2"" />
     {labels}
 </svg>");

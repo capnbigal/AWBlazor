@@ -1,0 +1,12 @@
+@* Renders a Material Check icon when true; nothing when false.
+   Replaces the ad-hoc `@(value ? "✓" : "")` glyph pattern scattered across CRUD grids —
+   the design system forbids unicode glyphs as iconography. *@
+
+@if (Value)
+{
+    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+}
+
+@code {
+    [Parameter, EditorRequired] public bool Value { get; set; }
+}

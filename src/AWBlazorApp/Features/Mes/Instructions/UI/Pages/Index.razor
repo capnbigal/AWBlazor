@@ -24,7 +24,7 @@
             <PropertyColumn Property="x => x.WorkOrderRoutingId" Title="Routing id" />
             <PropertyColumn Property="x => x.Title" Title="Title" />
             <PropertyColumn Property="x => x.ActiveRevisionId" Title="Active rev" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"mes/instructions/{context.Item.Id}"))" />

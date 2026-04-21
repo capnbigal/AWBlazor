@@ -20,14 +20,14 @@
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="Id" />
             <PropertyColumn Property="x => x.ProductId" Title="ProductId" />
-            <TemplateColumn Title="Lots" Sortable="false"><CellTemplate>@(context.Item.TracksLot ? "✓" : "")</CellTemplate></TemplateColumn>
-            <TemplateColumn Title="Serials" Sortable="false"><CellTemplate>@(context.Item.TracksSerial ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Lots" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.TracksLot" /></CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Serials" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.TracksSerial" /></CellTemplate></TemplateColumn>
             <PropertyColumn Property="x => x.DefaultLocationId" Title="Default loc" />
             <PropertyColumn Property="x => x.MinQty" Title="Min" Format="N2" />
             <PropertyColumn Property="x => x.MaxQty" Title="Max" Format="N2" />
             <PropertyColumn Property="x => x.ReorderPoint" Title="Reorder at" Format="N2" />
             <PropertyColumn Property="x => x.ReorderQty" Title="Reorder qty" Format="N2" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
         </Columns>
         <PagerContent><MudDataGridPager T="InventoryItemDto" /></PagerContent>

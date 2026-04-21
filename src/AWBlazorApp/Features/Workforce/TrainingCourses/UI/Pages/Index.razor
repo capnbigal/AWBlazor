@@ -30,7 +30,7 @@
             <PropertyColumn Property="x => x.Name" Title="Name" />
             <PropertyColumn Property="x => x.DurationMinutes" Title="Min" />
             <PropertyColumn Property="x => x.RecurrenceMonths" Title="Recur (mo)" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
         </Columns>
         <PagerContent><MudDataGridPager T="TrainingCourseDto" /></PagerContent>
     </MudDataGrid>

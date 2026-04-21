@@ -44,7 +44,9 @@
                                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                                   DebounceInterval="250" Clearable="true" />
                     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1 d-block">
-                        @_products.Count match@(_products.Count == 1 ? "" : "es") · ★ = inventory-managed
+                        @_products.Count match@(_products.Count == 1 ? "" : "es") ·
+                        <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Primary" Style="vertical-align: middle" />
+                        = inventory-managed
                     </MudText>
                     @if (_pickerLoading)
                     {

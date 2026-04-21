@@ -86,11 +86,18 @@ else
                     <PropertyColumn Property="x => x.TaskName" Title="Task" />
                     <PropertyColumn Property="x => x.EstimatedMinutes" Title="Est min" />
                     <PropertyColumn Property="x => x.ActualMinutes" Title="Actual min" />
-                    <TemplateColumn Title="Signoff" Sortable="false"><CellTemplate>@(context.Item.RequiresSignoff ? "⚠" : "")</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="Signoff" Sortable="false">
+                        <CellTemplate>
+                            @if (context.Item.RequiresSignoff)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="Done" Sortable="false">
                         <CellTemplate>
                             @if (context.Item.IsComplete)
-                            { <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">✓ @context.Item.CompletedByUserId</MudChip> }
+                            { <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Check">@context.Item.CompletedByUserId</MudChip> }
                             else if (wo.Status == WorkOrderStatus.InProgress)
                             { <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" OnClick="@(() => OpenCompleteTask(context.Item.Id))">Complete</MudButton> }
                         </CellTemplate>

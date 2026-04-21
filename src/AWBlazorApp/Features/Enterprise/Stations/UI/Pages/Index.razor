@@ -68,7 +68,7 @@
             <PropertyColumn Property="x => x.OrgUnitId" Title="Org unit #" />
             <PropertyColumn Property="x => x.OperatorBusinessEntityId" Title="Operator BE#" />
             <PropertyColumn Property="x => x.AssetId" Title="Asset #" />
-            <TemplateColumn Title="Active" Sortable="false"><CellTemplate>@(context.Item.IsActive ? "✓" : "")</CellTemplate></TemplateColumn>
+            <TemplateColumn Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
