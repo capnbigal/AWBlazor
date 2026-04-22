@@ -1,0 +1,120 @@
+@* Shared history grid over audit.AuditLog. Replaces the bespoke per-entity
+   History.razor pages that each had their own DTO + custom columns.
+
+   Usage:
+       <AuditHistoryGrid EntityType="CostCenter" />
+       <AuditHistoryGrid EntityType="CostCenter" EntityId="@Id.ToString()" />
+*@
+
+@using AWBlazorApp.Shared.Audit
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<MudStack Spacing="3">
+    @* Only show the free-form filter row when we're rendering an unscoped history
+       (i.e. the page didn't pass an EntityId). When EntityId is set the page is
+       showing the change-log for one specific row, so Action / ChangedBy filters
+       still help but an Entity-id input is redundant. *@
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="filterChangedBy" Label="Changed by"
+                              Variant="Variant.Outlined" OnBlur="ApplyFilter" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="string?" @bind-Value="filterAction" Label="Action"
+                           Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
+                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            @if (string.IsNullOrEmpty(EntityId))
+            {
+                <MudItem xs="12" sm="4">
+                    <MudTextField @bind-Value="filterEntityId" Label="Entity id"
+                                  Variant="Variant.Outlined" OnBlur="ApplyFilter" />
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="AuditLog" ServerData="LoadAsync" @ref="grid"
+                 Dense="true" Hover="true" Striped="true"
+                 SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.EntityId" Title="Id" />
+            <TemplateColumn Title="Action" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@ActionColor(context.Item.Action)"
+                             Variant="Variant.Filled">@context.Item.Action</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
+            <PropertyColumn Property="x => x.Summary" Title="Summary" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AuditLog" />
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    /// <summary>CLR type name of the audited entity (e.g. <c>"CostCenter"</c>).</summary>
+    [Parameter, EditorRequired] public string EntityType { get; set; } = "";
+
+    /// <summary>Optional: scope history to a single row's id. When null the grid shows all history for the type.</summary>
+    [Parameter] public string? EntityId { get; set; }
+
+    private MudDataGrid<AuditLog> grid = null!;
+    private string? filterChangedBy;
+    private string? filterAction;
+    private string? filterEntityId;
+
+    private async Task<GridData<AuditLog>> LoadAsync(GridState<AuditLog> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == EntityType);
+
+        // EntityId from the page's route parameter wins over the free-form filter input.
+        var scopedId = !string.IsNullOrWhiteSpace(EntityId) ? EntityId : filterEntityId;
+        if (!string.IsNullOrWhiteSpace(scopedId))
+        {
+            var id = scopedId.Trim();
+            query = query.Where(a => a.EntityId == id);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterAction))
+        {
+            query = query.Where(a => a.Action == filterAction);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterChangedBy))
+        {
+            var n = filterChangedBy.Trim();
+            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(n));
+        }
+
+        var total = await query.CountAsync(ct);
+        var rows = await query
+            .OrderByDescending(a => a.ChangedDate)
+            .ThenByDescending(a => a.Id)
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
+
+        return new GridData<AuditLog> { Items = rows, TotalItems = total };
+    }
+
+    private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private static Color ActionColor(string a) => a switch
+    {
+        "Created" => Color.Success,
+        "Updated" => Color.Info,
+        "Deleted" => Color.Error,
+        _         => Color.Default,
+    };
+}
