@@ -1,4 +1,3 @@
-using AWBlazorApp.Features.Engineering.Audit;
 using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
 using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
 using AWBlazorApp.Features.Maintenance.Audit;
@@ -219,7 +218,6 @@ public sealed class DemoDataFiller
         };
         db.EngineeringChangeOrders.Add(eco);
         await db.SaveChangesAsync(ct);
-        db.EngineeringChangeOrderAuditLogs.Add(EngineeringChangeOrderAuditService.RecordCreate(eco, "demo-fill"));
         rows++;
 
         // Engineering documents — count/2 per call.
@@ -239,7 +237,6 @@ public sealed class DemoDataFiller
             };
             db.EngineeringDocuments.Add(doc);
             await db.SaveChangesAsync(ct);
-            db.EngineeringDocumentAuditLogs.Add(EngineeringDocumentAuditService.RecordCreate(doc, "demo-fill"));
             rows++;
         }
 
@@ -263,7 +260,6 @@ public sealed class DemoDataFiller
             };
             db.DeviationRequests.Add(dev);
             await db.SaveChangesAsync(ct);
-            db.DeviationRequestAuditLogs.Add(DeviationRequestAuditService.RecordCreate(dev, "demo-fill"));
             rows++;
         }
 
@@ -317,7 +313,6 @@ public sealed class DemoDataFiller
             };
             db.MaintenanceWorkOrders.Add(wo);
             await db.SaveChangesAsync(ct);
-            db.MaintenanceWorkOrderAuditLogs.Add(MaintenanceWorkOrderAuditService.RecordCreate(wo, "demo-fill"));
             rows++;
         }
 

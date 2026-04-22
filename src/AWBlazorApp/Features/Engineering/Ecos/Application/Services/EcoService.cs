@@ -1,5 +1,6 @@
-using AWBlazorApp.Features.Engineering.Audit;
-using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
+using AWBlazorApp.Features.Engineering.Boms.Domain;
+using AWBlazorApp.Features.Engineering.Ecos.Domain;
+using AWBlazorApp.Features.Engineering.Routings.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,7 +34,6 @@ public sealed class EcoService(
 
         Guard(eco.Status, target);
 
-        var before = EngineeringChangeOrderAuditService.CaptureSnapshot(eco);
         var now = DateTime.UtcNow;
 
         eco.Status = target;
@@ -77,9 +77,8 @@ public sealed class EcoService(
                 break;
         }
 
-        db.EngineeringChangeOrderAuditLogs.Add(
-            EngineeringChangeOrderAuditService.RecordUpdate(before, eco, userId));
-
+        // AuditLogInterceptor writes audit rows for every modified entity (ECO + affected
+        // BOMs / Routings) inside this SaveChangesAsync.
         await db.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
     }
@@ -115,10 +114,10 @@ public sealed class EcoService(
             switch (item.AffectedKind)
             {
                 case EcoAffectedKind.Bom:
-                    await ActivateBomAsync(db, item.TargetId, userId, now, cancellationToken);
+                    await ActivateBomAsync(db, item.TargetId, now, cancellationToken);
                     break;
                 case EcoAffectedKind.Routing:
-                    await ActivateRoutingAsync(db, item.TargetId, userId, now, cancellationToken);
+                    await ActivateRoutingAsync(db, item.TargetId, now, cancellationToken);
                     break;
                 case EcoAffectedKind.Product:
                 case EcoAffectedKind.Document:
@@ -129,7 +128,7 @@ public sealed class EcoService(
     }
 
     private async Task ActivateBomAsync(
-        ApplicationDbContext db, int bomHeaderId, string? userId, DateTime now, CancellationToken cancellationToken)
+        ApplicationDbContext db, int bomHeaderId, DateTime now, CancellationToken cancellationToken)
     {
         var target = await db.BomHeaders.FirstOrDefaultAsync(b => b.Id == bomHeaderId, cancellationToken);
         if (target is null)
@@ -144,23 +143,19 @@ public sealed class EcoService(
 
         foreach (var prior in priors)
         {
-            var before = BomHeaderAuditService.CaptureSnapshot(prior);
             prior.IsActive = false;
             prior.ModifiedDate = now;
-            db.BomHeaderAuditLogs.Add(BomHeaderAuditService.RecordUpdate(before, prior, userId));
         }
 
         if (!target.IsActive)
         {
-            var before = BomHeaderAuditService.CaptureSnapshot(target);
             target.IsActive = true;
             target.ModifiedDate = now;
-            db.BomHeaderAuditLogs.Add(BomHeaderAuditService.RecordUpdate(before, target, userId));
         }
     }
 
     private async Task ActivateRoutingAsync(
-        ApplicationDbContext db, int routingId, string? userId, DateTime now, CancellationToken cancellationToken)
+        ApplicationDbContext db, int routingId, DateTime now, CancellationToken cancellationToken)
     {
         var target = await db.ManufacturingRoutings.FirstOrDefaultAsync(r => r.Id == routingId, cancellationToken);
         if (target is null)
@@ -175,18 +170,14 @@ public sealed class EcoService(
 
         foreach (var prior in priors)
         {
-            var before = ManufacturingRoutingAuditService.CaptureSnapshot(prior);
             prior.IsActive = false;
             prior.ModifiedDate = now;
-            db.ManufacturingRoutingAuditLogs.Add(ManufacturingRoutingAuditService.RecordUpdate(before, prior, userId));
         }
 
         if (!target.IsActive)
         {
-            var before = ManufacturingRoutingAuditService.CaptureSnapshot(target);
             target.IsActive = true;
             target.ModifiedDate = now;
-            db.ManufacturingRoutingAuditLogs.Add(ManufacturingRoutingAuditService.RecordUpdate(before, target, userId));
         }
     }
 }

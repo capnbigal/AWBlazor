@@ -1,5 +1,4 @@
-using AWBlazorApp.Features.Engineering.Audit;
-using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
+using AWBlazorApp.Features.Engineering.Deviations.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +28,6 @@ public sealed class DeviationService(IDbContextFactory<ApplicationDbContext> dbF
         if (d.Status != DeviationStatus.Pending)
             throw new InvalidOperationException($"Cannot transition deviation from {d.Status} to {target}.");
 
-        var before = DeviationRequestAuditService.CaptureSnapshot(d);
         var now = DateTime.UtcNow;
 
         d.Status = target;
@@ -38,8 +36,7 @@ public sealed class DeviationService(IDbContextFactory<ApplicationDbContext> dbF
         d.DecisionNotes = decisionNotes?.Trim();
         d.ModifiedDate = now;
 
-        db.DeviationRequestAuditLogs.Add(DeviationRequestAuditService.RecordUpdate(before, d, userId));
-
+        // AuditLogInterceptor writes the audit row inside this SaveChangesAsync.
         await db.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
     }
