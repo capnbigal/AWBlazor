@@ -2,9 +2,8 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Enterprise.Assets.Application.Services; using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services; using AWBlazorApp.Features.Enterprise.Organizations.Application.Services; using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services; using AWBlazorApp.Features.Enterprise.Stations.Application.Services; 
-using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
-using AWBlazorApp.Features.Enterprise.Assets.Dtos; using AWBlazorApp.Features.Enterprise.CostCenters.Dtos; using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos; using AWBlazorApp.Features.Enterprise.Organizations.Dtos; using AWBlazorApp.Features.Enterprise.ProductLines.Dtos; using AWBlazorApp.Features.Enterprise.Stations.Dtos; 
+using AWBlazorApp.Features.Enterprise.Assets.Domain;
+using AWBlazorApp.Features.Enterprise.Assets.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,24 +20,17 @@ public static class AssetEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListAssets").WithSummary("List org.Asset rows.");
 
-        group.MapIntIdCrud<Asset, AssetDto, CreateAssetRequest, UpdateAssetRequest, AssetAuditLog, AssetAuditLogDto, AssetAuditService.Snapshot, int>(
+        // Get / Create / Update / Delete / History — audit handled automatically by
+        // AuditLogInterceptor via SaveChangesAsync.
+        group.MapCrudWithInterceptor<Asset, AssetDto, CreateAssetRequest, UpdateAssetRequest, int>(
             entityName: "Asset",
             routePrefix: "/api/assets",
             entitySet: db => db.Assets,
-            auditSet: db => db.AssetAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.AssetId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: AssetAuditService.CaptureSnapshot,
-            recordCreate: AssetAuditService.RecordCreate,
-            recordUpdate: AssetAuditService.RecordUpdate,
-            recordDelete: AssetAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }
