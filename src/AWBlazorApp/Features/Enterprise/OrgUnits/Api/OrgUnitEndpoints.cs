@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Enterprise.Assets.Application.Services; using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services; using AWBlazorApp.Features.Enterprise.Organizations.Application.Services; using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services; using AWBlazorApp.Features.Enterprise.Stations.Application.Services; 
-using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
-using AWBlazorApp.Features.Enterprise.Assets.Dtos; using AWBlazorApp.Features.Enterprise.CostCenters.Dtos; using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos; using AWBlazorApp.Features.Enterprise.Organizations.Dtos; using AWBlazorApp.Features.Enterprise.ProductLines.Dtos; using AWBlazorApp.Features.Enterprise.Stations.Dtos; 
+using AWBlazorApp.Features.Enterprise.OrgUnits.Domain;
+using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +13,11 @@ using Microsoft.EntityFrameworkCore;
 namespace AWBlazorApp.Features.Enterprise.OrgUnits.Api;
 
 /// <summary>
-/// OrgUnit endpoints. Written by hand (not via <c>MapIntIdCrud</c>) because Create/Update must
-/// resolve the materialized <c>Path</c> and <c>Depth</c> from the parent row before persisting,
-/// and a parent change must cascade new paths onto descendants.
+/// OrgUnit endpoints. Written by hand (not via <c>MapCrudWithInterceptor</c>) because
+/// Create/Update must resolve the materialized <c>Path</c> and <c>Depth</c> from the
+/// parent row before persisting, and a parent change must cascade new paths onto
+/// descendants. Audit rows are written automatically by
+/// <see cref="AuditLogInterceptor"/> on <c>SaveChangesAsync</c>.
 /// </summary>
 public static class OrgUnitEndpoints
 {
@@ -77,7 +79,8 @@ public static class OrgUnitEndpoints
         var entity = request.ToEntity();
         await ResolvePathAndDepthAsync(db, entity, ct);
 
-        await db.AddWithAuditAsync(entity, e => OrgUnitAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.OrgUnits.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/org-units/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -92,20 +95,21 @@ public static class OrgUnitEndpoints
         var entity = await db.OrgUnits.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = OrgUnitAuditService.CaptureSnapshot(entity);
+        // Capture the pre-Apply values we need for cascade logic. The interceptor
+        // handles the actual audit-row write on SaveChangesAsync below.
+        var beforeParent = entity.ParentOrgUnitId;
+        var beforeCode = entity.Code;
         var oldPath = entity.Path;
         request.ApplyTo(entity);
 
-        // If parent or code changed, recompute this node's Path/Depth and cascade into descendants.
-        var parentChanged = request.ParentOrgUnitId is not null && request.ParentOrgUnitId != before.ParentOrgUnitId;
-        var codeChanged = request.Code is not null && request.Code.Trim().ToUpperInvariant() != before.Code;
+        var parentChanged = request.ParentOrgUnitId is not null && request.ParentOrgUnitId != beforeParent;
+        var codeChanged = request.Code is not null && request.Code.Trim().ToUpperInvariant() != beforeCode;
         if (parentChanged || codeChanged)
         {
             await ResolvePathAndDepthAsync(db, entity, ct);
             await CascadePathAsync(db, entity.Id, oldPath, entity.Path, entity.Depth, ct);
         }
 
-        db.OrgUnitAuditLogs.Add(OrgUnitAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -125,19 +129,18 @@ public static class OrgUnitEndpoints
             });
         }
 
-        db.OrgUnitAuditLogs.Add(OrgUnitAuditService.RecordDelete(entity, user.Identity?.Name));
         db.OrgUnits.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<OrgUnitAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db, CancellationToken ct)
     {
-        var rows = await db.OrgUnitAuditLogs.AsNoTracking()
-            .Where(a => a.OrgUnitId == id)
+        var idStr = id.ToString();
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "OrgUnit" && a.EntityId == idStr)
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }

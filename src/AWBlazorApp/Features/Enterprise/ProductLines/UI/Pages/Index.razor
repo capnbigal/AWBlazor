@@ -12,16 +12,10 @@
 @using AWBlazorApp.Features.Enterprise.Organizations.Dtos
 @using AWBlazorApp.Features.Enterprise.ProductLines.Dtos
 @using AWBlazorApp.Features.Enterprise.Stations.Dtos
-@using AWBlazorApp.Features.Enterprise.Assets.Application.Services
-@using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services
-@using AWBlazorApp.Features.Enterprise.Organizations.Application.Services
-@using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services
-@using AWBlazorApp.Features.Enterprise.Stations.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Product lines</PageTitle>
 
@@ -136,19 +130,12 @@
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.ProductLines.FirstOrDefaultAsync(t => t.Id == row.Id);
         if (entity is null) { Snackbar.Add("Already gone.", Severity.Warning); await grid.ReloadServerData(); return; }
-        var by = await GetCurrentUserNameAsync();
-        db.ProductLineAuditLogs.Add(ProductLineAuditService.RecordDelete(entity, by));
         db.ProductLines.Remove(entity);
+        // AuditLogInterceptor writes the Deleted audit row inside this SaveChangesAsync.
         try { await db.SaveChangesAsync(); Snackbar.Add("Product line deleted.", Severity.Success); }
         catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
         await grid.ReloadServerData();
     }
 
     private void OpenHistory(ProductLineDto row) => Navigation.NavigateTo($"enterprise/product-lines/history/{row.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

@@ -2,9 +2,8 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Enterprise.Assets.Application.Services; using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services; using AWBlazorApp.Features.Enterprise.Organizations.Application.Services; using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services; using AWBlazorApp.Features.Enterprise.Stations.Application.Services; 
-using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
-using AWBlazorApp.Features.Enterprise.Assets.Dtos; using AWBlazorApp.Features.Enterprise.CostCenters.Dtos; using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos; using AWBlazorApp.Features.Enterprise.Organizations.Dtos; using AWBlazorApp.Features.Enterprise.ProductLines.Dtos; using AWBlazorApp.Features.Enterprise.Stations.Dtos; 
+using AWBlazorApp.Features.Enterprise.Stations.Domain;
+using AWBlazorApp.Features.Enterprise.Stations.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,24 +20,17 @@ public static class StationEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListStations").WithSummary("List org.Station rows.");
 
-        group.MapIntIdCrud<Station, StationDto, CreateStationRequest, UpdateStationRequest, StationAuditLog, StationAuditLogDto, StationAuditService.Snapshot, int>(
+        // Get / Create / Update / Delete / History — audit handled automatically by
+        // AuditLogInterceptor via SaveChangesAsync.
+        group.MapCrudWithInterceptor<Station, StationDto, CreateStationRequest, UpdateStationRequest, int>(
             entityName: "Station",
             routePrefix: "/api/stations",
             entitySet: db => db.Stations,
-            auditSet: db => db.StationAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.StationId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: StationAuditService.CaptureSnapshot,
-            recordCreate: StationAuditService.RecordCreate,
-            recordUpdate: StationAuditService.RecordUpdate,
-            recordDelete: StationAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

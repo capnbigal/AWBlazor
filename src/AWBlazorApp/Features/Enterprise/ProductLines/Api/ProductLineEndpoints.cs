@@ -2,9 +2,8 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Enterprise.Assets.Application.Services; using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services; using AWBlazorApp.Features.Enterprise.Organizations.Application.Services; using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services; using AWBlazorApp.Features.Enterprise.Stations.Application.Services; 
-using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
-using AWBlazorApp.Features.Enterprise.Assets.Dtos; using AWBlazorApp.Features.Enterprise.CostCenters.Dtos; using AWBlazorApp.Features.Enterprise.OrgUnits.Dtos; using AWBlazorApp.Features.Enterprise.Organizations.Dtos; using AWBlazorApp.Features.Enterprise.ProductLines.Dtos; using AWBlazorApp.Features.Enterprise.Stations.Dtos; 
+using AWBlazorApp.Features.Enterprise.ProductLines.Domain;
+using AWBlazorApp.Features.Enterprise.ProductLines.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,24 +20,17 @@ public static class ProductLineEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListProductLines").WithSummary("List org.ProductLine rows.");
 
-        group.MapIntIdCrud<ProductLine, ProductLineDto, CreateProductLineRequest, UpdateProductLineRequest, ProductLineAuditLog, ProductLineAuditLogDto, ProductLineAuditService.Snapshot, int>(
+        // Get / Create / Update / Delete / History — audit handled automatically by
+        // AuditLogInterceptor via SaveChangesAsync.
+        group.MapCrudWithInterceptor<ProductLine, ProductLineDto, CreateProductLineRequest, UpdateProductLineRequest, int>(
             entityName: "ProductLine",
             routePrefix: "/api/product-lines",
             entitySet: db => db.ProductLines,
-            auditSet: db => db.ProductLineAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.ProductLineId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: ProductLineAuditService.CaptureSnapshot,
-            recordCreate: ProductLineAuditService.RecordCreate,
-            recordUpdate: ProductLineAuditService.RecordUpdate,
-            recordDelete: ProductLineAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

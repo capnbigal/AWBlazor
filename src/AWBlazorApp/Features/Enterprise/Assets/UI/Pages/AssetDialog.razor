@@ -10,16 +10,10 @@
 @using AWBlazorApp.Features.Enterprise.Organizations.Dtos
 @using AWBlazorApp.Features.Enterprise.ProductLines.Dtos
 @using AWBlazorApp.Features.Enterprise.Stations.Dtos
-@using AWBlazorApp.Features.Enterprise.Assets.Application.Services
-@using AWBlazorApp.Features.Enterprise.OrgUnits.Application.Services
-@using AWBlazorApp.Features.Enterprise.Organizations.Application.Services
-@using AWBlazorApp.Features.Enterprise.ProductLines.Application.Services
-@using AWBlazorApp.Features.Enterprise.Stations.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateAssetRequest> CreateValidator
 @inject MudFormValidator<UpdateAssetRequest> UpdateValidator
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -142,19 +136,15 @@
         saving = true;
         try
         {
-            var by = await GetCurrentUserNameAsync();
             await using var db = await DbFactory.CreateDbContextAsync();
             if (IsNew)
             {
                 if (!await CreateValidator.ValidateAllAsync(createModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
                 var entity = createModel.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Assets.Add(entity);
+                // AuditLogInterceptor writes the audit row inside this SaveChangesAsync.
                 try { await db.SaveChangesAsync(); }
                 catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
-                db.AssetAuditLogs.Add(AssetAuditService.RecordCreate(entity, by));
-                await db.SaveChangesAsync();
-                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else
@@ -162,20 +152,12 @@
                 if (!await UpdateValidator.ValidateAllAsync(updateModel)) { Snackbar.Add("Please fix the errors in the form.", Severity.Error); return; }
                 var entity = await db.Assets.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = AssetAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.AssetAuditLogs.Add(AssetAuditService.RecordUpdate(before, entity, by));
                 try { await db.SaveChangesAsync(); }
                 catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); return; }
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
         }
         finally { saving = false; }
-    }
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
     }
 }
