@@ -91,6 +91,7 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
         Assert.That(created, Is.Not.Null);
         var id = created!.AsInt();
 
+        var idStr = id.ToString();
         try
         {
             await using var db = await GetDbContextAsync();
@@ -98,14 +99,16 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
             Assert.That(entity, Is.Not.Null);
             Assert.That(entity!.Code, Is.EqualTo(code));
 
-            var auditCount = await db.TrainingCourseAuditLogs.AsNoTracking().CountAsync(a => a.TrainingCourseId == id);
+            var auditCount = await db.AuditLogs.AsNoTracking()
+                .CountAsync(a => a.EntityType == "TrainingCourse" && a.EntityId == idStr);
             Assert.That(auditCount, Is.GreaterThanOrEqualTo(1), "Expected at least one audit log row after create.");
         }
         finally
         {
             await using var cleanup = await GetDbContextAsync();
-            var rows = cleanup.TrainingCourseAuditLogs.Where(a => a.TrainingCourseId == id);
-            cleanup.TrainingCourseAuditLogs.RemoveRange(rows);
+            await cleanup.AuditLogs
+                .Where(a => a.EntityType == "TrainingCourse" && a.EntityId == idStr)
+                .ExecuteDeleteAsync();
             var course = await cleanup.TrainingCourses.FirstOrDefaultAsync(c => c.Id == id);
             if (course is not null) cleanup.TrainingCourses.Remove(course);
             await cleanup.SaveChangesAsync();

@@ -102,13 +102,8 @@
         {
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = newQ.ToEntity();
-            var by = await GetUserNameAsync();
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.Qualifications.Add(entity);
             await db.SaveChangesAsync();
-            db.QualificationAuditLogs.Add(QualificationAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Created {entity.Code}.", Severity.Success);
             dialogOpen = false;
             await grid.ReloadServerData();

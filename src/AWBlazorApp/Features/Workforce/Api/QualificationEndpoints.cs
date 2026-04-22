@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Workforce.Audit;
 using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
 using AWBlazorApp.Features.Workforce.Dtos;
 using AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services; using AWBlazorApp.Features.Workforce.Qualifications.Application.Services; using AWBlazorApp.Features.Workforce.Qualifications.Application.Hooks; 
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -105,7 +105,8 @@ public static class QualificationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => QualificationAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.Qualifications.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/qualifications/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -118,9 +119,7 @@ public static class QualificationEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.Qualifications.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = QualificationAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.QualificationAuditLogs.Add(QualificationAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -130,20 +129,22 @@ public static class QualificationEndpoints
     {
         var entity = await db.Qualifications.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, QualificationAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.Qualifications.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<QualificationAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.QualificationAuditLogs.AsNoTracking().Where(a => a.QualificationId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "Qualification" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<QualificationAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<EmployeeQualificationDto>>> ListEmpAsync(
@@ -202,16 +203,17 @@ public static class QualificationEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<EmployeeQualificationAuditLogDto>>> EmpHistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> EmpHistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.EmployeeQualificationAuditLogs.AsNoTracking().Where(a => a.EmployeeQualificationId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "EmployeeQualification" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<EmployeeQualificationAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<StationQualificationDto>>> ListStationAsync(
@@ -244,8 +246,6 @@ public static class QualificationEndpoints
         var entity = request.ToEntity();
         db.StationQualifications.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.StationQualificationAuditLogs.Add(StationQualificationAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/station-qualifications/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -256,7 +256,6 @@ public static class QualificationEndpoints
         var entity = await db.StationQualifications.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
         request.ApplyTo(entity);
-        db.StationQualificationAuditLogs.Add(StationQualificationAuditService.RecordUpdate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -267,7 +266,6 @@ public static class QualificationEndpoints
         var entity = await db.StationQualifications.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
         db.StationQualifications.Remove(entity);
-        db.StationQualificationAuditLogs.Add(StationQualificationAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
@@ -304,13 +302,11 @@ public static class QualificationEndpoints
     {
         var entity = await db.QualificationAlerts.FirstOrDefaultAsync(a => a.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = QualificationAlertAuditService.CaptureSnapshot(entity);
         entity.Status = request.TargetStatus;
         entity.AcknowledgedAt = DateTime.UtcNow;
         entity.AcknowledgedByUserId = user.Identity?.Name;
         if (!string.IsNullOrWhiteSpace(request.Notes)) entity.Notes = request.Notes.Trim();
         entity.ModifiedDate = DateTime.UtcNow;
-        db.QualificationAlertAuditLogs.Add(QualificationAlertAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(entity.ToDto());
     }
