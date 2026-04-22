@@ -5,20 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services;
 
-public sealed class PmScheduleService : IPmScheduleService
+public sealed class PmScheduleService(
+    IDbContextFactory<ApplicationDbContext> dbFactory,
+    ILogger<PmScheduleService> logger) : IPmScheduleService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-    private readonly ILogger<PmScheduleService> _logger;
-
-    public PmScheduleService(IDbContextFactory<ApplicationDbContext> dbFactory, ILogger<PmScheduleService> logger)
-    {
-        _dbFactory = dbFactory;
-        _logger = logger;
-    }
 
     public async Task<int> GenerateDueWorkOrdersAsync(int? pmScheduleId, string? userId, CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var q = db.PmSchedules.Where(s => s.IsActive);
@@ -100,7 +94,7 @@ public sealed class PmScheduleService : IPmScheduleService
         await tx.CommitAsync(cancellationToken);
 
         if (generated > 0)
-            _logger.LogInformation("Generated {Count} PM work order(s) from {Total} active schedules.", generated, schedules.Count);
+            logger.LogInformation("Generated {Count} PM work order(s) from {Total} active schedules.", generated, schedules.Count);
 
         return generated;
     }

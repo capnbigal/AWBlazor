@@ -11,43 +11,32 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace AWBlazorApp.Features.Dashboard.Services;
 
-public sealed class PlantDashboardService : IPlantDashboardService
+public sealed class PlantDashboardService(
+    IDbContextFactory<ApplicationDbContext> dbFactory,
+    IMemoryCache cache,
+    ILogger<PlantDashboardService> logger) : IPlantDashboardService
 {
     private const string CacheKey = "plant-dashboard:v1";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
     private const int ActivityFeedSize = 20;
 
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-    private readonly IMemoryCache _cache;
-    private readonly ILogger<PlantDashboardService> _logger;
-
-    public PlantDashboardService(
-        IDbContextFactory<ApplicationDbContext> dbFactory,
-        IMemoryCache cache,
-        ILogger<PlantDashboardService> logger)
-    {
-        _dbFactory = dbFactory;
-        _cache = cache;
-        _logger = logger;
-    }
-
-    public void Invalidate() => _cache.Remove(CacheKey);
+    public void Invalidate() => cache.Remove(CacheKey);
 
     public async Task<PlantDashboardDto> GetAsync(CancellationToken cancellationToken)
     {
-        if (_cache.TryGetValue<PlantDashboardDto>(CacheKey, out var cached) && cached is not null)
+        if (cache.TryGetValue<PlantDashboardDto>(CacheKey, out var cached) && cached is not null)
             return cached;
 
         var dto = await BuildAsync(cancellationToken);
 
-        _cache.Set(CacheKey, dto, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl });
+        cache.Set(CacheKey, dto, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl });
         return dto;
     }
 
     private async Task<PlantDashboardDto> BuildAsync(CancellationToken ct)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         var nowUtc = DateTime.UtcNow;
         var todayUtc = nowUtc.Date;
@@ -183,7 +172,7 @@ public sealed class PlantDashboardService : IPlantDashboardService
             .ToList();
 
         sw.Stop();
-        _logger.LogInformation("PlantDashboard built in {Ms}ms", sw.ElapsedMilliseconds);
+        logger.LogInformation("PlantDashboard built in {Ms}ms", sw.ElapsedMilliseconds);
 
         return new PlantDashboardDto(
             GeneratedAt: nowUtc,

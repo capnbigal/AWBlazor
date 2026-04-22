@@ -6,11 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Performance.Oee.Application.Services;
 
-public sealed class OeeService : IOeeService
+public sealed class OeeService(IDbContextFactory<ApplicationDbContext> dbFactory) : IOeeService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public OeeService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public async Task<OeeSnapshot> ComputeAsync(
         int stationId, PerformancePeriodKind periodKind,
@@ -20,7 +17,7 @@ public sealed class OeeService : IOeeService
         if (periodEnd <= periodStart)
             throw new ArgumentException("periodEnd must be after periodStart.", nameof(periodEnd));
 
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         // Production runs that overlap the period AT this station.
         var runs = await db.ProductionRuns.AsNoTracking()

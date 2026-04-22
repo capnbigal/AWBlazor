@@ -38,6 +38,7 @@ public static class ServiceRegistration
     {
         services.AddHttpContextAccessor();
         services.AddSingleton<AuditingInterceptor>();
+        services.AddSingleton<AuditLogInterceptor>();
 
         services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
         {
@@ -46,7 +47,9 @@ public static class ServiceRegistration
                 sql.MigrationsAssembly(typeof(Program).Assembly.GetName().Name);
                 sql.UseHierarchyId();
             });
-            options.AddInterceptors(sp.GetRequiredService<AuditingInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<AuditingInterceptor>(),
+                sp.GetRequiredService<AuditLogInterceptor>());
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 

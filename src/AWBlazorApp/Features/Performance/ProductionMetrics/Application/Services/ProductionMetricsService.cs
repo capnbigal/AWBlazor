@@ -4,18 +4,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services;
 
-public sealed class ProductionMetricsService : IProductionMetricsService
+public sealed class ProductionMetricsService(IDbContextFactory<ApplicationDbContext> dbFactory) : IProductionMetricsService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public ProductionMetricsService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public async Task<ProductionDailyMetric> ComputeDailyAsync(int stationId, DateOnly date, CancellationToken cancellationToken)
     {
         var dayStart = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var dayEnd = dayStart.AddDays(1);
 
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         var runs = await db.ProductionRuns.AsNoTracking()
             .Where(r => r.StationId == stationId

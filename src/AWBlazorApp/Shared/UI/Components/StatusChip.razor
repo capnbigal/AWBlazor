@@ -1,0 +1,57 @@
+@* Renders a colored MudChip for any status enum. Built-in color maps for the common
+   status enums (WorkOrderStatus, InspectionStatus, NcrStatus, CapaStatus, etc.) mean the
+   switch-expression `StatusColor(s)` helper that was copy-pasted across dozens of pages
+   can be deleted. Pass `Color="…"` to override for custom enums. *@
+
+@typeparam TStatus where TStatus : struct, Enum
+
+<MudChip T="string"
+         Size="@Size"
+         Variant="@Variant"
+         Color="@(Color ?? DefaultColorFor(Value))">
+    @(Label ?? Value.ToString())
+</MudChip>
+
+@code {
+    [Parameter, EditorRequired] public TStatus Value { get; set; }
+
+    /// <summary>Overrides the default color map. Leave null to use the built-in map.</summary>
+    [Parameter] public Color? Color { get; set; }
+
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public Size Size { get; set; } = Size.Small;
+    [Parameter] public Variant Variant { get; set; } = Variant.Filled;
+
+    private static Color DefaultColorFor(TStatus value)
+    {
+        // The map keys match the common status-enum value names we've adopted across
+        // Maintenance / Quality / Logistics / MES. Unknown values fall through to Default.
+        return value.ToString() switch
+        {
+            "Draft"        => MudBlazor.Color.Default,
+            "Pending"      => MudBlazor.Color.Warning,
+            "Scheduled"    => MudBlazor.Color.Info,
+            "InProgress"   => MudBlazor.Color.Warning,
+            "OnHold"       => MudBlazor.Color.Secondary,
+            "Paused"       => MudBlazor.Color.Warning,
+            "Completed"    => MudBlazor.Color.Success,
+            "Closed"       => MudBlazor.Color.Success,
+            "Approved"     => MudBlazor.Color.Success,
+            "Posted"       => MudBlazor.Color.Success,
+            "Shipped"      => MudBlazor.Color.Success,
+            "InTransit"    => MudBlazor.Color.Info,
+            "Active"       => MudBlazor.Color.Success,
+            "UnderReview"  => MudBlazor.Color.Info,
+            "Cancelled"    => MudBlazor.Color.Error,
+            "Rejected"     => MudBlazor.Color.Error,
+            "Failed"       => MudBlazor.Color.Error,
+            "Fail"         => MudBlazor.Color.Error,
+            "NonConformed" => MudBlazor.Color.Error,
+            "Critical"     => MudBlazor.Color.Error,
+            "Pass"         => MudBlazor.Color.Success,
+            "OnTarget"     => MudBlazor.Color.Success,
+            "Warning"      => MudBlazor.Color.Warning,
+            _              => MudBlazor.Color.Default,
+        };
+    }
+}

@@ -5,11 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Engineering.Deviations.Application.Services;
 
-public sealed class DeviationService : IDeviationService
+public sealed class DeviationService(IDbContextFactory<ApplicationDbContext> dbFactory) : IDeviationService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public DeviationService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public Task ApproveAsync(int deviationId, string? decisionNotes, string? userId, CancellationToken cancellationToken)
         => TransitionAsync(deviationId, DeviationStatus.Approved, userId, decisionNotes, cancellationToken);
@@ -23,7 +20,7 @@ public sealed class DeviationService : IDeviationService
     private async Task TransitionAsync(
         int deviationId, DeviationStatus target, string? userId, string? decisionNotes, CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var d = await db.DeviationRequests.FirstOrDefaultAsync(x => x.Id == deviationId, cancellationToken)

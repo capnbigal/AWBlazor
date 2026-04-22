@@ -5,18 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services;
 
-public sealed class MaintenanceMetricsService : IMaintenanceMetricsService
+public sealed class MaintenanceMetricsService(IDbContextFactory<ApplicationDbContext> dbFactory) : IMaintenanceMetricsService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public MaintenanceMetricsService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public async Task<MaintenanceMonthlyMetric> ComputeMonthlyAsync(int assetId, int year, int month, CancellationToken cancellationToken)
     {
         var monthStart = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
         var monthEnd = monthStart.AddMonths(1);
 
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         var wos = await db.MaintenanceWorkOrders.AsNoTracking()
             .Where(w => w.AssetId == assetId

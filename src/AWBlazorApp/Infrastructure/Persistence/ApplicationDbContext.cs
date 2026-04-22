@@ -1,4 +1,5 @@
 using AWBlazorApp.Shared.Domain;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Features.UserGuide.Domain;
 using AWBlazorApp.Features.Maintenance.ToolSlots.Domain;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
@@ -47,6 +48,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ToolSlotConfiguration> ToolSlotConfigurations => Set<ToolSlotConfiguration>();
     public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
+
+    // Consolidated audit log — populated automatically by AuditLogInterceptor on every
+    // SaveChangesAsync. Replaces the 117 per-entity *AuditLog tables as the go-forward
+    // source of history. Legacy tables remain read-only tombstones during the transition.
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
     public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
@@ -384,6 +391,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // --- Consolidated audit log ---
+        builder.Entity<AuditLog>(b =>
+        {
+            // Compound index on (EntityType, EntityId) is the hot-path lookup: "show me the
+            // history of this cost center." Sort by ChangedDate descending via the secondary
+            // column so History pages can ORDER BY without an extra scan.
+            b.HasIndex(x => new { x.EntityType, x.EntityId, x.ChangedDate });
+            // Time-based queries (e.g. "everything changed in the last 24 hours") use this.
+            b.HasIndex(x => x.ChangedDate);
+        });
 
         // --- Forecasting entities ---
         builder.Entity<ForecastDefinition>(b =>
