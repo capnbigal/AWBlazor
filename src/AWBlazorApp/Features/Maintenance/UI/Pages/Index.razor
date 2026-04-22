@@ -22,27 +22,19 @@
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Value="@criticalAssets.ToString("N0")" Label="Critical assets" /></MudItem>
     </MudGrid>
 
-    @* ── Modules (one card per subsection of the legacy Maintenance nav group) ── *@
+    @* ── Modules ───────────────────────────────────────────────────── *@
     <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
     <MudGrid Spacing="3">
-        @foreach (var card in Cards)
-        {
-            <MudItem xs="12" sm="6" md="4">
-                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; cursor: pointer" @onclick="@(() => Navigation.NavigateTo(card.Href))">
-                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3">
-                        <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
-                        <MudStack Spacing="0" Style="flex: 1; min-width: 0">
-                            <MudText Typo="Typo.h6">@card.Title</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">@card.Subtitle</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Default" />
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-        }
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Work orders" Subtitle="Draft → Scheduled → InProgress → Completed with OnHold/Cancelled side paths." Icon="@Icons.Material.Filled.Assignment" Href="maintenance/work-orders" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="PM schedules" Subtitle="Time- or meter-based preventive maintenance. Generate due WOs on demand." Icon="@Icons.Material.Filled.Schedule" Href="maintenance/pm-schedules" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Asset profiles" Subtitle="Criticality, owner, target MTBF per asset. 1:1 sidecar on org.Asset." Icon="@Icons.Material.Filled.PrecisionManufacturing" Href="maintenance/asset-profiles" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Spare parts" Subtitle="Standalone catalog with optional link to AW Production.Product." Icon="@Icons.Material.Filled.Inventory" Href="maintenance/spare-parts" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Meter readings" Subtitle="Runtime hours / cycles / kWh. Drives usage-based PM due checks." Icon="@Icons.Material.Filled.Speed" Href="maintenance/meter-readings" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Maintenance log" Subtitle="Free-form observations not yet escalated to a work order." Icon="@Icons.Material.Filled.EventNote" Href="maintenance/logs" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Tool slots" Subtitle="Externally-managed tool slot configurations keyed by family / MT code." Icon="@Icons.Material.Filled.Build" Href="maintenance/tool-slots" /></MudItem>
     </MudGrid>
 
-    @* ── Recent activity ─────────────────────────────────────────── *@
+    @* ── Recent activity ───────────────────────────────────────────── *@
     <MudText Typo="Typo.h5" Class="mt-3">Recent work orders</MudText>
     <MudPaper Class="pa-4" Elevation="2">
         @if (recentWorkOrders.Count == 0)
@@ -84,19 +76,7 @@
     private int openWorkOrders, inProgressWorkOrders, activeSchedules, criticalAssets;
     private List<RecentWo> recentWorkOrders = [];
 
-    private record NavCard(string Title, string Subtitle, string Href, string Icon);
     private record RecentWo(int Id, string Number, string Title, WorkOrderStatus Status, WorkOrderPriority Priority, DateTime ModifiedDate);
-
-    private static readonly NavCard[] Cards =
-    [
-        new("Work orders", "Draft → Scheduled → InProgress → Completed with OnHold/Cancelled side paths.", "maintenance/work-orders", Icons.Material.Filled.Assignment),
-        new("PM schedules", "Time- or meter-based preventive maintenance. Generate due WOs on demand.", "maintenance/pm-schedules", Icons.Material.Filled.Schedule),
-        new("Asset profiles", "Criticality, owner, target MTBF per asset. 1:1 sidecar on org.Asset.", "maintenance/asset-profiles", Icons.Material.Filled.PrecisionManufacturing),
-        new("Spare parts", "Standalone catalog with optional link to AW Production.Product.", "maintenance/spare-parts", Icons.Material.Filled.Inventory),
-        new("Meter readings", "Runtime hours / cycles / kWh. Drives usage-based PM due checks.", "maintenance/meter-readings", Icons.Material.Filled.Speed),
-        new("Maintenance log", "Free-form observations not yet escalated to a work order.", "maintenance/logs", Icons.Material.Filled.EventNote),
-        new("Tool slots", "Externally-managed tool slot configurations keyed by family / MT code.", "maintenance/tool-slots", Icons.Material.Filled.Build),
-    ];
 
     protected override async Task OnInitializedAsync()
     {

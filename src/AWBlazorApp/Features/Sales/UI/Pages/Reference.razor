@@ -1,0 +1,34 @@
+@page "/sales/reference"
+@attribute [Authorize]
+
+<PageTitle>Sales reference data</PageTitle>
+
+<ReferenceDataHub Title="Sales reference data"
+                  Subtitle="AdventureWorks Sales schema — orders, customers, territories, currencies, offers, carts."
+                  BackHref="sales"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Sales orders", "aw/sales-order-headers", Icons.Material.Filled.Receipt),
+        new("Order details", "aw/sales-order-details", Icons.Material.Filled.ListAlt),
+        new("Customers", "aw/customers", Icons.Material.Filled.PeopleAlt),
+        new("Sales persons", "aw/sales-persons", Icons.Material.Filled.Badge),
+        new("Stores", "aw/stores", Icons.Material.Filled.Store),
+        new("Sales territories", "aw/sales-territories", Icons.Material.Filled.Map),
+        new("Territory history", "aw/sales-territory-histories", Icons.Material.Filled.Timeline),
+        new("Quota history", "aw/sales-person-quota-histories", Icons.Material.Filled.TrendingUp),
+        new("Sales reasons", "aw/sales-reasons", Icons.Material.Filled.QuestionAnswer),
+        new("Order ↔ reason", "aw/sales-order-header-sales-reasons", Icons.Material.Filled.Link, "Junction — which reasons closed which order"),
+        new("Currencies", "aw/currencies", Icons.Material.Filled.Payments),
+        new("Currency rates", "aw/currency-rates", Icons.Material.Filled.CurrencyExchange),
+        new("Country ↔ currency", "aw/country-region-currencies", Icons.Material.Filled.Public),
+        new("Sales tax rates", "aw/sales-tax-rates", Icons.Material.Filled.Percent),
+        new("Special offers", "aw/special-offers", Icons.Material.Filled.LocalOffer),
+        new("Offer ↔ product", "aw/special-offer-products", Icons.Material.Filled.Loyalty),
+        new("Shopping cart items", "aw/shopping-cart-items", Icons.Material.Filled.ShoppingCart),
+        new("Credit cards", "aw/credit-cards", Icons.Material.Filled.CreditCard),
+        new("Person ↔ credit card", "aw/person-credit-cards", Icons.Material.Filled.PersonAdd),
+    ];
+}

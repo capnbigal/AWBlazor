@@ -6,61 +6,25 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Logistics</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Receipts, shipments, transfers — every post writes inv.* ledger rows</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Logistics</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Receipts, shipments, transfers — every post writes inv.* ledger rows</MudText>
+        </MudStack>
     </MudStack>
 
     <MudGrid Spacing="3">
-        <MudItem xs="12" md="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Goods receipts</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Inbound from POs and ad-hoc</MudText>
-                    </MudStack>
-                </MudStack>
-                <MudStack Row="true" Spacing="3" Class="mt-3">
-                    <MudChip T="string" Variant="Variant.Outlined">Drafts: @receiptDraftCount</MudChip>
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Posted (30d): @receiptPosted30Count</MudChip>
-                </MudStack>
-                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Inbox" Href="logistics/receipts">Open</MudButton>
-            </MudPaper>
-        </MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Inbox" Color="Color.Info" Value="@receiptDraftCount.ToString("N0")" Label="Receipt drafts" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Outbox" Color="Color.Warning" Value="@shipmentInProgress.ToString("N0")" Label="Shipments in progress" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.SyncAlt" Color="Color.Primary" Value="@transferInTransit.ToString("N0")" Label="Transfers in transit" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Value="@postedLast30.ToString("N0")" Label="Posted in last 30 days" /></MudItem>
+    </MudGrid>
 
-        <MudItem xs="12" md="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Outbox" Color="Color.Primary" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Shipments</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Outbound to customers</MudText>
-                    </MudStack>
-                </MudStack>
-                <MudStack Row="true" Spacing="3" Class="mt-3">
-                    <MudChip T="string" Variant="Variant.Outlined">In progress: @shipmentInProgress</MudChip>
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Shipped (30d): @shipmentShipped30</MudChip>
-                </MudStack>
-                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.LocalShipping" Href="logistics/shipments">Open</MudButton>
-            </MudPaper>
-        </MudItem>
-
-        <MudItem xs="12" md="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.SyncAlt" Color="Color.Primary" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Stock transfers</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Inter-location, inter-org</MudText>
-                    </MudStack>
-                </MudStack>
-                <MudStack Row="true" Spacing="3" Class="mt-3">
-                    <MudChip T="string" Variant="Variant.Outlined">In transit: @transferInTransit</MudChip>
-                    <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Completed (30d): @transferCompleted30</MudChip>
-                </MudStack>
-                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SwapHoriz" Href="logistics/transfers">Open</MudButton>
-            </MudPaper>
-        </MudItem>
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Goods receipts" Subtitle="Inbound from POs and ad-hoc — every Post writes inv.* rows." Icon="@Icons.Material.Filled.Inbox" Href="logistics/receipts" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Shipments" Subtitle="Outbound to customers — pick, pack, ship." Icon="@Icons.Material.Filled.Outbox" Href="logistics/shipments" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Stock transfers" Subtitle="Inter-location, inter-org — two-phase with in-transit state." Icon="@Icons.Material.Filled.SyncAlt" Href="logistics/transfers" /></MudItem>
     </MudGrid>
 </MudStack>
 
@@ -68,6 +32,7 @@
     private int receiptDraftCount, receiptPosted30Count;
     private int shipmentInProgress, shipmentShipped30;
     private int transferInTransit, transferCompleted30;
+    private int postedLast30;
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,5 +47,7 @@
 
         transferInTransit = await db.StockTransfers.CountAsync(t => t.Status == StockTransferStatus.InTransit);
         transferCompleted30 = await db.StockTransfers.CountAsync(t => t.Status == StockTransferStatus.Completed && t.CompletedAt >= since30);
+
+        postedLast30 = receiptPosted30Count + shipmentShipped30 + transferCompleted30;
     }
 }

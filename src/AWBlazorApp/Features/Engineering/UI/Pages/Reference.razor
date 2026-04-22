@@ -1,0 +1,19 @@
+@page "/engineering/reference"
+@attribute [Authorize]
+
+<PageTitle>Engineering reference data</PageTitle>
+
+<ReferenceDataHub Title="Engineering reference data"
+                  Subtitle="AdventureWorks Production schema — raw BOM catalog, illustrations, localization, units."
+                  BackHref="engineering"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("BOM catalog (raw)", "aw/bill-of-materials", Icons.Material.Filled.AccountTree, "AW's finance-style BOM — separate from our revision-controlled eng BOM"),
+        new("Illustrations", "aw/illustrations", Icons.Material.Filled.Brush),
+        new("Cultures", "aw/cultures", Icons.Material.Filled.Translate),
+        new("Units of measure", "aw/unit-measures", Icons.Material.Filled.Straighten),
+    ];
+}

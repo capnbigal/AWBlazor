@@ -1,0 +1,27 @@
+@page "/enterprise/reference"
+@attribute [Authorize]
+
+<PageTitle>Enterprise reference data</PageTitle>
+
+<ReferenceDataHub Title="Enterprise reference data"
+                  Subtitle="AdventureWorks Person schema — businesses, people, contact details, and the junction tables that link them."
+                  BackHref="enterprise"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Business entities", "aw/business-entities", Icons.Material.Filled.Fingerprint, "Shared identity across customer / vendor / employee"),
+        new("Persons", "aw/persons", Icons.Material.Filled.Person, "Individual humans linked to business entities"),
+        new("Email addresses", "aw/email-addresses", Icons.Material.Filled.Email),
+        new("Person phones", "aw/person-phones", Icons.Material.Filled.Phone),
+        new("Addresses", "aw/addresses", Icons.Material.Filled.LocationOn),
+        new("Entity ↔ address", "aw/business-entity-addresses", Icons.Material.Filled.HomeWork, "Junction — who lives/works where"),
+        new("Entity ↔ contact", "aw/business-entity-contacts", Icons.Material.Filled.PermContactCalendar, "Junction — typed relationships"),
+        new("Address types", "aw/address-types", Icons.Material.Filled.Home),
+        new("Contact types", "aw/contact-types", Icons.Material.Filled.ContactMail),
+        new("Country / region codes", "aw/country-regions", Icons.Material.Filled.Public),
+        new("Phone number types", "aw/phone-number-types", Icons.Material.Filled.Phone),
+        new("State / provinces", "aw/state-provinces", Icons.Material.Filled.Map),
+    ];
+}

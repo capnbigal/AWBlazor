@@ -6,8 +6,11 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Production execution</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Runs, downtime, operator clock-ins — OEE rolls up live from the event tables</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Production execution</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Runs, downtime, operator clock-ins — OEE rolls up live from the event tables</MudText>
+        </MudStack>
     </MudStack>
 
     <MudGrid Spacing="3">
@@ -17,59 +20,15 @@
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.ReportProblem" Color="Color.Error" Value="@openDowntime.ToString("N0")" Label="Open downtime events" /></MudItem>
     </MudGrid>
 
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
     <MudGrid Spacing="3">
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Runs</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Start, pause, resume, complete production runs</MudText>
-                    </MudStack>
-                    <MudSpacer />
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/runs">Open</MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Timer" Color="Color.Warning" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Downtime</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Track reasons and durations against OEE</MudText>
-                    </MudStack>
-                    <MudSpacer />
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/downtime">Open</MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Info" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Work instructions</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Versioned content keyed to WorkOrderRouting steps</MudText>
-                    </MudStack>
-                    <MudSpacer />
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="mes/instructions">Open</MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Success" Size="Size.Large" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">OEE rollup</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Live Availability × Performance × Quality by station</MudText>
-                    </MudStack>
-                    <MudSpacer />
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Analytics" Href="mes/oee">Open</MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Production analytics" Subtitle="Time-series charts for units produced, scrap, throughput." Icon="@Icons.Material.Filled.Analytics" Href="analytics/production" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Production runs" Subtitle="Start, pause, resume, complete production runs." Icon="@Icons.Material.Filled.PlayCircle" Href="mes/runs" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Downtime events" Subtitle="Track reasons and durations against OEE." Icon="@Icons.Material.Filled.Timer" Href="mes/downtime" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Downtime reason codes" Subtitle="Seeded catalog used when logging downtime events." Icon="@Icons.Material.Filled.Rule" Href="mes/downtime/reasons" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Work instructions" Subtitle="Versioned content keyed to WorkOrderRouting steps." Icon="@Icons.Material.Filled.MenuBook" Href="mes/instructions" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="OEE rollup" Subtitle="Live Availability × Performance × Quality by station." Icon="@Icons.Material.Filled.Speed" Href="mes/oee" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW manufacturing work orders, WO routings, transaction history, scrap reasons, product documents." Icon="@Icons.Material.Filled.TableView" Href="mes/reference" /></MudItem>
     </MudGrid>
 </MudStack>
 

@@ -271,6 +271,25 @@
             }
         </MudItem>
     </MudGrid>
+
+    @* ── Modules ───────────────────────────────────────────────────────
+       The Product explorer above is the primary landing, but clicking the
+       "Inventory" nav item should also give a way into every other inv/* page
+       without re-opening the old expandable nav group. *@
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Balances grid" Subtitle="Raw row-per-location balances across every inventory-managed product." Icon="@Icons.Material.Filled.TableRows" Href="inventory/balances" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Transaction explorer" Subtitle="Filter the ledger by product, location, date, type." Icon="@Icons.Material.Filled.ReceiptLong" Href="inventory/transactions" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Adjustments" Subtitle="Manual post to the ledger with reason + audit trail." Icon="@Icons.Material.Filled.Edit" Href="inventory/adjustments" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Status reports" Subtitle="Aging, low-stock, reorder triggers." Icon="@Icons.Material.Filled.Assessment" Href="inventory/reports" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Items" Subtitle="inv.InventoryItem metadata layer over Production.Product." Icon="@Icons.Material.Filled.Category" Href="inventory/items" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Locations" Subtitle="Warehouse / zone / bin hierarchy." Icon="@Icons.Material.Filled.Warehouse" Href="inventory/locations" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Transaction types" Subtitle="Seeded catalog governing balance arithmetic and JSON emission." Icon="@Icons.Material.Filled.Rule" Href="inventory/transaction-types" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Outbox" Subtitle="Pending transactions awaiting post / sync." Icon="@Icons.Material.Filled.Outbox" Href="inventory/outbox" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Inbound queue" Subtitle="Incoming items awaiting receipt / put-away." Icon="@Icons.Material.Filled.QueuePlayNext" Href="inventory/queue" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Product gallery" Subtitle="Photo gallery across the AW product catalog." Icon="@Icons.Material.Filled.Collections" Href="gallery/products" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW products, models, categories, descriptions, photos, reviews, price history." Icon="@Icons.Material.Filled.TableView" Href="inventory/reference" /></MudItem>
+    </MudGrid>
 </MudStack>
 
 @code {

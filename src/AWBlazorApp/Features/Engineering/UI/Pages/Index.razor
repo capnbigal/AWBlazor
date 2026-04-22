@@ -6,8 +6,11 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Engineering</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Routings, BOMs, ECOs, drawings, deviations — ECO approval auto-activates new revisions</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Architecture" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Engineering</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Routings, BOMs, ECOs, drawings, deviations — ECO approval auto-activates new revisions</MudText>
+        </MudStack>
     </MudStack>
 
     <MudGrid Spacing="3">
@@ -17,39 +20,19 @@
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.RuleFolder" Color="Color.Error" Value="@pendingDeviations.ToString("N0")" Label="Pending deviations" /></MudItem>
     </MudGrid>
 
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
     <MudGrid Spacing="3">
-        @foreach (var card in Cards)
-        {
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4" Elevation="2">
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.h6">@card.Title</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Subtitle</MudText>
-                        </MudStack>
-                        <MudSpacer />
-                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="@card.Href">Open</MudButton>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-        }
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Change orders" Subtitle="Draft → UnderReview → Approved/Rejected. Approval auto-activates affected BOM/Routing revisions." Icon="@Icons.Material.Filled.ChangeCircle" Href="engineering/ecos" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Routings" Subtitle="Ordered sequence of stations per product — template used by MES runs." Icon="@Icons.Material.Filled.Timeline" Href="engineering/routings" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Bills of materials" Subtitle="Engineering BOM with revision control — independent of AW's finance BOM." Icon="@Icons.Material.Filled.AccountTree" Href="engineering/boms" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Documents" Subtitle="Drawings, specs, CAD models, procedures — URL refs to external storage." Icon="@Icons.Material.Filled.Description" Href="engineering/documents" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Deviations" Subtitle="Time- and quantity-bounded spec exceptions — temporary, not permanent changes." Icon="@Icons.Material.Filled.RuleFolder" Href="engineering/deviations" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Raw AW BOM catalog, illustrations, cultures, units of measure." Icon="@Icons.Material.Filled.TableView" Href="engineering/reference" /></MudItem>
     </MudGrid>
 </MudStack>
 
 @code {
     private int ecosUnderReview, activeBoms, activeRoutings, pendingDeviations;
-
-    private record NavCard(string Title, string Subtitle, string Href, string Icon);
-
-    private static readonly NavCard[] Cards =
-    [
-        new("Change orders", "Draft → UnderReview → Approved/Rejected. Approval auto-activates affected BOM/Routing revisions.", "engineering/ecos", Icons.Material.Filled.ChangeCircle),
-        new("Routings", "Ordered sequence of stations per product — template used by MES runs.", "engineering/routings", Icons.Material.Filled.Timeline),
-        new("Bills of materials", "Engineering BOM with revision control — independent of AW's finance BOM.", "engineering/boms", Icons.Material.Filled.AccountTree),
-        new("Documents", "Drawings, specs, CAD models, procedures — URL refs to external storage.", "engineering/documents", Icons.Material.Filled.Description),
-        new("Deviations", "Time- and quantity-bounded spec exceptions — temporary, not permanent changes.", "engineering/deviations", Icons.Material.Filled.RuleFolder),
-    ];
 
     protected override async Task OnInitializedAsync()
     {

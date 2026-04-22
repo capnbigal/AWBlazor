@@ -1,0 +1,55 @@
+@* Per-module reference-data hub — renders at /<module>/reference and lists the legacy
+   AW CRUD pages that used to live under the old nav group's "Reference data" sub-group.
+   Usage:
+       <ReferenceDataHub Title="Enterprise reference data"
+                         Subtitle="..."
+                         BackHref="enterprise"
+                         Entries="@_entries" />
+*@
+
+@inject NavigationManager Navigation
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       aria-label="Back to module"
+                       OnClick="@(() => Navigation.NavigateTo(BackHref))" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">@Title</MudText>
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@Subtitle</MudText>
+            }
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        @foreach (var entry in Entries)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudPaper Class="pa-3" Elevation="2" Style="height: 100%; cursor: pointer"
+                          @onclick="@(() => Navigation.NavigateTo(entry.Href))">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@entry.Icon" Color="Color.Primary" Size="Size.Medium" />
+                        <MudStack Spacing="0" Style="flex: 1; min-width: 0">
+                            <MudText Typo="Typo.subtitle2">@entry.Title</MudText>
+                            @if (!string.IsNullOrEmpty(entry.Subtitle))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@entry.Subtitle</MudText>
+                            }
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter, EditorRequired] public string BackHref { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<ReferenceEntry> Entries { get; set; } = Array.Empty<ReferenceEntry>();
+
+    public record ReferenceEntry(string Title, string Href, string Icon, string? Subtitle = null);
+}

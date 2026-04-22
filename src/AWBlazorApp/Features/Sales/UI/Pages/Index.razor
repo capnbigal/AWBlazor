@@ -1,0 +1,52 @@
+@page "/sales"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Sales</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Sales</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Orders, customers, territories, sales persons — drives shipments in Logistics</MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Value="@totalOrders.ToString("N0")" Label="Sales orders" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.DateRange" Color="Color.Info" Value="@ordersLast30d.ToString("N0")" Label="Orders (last 30 days)" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PeopleAlt" Color="Color.Success" Value="@customers.ToString("N0")" Label="Customers" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Warning" Value="@FormatMoney(revenueLast30d)" Label="Revenue (last 30 days)" /></MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Sales analytics" Subtitle="Revenue trends, territories, top customers, order volume over time." Icon="@Icons.Material.Filled.Analytics" Href="analytics/sales" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Orders, customers, sales persons, stores, territories, currencies, tax rates, offers, carts, credit cards." Icon="@Icons.Material.Filled.TableView" Href="sales/reference" /></MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int totalOrders, ordersLast30d, customers;
+    private decimal revenueLast30d;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        totalOrders = await db.SalesOrderHeaders.CountAsync();
+        customers = await db.Customers.CountAsync();
+        var since30 = DateTime.UtcNow.AddDays(-30);
+        ordersLast30d = await db.SalesOrderHeaders.CountAsync(s => s.OrderDate >= since30);
+        revenueLast30d = await db.SalesOrderHeaders
+            .Where(s => s.OrderDate >= since30)
+            .SumAsync(s => (decimal?)s.TotalDue) ?? 0m;
+    }
+
+    private static string FormatMoney(decimal v) => v switch
+    {
+        >= 1_000_000m => $"${v / 1_000_000m:F1}M",
+        >= 1_000m     => $"${v / 1_000m:F0}K",
+        _             => $"${v:N0}",
+    };
+}
