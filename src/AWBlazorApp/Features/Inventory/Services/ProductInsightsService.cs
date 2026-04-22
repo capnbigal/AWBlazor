@@ -21,24 +21,17 @@ public interface IProductInsightsService
     void Invalidate(int? productId = null);
 }
 
-public sealed class ProductInsightsService : IProductInsightsService
+public sealed class ProductInsightsService(
+    IDbContextFactory<ApplicationDbContext> dbFactory,
+    IMemoryCache cache) : IProductInsightsService
 {
     private const string CacheKeyPrefix = "product-insights:";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
 
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-    private readonly IMemoryCache _cache;
-
-    public ProductInsightsService(IDbContextFactory<ApplicationDbContext> dbFactory, IMemoryCache cache)
-    {
-        _dbFactory = dbFactory;
-        _cache = cache;
-    }
-
     public void Invalidate(int? productId = null)
     {
         if (productId.HasValue)
-            _cache.Remove(CacheKeyPrefix + productId.Value);
+            cache.Remove(CacheKeyPrefix + productId.Value);
         // We can't enumerate IMemoryCache to wipe the whole prefix without reflection; the
         // 60-second TTL bounds staleness for "wipe all" callers, which only really matters for
         // tests anyway — they create a fresh provider per scope.
@@ -46,19 +39,19 @@ public sealed class ProductInsightsService : IProductInsightsService
 
     public async Task<ProductInsightsDto?> GetAsync(int productId, CancellationToken ct)
     {
-        if (_cache.TryGetValue<ProductInsightsDto>(CacheKeyPrefix + productId, out var cached) && cached is not null)
+        if (cache.TryGetValue<ProductInsightsDto>(CacheKeyPrefix + productId, out var cached) && cached is not null)
             return cached;
 
         var dto = await BuildAsync(productId, ct);
         if (dto is not null)
-            _cache.Set(CacheKeyPrefix + productId, dto, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl });
+            cache.Set(CacheKeyPrefix + productId, dto, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl });
         return dto;
     }
 
     public async Task<IReadOnlyList<ProductPickerItemDto>> ListProductsAsync(string? search, int take, CancellationToken ct)
     {
         take = Math.Clamp(take, 1, 500);
-        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         var s = search?.Trim();
         var managedItemProductIds = await db.InventoryItems.AsNoTracking()
@@ -90,7 +83,7 @@ public sealed class ProductInsightsService : IProductInsightsService
 
     private async Task<ProductInsightsDto?> BuildAsync(int productId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         var product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == productId, ct);
         if (product is null) return null;

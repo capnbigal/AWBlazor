@@ -259,6 +259,11 @@ WHERE a.SpatialLocation IS NULL;";
         // maintenance metric rollups, KPI definitions + values, scorecards, saved reports) +
         // three audit logs. Marker is KpiDefinition (pure perf product).
         ("_AddPerformanceModule",       "KpiDefinition"),
+        // 2026-04 — AddConsolidatedAuditLog: creates audit.AuditLog (the new consolidated
+        // audit-log table that replaces the 117 per-entity *AuditLog tables going forward,
+        // written by AuditLogInterceptor). Marker is AuditLog (pure audit product — no
+        // legacy equivalent).
+        ("_AddConsolidatedAuditLog",    "AuditLog"),
     ];
 
     /// <summary>

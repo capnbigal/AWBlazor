@@ -5,11 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services;
 
-public sealed class WorkOrderService : IWorkOrderService
+public sealed class WorkOrderService(IDbContextFactory<ApplicationDbContext> dbFactory) : IWorkOrderService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public WorkOrderService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public Task ScheduleAsync(int workOrderId, DateTime scheduledFor, int? assigneeBusinessEntityId, string? userId, CancellationToken cancellationToken)
         => TransitionAsync(workOrderId, WorkOrderStatus.Scheduled, userId, wo =>
@@ -39,7 +36,7 @@ public sealed class WorkOrderService : IWorkOrderService
 
     public async Task CompleteAsync(int workOrderId, string? completionNotes, decimal? completedMeterValue, string? userId, CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var wo = await db.MaintenanceWorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken)
@@ -89,7 +86,7 @@ public sealed class WorkOrderService : IWorkOrderService
         int workOrderId, WorkOrderStatus target, string? userId,
         Action<MaintenanceWorkOrder> apply, CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var wo = await db.MaintenanceWorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken)

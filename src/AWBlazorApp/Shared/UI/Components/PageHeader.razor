@@ -1,0 +1,37 @@
+@* Shared page-header row used on every Index / Detail / History / CRUD page.
+   Replaces the repeated "icon + h4 + caption + spacer + actions" markup. *@
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="@Class">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <MudIcon Icon="@Icon" Color="@IconColor" Size="@IconSize" />
+    }
+    <MudStack Spacing="0">
+        <MudText Typo="@TitleTypo">@Title</MudText>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@Subtitle</MudText>
+        }
+    </MudStack>
+    @if (Actions is not null)
+    {
+        <MudSpacer />
+        @Actions
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    [Parameter] public Size IconSize { get; set; } = Size.Large;
+
+    /// <summary>Use <c>Typo.h4</c> for top-of-page titles; <c>Typo.h5</c> for section headers.</summary>
+    [Parameter] public Typo TitleTypo { get; set; } = Typo.h4;
+
+    /// <summary>Right-aligned action buttons / chips. Rendered after a MudSpacer.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+}

@@ -5,16 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Engineering.Ecos.Application.Services;
 
-public sealed class EcoService : IEcoService
+public sealed class EcoService(
+    IDbContextFactory<ApplicationDbContext> dbFactory,
+    ILogger<EcoService> logger) : IEcoService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-    private readonly ILogger<EcoService> _logger;
-
-    public EcoService(IDbContextFactory<ApplicationDbContext> dbFactory, ILogger<EcoService> logger)
-    {
-        _dbFactory = dbFactory;
-        _logger = logger;
-    }
 
     public Task SubmitForReviewAsync(int ecoId, string? userId, CancellationToken cancellationToken)
         => TransitionAsync(ecoId, EcoStatus.UnderReview, userId, decisionNotes: null, cancellationToken);
@@ -31,7 +25,7 @@ public sealed class EcoService : IEcoService
     private async Task TransitionAsync(
         int ecoId, EcoStatus target, string? userId, string? decisionNotes, CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var eco = await db.EngineeringChangeOrders.FirstOrDefaultAsync(e => e.Id == ecoId, cancellationToken)
@@ -140,7 +134,7 @@ public sealed class EcoService : IEcoService
         var target = await db.BomHeaders.FirstOrDefaultAsync(b => b.Id == bomHeaderId, cancellationToken);
         if (target is null)
         {
-            _logger.LogWarning("ECO activation skipped: BomHeader {Id} not found.", bomHeaderId);
+            logger.LogWarning("ECO activation skipped: BomHeader {Id} not found.", bomHeaderId);
             return;
         }
 
@@ -171,7 +165,7 @@ public sealed class EcoService : IEcoService
         var target = await db.ManufacturingRoutings.FirstOrDefaultAsync(r => r.Id == routingId, cancellationToken);
         if (target is null)
         {
-            _logger.LogWarning("ECO activation skipped: ManufacturingRouting {Id} not found.", routingId);
+            logger.LogWarning("ECO activation skipped: ManufacturingRouting {Id} not found.", routingId);
             return;
         }
 

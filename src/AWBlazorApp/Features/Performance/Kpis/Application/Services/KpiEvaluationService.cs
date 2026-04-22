@@ -4,11 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.Features.Performance.Kpis.Application.Services;
 
-public sealed class KpiEvaluationService : IKpiEvaluationService
+public sealed class KpiEvaluationService(IDbContextFactory<ApplicationDbContext> dbFactory) : IKpiEvaluationService
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
-
-    public KpiEvaluationService(IDbContextFactory<ApplicationDbContext> dbFactory) => _dbFactory = dbFactory;
 
     public async Task<KpiValue> EvaluateAsync(
         int kpiDefinitionId,
@@ -17,7 +14,7 @@ public sealed class KpiEvaluationService : IKpiEvaluationService
         DateTime periodEnd,
         CancellationToken cancellationToken)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         var def = await db.KpiDefinitions.AsNoTracking().FirstOrDefaultAsync(k => k.Id == kpiDefinitionId, cancellationToken)
             ?? throw new KeyNotFoundException($"KPI definition {kpiDefinitionId} not found.");
