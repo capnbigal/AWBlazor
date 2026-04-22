@@ -9,7 +9,6 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Tool slot configurations</PageTitle>
 
@@ -209,9 +208,6 @@
             return;
         }
 
-        var changedBy = await GetCurrentUserNameAsync();
-        // Write the audit row first (same SaveChanges as the delete so they commit atomically).
-        db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordDelete(entity, changedBy));
         db.ToolSlotConfigurations.Remove(entity);
         try
         {
@@ -227,10 +223,4 @@
 
     private void OpenHistory(ToolSlotConfigurationDto slot)
         => Navigation.NavigateTo($"maintenance/tool-slots/history/{slot.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

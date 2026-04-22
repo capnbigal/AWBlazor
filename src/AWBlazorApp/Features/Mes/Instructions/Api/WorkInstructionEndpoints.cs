@@ -2,11 +2,11 @@ using AWBlazorApp.Features.Mes.Instructions.Dtos;
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Mes.Audit;
-using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
+using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain;
 using AWBlazorApp.Features.Mes.Dtos;
-using AWBlazorApp.Features.Mes.Runs.Application.Services; using AWBlazorApp.Features.Mes.Instructions.Application.Services; 
+using AWBlazorApp.Features.Mes.Runs.Application.Services; using AWBlazorApp.Features.Mes.Instructions.Application.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -78,7 +78,8 @@ public static class WorkInstructionEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => WorkInstructionAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.WorkInstructions.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/work-instructions/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -91,9 +92,7 @@ public static class WorkInstructionEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.WorkInstructions.FirstOrDefaultAsync(w => w.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = WorkInstructionAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.WorkInstructionAuditLogs.Add(WorkInstructionAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -103,20 +102,22 @@ public static class WorkInstructionEndpoints
     {
         var entity = await db.WorkInstructions.FirstOrDefaultAsync(w => w.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, WorkInstructionAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.WorkInstructions.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<WorkInstructionAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.WorkInstructionAuditLogs.AsNoTracking().Where(a => a.WorkInstructionId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "WorkInstruction" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<WorkInstructionAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<WorkInstructionRevisionDto>>> ListRevisionsAsync(
@@ -177,8 +178,6 @@ public static class WorkInstructionEndpoints
         var entity = request.ToEntity();
         db.WorkInstructionSteps.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/work-instructions/revisions/{revId}/steps/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -195,9 +194,7 @@ public static class WorkInstructionEndpoints
         if (revision.Status != WorkInstructionRevisionStatus.Draft)
             return TypedResults.BadRequest($"Revision is {revision.Status}; only Draft revisions can be edited.");
 
-        var before = WorkInstructionStepAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -212,7 +209,6 @@ public static class WorkInstructionEndpoints
             return TypedResults.BadRequest($"Revision is {revision.Status}; only Draft revisions can be edited.");
 
         db.WorkInstructionSteps.Remove(entity);
-        db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

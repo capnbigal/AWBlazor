@@ -1,5 +1,5 @@
-using AWBlazorApp.Features.Maintenance.Audit;
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
+using AWBlazorApp.Features.Maintenance.PmSchedules.Domain;
+using AWBlazorApp.Features.Maintenance.WorkOrders.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +44,6 @@ public sealed class WorkOrderService(IDbContextFactory<ApplicationDbContext> dbF
 
         Guard(wo.Status, WorkOrderStatus.Completed);
 
-        var before = MaintenanceWorkOrderAuditService.CaptureSnapshot(wo);
         var now = DateTime.UtcNow;
 
         wo.Status = WorkOrderStatus.Completed;
@@ -54,20 +53,14 @@ public sealed class WorkOrderService(IDbContextFactory<ApplicationDbContext> dbF
         wo.CompletedMeterValue = completedMeterValue;
         wo.ModifiedDate = now;
 
-        db.MaintenanceWorkOrderAuditLogs.Add(
-            MaintenanceWorkOrderAuditService.RecordUpdate(before, wo, userId));
-
-        // If this WO came from a PM schedule, update the schedule's cached last-completed stamps.
         if (wo.PmScheduleId.HasValue)
         {
             var schedule = await db.PmSchedules.FirstOrDefaultAsync(s => s.Id == wo.PmScheduleId.Value, cancellationToken);
             if (schedule is not null)
             {
-                var scheduleBefore = PmScheduleAuditService.CaptureSnapshot(schedule);
                 schedule.LastCompletedAt = now;
                 if (completedMeterValue.HasValue) schedule.LastCompletedMeterValue = completedMeterValue;
                 schedule.ModifiedDate = now;
-                db.PmScheduleAuditLogs.Add(PmScheduleAuditService.RecordUpdate(scheduleBefore, schedule, userId));
             }
         }
 
@@ -94,13 +87,9 @@ public sealed class WorkOrderService(IDbContextFactory<ApplicationDbContext> dbF
 
         Guard(wo.Status, target);
 
-        var before = MaintenanceWorkOrderAuditService.CaptureSnapshot(wo);
         wo.Status = target;
         wo.ModifiedDate = DateTime.UtcNow;
         apply(wo);
-
-        db.MaintenanceWorkOrderAuditLogs.Add(
-            MaintenanceWorkOrderAuditService.RecordUpdate(before, wo, userId));
 
         await db.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);

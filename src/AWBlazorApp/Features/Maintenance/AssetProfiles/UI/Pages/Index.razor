@@ -2,7 +2,6 @@
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Asset maintenance profiles</PageTitle>
 
@@ -112,13 +111,8 @@
                 return;
             }
             var entity = newRow.ToEntity();
-            var by = await GetUserNameAsync();
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.AssetMaintenanceProfiles.Add(entity);
             await db.SaveChangesAsync();
-            db.AssetMaintenanceProfileAuditLogs.Add(AssetMaintenanceProfileAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add("Created.", Severity.Success);
             dialogOpen = false;
             await grid.ReloadServerData();
@@ -127,9 +121,4 @@
         finally { saving = false; }
     }
 
-    private async Task<string?> GetUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using AWBlazorApp.Shared.Audit;
@@ -20,14 +21,9 @@ namespace AWBlazorApp.Infrastructure.Persistence;
 /// The current user is read from <see cref="IHttpContextAccessor"/> at call time.
 /// </para>
 /// <para>
-/// Exclusions:
-/// <list type="bullet">
-///   <item><see cref="AuditLog"/> itself (recursion)</item>
-///   <item>Any type whose name ends in <c>AuditLog</c> — legacy per-entity audit tables
-///     still written by existing <c>*AuditService</c> call sites during this transition</item>
-///   <item>Any type decorated with <see cref="NotAuditedAttribute"/></item>
-///   <item>ASP.NET Core Identity types</item>
-/// </list>
+/// For Added entities whose primary key is store-generated, the real Id isn't known
+/// during SavingChanges — the log row is inserted with a placeholder EntityId and then
+/// patched inside SavedChanges once the identity is assigned.
 /// </para>
 /// </remarks>
 public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : SaveChangesInterceptor
@@ -36,6 +32,11 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
     {
         WriteIndented = false,
     };
+
+    // Tracks AuditLog rows for Added entries whose EntityId must be patched after save,
+    // once the store-generated PK is assigned. Keyed by DbContext so concurrent calls
+    // across different contexts remain isolated.
+    private readonly ConditionalWeakTable<DbContext, List<(AuditLog Log, EntityEntry Source)>> _pending = new();
 
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
@@ -54,6 +55,21 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
         return ValueTask.FromResult(result);
     }
 
+    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
+    {
+        PatchAddedEntityIds(eventData.Context);
+        return result;
+    }
+
+    public override async ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        await PatchAddedEntityIdsAsync(eventData.Context, cancellationToken);
+        return result;
+    }
+
     private void AddAuditEntries(DbContext? context)
     {
         if (context is null) return;
@@ -63,20 +79,68 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
             : null;
         var now = DateTime.UtcNow;
 
-        // Snapshot — adding AuditLog entries inside the loop would mutate Entries().
         var candidates = context.ChangeTracker.Entries()
             .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .Where(e => ShouldAudit(e.Entity.GetType()))
             .ToList();
 
+        List<(AuditLog, EntityEntry)>? addedPending = null;
+
         foreach (var entry in candidates)
         {
+            var wasAdded = entry.State == EntityState.Added;
             var log = BuildLog(entry, user, now);
-            if (log is not null)
+            if (log is null) continue;
+            context.Add(log);
+            if (wasAdded)
             {
-                context.Add(log);
+                addedPending ??= new List<(AuditLog, EntityEntry)>();
+                addedPending.Add((log, entry));
             }
         }
+
+        if (addedPending is not null)
+        {
+            _pending.AddOrUpdate(context, addedPending);
+        }
+    }
+
+    private void PatchAddedEntityIds(DbContext? context)
+    {
+        if (context is null || !_pending.TryGetValue(context, out var pending)) return;
+        _pending.Remove(context);
+
+        var changed = false;
+        foreach (var (log, source) in pending)
+        {
+            var realId = ExtractPrimaryKey(source);
+            if (!string.IsNullOrEmpty(realId) && realId != log.EntityId)
+            {
+                log.EntityId = realId;
+                changed = true;
+            }
+        }
+
+        if (changed) context.SaveChanges();
+    }
+
+    private async Task PatchAddedEntityIdsAsync(DbContext? context, CancellationToken ct)
+    {
+        if (context is null || !_pending.TryGetValue(context, out var pending)) return;
+        _pending.Remove(context);
+
+        var changed = false;
+        foreach (var (log, source) in pending)
+        {
+            var realId = ExtractPrimaryKey(source);
+            if (!string.IsNullOrEmpty(realId) && realId != log.EntityId)
+            {
+                log.EntityId = realId;
+                changed = true;
+            }
+        }
+
+        if (changed) await context.SaveChangesAsync(ct);
     }
 
     private static bool ShouldAudit(Type t)
@@ -107,7 +171,6 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
             _                    => (null, null),
         };
 
-        // No-op updates (e.g. entity marked Modified but all props unchanged) don't earn a row.
         if (entry.State == EntityState.Modified && json is null) return null;
 
         return new AuditLog
@@ -127,8 +190,6 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
         var key = entry.Metadata.FindPrimaryKey();
         if (key is null) return "";
 
-        // Added rows may still have default PK values here — SaveChanges hasn't assigned
-        // the identity yet. Readers can still query by EntityType + ChangedDate.
         var parts = key.Properties
             .Select(p => entry.Property(p.Name).CurrentValue?.ToString() ?? "")
             .ToArray();
@@ -192,7 +253,6 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
         }
         catch
         {
-            // Fallback: if any value isn't serializable, stringify at the top level.
             var safe = payload.ToDictionary(
                 kv => kv.Key,
                 kv => (object?)(kv.Value?.ToString()),
@@ -201,3 +261,4 @@ public sealed class AuditLogInterceptor(IHttpContextAccessor httpContext) : Save
         }
     }
 }
+

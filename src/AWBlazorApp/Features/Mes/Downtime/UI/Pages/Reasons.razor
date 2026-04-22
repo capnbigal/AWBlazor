@@ -3,7 +3,6 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Downtime reason codes</PageTitle>
 
@@ -89,24 +88,17 @@
         try
         {
             await using var db = await DbFactory.CreateDbContextAsync();
-            var by = await GetUserNameAsync();
             if (editing is null)
             {
                 var entity = newCreate.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.DowntimeReasons.Add(entity);
                 await db.SaveChangesAsync();
-                db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordCreate(entity, by));
-                await db.SaveChangesAsync();
-                await tx.CommitAsync();
                 Snackbar.Add($"Created {entity.Code}.", Severity.Success);
             }
             else
             {
                 var entity = await db.DowntimeReasons.FirstAsync(r => r.Id == editing.Id);
-                var before = DowntimeReasonAuditService.CaptureSnapshot(entity);
                 newUpdate.ApplyTo(entity);
-                db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordUpdate(before, entity, by));
                 await db.SaveChangesAsync();
                 Snackbar.Add("Updated.", Severity.Success);
             }
@@ -132,19 +124,10 @@
             return;
         }
         var entity = await db.DowntimeReasons.FirstAsync(r => r.Id == row.Id);
-        var by = await GetUserNameAsync();
-        await using var tx = await db.Database.BeginTransactionAsync();
         db.DowntimeReasons.Remove(entity);
-        db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordDelete(entity, by));
         await db.SaveChangesAsync();
-        await tx.CommitAsync();
         Snackbar.Add("Deleted.", Severity.Success);
         await LoadAsync();
     }
 
-    private async Task<string?> GetUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

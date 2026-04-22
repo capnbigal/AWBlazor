@@ -213,10 +213,7 @@ else
             await using var db = await DbFactory.CreateDbContextAsync();
             newStep.WorkInstructionRevisionId = selectedRevisionId!.Value;
             var entity = newStep.ToEntity();
-            var by = await GetUserNameAsync();
             db.WorkInstructionSteps.Add(entity);
-            await db.SaveChangesAsync();
-            db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Step added.", Severity.Success);
             stepDialogOpen = false;
@@ -231,9 +228,7 @@ else
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.WorkInstructionSteps.FirstOrDefaultAsync(s => s.Id == stepId);
         if (entity is null) return;
-        var by = await GetUserNameAsync();
         db.WorkInstructionSteps.Remove(entity);
-        db.WorkInstructionStepAuditLogs.Add(WorkInstructionStepAuditService.RecordDelete(entity, by));
         await db.SaveChangesAsync();
         await LoadStepsAsync();
     }

@@ -160,12 +160,8 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var by = await GetUserNameAsync();
             var entity = newWo.ToEntity(by);
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.MaintenanceWorkOrders.Add(entity);
             await db.SaveChangesAsync();
-            db.MaintenanceWorkOrderAuditLogs.Add(MaintenanceWorkOrderAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Created {entity.WorkOrderNumber}.", Severity.Success);
             await NotificationService.NotifyDashboardChangedAsync("Maintenance");
             dialogOpen = false;

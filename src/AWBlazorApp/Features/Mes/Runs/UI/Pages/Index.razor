@@ -4,7 +4,6 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
 @inject AWBlazorApp.Features.Insights.Services.NotificationService NotificationService
 
 <PageTitle>Production runs</PageTitle>
@@ -137,13 +136,8 @@
             }
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = newRun.ToEntity();
-            var by = await GetUserNameAsync();
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.ProductionRuns.Add(entity);
             await db.SaveChangesAsync();
-            db.ProductionRunAuditLogs.Add(ProductionRunAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Created {entity.RunNumber}.", Severity.Success);
             await NotificationService.NotifyDashboardChangedAsync("Mes");
             dialogOpen = false;
@@ -153,9 +147,4 @@
         finally { saving = false; }
     }
 
-    private async Task<string?> GetUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

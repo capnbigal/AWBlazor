@@ -2,7 +2,6 @@
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Spare parts</PageTitle>
 
@@ -101,13 +100,8 @@
         {
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = newRow.ToEntity();
-            var by = await GetUserNameAsync();
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.SpareParts.Add(entity);
             await db.SaveChangesAsync();
-            db.SparePartAuditLogs.Add(SparePartAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Created {entity.PartNumber}.", Severity.Success);
             dialogOpen = false;
             await grid.ReloadServerData();
@@ -116,9 +110,4 @@
         finally { saving = false; }
     }
 
-    private async Task<string?> GetUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
-    }
 }

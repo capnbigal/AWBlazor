@@ -703,10 +703,11 @@ public class IntegrationTest
         var deleteResponse = await client.DeleteAsync($"/api/tool-slots/{newId}");
         Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
 
-        // Verify: three audit rows, one per action, all for the same slot id.
+        // Verify: three audit rows in the consolidated audit.AuditLog, one per action, all for the same slot id.
+        var newIdStr = newId.ToString();
         await using var verifyDb = await GetDbContextAsync();
-        var rows = await verifyDb.ToolSlotAuditLogs
-            .Where(a => a.ToolSlotConfigurationId == newId)
+        var rows = await verifyDb.AuditLogs
+            .Where(a => a.EntityType == "ToolSlotConfiguration" && a.EntityId == newIdStr)
             .OrderBy(a => a.ChangedDate)
             .ThenBy(a => a.Id)
             .ToListAsync();
@@ -714,18 +715,8 @@ public class IntegrationTest
         Assert.That(rows, Has.Count.EqualTo(3),
             "Expected exactly one audit row each for Created, Updated, and Deleted.");
         Assert.That(rows[0].Action, Is.EqualTo("Created"));
-        Assert.That(rows[0].Family, Is.EqualTo("AUDIT-FAM"));
-        Assert.That(rows[0].IsActive, Is.True);
-
         Assert.That(rows[1].Action, Is.EqualTo("Updated"));
-        Assert.That(rows[1].Family, Is.EqualTo("AUDIT-FAM-2"));
-        Assert.That(rows[1].IsActive, Is.False);
-        Assert.That(rows[1].ChangeSummary, Does.Contain("Family: AUDIT-FAM → AUDIT-FAM-2"));
-        Assert.That(rows[1].ChangeSummary, Does.Contain("IsActive: True → False"));
-
         Assert.That(rows[2].Action, Is.EqualTo("Deleted"));
-        Assert.That(rows[2].Family, Is.EqualTo("AUDIT-FAM-2"),
-            "Delete audit should snapshot the row's final state.");
 
         // All three should be attributed to admin@email.com (the owner of the API key used above).
         foreach (var row in rows)
@@ -738,8 +729,8 @@ public class IntegrationTest
         // delete the three audit rows produced by this test. The source ToolSlotConfiguration
         // row was already deleted by the DELETE call above.
         await using var cleanupDb = await GetDbContextAsync();
-        await cleanupDb.ToolSlotAuditLogs
-            .Where(a => a.ToolSlotConfigurationId == newId)
+        await cleanupDb.AuditLogs
+            .Where(a => a.EntityType == "ToolSlotConfiguration" && a.EntityId == newIdStr)
             .ExecuteDeleteAsync();
     }
 

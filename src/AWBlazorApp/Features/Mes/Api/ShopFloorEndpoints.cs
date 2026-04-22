@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Mes.Audit;
-using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
+using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain;
 using AWBlazorApp.Features.Mes.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -165,7 +165,8 @@ public static class ShopFloorEndpoints
             var v = await validator.ValidateAsync(request, ct);
             if (!v.IsValid) return Results.ValidationProblem(v.ToDictionary());
             var entity = request.ToEntity();
-            await db.AddWithAuditAsync(entity, e => DowntimeReasonAuditService.RecordCreate(e, user.Identity?.Name), ct);
+            db.DowntimeReasons.Add(entity);
+            await db.SaveChangesAsync(ct);
             return Results.Created($"/api/downtime-reasons/{entity.Id}", new IdResponse(entity.Id));
         }).WithName("CreateDowntimeReason")
           .RequireAuthorization(p => p.RequireRole(AppRoles.Manager, AppRoles.Admin));
@@ -179,9 +180,7 @@ public static class ShopFloorEndpoints
             if (!v.IsValid) return Results.ValidationProblem(v.ToDictionary());
             var entity = await db.DowntimeReasons.FirstOrDefaultAsync(r => r.Id == id, ct);
             if (entity is null) return Results.NotFound();
-            var before = DowntimeReasonAuditService.CaptureSnapshot(entity);
             request.ApplyTo(entity);
-            db.DowntimeReasonAuditLogs.Add(DowntimeReasonAuditService.RecordUpdate(before, entity, user.Identity?.Name));
             await db.SaveChangesAsync(ct);
             return Results.Ok(new IdResponse(entity.Id));
         }).WithName("UpdateDowntimeReason")
@@ -194,7 +193,8 @@ public static class ShopFloorEndpoints
             if (entity is null) return Results.NotFound();
             var inUse = await db.DowntimeEvents.AnyAsync(d => d.DowntimeReasonId == id, ct);
             if (inUse) return Results.BadRequest("Reason is referenced by downtime events; deactivate instead.");
-            await db.DeleteWithAuditAsync(entity, DowntimeReasonAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+            db.DowntimeReasons.Remove(entity);
+            await db.SaveChangesAsync(ct);
             return Results.NoContent();
         }).WithName("DeleteDowntimeReason")
           .RequireAuthorization(p => p.RequireRole(AppRoles.Admin));
@@ -204,11 +204,12 @@ public static class ShopFloorEndpoints
             [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default) =>
         {
             take = Math.Clamp(take, 1, 500);
-            var q = db.DowntimeReasonAuditLogs.AsNoTracking().Where(a => a.DowntimeReasonId == id);
+            var idStr = id.ToString();
+            var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "DowntimeReason" && a.EntityId == idStr);
             var total = await q.CountAsync(ct);
             var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-                .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-            return TypedResults.Ok(new PagedResult<DowntimeReasonAuditLogDto>(rows, total, skip, take));
+                .Skip(skip).Take(take).ToListAsync(ct);
+            return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
         }).WithName("ListDowntimeReasonHistory");
 
         return app;

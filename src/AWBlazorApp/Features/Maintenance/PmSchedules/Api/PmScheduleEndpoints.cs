@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Maintenance.Audit;
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos; 
-using AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services; using AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services; 
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos;
+using AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services; using AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -74,7 +74,8 @@ public static class PmScheduleEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => PmScheduleAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.PmSchedules.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/pm-schedules/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -87,9 +88,7 @@ public static class PmScheduleEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.PmSchedules.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = PmScheduleAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.PmScheduleAuditLogs.Add(PmScheduleAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -99,20 +98,22 @@ public static class PmScheduleEndpoints
     {
         var entity = await db.PmSchedules.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, PmScheduleAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.PmSchedules.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<PmScheduleAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.PmScheduleAuditLogs.AsNoTracking().Where(a => a.PmScheduleId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "PmSchedule" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<PmScheduleAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<PmScheduleTaskDto>>> ListTasksAsync(

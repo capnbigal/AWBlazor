@@ -1,5 +1,6 @@
-using AWBlazorApp.Features.Maintenance.Audit;
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
+using AWBlazorApp.Features.Maintenance.MeterReadings.Domain;
+using AWBlazorApp.Features.Maintenance.PmSchedules.Domain;
+using AWBlazorApp.Features.Maintenance.WorkOrders.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,9 +25,6 @@ public sealed class PmScheduleService(
 
         foreach (var schedule in schedules)
         {
-            // Skip if there's already an open (non-terminal) WO for this schedule —
-            // regenerating would churn duplicates. Completed WOs don't block regeneration
-            // because that's how the next cycle gets created.
             var hasOpen = await db.MaintenanceWorkOrders.AnyAsync(
                 w => w.PmScheduleId == schedule.Id
                   && w.Status != WorkOrderStatus.Completed
@@ -54,7 +52,6 @@ public sealed class PmScheduleService(
             db.MaintenanceWorkOrders.Add(wo);
             await db.SaveChangesAsync(cancellationToken);
 
-            // Copy the schedule's tasks onto the new WO.
             var tasks = await db.PmScheduleTasks.AsNoTracking()
                 .Where(t => t.PmScheduleId == schedule.Id)
                 .OrderBy(t => t.SequenceNumber)
@@ -74,17 +71,11 @@ public sealed class PmScheduleService(
                 });
             }
 
-            db.MaintenanceWorkOrderAuditLogs.Add(
-                MaintenanceWorkOrderAuditService.RecordCreate(wo, userId));
-
-            // Update the AssetMaintenanceProfile's NextPmDueAt hint so the asset page shows it.
             var profile = await db.AssetMaintenanceProfiles.FirstOrDefaultAsync(p => p.AssetId == schedule.AssetId, cancellationToken);
             if (profile is not null && (profile.NextPmDueAt is null || profile.NextPmDueAt > now))
             {
-                var profileBefore = AssetMaintenanceProfileAuditService.CaptureSnapshot(profile);
                 profile.NextPmDueAt = now;
                 profile.ModifiedDate = now;
-                db.AssetMaintenanceProfileAuditLogs.Add(AssetMaintenanceProfileAuditService.RecordUpdate(profileBefore, profile, userId));
             }
 
             await db.SaveChangesAsync(cancellationToken);
@@ -105,7 +96,7 @@ public sealed class PmScheduleService(
         {
             case PmIntervalKind.Days:
             {
-                if (schedule.LastCompletedAt is null) return true; // never run — due
+                if (schedule.LastCompletedAt is null) return true;
                 var daysSince = (now - schedule.LastCompletedAt.Value).TotalDays;
                 return daysSince >= schedule.IntervalValue;
             }
@@ -120,8 +111,8 @@ public sealed class PmScheduleService(
                     .OrderByDescending(m => m.RecordedAt)
                     .Select(m => (decimal?)m.Value)
                     .FirstOrDefaultAsync(cancellationToken);
-                if (latest is null) return false; // can't decide without a reading
-                if (schedule.LastCompletedMeterValue is null) return true; // never completed on meter — due now
+                if (latest is null) return false;
+                if (schedule.LastCompletedMeterValue is null) return true;
                 var delta = latest.Value - schedule.LastCompletedMeterValue.Value;
                 return delta >= schedule.IntervalValue;
             }
