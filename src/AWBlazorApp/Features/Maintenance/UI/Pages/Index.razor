@@ -1,15 +1,20 @@
 @page "/maintenance"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Maintenance</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Maintenance</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">PM schedules, work orders, spare parts, meter-based due detection</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Maintenance</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">PM schedules, work orders, spare parts, meter-based due detection</MudText>
+        </MudStack>
     </MudStack>
 
+    @* ── Headline KPIs ─────────────────────────────────────────────── *@
     <MudGrid Spacing="3">
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Assignment" Color="Color.Warning" Value="@openWorkOrders.ToString("N0")" Label="Open work orders" /></MudItem>
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Info" Value="@inProgressWorkOrders.ToString("N0")" Label="In progress" /></MudItem>
@@ -17,30 +22,70 @@
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Value="@criticalAssets.ToString("N0")" Label="Critical assets" /></MudItem>
     </MudGrid>
 
+    @* ── Modules (one card per subsection of the legacy Maintenance nav group) ── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
     <MudGrid Spacing="3">
         @foreach (var card in Cards)
         {
-            <MudItem xs="12" md="6">
-                <MudPaper Class="pa-4" Elevation="2">
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%; cursor: pointer" @onclick="@(() => Navigation.NavigateTo(card.Href))">
+                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3">
                         <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
-                        <MudStack Spacing="0">
+                        <MudStack Spacing="0" Style="flex: 1; min-width: 0">
                             <MudText Typo="Typo.h6">@card.Title</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Subtitle</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@card.Subtitle</MudText>
                         </MudStack>
-                        <MudSpacer />
-                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="@card.Href">Open</MudButton>
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Default" />
                     </MudStack>
                 </MudPaper>
             </MudItem>
         }
     </MudGrid>
+
+    @* ── Recent activity ─────────────────────────────────────────── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Recent work orders</MudText>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentWorkOrders.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No work orders yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>WO #</th>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var wo in recentWorkOrders)
+                    {
+                        <tr>
+                            <td><strong>@wo.Number</strong></td>
+                            <td>@wo.Title</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@PriorityColor(wo.Priority)">@wo.Priority</MudChip></td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(wo.Status)">@wo.Status</MudChip></td>
+                            <td>@wo.ModifiedDate.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"maintenance/work-orders/{wo.Id}"))" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int openWorkOrders, inProgressWorkOrders, activeSchedules, criticalAssets;
+    private List<RecentWo> recentWorkOrders = [];
 
     private record NavCard(string Title, string Subtitle, string Href, string Icon);
+    private record RecentWo(int Id, string Number, string Title, WorkOrderStatus Status, WorkOrderPriority Priority, DateTime ModifiedDate);
 
     private static readonly NavCard[] Cards =
     [
@@ -50,6 +95,7 @@
         new("Spare parts", "Standalone catalog with optional link to AW Production.Product.", "maintenance/spare-parts", Icons.Material.Filled.Inventory),
         new("Meter readings", "Runtime hours / cycles / kWh. Drives usage-based PM due checks.", "maintenance/meter-readings", Icons.Material.Filled.Speed),
         new("Maintenance log", "Free-form observations not yet escalated to a work order.", "maintenance/logs", Icons.Material.Filled.EventNote),
+        new("Tool slots", "Externally-managed tool slot configurations keyed by family / MT code.", "maintenance/tool-slots", Icons.Material.Filled.Build),
     ];
 
     protected override async Task OnInitializedAsync()
@@ -60,5 +106,31 @@
         inProgressWorkOrders = await db.MaintenanceWorkOrders.CountAsync(w => w.Status == WorkOrderStatus.InProgress);
         activeSchedules = await db.PmSchedules.CountAsync(s => s.IsActive);
         criticalAssets = await db.AssetMaintenanceProfiles.CountAsync(p => p.Criticality == AssetCriticality.Critical);
+
+        recentWorkOrders = await db.MaintenanceWorkOrders.AsNoTracking()
+            .OrderByDescending(w => w.ModifiedDate)
+            .Take(5)
+            .Select(w => new RecentWo(w.Id, w.WorkOrderNumber, w.Title, w.Status, w.Priority, w.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(WorkOrderStatus s) => s switch
+    {
+        WorkOrderStatus.Draft      => Color.Default,
+        WorkOrderStatus.Scheduled  => Color.Info,
+        WorkOrderStatus.InProgress => Color.Warning,
+        WorkOrderStatus.OnHold     => Color.Secondary,
+        WorkOrderStatus.Completed  => Color.Success,
+        WorkOrderStatus.Cancelled  => Color.Error,
+        _                          => Color.Default,
+    };
+
+    private static Color PriorityColor(WorkOrderPriority p) => p switch
+    {
+        WorkOrderPriority.Critical => Color.Error,
+        WorkOrderPriority.High     => Color.Warning,
+        WorkOrderPriority.Medium   => Color.Info,
+        WorkOrderPriority.Low      => Color.Default,
+        _                          => Color.Default,
+    };
 }
