@@ -1,0 +1,22 @@
+@page "/mes/reference"
+@attribute [Authorize]
+
+<PageTitle>Production reference data</PageTitle>
+
+<ReferenceDataHub Title="Production reference data"
+                  Subtitle="AdventureWorks Production schema — manufacturing work orders, WO routings, and the product-document junctions."
+                  BackHref="mes"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Manufacturing work orders", "aw/work-orders", Icons.Material.Filled.Construction, "AW's Production.WorkOrder — separate from our maint work orders"),
+        new("WO routings (raw)", "aw/work-order-routings", Icons.Material.Filled.Route),
+        new("Transaction history", "aw/transaction-histories", Icons.Material.Filled.Receipt),
+        new("Transaction archive", "aw/transaction-history-archives", Icons.Material.Filled.Archive),
+        new("Scrap reasons", "aw/scrap-reasons", Icons.Material.Filled.RemoveCircle),
+        new("Product documents", "aw/documents", Icons.Material.Filled.InsertDriveFile),
+        new("Product ↔ document", "aw/product-documents", Icons.Material.Filled.FolderOpen, "Junction — which docs go with which product"),
+    ];
+}

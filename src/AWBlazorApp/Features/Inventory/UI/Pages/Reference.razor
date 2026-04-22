@@ -1,0 +1,29 @@
+@page "/inventory/reference"
+@attribute [Authorize]
+
+<PageTitle>Inventory reference data</PageTitle>
+
+<ReferenceDataHub Title="Inventory reference data"
+                  Subtitle="AdventureWorks Production schema — product catalog, models, categories, photos, pricing history."
+                  BackHref="inventory"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Products", "aw/products", Icons.Material.Filled.Inventory2),
+        new("Product models", "aw/product-models", Icons.Material.Filled.Layers),
+        new("Product categories", "aw/product-categories", Icons.Material.Filled.Category),
+        new("Product subcategories", "aw/product-subcategories", Icons.Material.Filled.Segment),
+        new("Product descriptions", "aw/product-descriptions", Icons.Material.Filled.Description),
+        new("Model ↔ desc ↔ culture", "aw/product-model-product-description-cultures", Icons.Material.Filled.Translate, "Junction — localized descriptions per model"),
+        new("Model ↔ illustration", "aw/product-model-illustrations", Icons.Material.Filled.Draw),
+        new("Product photos", "aw/product-photos", Icons.Material.Filled.Image),
+        new("Product ↔ photo", "aw/product-product-photos", Icons.Material.Filled.PhotoLibrary),
+        new("Product reviews", "aw/product-reviews", Icons.Material.Filled.RateReview),
+        new("Product inventory", "aw/product-inventories", Icons.Material.Filled.Warehouse),
+        new("List price history", "aw/product-list-price-histories", Icons.Material.Filled.Sell),
+        new("Product cost history", "aw/product-cost-histories", Icons.Material.Filled.PriceChange),
+        new("Storage locations", "aw/locations", Icons.Material.Filled.Place),
+    ];
+}

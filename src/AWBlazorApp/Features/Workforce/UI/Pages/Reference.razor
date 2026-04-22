@@ -1,0 +1,21 @@
+@page "/workforce/reference"
+@attribute [Authorize]
+
+<PageTitle>Workforce reference data</PageTitle>
+
+<ReferenceDataHub Title="Workforce reference data"
+                  Subtitle="AdventureWorks HumanResources schema — employees, pay history, departments, shifts."
+                  BackHref="workforce"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Employees", "aw/employees", Icons.Material.Filled.Badge),
+        new("Pay history", "aw/employee-pay-histories", Icons.Material.Filled.Payments),
+        new("Job candidates", "aw/job-candidates", Icons.Material.Filled.PersonSearch),
+        new("Departments", "aw/departments", Icons.Material.Filled.AccountTree),
+        new("Shifts", "aw/shifts", Icons.Material.Filled.AccessTime),
+        new("Employee dept history", "aw/employee-department-histories", Icons.Material.Filled.History),
+    ];
+}

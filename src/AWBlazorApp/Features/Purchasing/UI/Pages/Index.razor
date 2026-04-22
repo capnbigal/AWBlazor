@@ -1,0 +1,42 @@
+@page "/purchasing"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Purchasing</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Purchasing</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Vendors, purchase orders, ship methods — drives goods receipts in Logistics</MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Value="@activeVendors.ToString("N0")" Label="Active vendors" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Value="@preferredVendors.ToString("N0")" Label="Preferred vendors" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Info" Value="@totalPos.ToString("N0")" Label="Purchase orders" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.DateRange" Color="Color.Success" Value="@posLast30d.ToString("N0")" Label="POs (last 30 days)" /></MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Purchasing analytics" Subtitle="Spend trends, top vendors, PO volume over time." Icon="@Icons.Material.Filled.Analytics" Href="analytics/purchasing" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Vendors, product-vendor links, purchase orders, PO details, ship methods." Icon="@Icons.Material.Filled.TableView" Href="purchasing/reference" /></MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int activeVendors, preferredVendors, totalPos, posLast30d;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        activeVendors = await db.Vendors.CountAsync(v => v.ActiveFlag);
+        preferredVendors = await db.Vendors.CountAsync(v => v.PreferredVendorStatus && v.ActiveFlag);
+        totalPos = await db.PurchaseOrderHeaders.CountAsync();
+        var since30 = DateTime.UtcNow.AddDays(-30);
+        posLast30d = await db.PurchaseOrderHeaders.CountAsync(p => p.OrderDate >= since30);
+    }
+}

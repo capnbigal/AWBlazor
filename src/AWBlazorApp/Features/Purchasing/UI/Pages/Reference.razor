@@ -1,0 +1,20 @@
+@page "/purchasing/reference"
+@attribute [Authorize]
+
+<PageTitle>Purchasing reference data</PageTitle>
+
+<ReferenceDataHub Title="Purchasing reference data"
+                  Subtitle="AdventureWorks Purchasing schema — vendors, purchase orders, ship methods."
+                  BackHref="purchasing"
+                  Entries="@Entries" />
+
+@code {
+    private static readonly ReferenceDataHub.ReferenceEntry[] Entries =
+    [
+        new("Vendors", "aw/vendors", Icons.Material.Filled.Business),
+        new("Product ↔ vendor", "aw/product-vendors", Icons.Material.Filled.Link, "Junction — which vendors supply which products"),
+        new("Purchase orders", "aw/purchase-order-headers", Icons.Material.Filled.Receipt),
+        new("PO details", "aw/purchase-order-details", Icons.Material.Filled.ListAlt),
+        new("Ship methods", "aw/ship-methods", Icons.Material.Filled.LocalShipping),
+    ];
+}

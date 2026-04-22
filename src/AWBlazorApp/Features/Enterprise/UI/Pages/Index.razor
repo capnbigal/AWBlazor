@@ -1,0 +1,47 @@
+@page "/enterprise"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Enterprise</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.Domain" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Enterprise</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Organization → Plant → Division → Department → Team → Area → Station</MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Value="@organizations.ToString("N0")" Label="Organizations" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Hub" Color="Color.Info" Value="@orgUnits.ToString("N0")" Label="Org units" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.Engineering" Color="Color.Success" Value="@stations.ToString("N0")" Label="Stations" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.PrecisionManufacturing" Color="Color.Warning" Value="@assets.ToString("N0")" Label="Assets / machines" /></MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Org tree explorer" Subtitle="Full hierarchy with stations and assets shown in context." Icon="@Icons.Material.Filled.AccountTree" Href="enterprise/tree" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Organizations" Subtitle="Top-level tenants — primary flag picks the one the nav defaults to." Icon="@Icons.Material.Filled.Business" Href="enterprise/organizations" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Org units" Subtitle="Plant → Division → Department → Subdepartment → Team → Area." Icon="@Icons.Material.Filled.Hub" Href="enterprise/org-units" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Stations" Subtitle="Leaf of the hierarchy, where people (and sometimes machines) work." Icon="@Icons.Material.Filled.Engineering" Href="enterprise/stations" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Assets / machines" Subtitle="Physical equipment — drives maintenance + OEE rollups." Icon="@Icons.Material.Filled.PrecisionManufacturing" Href="enterprise/assets" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Cost centers" Subtitle="org.CostCenter — cost attribution across org hierarchy." Icon="@Icons.Material.Filled.AccountBalance" Href="enterprise/cost-centers" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Product lines" Subtitle="org.ProductLine — management-level grouping above categories." Icon="@Icons.Material.Filled.Category" Href="enterprise/product-lines" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW business entities, persons, emails, phones, addresses, country/state codes." Icon="@Icons.Material.Filled.TableView" Href="enterprise/reference" /></MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private int organizations, orgUnits, stations, assets;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        organizations = await db.Organizations.CountAsync();
+        orgUnits = await db.OrgUnits.CountAsync();
+        stations = await db.Stations.CountAsync();
+        assets = await db.Assets.CountAsync();
+    }
+}

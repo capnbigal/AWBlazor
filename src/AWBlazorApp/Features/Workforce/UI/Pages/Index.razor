@@ -6,8 +6,11 @@
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Workforce</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Training, qualifications, attendance, leave, shift communication</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h4">Workforce</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Training, qualifications, attendance, leave, shift communication</MudText>
+        </MudStack>
     </MudStack>
 
     <MudGrid Spacing="3">
@@ -17,43 +20,25 @@
         <MudItem xs="12" sm="6" md="3"><KpiCard Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Value="@unackHandovers.ToString("N0")" Label="Unack handover notes" /></MudItem>
     </MudGrid>
 
+    <MudText Typo="Typo.h5" Class="mt-3">Modules</MudText>
     <MudGrid Spacing="3">
-        @foreach (var card in Cards)
-        {
-            <MudItem xs="12" md="6" lg="4">
-                <MudPaper Class="pa-4" Elevation="2">
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudIcon Icon="@card.Icon" Color="Color.Primary" Size="Size.Large" />
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.h6">@card.Title</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@card.Subtitle</MudText>
-                        </MudStack>
-                        <MudSpacer />
-                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.List" Href="@card.Href">Open</MudButton>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-        }
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="HR analytics" Subtitle="Headcount, tenure, gender distribution, salaried vs hourly." Icon="@Icons.Material.Filled.Analytics" Href="analytics/hr" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Alert inbox" Subtitle="Operator qualification issues from clock-in." Icon="@Icons.Material.Filled.NotificationsActive" Href="workforce/qualification-alerts" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Training courses" Subtitle="wf.TrainingCourse — recurring cert tracking." Icon="@Icons.Material.Filled.School" Href="workforce/training-courses" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Training records" Subtitle="Completion history per employee." Icon="@Icons.Material.Filled.History" Href="workforce/training-records" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Qualifications" Subtitle="wf.Qualification — skills, certs, safety, compliance." Icon="@Icons.Material.Filled.Badge" Href="workforce/qualifications" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Employee quals" Subtitle="Per-employee grant, expiry, evidence." Icon="@Icons.Material.Filled.CardMembership" Href="workforce/employee-qualifications" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Station requirements" Subtitle="Required quals per station." Icon="@Icons.Material.Filled.WorkspacePremium" Href="workforce/station-qualifications" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Attendance" Subtitle="Per-shift clock in / out, status." Icon="@Icons.Material.Filled.HowToReg" Href="workforce/attendance" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Leave requests" Subtitle="Pending → Approved/Rejected workflow." Icon="@Icons.Material.Filled.EventBusy" Href="workforce/leave-requests" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Shift handover" Subtitle="Per-station handover notes." Icon="@Icons.Material.Filled.EditNote" Href="workforce/handover-notes" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Announcements" Subtitle="Broadcast messages across org / org unit." Icon="@Icons.Material.Filled.Campaign" Href="workforce/announcements" /></MudItem>
+        <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW employees, pay history, job candidates, departments, shifts." Icon="@Icons.Material.Filled.TableView" Href="workforce/reference" /></MudItem>
     </MudGrid>
 </MudStack>
 
 @code {
     private int openAlerts, expiringQuals, pendingLeaves, unackHandovers;
-
-    private record NavCard(string Title, string Subtitle, string Href, string Icon);
-
-    private static readonly NavCard[] Cards =
-    [
-        new("Alert inbox", "Operator qualification issues from clock-in", "workforce/qualification-alerts", Icons.Material.Filled.NotificationsActive),
-        new("Training courses", "wf.TrainingCourse — recurring cert tracking", "workforce/training-courses", Icons.Material.Filled.School),
-        new("Qualifications", "wf.Qualification — skills, certs, safety, compliance", "workforce/qualifications", Icons.Material.Filled.Badge),
-        new("Employee quals", "Per-employee grant, expiry, evidence", "workforce/employee-qualifications", Icons.Material.Filled.CardMembership),
-        new("Station requirements", "Required quals per station", "workforce/station-qualifications", Icons.Material.Filled.WorkspacePremium),
-        new("Leave requests", "Pending → Approved/Rejected workflow", "workforce/leave-requests", Icons.Material.Filled.EventBusy),
-        new("Attendance", "Per-shift clock in / out, status", "workforce/attendance", Icons.Material.Filled.HowToReg),
-        new("Shift handover", "Per-station handover notes", "workforce/handover-notes", Icons.Material.Filled.EditNote),
-        new("Announcements", "Broadcast messages across org / org unit", "workforce/announcements", Icons.Material.Filled.Campaign),
-    ];
 
     protected override async Task OnInitializedAsync()
     {

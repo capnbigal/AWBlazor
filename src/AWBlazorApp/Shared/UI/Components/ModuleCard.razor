@@ -1,0 +1,28 @@
+@* Clickable module tile used on each domain landing page (/maintenance, /engineering, …).
+   The whole paper is the click target; the chevron reinforces that. Elevation="2" and
+   radius come from MudPaper defaults — spec-compliant, no hard-coded tokens. *@
+
+@inject NavigationManager Navigation
+
+<MudPaper Class="pa-4" Elevation="2" Style="height: 100%; cursor: pointer" @onclick="OnClick">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3">
+        <MudIcon Icon="@Icon" Color="Color.Primary" Size="Size.Large" />
+        <MudStack Spacing="0" Style="flex: 1; min-width: 0">
+            <MudText Typo="Typo.h6">@Title</MudText>
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+            }
+        </MudStack>
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Default" />
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+
+    private void OnClick() => Navigation.NavigateTo(Href);
+}
