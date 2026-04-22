@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Logistics.Receipts.Application.Services; using AWBlazorApp.Features.Logistics.Shipments.Application.Services; using AWBlazorApp.Features.Logistics.Transfers.Application.Services; 
-using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
-using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos; 
+using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain;
+using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos;
 using AWBlazorApp.Features.Logistics.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -77,7 +77,8 @@ public static class ShipmentEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => ShipmentAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.Shipments.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/shipments/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -91,9 +92,7 @@ public static class ShipmentEndpoints
         var entity = await db.Shipments.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = ShipmentAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.ShipmentAuditLogs.Add(ShipmentAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -106,7 +105,8 @@ public static class ShipmentEndpoints
         if (entity.Status is ShipmentStatus.Shipped or ShipmentStatus.Delivered)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a shipment that has left the warehouse."] });
 
-        await db.DeleteWithAuditAsync(entity, ShipmentAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.Shipments.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
@@ -117,16 +117,17 @@ public static class ShipmentEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<ShipmentAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.ShipmentAuditLogs.AsNoTracking().Where(a => a.ShipmentId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "Shipment" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<ShipmentAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<ShipmentLineDto>>> ListLinesAsync(
@@ -156,8 +157,6 @@ public static class ShipmentEndpoints
         var entity = request.ToEntity();
         db.ShipmentLines.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.ShipmentLineAuditLogs.Add(ShipmentLineAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/shipments/{id}/lines/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -171,9 +170,7 @@ public static class ShipmentEndpoints
         var entity = await db.ShipmentLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = ShipmentLineAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.ShipmentLineAuditLogs.Add(ShipmentLineAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -184,7 +181,6 @@ public static class ShipmentEndpoints
         var entity = await db.ShipmentLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
         db.ShipmentLines.Remove(entity);
-        db.ShipmentLineAuditLogs.Add(ShipmentLineAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

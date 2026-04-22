@@ -1,9 +1,8 @@
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Inventory.Adjustments.Application.Services; using AWBlazorApp.Features.Inventory.Items.Application.Services; using AWBlazorApp.Features.Inventory.Locations.Application.Services; using AWBlazorApp.Features.Inventory.Lots.Application.Services; using AWBlazorApp.Features.Inventory.Serials.Application.Services; 
-using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
-using AWBlazorApp.Features.Inventory.Adjustments.Dtos; using AWBlazorApp.Features.Inventory.Items.Dtos; using AWBlazorApp.Features.Inventory.Locations.Dtos; using AWBlazorApp.Features.Inventory.Lots.Dtos; using AWBlazorApp.Features.Inventory.Serials.Dtos; 
+using AWBlazorApp.Features.Inventory.Serials.Domain;
+using AWBlazorApp.Features.Inventory.Serials.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,24 +18,15 @@ public static class SerialUnitEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListSerialUnits");
-        group.MapIntIdCrud<SerialUnit, SerialUnitDto, CreateSerialUnitRequest, UpdateSerialUnitRequest, SerialUnitAuditLog, SerialUnitAuditLogDto, SerialUnitAuditService.Snapshot, int>(
+        group.MapCrudWithInterceptor<SerialUnit, SerialUnitDto, CreateSerialUnitRequest, UpdateSerialUnitRequest, int>(
             entityName: "SerialUnit",
             routePrefix: "/api/serial-units",
             entitySet: db => db.SerialUnits,
-            auditSet: db => db.SerialUnitAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.SerialUnitId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: SerialUnitAuditService.CaptureSnapshot,
-            recordCreate: SerialUnitAuditService.RecordCreate,
-            recordUpdate: SerialUnitAuditService.RecordUpdate,
-            recordDelete: SerialUnitAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
         return app;
     }
 

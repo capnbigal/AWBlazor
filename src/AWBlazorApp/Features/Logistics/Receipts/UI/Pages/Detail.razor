@@ -152,10 +152,7 @@ else
             await using var db = await DbFactory.CreateDbContextAsync();
             newLine.GoodsReceiptId = Id;
             var entity = newLine.ToEntity();
-            var by = await GetUserNameAsync();
             db.GoodsReceiptLines.Add(entity);
-            await db.SaveChangesAsync();
-            db.GoodsReceiptLineAuditLogs.Add(GoodsReceiptLineAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Line added.", Severity.Success);
             lineDialogOpen = false;
@@ -170,9 +167,7 @@ else
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.GoodsReceiptLines.FirstOrDefaultAsync(x => x.Id == lineId);
         if (entity is null) return;
-        var by = await GetUserNameAsync();
         db.GoodsReceiptLines.Remove(entity);
-        db.GoodsReceiptLineAuditLogs.Add(GoodsReceiptLineAuditService.RecordDelete(entity, by));
         await db.SaveChangesAsync();
         await LoadAsync();
     }

@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Inventory.Adjustments.Application.Services; using AWBlazorApp.Features.Inventory.Items.Application.Services; using AWBlazorApp.Features.Inventory.Locations.Application.Services; using AWBlazorApp.Features.Inventory.Lots.Application.Services; using AWBlazorApp.Features.Inventory.Serials.Application.Services; 
 using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
 using AWBlazorApp.Features.Inventory.Adjustments.Dtos; using AWBlazorApp.Features.Inventory.Items.Dtos; using AWBlazorApp.Features.Inventory.Locations.Dtos; using AWBlazorApp.Features.Inventory.Lots.Dtos; using AWBlazorApp.Features.Inventory.Serials.Dtos; 
 using AWBlazorApp.Features.Inventory.Services;
@@ -76,7 +76,8 @@ public static class InventoryAdjustmentEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity(user.Identity?.Name);
-        await db.AddWithAuditAsync(entity, e => InventoryAdjustmentAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.InventoryAdjustments.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/inventory-adjustments/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -98,9 +99,7 @@ public static class InventoryAdjustmentEndpoints
             });
         }
 
-        var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -116,7 +115,6 @@ public static class InventoryAdjustmentEndpoints
         var item = await db.InventoryItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == entity.InventoryItemId, ct);
         if (item is null) return TypedResults.BadRequest("InventoryItem no longer exists.");
 
-        var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
         var typeCode = entity.QuantityDelta > 0
             ? InventoryTransactionTypeCodes.AdjustInc
             : InventoryTransactionTypeCodes.AdjustDec;
@@ -147,7 +145,6 @@ public static class InventoryAdjustmentEndpoints
             entity.ApprovedAt = DateTime.UtcNow;
             entity.PostedTransactionId = result.TransactionId;
             entity.ModifiedDate = DateTime.UtcNow;
-            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, user.Identity?.Name));
             await db.SaveChangesAsync(ct);
             return TypedResults.Ok(new IdResponse(entity.Id));
         }
@@ -165,25 +162,24 @@ public static class InventoryAdjustmentEndpoints
         if (entity.Status is AdjustmentStatus.Posted or AdjustmentStatus.Rejected)
             return TypedResults.BadRequest($"Adjustment is already {entity.Status}.");
 
-        var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
         entity.Status = AdjustmentStatus.Rejected;
         entity.ApprovedByUserId = user.Identity?.Name;
         entity.ApprovedAt = DateTime.UtcNow;
         entity.ModifiedDate = DateTime.UtcNow;
-        db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
 
-    private static async Task<Ok<PagedResult<InventoryAdjustmentAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var query = db.InventoryAdjustmentAuditLogs.AsNoTracking().Where(x => x.InventoryAdjustmentId == id);
+        var idStr = id.ToString();
+        var query = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "InventoryAdjustment" && a.EntityId == idStr);
         var total = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(x => x.ChangedDate).ThenByDescending(x => x.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<InventoryAdjustmentAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 }

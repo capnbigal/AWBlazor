@@ -153,10 +153,7 @@ else
             await using var db = await DbFactory.CreateDbContextAsync();
             newLine.StockTransferId = Id;
             var entity = newLine.ToEntity();
-            var by = await GetUserNameAsync();
             db.StockTransferLines.Add(entity);
-            await db.SaveChangesAsync();
-            db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Line added.", Severity.Success);
             lineDialogOpen = false;
@@ -171,9 +168,7 @@ else
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.StockTransferLines.FirstOrDefaultAsync(x => x.Id == lineId);
         if (entity is null) return;
-        var by = await GetUserNameAsync();
         db.StockTransferLines.Remove(entity);
-        db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordDelete(entity, by));
         await db.SaveChangesAsync();
         await LoadAsync();
     }

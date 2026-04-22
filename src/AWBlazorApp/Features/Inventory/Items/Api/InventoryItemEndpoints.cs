@@ -1,9 +1,8 @@
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Inventory.Adjustments.Application.Services; using AWBlazorApp.Features.Inventory.Items.Application.Services; using AWBlazorApp.Features.Inventory.Locations.Application.Services; using AWBlazorApp.Features.Inventory.Lots.Application.Services; using AWBlazorApp.Features.Inventory.Serials.Application.Services; 
-using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
-using AWBlazorApp.Features.Inventory.Adjustments.Dtos; using AWBlazorApp.Features.Inventory.Items.Dtos; using AWBlazorApp.Features.Inventory.Locations.Dtos; using AWBlazorApp.Features.Inventory.Lots.Dtos; using AWBlazorApp.Features.Inventory.Serials.Dtos; 
+using AWBlazorApp.Features.Inventory.Items.Domain;
+using AWBlazorApp.Features.Inventory.Items.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,24 +18,15 @@ public static class InventoryItemEndpoints
             .RequireAuthorization("ApiOrCookie");
 
         group.MapGet("/", ListAsync).WithName("ListInventoryItems");
-        group.MapIntIdCrud<InventoryItem, InventoryItemDto, CreateInventoryItemRequest, UpdateInventoryItemRequest, InventoryItemAuditLog, InventoryItemAuditLogDto, InventoryItemAuditService.Snapshot, int>(
+        group.MapCrudWithInterceptor<InventoryItem, InventoryItemDto, CreateInventoryItemRequest, UpdateInventoryItemRequest, int>(
             entityName: "InventoryItem",
             routePrefix: "/api/inventory-items",
             entitySet: db => db.InventoryItems,
-            auditSet: db => db.InventoryItemAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.InventoryItemId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: InventoryItemAuditService.CaptureSnapshot,
-            recordCreate: InventoryItemAuditService.RecordCreate,
-            recordUpdate: InventoryItemAuditService.RecordUpdate,
-            recordDelete: InventoryItemAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
         return app;
     }
 

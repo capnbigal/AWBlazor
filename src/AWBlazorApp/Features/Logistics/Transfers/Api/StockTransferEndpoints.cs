@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Logistics.Receipts.Application.Services; using AWBlazorApp.Features.Logistics.Shipments.Application.Services; using AWBlazorApp.Features.Logistics.Transfers.Application.Services; 
-using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
-using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos; 
+using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain;
+using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos;
 using AWBlazorApp.Features.Logistics.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -77,7 +77,8 @@ public static class StockTransferEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => StockTransferAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.StockTransfers.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/stock-transfers/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -93,9 +94,7 @@ public static class StockTransferEndpoints
         if (entity.Status is StockTransferStatus.Completed or StockTransferStatus.Cancelled)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = [$"Transfer is {entity.Status}; no further edits."] });
 
-        var before = StockTransferAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.StockTransferAuditLogs.Add(StockTransferAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -108,7 +107,8 @@ public static class StockTransferEndpoints
         if (entity.Status == StockTransferStatus.Completed)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a completed transfer."] });
 
-        await db.DeleteWithAuditAsync(entity, StockTransferAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.StockTransfers.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
@@ -119,16 +119,17 @@ public static class StockTransferEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<StockTransferAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.StockTransferAuditLogs.AsNoTracking().Where(a => a.StockTransferId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "StockTransfer" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<StockTransferAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<StockTransferLineDto>>> ListLinesAsync(
@@ -158,8 +159,6 @@ public static class StockTransferEndpoints
         var entity = request.ToEntity();
         db.StockTransferLines.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/stock-transfers/{id}/lines/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -173,9 +172,7 @@ public static class StockTransferEndpoints
         var entity = await db.StockTransferLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = StockTransferLineAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -186,7 +183,6 @@ public static class StockTransferEndpoints
         var entity = await db.StockTransferLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
         db.StockTransferLines.Remove(entity);
-        db.StockTransferLineAuditLogs.Add(StockTransferLineAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
