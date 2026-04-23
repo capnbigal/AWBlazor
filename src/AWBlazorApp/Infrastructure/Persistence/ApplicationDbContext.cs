@@ -450,7 +450,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<CountryRegionCurrency>(b       => b.ToTable("CountryRegionCurrency",       schema: "Sales",          t => t.ExcludeFromMigrations()));
         builder.Entity<CurrencyRate>(b                => b.ToTable("CurrencyRate",                schema: "Sales",          t => t.ExcludeFromMigrations()));
         builder.Entity<BillOfMaterials>(b             => b.ToTable("BillOfMaterials",             schema: "Production",     t => t.ExcludeFromMigrations()));
-        builder.Entity<WorkOrder>(b                   => b.ToTable("WorkOrder",                   schema: "Production",     t => t.ExcludeFromMigrations()));
+        builder.Entity<WorkOrder>(b => b.ToTable("WorkOrder", schema: "Production", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("iWorkOrder");
+        }));
         builder.Entity<EmployeeDepartmentHistory>(b   => b.ToTable("EmployeeDepartmentHistory",   schema: "HumanResources", t => t.ExcludeFromMigrations()));
         builder.Entity<ProductCostHistory>(b          => b.ToTable("ProductCostHistory",          schema: "Production",     t => t.ExcludeFromMigrations()));
 
@@ -460,7 +464,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // (AdditionalContactInfo, Demographics) that we also intentionally do NOT map.
         builder.Entity<Address>(b                  => b.ToTable("Address",                schema: "Person", t => t.ExcludeFromMigrations()));
         builder.Entity<BusinessEntity>(b           => b.ToTable("BusinessEntity",         schema: "Person", t => t.ExcludeFromMigrations()));
-        builder.Entity<Person>(b                   => b.ToTable("Person",                 schema: "Person", t => t.ExcludeFromMigrations()));
+        builder.Entity<Person>(b => b.ToTable("Person", schema: "Person", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("iuPerson");
+        }));
         builder.Entity<EmailAddress>(b             => b.ToTable("EmailAddress",           schema: "Person", t => t.ExcludeFromMigrations()));
         builder.Entity<PersonPhone>(b              => b.ToTable("PersonPhone",            schema: "Person", t => t.ExcludeFromMigrations()));
         builder.Entity<BusinessEntityAddress>(b    => b.ToTable("BusinessEntityAddress",  schema: "Person", t => t.ExcludeFromMigrations()));
@@ -490,8 +498,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Batch 7 source tables — also DBA-owned.
         builder.Entity<CreditCard>(b             => b.ToTable("CreditCard",             schema: "Sales", t => t.ExcludeFromMigrations()));
         builder.Entity<PersonCreditCard>(b       => b.ToTable("PersonCreditCard",       schema: "Sales", t => t.ExcludeFromMigrations()));
-        builder.Entity<SalesOrderHeader>(b       => b.ToTable("SalesOrderHeader",       schema: "Sales", t => t.ExcludeFromMigrations()));
-        builder.Entity<SalesOrderDetail>(b       => b.ToTable("SalesOrderDetail",       schema: "Sales", t => t.ExcludeFromMigrations()));
+        // SalesOrderHeader + SalesOrderDetail carry DB triggers (uSalesOrderHeader,
+        // iduSalesOrderDetail). `HasTrigger(...)` switches EF off the OUTPUT-without-INTO
+        // path SQL Server rejects on trigger-bearing tables. The name is informational when
+        // combined with `ExcludeFromMigrations()` — EF just needs to know there's at least
+        // one trigger to pick the legacy SCOPE_IDENTITY fallback.
+        builder.Entity<SalesOrderHeader>(b => b.ToTable("SalesOrderHeader", schema: "Sales", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("uSalesOrderHeader");
+        }));
+        builder.Entity<SalesOrderDetail>(b => b.ToTable("SalesOrderDetail", schema: "Sales", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("iduSalesOrderDetail");
+        }));
         builder.Entity<SalesTerritoryHistory>(b  => b.ToTable("SalesTerritoryHistory",  schema: "Sales", t => t.ExcludeFromMigrations()));
         builder.Entity<SpecialOfferProduct>(b    => b.ToTable("SpecialOfferProduct",    schema: "Sales", t => t.ExcludeFromMigrations()));
         builder.Entity<Store>(b                  => b.ToTable("Store",                  schema: "Sales", t => t.ExcludeFromMigrations()));
@@ -502,11 +523,29 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         //   - HumanResources.JobCandidate has a Resume XML column we don't map.
         //   - PurchaseOrderHeader.TotalDue, PurchaseOrderDetail.LineTotal and StockedQty are
         //     computed columns.
-        builder.Entity<Vendor>(b                 => b.ToTable("Vendor",              schema: "Purchasing",     t => t.ExcludeFromMigrations()));
+        // Vendor, PurchaseOrderHeader/Detail, Employee all carry DB triggers that forbid
+        // OUTPUT-without-INTO on INSERT/UPDATE/DELETE. See the SalesOrderHeader comment above.
+        builder.Entity<Vendor>(b => b.ToTable("Vendor", schema: "Purchasing", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("dVendor");
+        }));
         builder.Entity<ProductVendor>(b          => b.ToTable("ProductVendor",       schema: "Purchasing",     t => t.ExcludeFromMigrations()));
-        builder.Entity<PurchaseOrderHeader>(b    => b.ToTable("PurchaseOrderHeader", schema: "Purchasing",     t => t.ExcludeFromMigrations()));
-        builder.Entity<PurchaseOrderDetail>(b    => b.ToTable("PurchaseOrderDetail", schema: "Purchasing",     t => t.ExcludeFromMigrations()));
-        builder.Entity<Employee>(b               => b.ToTable("Employee",            schema: "HumanResources", t => t.ExcludeFromMigrations()));
+        builder.Entity<PurchaseOrderHeader>(b => b.ToTable("PurchaseOrderHeader", schema: "Purchasing", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("uPurchaseOrderHeader");
+        }));
+        builder.Entity<PurchaseOrderDetail>(b => b.ToTable("PurchaseOrderDetail", schema: "Purchasing", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("iPurchaseOrderDetail");
+        }));
+        builder.Entity<Employee>(b => b.ToTable("Employee", schema: "HumanResources", t =>
+        {
+            t.ExcludeFromMigrations();
+            t.HasTrigger("dEmployee");
+        }));
         builder.Entity<EmployeePayHistory>(b     => b.ToTable("EmployeePayHistory",  schema: "HumanResources", t => t.ExcludeFromMigrations()));
         builder.Entity<JobCandidate>(b           => b.ToTable("JobCandidate",        schema: "HumanResources", t => t.ExcludeFromMigrations()));
 
