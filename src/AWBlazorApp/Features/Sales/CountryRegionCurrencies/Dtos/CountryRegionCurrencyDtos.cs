@@ -20,10 +20,6 @@ public sealed record UpdateCountryRegionCurrencyRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record CountryRegionCurrencyAuditLogDto(
-    int Id, string CountryRegionCode, string CurrencyCode, string Action,
-    string? ChangedBy, DateTime ChangedDate, string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class CountryRegionCurrencyMappings
 {
     public static CountryRegionCurrencyDto ToDto(this CountryRegionCurrency e) => new(
@@ -41,7 +37,4 @@ public static class CountryRegionCurrencyMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CountryRegionCurrencyAuditLogDto ToDto(this CountryRegionCurrencyAuditLog a) => new(
-        a.Id, a.CountryRegionCode, a.CurrencyCode, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

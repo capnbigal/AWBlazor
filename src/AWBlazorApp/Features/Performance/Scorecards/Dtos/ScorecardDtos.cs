@@ -21,11 +21,6 @@ public sealed record UpdateScorecardDefinitionRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record ScorecardDefinitionAuditLogDto(
-    int Id, int ScorecardDefinitionId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description, string? OwnerUserId,
-    bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record ScorecardKpiDto(
     int Id, int ScorecardDefinitionId, int KpiDefinitionId,
     int DisplayOrder, ScorecardKpiVisual Visual, DateTime ModifiedDate);
@@ -67,13 +62,6 @@ public sealed record UpdatePerformanceReportRequest
     public string? DefinitionJson { get; set; }
     public bool? IsActive { get; set; }
 }
-
-public sealed record PerformanceReportAuditLogDto(
-    int Id, int PerformanceReportId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description,
-    PerformanceReportKind Kind, ReportRangePreset RangePreset,
-    int? StationId, int? AssetId, string? DefinitionJson,
-    DateTime? LastRunAt, bool IsActive, DateTime SourceModifiedDate);
 
 /// <summary>
 /// Result of running a <see cref="PerformanceReport"/>. Generic shape (column metadata +
@@ -129,11 +117,6 @@ public static class ScorecardMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ScorecardDefinitionAuditLogDto ToDto(this ScorecardDefinitionAuditLog a) => new(
-        a.Id, a.ScorecardDefinitionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.OwnerUserId,
-        a.IsActive, a.SourceModifiedDate);
-
     public static ScorecardKpiDto ToDto(this ScorecardKpi e) => new(
         e.Id, e.ScorecardDefinitionId, e.KpiDefinitionId,
         e.DisplayOrder, e.Visual, e.ModifiedDate);
@@ -181,12 +164,6 @@ public static class ScorecardMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static PerformanceReportAuditLogDto ToDto(this PerformanceReportAuditLog a) => new(
-        a.Id, a.PerformanceReportId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description,
-        a.Kind, a.RangePreset, a.StationId, a.AssetId, a.DefinitionJson,
-        a.LastRunAt, a.IsActive, a.SourceModifiedDate);
 
     public static PerformanceReportRunDto ToDto(this PerformanceReportRun e) => new(
         e.Id, e.PerformanceReportId, e.RunAt, e.RunByUserId,

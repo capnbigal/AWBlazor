@@ -32,13 +32,6 @@ public sealed record UpdatePmScheduleRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record PmScheduleAuditLogDto(
-    int Id, int PmScheduleId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description,
-    int AssetId, PmIntervalKind IntervalKind, int IntervalValue,
-    WorkOrderPriority DefaultPriority, int EstimatedMinutes, bool IsActive,
-    DateTime? LastCompletedAt, decimal? LastCompletedMeterValue, DateTime SourceModifiedDate);
-
 public sealed record PmScheduleTaskDto(
     int Id, int PmScheduleId, int SequenceNumber, string TaskName,
     string? Instructions, int? EstimatedMinutes, bool RequiresSignoff, DateTime ModifiedDate);
@@ -88,13 +81,6 @@ public static class PmScheduleMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static PmScheduleAuditLogDto ToDto(this PmScheduleAuditLog a) => new(
-        a.Id, a.PmScheduleId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description,
-        a.AssetId, a.IntervalKind, a.IntervalValue,
-        a.DefaultPriority, a.EstimatedMinutes, a.IsActive,
-        a.LastCompletedAt, a.LastCompletedMeterValue, a.SourceModifiedDate);
 
     public static PmScheduleTaskDto ToDto(this PmScheduleTask e) => new(
         e.Id, e.PmScheduleId, e.SequenceNumber, e.TaskName,

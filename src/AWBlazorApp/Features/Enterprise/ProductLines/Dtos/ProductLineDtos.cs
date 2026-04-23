@@ -23,11 +23,6 @@ public sealed record UpdateProductLineRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record ProductLineAuditLogDto(
-    int Id, int ProductLineId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrganizationId, string? Code, string? Name,
-    string? Description, bool IsActive, DateTime SourceModifiedDate);
-
 public static class ProductLineMappings
 {
     public static ProductLineDto ToDto(this ProductLine e) => new(
@@ -52,7 +47,4 @@ public static class ProductLineMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductLineAuditLogDto ToDto(this ProductLineAuditLog a) => new(
-        a.Id, a.ProductLineId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrganizationId, a.Code, a.Name, a.Description, a.IsActive, a.SourceModifiedDate);
-}
+    }

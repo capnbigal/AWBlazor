@@ -15,10 +15,6 @@ public sealed record UpdateCurrencyRequest
     public string? Name { get; set; }
 }
 
-public sealed record CurrencyAuditLogDto(
-    int Id, string CurrencyCode, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class CurrencyMappings
 {
     public static CurrencyDto ToDto(this Currency e) => new(e.CurrencyCode, e.Name, e.ModifiedDate);
@@ -36,7 +32,4 @@ public static class CurrencyMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CurrencyAuditLogDto ToDto(this CurrencyAuditLog a) => new(
-        a.Id, a.CurrencyCode, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

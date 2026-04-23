@@ -34,12 +34,6 @@ public sealed record UpdatePersonRequest
     public int? EmailPromotion { get; set; }
 }
 
-public sealed record PersonAuditLogDto(
-    int Id, int PersonId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? PersonType, bool NameStyle, string? Title,
-    string? FirstName, string? MiddleName, string? LastName, string? Suffix,
-    int EmailPromotion, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class PersonMappings
 {
     public static PersonDto ToDto(this PersonEntity e) => new(
@@ -75,8 +69,4 @@ public static class PersonMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PersonAuditLogDto ToDto(this PersonAuditLog a) => new(
-        a.Id, a.PersonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.PersonType, a.NameStyle, a.Title, a.FirstName, a.MiddleName, a.LastName, a.Suffix,
-        a.EmailPromotion, a.RowGuid, a.SourceModifiedDate);
-}
+    }

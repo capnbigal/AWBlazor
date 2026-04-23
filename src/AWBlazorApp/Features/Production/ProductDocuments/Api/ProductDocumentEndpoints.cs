@@ -116,20 +116,15 @@ public static class ProductDocumentEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductDocumentAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productId = null,
-        [FromQuery] string? documentNode = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductDocumentAuditLogs.AsNoTracking();
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-        if (!string.IsNullOrWhiteSpace(documentNode)) query = query.Where(a => a.DocumentNode == documentNode);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductDocument")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

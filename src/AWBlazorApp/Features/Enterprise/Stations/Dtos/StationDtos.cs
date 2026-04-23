@@ -31,12 +31,6 @@ public sealed record UpdateStationRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record StationAuditLogDto(
-    int Id, int StationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrgUnitId, string? Code, string? Name, StationKind StationKind,
-    int? OperatorBusinessEntityId, int? AssetId, decimal? IdealCycleSeconds,
-    bool IsActive, DateTime SourceModifiedDate);
-
 public static class StationMappings
 {
     public static StationDto ToDto(this Station e) => new(
@@ -70,9 +64,4 @@ public static class StationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static StationAuditLogDto ToDto(this StationAuditLog a) => new(
-        a.Id, a.StationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrgUnitId, a.Code, a.Name, a.StationKind,
-        a.OperatorBusinessEntityId, a.AssetId, a.IdealCycleSeconds,
-        a.IsActive, a.SourceModifiedDate);
-}
+    }

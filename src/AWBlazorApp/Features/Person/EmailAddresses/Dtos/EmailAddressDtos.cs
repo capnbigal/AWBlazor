@@ -17,11 +17,6 @@ public sealed record UpdateEmailAddressRequest
     public string? EmailAddressValue { get; set; }
 }
 
-public sealed record EmailAddressAuditLogDto(
-    int Id, int BusinessEntityId, int EmailAddressId, string Action,
-    string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? EmailAddressValue, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class EmailAddressMappings
 {
     public static EmailAddressDto ToDto(this EmailAddress e) => new(
@@ -43,7 +38,4 @@ public static class EmailAddressMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static EmailAddressAuditLogDto ToDto(this EmailAddressAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.EmailAddressId, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.EmailAddressValue, a.RowGuid, a.SourceModifiedDate);
-}
+    }

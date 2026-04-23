@@ -19,10 +19,6 @@ public sealed record UpdateProductListPriceHistoryRequest
     public decimal? ListPrice { get; set; }
 }
 
-public sealed record ProductListPriceHistoryAuditLogDto(
-    int Id, int ProductId, DateTime StartDate, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime? EndDate, decimal ListPrice, DateTime SourceModifiedDate);
-
 public static class ProductListPriceHistoryMappings
 {
     public static ProductListPriceHistoryDto ToDto(this ProductListPriceHistory e) => new(
@@ -44,7 +40,4 @@ public static class ProductListPriceHistoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductListPriceHistoryAuditLogDto ToDto(this ProductListPriceHistoryAuditLog a) => new(
-        a.Id, a.ProductId, a.StartDate, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.EndDate, a.ListPrice, a.SourceModifiedDate);
-}
+    }

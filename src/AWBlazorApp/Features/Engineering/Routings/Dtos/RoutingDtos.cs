@@ -24,11 +24,6 @@ public sealed record UpdateManufacturingRoutingRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record ManufacturingRoutingAuditLogDto(
-    int Id, int ManufacturingRoutingId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description,
-    int ProductId, int RevisionNumber, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record RoutingStepDto(
     int Id, int ManufacturingRoutingId, int SequenceNumber, string OperationName,
     int? StationId, decimal StandardMinutes, string? Instructions, DateTime ModifiedDate);
@@ -77,10 +72,6 @@ public static class RoutingMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static ManufacturingRoutingAuditLogDto ToDto(this ManufacturingRoutingAuditLog a) => new(
-        a.Id, a.ManufacturingRoutingId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.ProductId, a.RevisionNumber, a.IsActive, a.SourceModifiedDate);
 
     public static RoutingStepDto ToDto(this RoutingStep e) => new(
         e.Id, e.ManufacturingRoutingId, e.SequenceNumber, e.OperationName,

@@ -29,11 +29,6 @@ public sealed record UpdateEngineeringDocumentRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record EngineeringDocumentAuditLogDto(
-    int Id, int EngineeringDocumentId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Title, EngineeringDocumentKind Kind, int? ProductId, int RevisionNumber,
-    string? Url, string? Description, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record DeviationRequestDto(
     int Id, string Code, int ProductId, string Reason, string? ProposedDisposition,
     decimal? AuthorizedQuantity, string? UnitMeasureCode,
@@ -54,14 +49,6 @@ public sealed record CreateDeviationRequestRequest
 }
 
 public sealed record ReviewDeviationRequest { public string? Notes { get; set; } }
-
-public sealed record DeviationRequestAuditLogDto(
-    int Id, int DeviationRequestId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, int ProductId, string? Reason, string? ProposedDisposition,
-    decimal? AuthorizedQuantity, string? UnitMeasureCode,
-    DateOnly? ValidFrom, DateOnly? ValidTo, DeviationStatus Status,
-    string? RaisedByUserId, DateTime RaisedAt,
-    string? DecidedByUserId, DateTime? DecidedAt, string? DecisionNotes, DateTime SourceModifiedDate);
 
 public static class DocumentDeviationMappings
 {
@@ -93,11 +80,6 @@ public static class DocumentDeviationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static EngineeringDocumentAuditLogDto ToDto(this EngineeringDocumentAuditLog a) => new(
-        a.Id, a.EngineeringDocumentId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Title, a.Kind, a.ProductId, a.RevisionNumber,
-        a.Url, a.Description, a.IsActive, a.SourceModifiedDate);
-
     public static DeviationRequestDto ToDto(this DeviationRequest e) => new(
         e.Id, e.Code, e.ProductId, e.Reason, e.ProposedDisposition,
         e.AuthorizedQuantity, e.UnitMeasureCode,
@@ -125,11 +107,4 @@ public static class DocumentDeviationMappings
         };
     }
 
-    public static DeviationRequestAuditLogDto ToDto(this DeviationRequestAuditLog a) => new(
-        a.Id, a.DeviationRequestId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.ProductId, a.Reason, a.ProposedDisposition,
-        a.AuthorizedQuantity, a.UnitMeasureCode,
-        a.ValidFrom, a.ValidTo, a.Status,
-        a.RaisedByUserId, a.RaisedAt,
-        a.DecidedByUserId, a.DecidedAt, a.DecisionNotes, a.SourceModifiedDate);
-}
+    }

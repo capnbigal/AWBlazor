@@ -22,11 +22,6 @@ public sealed record UpdateProductInventoryRequest
     public short? Quantity { get; set; }
 }
 
-public sealed record ProductInventoryAuditLogDto(
-    int Id, int ProductId, short LocationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Shelf, byte Bin, short Quantity, Guid RowGuid,
-    DateTime SourceModifiedDate);
-
 public static class ProductInventoryMappings
 {
     public static ProductInventoryDto ToDto(this ProductInventory e) => new(
@@ -51,7 +46,4 @@ public static class ProductInventoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductInventoryAuditLogDto ToDto(this ProductInventoryAuditLog a) => new(
-        a.Id, a.ProductId, a.LocationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Shelf, a.Bin, a.Quantity, a.RowGuid, a.SourceModifiedDate);
-}
+    }

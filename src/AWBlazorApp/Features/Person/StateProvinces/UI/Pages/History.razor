@@ -1,143 +1,20 @@
 @page "/aw/state-provinces/history"
 @page "/aw/state-provinces/history/{SlotId:int}"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Person.Addresses.Domain
-@using AWBlazorApp.Features.Person.AddressTypes.Domain
-@using AWBlazorApp.Features.Person.BusinessEntities.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Domain
-@using AWBlazorApp.Features.Person.ContactTypes.Domain
-@using AWBlazorApp.Features.Person.CountryRegions.Domain
-@using AWBlazorApp.Features.Person.EmailAddresses.Domain
-@using AWBlazorApp.Features.Person.Persons.Domain
-@using AWBlazorApp.Features.Person.PersonPhones.Domain
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Domain
-@using AWBlazorApp.Features.Person.StateProvinces.Domain
-@using AWBlazorApp.Features.Person.Addresses.Dtos
-@using AWBlazorApp.Features.Person.AddressTypes.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntities.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos
-@using AWBlazorApp.Features.Person.ContactTypes.Dtos
-@using AWBlazorApp.Features.Person.CountryRegions.Dtos
-@using AWBlazorApp.Features.Person.EmailAddresses.Dtos
-@using AWBlazorApp.Features.Person.Persons.Dtos
-@using AWBlazorApp.Features.Person.PersonPhones.Dtos
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
-@using AWBlazorApp.Features.Person.StateProvinces.Dtos
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<PageTitle>State / province history@(SlotId is null ? "" : $" — #{SlotId}")</PageTitle>
+<PageTitle>State / province history</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/state-provinces"))" />
-        <MudText Typo="Typo.h4">@(SlotId is null ? "State / province history" : $"History for #{SlotId}")</MudText>
-        <MudSpacer />
-        @if (SlotId is not null)
-        {
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List" Href="aw/state-provinces/history">All history</MudButton>
-        }
+
+        <MudText Typo="Typo.h4">@(SlotId is null ? "State / province history" : $"History for StateProvince #{SlotId}")</MudText>
     </MudStack>
 
-    <MudText Typo="Typo.body2" Color="Color.Secondary">Every create, update, and delete of a <code>Person.StateProvince</code> row is recorded here.</MudText>
-
-    @if (SlotId is null)
-    {
-        <MudPaper Class="pa-3" Elevation="1">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="4"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                        <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="4"><MudNumericField T="int?" @bind-Value="filterRowId" Label="State/prov id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            </MudGrid>
-        </MudPaper>
-    }
-
-    <MudDataGrid T="StateProvinceAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.StateProvinceId" Title="Id">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.StateProvinceId)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Action" Sortable="false">
-                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.StateProvinceCode" Title="Code">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.StateProvinceCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Name" Title="Name">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.CountryRegionCode" Title="Country">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <HeaderTemplate><GridColumnHeader TEntity="StateProvinceAuditLog" PropertyName="@nameof(StateProvinceAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="StateProvinceAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="StateProvince" EntityId="@(SlotId?.ToString())" />
 </MudStack>
 
 @code {
     [Parameter] public int? SlotId { get; set; }
-
-    private MudDataGrid<StateProvinceAuditLogDto> grid = null!;
-    private string? filterChangedBy;
-    private string? filterAction;
-    private int? filterRowId;
-    private readonly ColumnFilterState columnFilters = new();
-
-    private async Task<GridData<StateProvinceAuditLogDto>> LoadServerDataAsync(GridState<StateProvinceAuditLogDto> state, CancellationToken ct)
-    {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.StateProvinceAuditLogs.AsNoTracking();
-
-        var scopedId = SlotId ?? filterRowId;
-        if (scopedId.HasValue) query = query.Where(a => a.StateProvinceId == scopedId.Value);
-        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
-        if (!string.IsNullOrWhiteSpace(filterChangedBy))
-        {
-            var needle = filterChangedBy.Trim();
-            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(StateProvinceAuditLogDto.ChangedDate)       => sort.Descending ? query.OrderByDescending(a => a.ChangedDate)       : query.OrderBy(a => a.ChangedDate),
-            nameof(StateProvinceAuditLogDto.StateProvinceId)   => sort.Descending ? query.OrderByDescending(a => a.StateProvinceId)   : query.OrderBy(a => a.StateProvinceId),
-            nameof(StateProvinceAuditLogDto.ChangedBy)         => sort.Descending ? query.OrderByDescending(a => a.ChangedBy)         : query.OrderBy(a => a.ChangedBy),
-            nameof(StateProvinceAuditLogDto.Name)              => sort.Descending ? query.OrderByDescending(a => a.Name)              : query.OrderBy(a => a.Name),
-            nameof(StateProvinceAuditLogDto.StateProvinceCode) => sort.Descending ? query.OrderByDescending(a => a.StateProvinceCode) : query.OrderBy(a => a.StateProvinceCode),
-            nameof(StateProvinceAuditLogDto.CountryRegionCode) => sort.Descending ? query.OrderByDescending(a => a.CountryRegionCode) : query.OrderBy(a => a.CountryRegionCode),
-            nameof(StateProvinceAuditLogDto.ChangeSummary)     => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary)     : query.OrderBy(a => a.ChangeSummary),
-            _                                                  => query.OrderByDescending(a => a.ChangedDate),
-        };
-
-        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
-        return new GridData<StateProvinceAuditLogDto> { Items = rows, TotalItems = total };
-    }
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-
-    private static Color ActionColor(string action) => action switch
-    {
-        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
-    };
 }

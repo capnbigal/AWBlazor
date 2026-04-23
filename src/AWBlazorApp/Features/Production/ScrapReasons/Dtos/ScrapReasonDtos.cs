@@ -14,10 +14,6 @@ public sealed record UpdateScrapReasonRequest
     public string? Name { get; set; }
 }
 
-public sealed record ScrapReasonAuditLogDto(
-    int Id, short ScrapReasonId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class ScrapReasonMappings
 {
     public static ScrapReasonDto ToDto(this ScrapReason e) => new(e.Id, e.Name, e.ModifiedDate);
@@ -34,7 +30,4 @@ public static class ScrapReasonMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ScrapReasonAuditLogDto ToDto(this ScrapReasonAuditLog a) => new(
-        a.Id, a.ScrapReasonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

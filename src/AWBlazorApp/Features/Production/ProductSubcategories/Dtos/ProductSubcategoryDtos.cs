@@ -16,10 +16,6 @@ public sealed record UpdateProductSubcategoryRequest
     public string? Name { get; set; }
 }
 
-public sealed record ProductSubcategoryAuditLogDto(
-    int Id, int ProductSubcategoryId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int ProductCategoryId, string? Name, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class ProductSubcategoryMappings
 {
     public static ProductSubcategoryDto ToDto(this ProductSubcategory e)
@@ -40,7 +36,4 @@ public static class ProductSubcategoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductSubcategoryAuditLogDto ToDto(this ProductSubcategoryAuditLog a) => new(
-        a.Id, a.ProductSubcategoryId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductCategoryId, a.Name, a.RowGuid, a.SourceModifiedDate);
-}
+    }

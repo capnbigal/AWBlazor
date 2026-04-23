@@ -153,12 +153,8 @@ public class EngineeringEndpointTests : IntegrationTestFixtureBase
             cleanup.EcoAffectedItems.RemoveRange(affectedRows);
             var approvals = cleanup.EcoApprovals.Where(a => a.EngineeringChangeOrderId == ecoId);
             cleanup.EcoApprovals.RemoveRange(approvals);
-            var ecoAudits = cleanup.EngineeringChangeOrderAuditLogs.Where(a => a.EngineeringChangeOrderId == ecoId);
-            cleanup.EngineeringChangeOrderAuditLogs.RemoveRange(ecoAudits);
             var eco = await cleanup.EngineeringChangeOrders.FirstOrDefaultAsync(e => e.Id == ecoId);
             if (eco is not null) cleanup.EngineeringChangeOrders.Remove(eco);
-            var bomAudits = cleanup.BomHeaderAuditLogs.Where(a => a.BomHeaderId == oldBomId || a.BomHeaderId == newBomId);
-            cleanup.BomHeaderAuditLogs.RemoveRange(bomAudits);
             var boms = cleanup.BomHeaders.Where(b => b.Id == oldBomId || b.Id == newBomId);
             cleanup.BomHeaders.RemoveRange(boms);
             await cleanup.SaveChangesAsync();
@@ -195,8 +191,6 @@ public class EngineeringEndpointTests : IntegrationTestFixtureBase
         finally
         {
             await using var cleanup = await GetDbContextAsync();
-            var audits = cleanup.EngineeringChangeOrderAuditLogs.Where(a => a.EngineeringChangeOrderId == ecoId);
-            cleanup.EngineeringChangeOrderAuditLogs.RemoveRange(audits);
             var eco = await cleanup.EngineeringChangeOrders.FirstOrDefaultAsync(e => e.Id == ecoId);
             if (eco is not null) cleanup.EngineeringChangeOrders.Remove(eco);
             await cleanup.SaveChangesAsync();
@@ -238,8 +232,6 @@ public class EngineeringEndpointTests : IntegrationTestFixtureBase
         finally
         {
             await using var cleanup = await GetDbContextAsync();
-            var audits = cleanup.DeviationRequestAuditLogs.Where(a => a.DeviationRequestId == deviationId);
-            cleanup.DeviationRequestAuditLogs.RemoveRange(audits);
             var dev = await cleanup.DeviationRequests.FirstOrDefaultAsync(x => x.Id == deviationId);
             if (dev is not null) cleanup.DeviationRequests.Remove(dev);
             await cleanup.SaveChangesAsync();

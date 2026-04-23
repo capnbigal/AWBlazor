@@ -84,13 +84,15 @@ public static class BusinessEntityEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<BusinessEntityAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.BusinessEntityAuditLogs.AsNoTracking()
-            .Where(a => a.BusinessEntityId == id)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "BusinessEntity")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

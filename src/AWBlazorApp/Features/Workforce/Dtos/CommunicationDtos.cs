@@ -42,11 +42,6 @@ public sealed record UpdateAnnouncementRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record AnnouncementAuditLogDto(
-    int Id, int AnnouncementId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Title, AnnouncementSeverity Severity, int? OrganizationId, int? OrgUnitId,
-    DateTime PublishedAt, DateTime? ExpiresAt, string? AuthoredByUserId, bool IsActive, DateTime SourceModifiedDate);
-
 public static class CommunicationMappings
 {
     public static ShiftHandoverNoteDto ToDto(this ShiftHandoverNote e) => new(
@@ -99,8 +94,4 @@ public static class CommunicationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static AnnouncementAuditLogDto ToDto(this AnnouncementAuditLog a) => new(
-        a.Id, a.AnnouncementId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Title, a.Severity, a.OrganizationId, a.OrgUnitId,
-        a.PublishedAt, a.ExpiresAt, a.AuthoredByUserId, a.IsActive, a.SourceModifiedDate);
-}
+    }

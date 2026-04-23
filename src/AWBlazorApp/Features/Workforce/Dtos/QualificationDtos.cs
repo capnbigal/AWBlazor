@@ -23,11 +23,6 @@ public sealed record UpdateQualificationRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record QualificationAuditLogDto(
-    int Id, int QualificationId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description, QualificationCategory Category,
-    bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record EmployeeQualificationDto(
     int Id, int BusinessEntityId, int QualificationId,
     DateTime EarnedDate, DateTime? ExpiresOn,
@@ -42,11 +37,6 @@ public sealed record GrantEmployeeQualificationRequest
     public string? EvidenceUrl { get; set; }
     public string? Notes { get; set; }
 }
-
-public sealed record EmployeeQualificationAuditLogDto(
-    int Id, int EmployeeQualificationId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int BusinessEntityId, int QualificationId, DateTime EarnedDate, DateTime? ExpiresOn,
-    string? EvidenceUrl, string? VerifiedByUserId, string? Notes, DateTime SourceModifiedDate);
 
 public sealed record StationQualificationDto(
     int Id, int StationId, int QualificationId, bool IsRequired, DateTime ModifiedDate);
@@ -94,18 +84,9 @@ public static class QualificationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static QualificationAuditLogDto ToDto(this QualificationAuditLog a) => new(
-        a.Id, a.QualificationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.Category, a.IsActive, a.SourceModifiedDate);
-
     public static EmployeeQualificationDto ToDto(this EmployeeQualification e) => new(
         e.Id, e.BusinessEntityId, e.QualificationId,
         e.EarnedDate, e.ExpiresOn, e.EvidenceUrl, e.VerifiedByUserId, e.Notes, e.ModifiedDate);
-
-    public static EmployeeQualificationAuditLogDto ToDto(this EmployeeQualificationAuditLog a) => new(
-        a.Id, a.EmployeeQualificationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.BusinessEntityId, a.QualificationId, a.EarnedDate, a.ExpiresOn,
-        a.EvidenceUrl, a.VerifiedByUserId, a.Notes, a.SourceModifiedDate);
 
     public static StationQualificationDto ToDto(this StationQualification e) => new(
         e.Id, e.StationId, e.QualificationId, e.IsRequired, e.ModifiedDate);

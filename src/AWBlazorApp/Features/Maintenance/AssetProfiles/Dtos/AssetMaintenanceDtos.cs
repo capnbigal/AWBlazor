@@ -23,11 +23,6 @@ public sealed record UpdateAssetMaintenanceProfileRequest
     public string? Notes { get; set; }
 }
 
-public sealed record AssetMaintenanceProfileAuditLogDto(
-    int Id, int AssetMaintenanceProfileId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int AssetId, AssetCriticality Criticality, int? OwnerBusinessEntityId,
-    int? TargetMtbfHours, DateTime? NextPmDueAt, string? Notes, DateTime SourceModifiedDate);
-
 public sealed record MeterReadingDto(
     long Id, int AssetId, MeterKind Kind, decimal Value,
     DateTime RecordedAt, string? RecordedByUserId, string? Notes, DateTime ModifiedDate);
@@ -77,11 +72,6 @@ public static class AssetMaintenanceMappings
         if (r.Notes is not null) e.Notes = r.Notes.Trim();
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static AssetMaintenanceProfileAuditLogDto ToDto(this AssetMaintenanceProfileAuditLog a) => new(
-        a.Id, a.AssetMaintenanceProfileId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.AssetId, a.Criticality, a.OwnerBusinessEntityId,
-        a.TargetMtbfHours, a.NextPmDueAt, a.Notes, a.SourceModifiedDate);
 
     public static MeterReadingDto ToDto(this MeterReading e) => new(
         e.Id, e.AssetId, e.Kind, e.Value,

@@ -111,20 +111,15 @@ public static class ProductVendorEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductVendorAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productId = null,
-        [FromQuery] int? businessEntityId = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductVendorAuditLogs.AsNoTracking();
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductVendor")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

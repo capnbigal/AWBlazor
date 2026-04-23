@@ -113,22 +113,15 @@ public static class CountryRegionCurrencyEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<CountryRegionCurrencyAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] string? countryRegionCode = null,
-        [FromQuery] string? currencyCode = null,
         CancellationToken ct = default)
     {
-        var query = db.CountryRegionCurrencyAuditLogs.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(countryRegionCode))
-            query = query.Where(a => a.CountryRegionCode == countryRegionCode);
-        if (!string.IsNullOrWhiteSpace(currencyCode))
-            query = query.Where(a => a.CurrencyCode == currencyCode);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "CountryRegionCurrency")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

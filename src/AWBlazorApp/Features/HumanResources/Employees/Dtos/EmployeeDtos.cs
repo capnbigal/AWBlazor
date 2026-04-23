@@ -40,13 +40,6 @@ public sealed record UpdateEmployeeRequest
     public short? SickLeaveHours { get; set; }
 }
 
-public sealed record EmployeeAuditLogDto(
-    int Id, int EmployeeId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? NationalIDNumber, string? LoginID, string? JobTitle,
-    DateTime BirthDate, string? MaritalStatus, string? Gender, DateTime HireDate,
-    bool SalariedFlag, bool CurrentFlag, short VacationHours, short SickLeaveHours,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class EmployeeMappings
 {
     public static EmployeeDto ToDto(this Employee e) => new(
@@ -89,10 +82,4 @@ public static class EmployeeMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static EmployeeAuditLogDto ToDto(this EmployeeAuditLog a) => new(
-        a.Id, a.EmployeeId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.NationalIDNumber, a.LoginID, a.JobTitle,
-        a.BirthDate, a.MaritalStatus, a.Gender, a.HireDate,
-        a.SalariedFlag, a.CurrentFlag, a.VacationHours, a.SickLeaveHours,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

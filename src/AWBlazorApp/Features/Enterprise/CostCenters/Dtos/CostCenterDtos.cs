@@ -23,11 +23,6 @@ public sealed record UpdateCostCenterRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record CostCenterAuditLogDto(
-    int Id, int CostCenterId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrganizationId, string? Code, string? Name,
-    int? OwnerBusinessEntityId, bool IsActive, DateTime SourceModifiedDate);
-
 public static class CostCenterMappings
 {
     public static CostCenterDto ToDto(this CostCenter e) => new(
@@ -52,7 +47,4 @@ public static class CostCenterMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CostCenterAuditLogDto ToDto(this CostCenterAuditLog a) => new(
-        a.Id, a.CostCenterId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrganizationId, a.Code, a.Name, a.OwnerBusinessEntityId, a.IsActive, a.SourceModifiedDate);
-}
+    }

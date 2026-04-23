@@ -32,12 +32,6 @@ public sealed record UpdateSparePartRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record SparePartAuditLogDto(
-    int Id, int SparePartId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? PartNumber, string? Name, string? Description,
-    int? ProductId, string? UnitMeasureCode, decimal? StandardCost,
-    int? ReorderPoint, int? ReorderQuantity, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record WorkOrderPartUsageDto(
     int Id, int MaintenanceWorkOrderId, int SparePartId, decimal Quantity,
     decimal? UnitCost, DateTime UsedAt, string? UsedByUserId, string? Notes, DateTime ModifiedDate);
@@ -84,12 +78,6 @@ public static class SparePartMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static SparePartAuditLogDto ToDto(this SparePartAuditLog a) => new(
-        a.Id, a.SparePartId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.PartNumber, a.Name, a.Description,
-        a.ProductId, a.UnitMeasureCode, a.StandardCost,
-        a.ReorderPoint, a.ReorderQuantity, a.IsActive, a.SourceModifiedDate);
 
     public static WorkOrderPartUsageDto ToDto(this WorkOrderPartUsage e) => new(
         e.Id, e.MaintenanceWorkOrderId, e.SparePartId, e.Quantity,

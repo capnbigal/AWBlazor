@@ -37,13 +37,6 @@ public sealed record UpdateKpiDefinitionRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record KpiDefinitionAuditLogDto(
-    int Id, int KpiDefinitionId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description, string? Unit,
-    KpiSource Source, KpiAggregation Aggregation,
-    decimal? TargetValue, decimal? WarningThreshold, decimal? CriticalThreshold,
-    KpiDirection Direction, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record KpiValueDto(
     long Id, int KpiDefinitionId, PerformancePeriodKind PeriodKind,
     DateTime PeriodStart, DateTime PeriodEnd,
@@ -93,13 +86,6 @@ public static class KpiMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static KpiDefinitionAuditLogDto ToDto(this KpiDefinitionAuditLog a) => new(
-        a.Id, a.KpiDefinitionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.Unit,
-        a.Source, a.Aggregation,
-        a.TargetValue, a.WarningThreshold, a.CriticalThreshold,
-        a.Direction, a.IsActive, a.SourceModifiedDate);
 
     public static KpiValueDto ToDto(this KpiValue e) => new(
         e.Id, e.KpiDefinitionId, e.PeriodKind,

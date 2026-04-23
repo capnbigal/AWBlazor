@@ -20,10 +20,6 @@ public sealed record UpdateSalesOrderHeaderSalesReasonRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record SalesOrderHeaderSalesReasonAuditLogDto(
-    int Id, int SalesOrderId, int SalesReasonId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class SalesOrderHeaderSalesReasonMappings
 {
     public static SalesOrderHeaderSalesReasonDto ToDto(this SalesOrderHeaderSalesReason e) => new(
@@ -41,6 +37,4 @@ public static class SalesOrderHeaderSalesReasonMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesOrderHeaderSalesReasonAuditLogDto ToDto(this SalesOrderHeaderSalesReasonAuditLog a) => new(
-        a.Id, a.SalesOrderId, a.SalesReasonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

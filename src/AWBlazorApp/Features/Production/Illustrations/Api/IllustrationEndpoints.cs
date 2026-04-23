@@ -84,13 +84,15 @@ public static class IllustrationEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<IllustrationAuditLogDto>>> HistoryAsync(int id, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.IllustrationAuditLogs.AsNoTracking()
-            .Where(a => a.IllustrationId == id)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "Illustration")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

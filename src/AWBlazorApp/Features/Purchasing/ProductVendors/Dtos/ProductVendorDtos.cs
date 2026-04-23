@@ -33,12 +33,6 @@ public sealed record UpdateProductVendorRequest
     public string? UnitMeasureCode { get; set; }
 }
 
-public sealed record ProductVendorAuditLogDto(
-    int Id, int ProductId, int BusinessEntityId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int AverageLeadTime, decimal StandardPrice,
-    decimal? LastReceiptCost, DateTime? LastReceiptDate, int MinOrderQty, int MaxOrderQty,
-    int? OnOrderQty, string? UnitMeasureCode, DateTime SourceModifiedDate);
-
 public static class ProductVendorMappings
 {
     public static ProductVendorDto ToDto(this ProductVendor e) => new(
@@ -74,9 +68,4 @@ public static class ProductVendorMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductVendorAuditLogDto ToDto(this ProductVendorAuditLog a) => new(
-        a.Id, a.ProductId, a.BusinessEntityId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.AverageLeadTime, a.StandardPrice,
-        a.LastReceiptCost, a.LastReceiptDate, a.MinOrderQty, a.MaxOrderQty,
-        a.OnOrderQty, a.UnitMeasureCode, a.SourceModifiedDate);
-}
+    }

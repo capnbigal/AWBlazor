@@ -13,10 +13,6 @@ public sealed record CreateIllustrationRequest;
 
 public sealed record UpdateIllustrationRequest;
 
-public sealed record IllustrationAuditLogDto(
-    int Id, int IllustrationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class IllustrationMappings
 {
     public static IllustrationDto ToDto(this Illustration e) => new(e.Id, e.ModifiedDate);
@@ -31,6 +27,4 @@ public static class IllustrationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static IllustrationAuditLogDto ToDto(this IllustrationAuditLog a) => new(
-        a.Id, a.IllustrationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

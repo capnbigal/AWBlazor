@@ -24,11 +24,6 @@ public sealed record UpdateCurrencyRateRequest
     public decimal? EndOfDayRate { get; set; }
 }
 
-public sealed record CurrencyRateAuditLogDto(
-    int Id, int CurrencyRateId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime CurrencyRateDate, string? FromCurrencyCode, string? ToCurrencyCode,
-    decimal AverageRate, decimal EndOfDayRate, DateTime SourceModifiedDate);
-
 public static class CurrencyRateMappings
 {
     public static CurrencyRateDto ToDto(this CurrencyRate e) => new(
@@ -55,8 +50,4 @@ public static class CurrencyRateMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CurrencyRateAuditLogDto ToDto(this CurrencyRateAuditLog a) => new(
-        a.Id, a.CurrencyRateId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.CurrencyRateDate, a.FromCurrencyCode, a.ToCurrencyCode,
-        a.AverageRate, a.EndOfDayRate, a.SourceModifiedDate);
-}
+    }

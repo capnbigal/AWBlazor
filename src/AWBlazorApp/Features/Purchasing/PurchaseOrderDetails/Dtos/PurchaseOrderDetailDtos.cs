@@ -28,12 +28,6 @@ public sealed record UpdatePurchaseOrderDetailRequest
     public decimal? RejectedQty { get; set; }
 }
 
-public sealed record PurchaseOrderDetailAuditLogDto(
-    int Id, int PurchaseOrderId, int PurchaseOrderDetailId, string Action, string? ChangedBy,
-    DateTime ChangedDate, string? ChangeSummary, DateTime DueDate, short OrderQty, int ProductId,
-    decimal UnitPrice, decimal LineTotal, decimal ReceivedQty, decimal RejectedQty,
-    decimal StockedQty, DateTime SourceModifiedDate);
-
 public static class PurchaseOrderDetailMappings
 {
     public static PurchaseOrderDetailDto ToDto(this PurchaseOrderDetail e) => new(
@@ -66,9 +60,4 @@ public static class PurchaseOrderDetailMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PurchaseOrderDetailAuditLogDto ToDto(this PurchaseOrderDetailAuditLog a) => new(
-        a.Id, a.PurchaseOrderId, a.PurchaseOrderDetailId, a.Action, a.ChangedBy,
-        a.ChangedDate, a.ChangeSummary, a.DueDate, a.OrderQty, a.ProductId,
-        a.UnitPrice, a.LineTotal, a.ReceivedQty, a.RejectedQty,
-        a.StockedQty, a.SourceModifiedDate);
-}
+    }

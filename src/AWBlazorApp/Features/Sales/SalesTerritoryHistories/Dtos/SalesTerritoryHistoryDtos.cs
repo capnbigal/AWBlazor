@@ -19,11 +19,6 @@ public sealed record UpdateSalesTerritoryHistoryRequest
     public DateTime? EndDate { get; set; }
 }
 
-public sealed record SalesTerritoryHistoryAuditLogDto(
-    int Id, int BusinessEntityId, int TerritoryId, DateTime StartDate,
-    string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    DateTime? EndDate, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesTerritoryHistoryMappings
 {
     public static SalesTerritoryHistoryDto ToDto(this SalesTerritoryHistory e) => new(
@@ -45,8 +40,4 @@ public static class SalesTerritoryHistoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesTerritoryHistoryAuditLogDto ToDto(this SalesTerritoryHistoryAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.TerritoryId, a.StartDate,
-        a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.EndDate, a.RowGuid, a.SourceModifiedDate);
-}
+    }

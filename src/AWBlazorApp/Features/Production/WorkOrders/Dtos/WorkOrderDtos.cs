@@ -29,12 +29,6 @@ public sealed record UpdateWorkOrderRequest
     public short? ScrapReasonId { get; set; }
 }
 
-public sealed record WorkOrderAuditLogDto(
-    int Id, int WorkOrderId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int ProductId, int OrderQty, int StockedQty, short ScrappedQty,
-    DateTime StartDate, DateTime? EndDate, DateTime DueDate, short? ScrapReasonId,
-    DateTime SourceModifiedDate);
-
 public static class WorkOrderMappings
 {
     public static WorkOrderDto ToDto(this WorkOrder e) => new(
@@ -66,8 +60,4 @@ public static class WorkOrderMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static WorkOrderAuditLogDto ToDto(this WorkOrderAuditLog a) => new(
-        a.Id, a.WorkOrderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductId, a.OrderQty, a.StockedQty, a.ScrappedQty,
-        a.StartDate, a.EndDate, a.DueDate, a.ScrapReasonId, a.SourceModifiedDate);
-}
+    }

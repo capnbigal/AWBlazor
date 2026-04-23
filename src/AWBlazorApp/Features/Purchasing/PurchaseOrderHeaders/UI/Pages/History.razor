@@ -1,116 +1,20 @@
 @page "/aw/purchase-order-headers/history"
 @page "/aw/purchase-order-headers/history/{SlotId:int}"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
-@using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
-@using AWBlazorApp.Features.Purchasing.Vendors.Dtos
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<PageTitle>PO header history@(SlotId is null ? "" : $" — #{SlotId}")</PageTitle>
+<PageTitle>PO header history</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/purchase-order-headers"))" />
-        <MudText Typo="Typo.h4">@(SlotId is null ? "PO header history" : $"History for PO #{SlotId}")</MudText>
-        <MudSpacer />
-        @if (SlotId is not null)
-        {
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List" Href="aw/purchase-order-headers/history">All history</MudButton>
-        }
+
+        <MudText Typo="Typo.h4">@(SlotId is null ? "PO header history" : $"History for PurchaseOrderHeader #{SlotId}")</MudText>
     </MudStack>
 
-    @if (SlotId is null)
-    {
-        <MudPaper Class="pa-3" Elevation="1">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="4"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                        <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
-                        <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="4"><MudNumericField T="int?" @bind-Value="filterRowId" Label="PO id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            </MudGrid>
-        </MudPaper>
-    }
-
-    <MudDataGrid T="PurchaseOrderHeaderAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.PurchaseOrderId" Title="PO #">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.PurchaseOrderId)" Title="PO #" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Action" Sortable="false">
-                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Status" Title="Status">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.Status)" Title="Status" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <HeaderTemplate><GridColumnHeader TEntity="PurchaseOrderHeaderAuditLog" PropertyName="@nameof(PurchaseOrderHeaderAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="PurchaseOrderHeaderAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="PurchaseOrderHeader" EntityId="@(SlotId?.ToString())" />
 </MudStack>
 
 @code {
     [Parameter] public int? SlotId { get; set; }
-
-    private MudDataGrid<PurchaseOrderHeaderAuditLogDto> grid = null!;
-    private string? filterChangedBy;
-    private string? filterAction;
-    private int? filterRowId;
-    private readonly ColumnFilterState columnFilters = new();
-
-    private async Task<GridData<PurchaseOrderHeaderAuditLogDto>> LoadServerDataAsync(GridState<PurchaseOrderHeaderAuditLogDto> state, CancellationToken ct)
-    {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.PurchaseOrderHeaderAuditLogs.AsNoTracking();
-
-        var scopedId = SlotId ?? filterRowId;
-        if (scopedId.HasValue) query = query.Where(a => a.PurchaseOrderId == scopedId.Value);
-        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
-        if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(PurchaseOrderHeaderAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(PurchaseOrderHeaderAuditLogDto.PurchaseOrderId) => sort.Descending ? query.OrderByDescending(a => a.PurchaseOrderId) : query.OrderBy(a => a.PurchaseOrderId),
-            nameof(PurchaseOrderHeaderAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
-            nameof(PurchaseOrderHeaderAuditLogDto.Status) => sort.Descending ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status),
-            nameof(PurchaseOrderHeaderAuditLogDto.TotalDue) => sort.Descending ? query.OrderByDescending(a => a.TotalDue) : query.OrderBy(a => a.TotalDue),
-            nameof(PurchaseOrderHeaderAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
-            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
-        return new GridData<PurchaseOrderHeaderAuditLogDto> { Items = rows, TotalItems = total };
-    }
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-
-    private static Color ActionColor(string action) => action switch
-    {
-        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
-    };
 }

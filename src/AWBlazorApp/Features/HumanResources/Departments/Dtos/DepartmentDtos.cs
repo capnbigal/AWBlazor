@@ -16,10 +16,6 @@ public sealed record UpdateDepartmentRequest
     public string? GroupName { get; set; }
 }
 
-public sealed record DepartmentAuditLogDto(
-    int Id, short DepartmentId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, string? GroupName, DateTime SourceModifiedDate);
-
 public static class DepartmentMappings
 {
     public static DepartmentDto ToDto(this Department e) => new(e.Id, e.Name, e.GroupName, e.ModifiedDate);
@@ -38,7 +34,4 @@ public static class DepartmentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static DepartmentAuditLogDto ToDto(this DepartmentAuditLog a) => new(
-        a.Id, a.DepartmentId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.GroupName, a.SourceModifiedDate);
-}
+    }

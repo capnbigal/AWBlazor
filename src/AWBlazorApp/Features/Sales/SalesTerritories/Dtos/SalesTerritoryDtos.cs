@@ -25,12 +25,6 @@ public sealed record UpdateSalesTerritoryRequest
     public decimal? CostLastYear { get; set; }
 }
 
-public sealed record SalesTerritoryAuditLogDto(
-    int Id, int SalesTerritoryId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, string? CountryRegionCode, string? GroupName,
-    decimal SalesYtd, decimal SalesLastYear, decimal CostYtd, decimal CostLastYear,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesTerritoryMappings
 {
     public static SalesTerritoryDto ToDto(this SalesTerritory e) => new(
@@ -64,9 +58,4 @@ public static class SalesTerritoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesTerritoryAuditLogDto ToDto(this SalesTerritoryAuditLog a) => new(
-        a.Id, a.SalesTerritoryId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.CountryRegionCode, a.GroupName,
-        a.SalesYtd, a.SalesLastYear, a.CostYtd, a.CostLastYear,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

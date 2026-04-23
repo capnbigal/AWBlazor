@@ -17,10 +17,6 @@ public sealed record UpdateProductProductPhotoRequest
     public bool? Primary { get; set; }
 }
 
-public sealed record ProductProductPhotoAuditLogDto(
-    int Id, int ProductId, int ProductPhotoId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, bool Primary, DateTime SourceModifiedDate);
-
 public static class ProductProductPhotoMappings
 {
     public static ProductProductPhotoDto ToDto(this ProductProductPhoto e) => new(
@@ -40,7 +36,4 @@ public static class ProductProductPhotoMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductProductPhotoAuditLogDto ToDto(this ProductProductPhotoAuditLog a) => new(
-        a.Id, a.ProductId, a.ProductPhotoId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Primary, a.SourceModifiedDate);
-}
+    }

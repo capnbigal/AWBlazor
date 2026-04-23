@@ -125,22 +125,15 @@ public static class BusinessEntityContactEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<BusinessEntityContactAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] int? personId = null,
-        [FromQuery] int? contactTypeId = null,
         CancellationToken ct = default)
     {
-        var query = db.BusinessEntityContactAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (personId.HasValue) query = query.Where(a => a.PersonId == personId.Value);
-        if (contactTypeId.HasValue) query = query.Where(a => a.ContactTypeId == contactTypeId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "BusinessEntityContact")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

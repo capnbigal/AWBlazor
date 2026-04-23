@@ -17,10 +17,6 @@ public sealed record UpdateSalesPersonQuotaHistoryRequest
     public decimal? SalesQuota { get; set; }
 }
 
-public sealed record SalesPersonQuotaHistoryAuditLogDto(
-    int Id, int BusinessEntityId, DateTime QuotaDate, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, decimal SalesQuota, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesPersonQuotaHistoryMappings
 {
     public static SalesPersonQuotaHistoryDto ToDto(this SalesPersonQuotaHistory e) => new(
@@ -41,7 +37,4 @@ public static class SalesPersonQuotaHistoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesPersonQuotaHistoryAuditLogDto ToDto(this SalesPersonQuotaHistoryAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.QuotaDate, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.SalesQuota, a.RowGuid, a.SourceModifiedDate);
-}
+    }

@@ -1,18 +1,5 @@
 @page "/aw/employee-pay-histories/history"
 @attribute [Authorize]
-@using AWBlazorApp.Features.HumanResources.Departments.Domain
-@using AWBlazorApp.Features.HumanResources.Employees.Domain
-@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain
-@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain
-@using AWBlazorApp.Features.HumanResources.JobCandidates.Domain
-@using AWBlazorApp.Features.HumanResources.Shifts.Domain
-@using AWBlazorApp.Features.HumanResources.Departments.Dtos
-@using AWBlazorApp.Features.HumanResources.Employees.Dtos
-@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Dtos
-@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos
-@using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos
-@using AWBlazorApp.Features.HumanResources.Shifts.Dtos
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Employee pay history audit</PageTitle>
@@ -20,100 +7,12 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/employee-pay-histories"))" />
-        <MudText Typo="Typo.h4">Employee pay history audit</MudText>
+
+        <MudText Typo="Typo.h4">"Employee pay history audit"</MudText>
     </MudStack>
 
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="BusinessEntityId" Label="Employee id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3"><MudDatePicker @bind-Date="RateChangeDate" Label="Rate change date" Variant="Variant.Outlined" Clearable="true" /></MudItem>
-            <MudItem xs="12" sm="3"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3">
-                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <MudDataGrid T="EmployeePayHistoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Employee">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.BusinessEntityId)" Title="Employee" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.RateChangeDate" Title="Rate date" Format="yyyy-MM-dd">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.RateChangeDate)" Title="Rate date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Action" Sortable="false">
-                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Rate" Title="Rate" Format="C2">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.Rate)" Title="Rate" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.PayFrequency" Title="Freq">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.PayFrequency)" Title="Freq" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <HeaderTemplate><GridColumnHeader TEntity="EmployeePayHistoryAuditLog" PropertyName="@nameof(EmployeePayHistoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="EmployeePayHistoryAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="EmployeePayHistory"  />
 </MudStack>
 
 @code {
-    [SupplyParameterFromQuery] public int? BusinessEntityId { get; set; }
-    [SupplyParameterFromQuery] public DateTime? RateChangeDate { get; set; }
-
-    private MudDataGrid<EmployeePayHistoryAuditLogDto> grid = null!;
-    private string? filterChangedBy;
-    private string? filterAction;
-    private readonly ColumnFilterState columnFilters = new();
-
-    private async Task<GridData<EmployeePayHistoryAuditLogDto>> LoadServerDataAsync(GridState<EmployeePayHistoryAuditLogDto> state, CancellationToken ct)
-    {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.EmployeePayHistoryAuditLogs.AsNoTracking();
-
-        if (BusinessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == BusinessEntityId.Value);
-        if (RateChangeDate.HasValue) query = query.Where(a => a.RateChangeDate == RateChangeDate.Value);
-        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
-        if (!string.IsNullOrWhiteSpace(filterChangedBy)) query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(filterChangedBy.Trim()));
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(EmployeePayHistoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(EmployeePayHistoryAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
-            nameof(EmployeePayHistoryAuditLogDto.RateChangeDate) => sort.Descending ? query.OrderByDescending(a => a.RateChangeDate) : query.OrderBy(a => a.RateChangeDate),
-            nameof(EmployeePayHistoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
-            nameof(EmployeePayHistoryAuditLogDto.Rate) => sort.Descending ? query.OrderByDescending(a => a.Rate) : query.OrderBy(a => a.Rate),
-            nameof(EmployeePayHistoryAuditLogDto.PayFrequency) => sort.Descending ? query.OrderByDescending(a => a.PayFrequency) : query.OrderBy(a => a.PayFrequency),
-            nameof(EmployeePayHistoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
-            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
-        return new GridData<EmployeePayHistoryAuditLogDto> { Items = rows, TotalItems = total };
-    }
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-
-    private static Color ActionColor(string action) => action switch
-    {
-        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
-    };
 }

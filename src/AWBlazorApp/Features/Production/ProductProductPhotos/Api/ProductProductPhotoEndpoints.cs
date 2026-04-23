@@ -110,20 +110,15 @@ public static class ProductProductPhotoEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductProductPhotoAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productId = null,
-        [FromQuery] int? productPhotoId = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductProductPhotoAuditLogs.AsNoTracking();
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-        if (productPhotoId.HasValue) query = query.Where(a => a.ProductPhotoId == productPhotoId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductProductPhoto")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

@@ -112,20 +112,15 @@ public static class SalesOrderHeaderSalesReasonEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<SalesOrderHeaderSalesReasonAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? salesOrderId = null,
-        [FromQuery] int? salesReasonId = null,
         CancellationToken ct = default)
     {
-        var query = db.SalesOrderHeaderSalesReasonAuditLogs.AsNoTracking();
-        if (salesOrderId.HasValue) query = query.Where(a => a.SalesOrderId == salesOrderId.Value);
-        if (salesReasonId.HasValue) query = query.Where(a => a.SalesReasonId == salesReasonId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "SalesOrderHeaderSalesReason")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

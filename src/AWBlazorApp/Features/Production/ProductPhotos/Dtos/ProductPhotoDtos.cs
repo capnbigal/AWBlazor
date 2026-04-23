@@ -18,11 +18,6 @@ public sealed record UpdateProductPhotoRequest
     public string? LargePhotoFileName { get; set; }
 }
 
-public sealed record ProductPhotoAuditLogDto(
-    int Id, int ProductPhotoId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? ThumbnailPhotoFileName, string? LargePhotoFileName,
-    DateTime SourceModifiedDate);
-
 public static class ProductPhotoMappings
 {
     public static ProductPhotoDto ToDto(this ProductPhoto e) => new(
@@ -43,10 +38,6 @@ public static class ProductPhotoMappings
         if (r.LargePhotoFileName is not null) e.LargePhotoFileName = TrimToNull(r.LargePhotoFileName);
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static ProductPhotoAuditLogDto ToDto(this ProductPhotoAuditLog a) => new(
-        a.Id, a.ProductPhotoId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ThumbnailPhotoFileName, a.LargePhotoFileName, a.SourceModifiedDate);
 
     private static string? TrimToNull(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

@@ -35,13 +35,6 @@ public sealed record UpdateWorkOrderRoutingRequest
     public decimal? ActualCost { get; set; }
 }
 
-public sealed record WorkOrderRoutingAuditLogDto(
-    int Id, int WorkOrderId, int ProductId, short OperationSequence,
-    string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    short LocationId, DateTime ScheduledStartDate, DateTime ScheduledEndDate,
-    DateTime? ActualStartDate, DateTime? ActualEndDate, decimal? ActualResourceHrs,
-    decimal PlannedCost, decimal? ActualCost, DateTime SourceModifiedDate);
-
 public static class WorkOrderRoutingMappings
 {
     public static WorkOrderRoutingDto ToDto(this WorkOrderRouting e) => new(
@@ -79,10 +72,4 @@ public static class WorkOrderRoutingMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static WorkOrderRoutingAuditLogDto ToDto(this WorkOrderRoutingAuditLog a) => new(
-        a.Id, a.WorkOrderId, a.ProductId, a.OperationSequence,
-        a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.LocationId, a.ScheduledStartDate, a.ScheduledEndDate,
-        a.ActualStartDate, a.ActualEndDate, a.ActualResourceHrs,
-        a.PlannedCost, a.ActualCost, a.SourceModifiedDate);
-}
+    }

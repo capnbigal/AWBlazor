@@ -31,12 +31,6 @@ public sealed record UpdateTransactionHistoryArchiveRequest
     public decimal? ActualCost { get; set; }
 }
 
-public sealed record TransactionHistoryArchiveAuditLogDto(
-    int Id, int TransactionId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int ProductId, int ReferenceOrderId, int ReferenceOrderLineId,
-    DateTime TransactionDate, string TransactionType, int Quantity,
-    decimal ActualCost, DateTime SourceModifiedDate);
-
 public static class TransactionHistoryArchiveMappings
 {
     public static TransactionHistoryArchiveDto ToDto(this TransactionHistoryArchive e) => new(
@@ -68,8 +62,4 @@ public static class TransactionHistoryArchiveMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static TransactionHistoryArchiveAuditLogDto ToDto(this TransactionHistoryArchiveAuditLog a) => new(
-        a.Id, a.TransactionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductId, a.ReferenceOrderId, a.ReferenceOrderLineId,
-        a.TransactionDate, a.TransactionType, a.Quantity, a.ActualCost, a.SourceModifiedDate);
-}
+    }

@@ -18,10 +18,6 @@ public sealed record UpdateLocationRequest
     public decimal? Availability { get; set; }
 }
 
-public sealed record LocationAuditLogDto(
-    int Id, short LocationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, decimal CostRate, decimal Availability, DateTime SourceModifiedDate);
-
 public static class LocationMappings
 {
     public static LocationDto ToDto(this Location e) => new(e.Id, e.Name, e.CostRate, e.Availability, e.ModifiedDate);
@@ -42,7 +38,4 @@ public static class LocationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static LocationAuditLogDto ToDto(this LocationAuditLog a) => new(
-        a.Id, a.LocationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.CostRate, a.Availability, a.SourceModifiedDate);
-}
+    }

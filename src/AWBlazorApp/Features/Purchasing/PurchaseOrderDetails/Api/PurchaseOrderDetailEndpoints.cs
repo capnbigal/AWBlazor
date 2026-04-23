@@ -104,20 +104,15 @@ public static class PurchaseOrderDetailEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<PurchaseOrderDetailAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? purchaseOrderId = null,
-        [FromQuery] int? purchaseOrderDetailId = null,
         CancellationToken ct = default)
     {
-        var query = db.PurchaseOrderDetailAuditLogs.AsNoTracking();
-        if (purchaseOrderId.HasValue) query = query.Where(a => a.PurchaseOrderId == purchaseOrderId.Value);
-        if (purchaseOrderDetailId.HasValue) query = query.Where(a => a.PurchaseOrderDetailId == purchaseOrderDetailId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "PurchaseOrderDetail")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

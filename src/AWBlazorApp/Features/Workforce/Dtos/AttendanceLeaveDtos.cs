@@ -41,12 +41,6 @@ public sealed record CreateLeaveRequestRequest
 
 public sealed record ReviewLeaveRequestRequest { public string? Notes { get; set; } }
 
-public sealed record LeaveRequestAuditLogDto(
-    int Id, int LeaveRequestId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int BusinessEntityId, LeaveType LeaveType, DateOnly StartDate, DateOnly EndDate, LeaveStatus Status,
-    string? Reason, string? RequestedByUserId, DateTime RequestedAt,
-    string? ReviewedByUserId, DateTime? ReviewedAt, string? ReviewNotes, DateTime SourceModifiedDate);
-
 public static class AttendanceLeaveMappings
 {
     public static AttendanceEventDto ToDto(this AttendanceEvent e) => new(
@@ -96,9 +90,4 @@ public static class AttendanceLeaveMappings
         };
     }
 
-    public static LeaveRequestAuditLogDto ToDto(this LeaveRequestAuditLog a) => new(
-        a.Id, a.LeaveRequestId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.BusinessEntityId, a.LeaveType, a.StartDate, a.EndDate, a.Status,
-        a.Reason, a.RequestedByUserId, a.RequestedAt,
-        a.ReviewedByUserId, a.ReviewedAt, a.ReviewNotes, a.SourceModifiedDate);
-}
+    }

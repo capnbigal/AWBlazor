@@ -19,11 +19,6 @@ public sealed record UpdateShoppingCartItemRequest
     public int? ProductId { get; set; }
 }
 
-public sealed record ShoppingCartItemAuditLogDto(
-    int Id, int ShoppingCartItemId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? ShoppingCartId, int Quantity, int ProductId,
-    DateTime DateCreated, DateTime SourceModifiedDate);
-
 public static class ShoppingCartItemMappings
 {
     public static ShoppingCartItemDto ToDto(this ShoppingCartItem e)
@@ -51,7 +46,4 @@ public static class ShoppingCartItemMappings
         // DateCreated is preserved — it's a create-time anchor, not a last-modified timestamp.
     }
 
-    public static ShoppingCartItemAuditLogDto ToDto(this ShoppingCartItemAuditLog a) => new(
-        a.Id, a.ShoppingCartItemId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ShoppingCartId, a.Quantity, a.ProductId, a.DateCreated, a.SourceModifiedDate);
-}
+    }

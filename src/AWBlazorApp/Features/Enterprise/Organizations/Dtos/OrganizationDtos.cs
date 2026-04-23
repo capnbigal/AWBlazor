@@ -26,11 +26,6 @@ public sealed record UpdateOrganizationRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record OrganizationAuditLogDto(
-    int Id, int OrganizationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Code, string? Name, bool IsPrimary,
-    int? ParentOrganizationId, string? ExternalRef, bool IsActive, DateTime SourceModifiedDate);
-
 public static class OrganizationMappings
 {
     public static OrganizationDto ToDto(this Organization e) => new(
@@ -58,7 +53,4 @@ public static class OrganizationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static OrganizationAuditLogDto ToDto(this OrganizationAuditLog a) => new(
-        a.Id, a.OrganizationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.IsPrimary, a.ParentOrganizationId, a.ExternalRef, a.IsActive, a.SourceModifiedDate);
-}
+    }

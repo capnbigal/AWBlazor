@@ -114,22 +114,15 @@ public static class SalesTerritoryHistoryEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<SalesTerritoryHistoryAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] DateTime? startDate = null,
-        [FromQuery] int? territoryId = null,
         CancellationToken ct = default)
     {
-        var query = db.SalesTerritoryHistoryAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (startDate.HasValue) query = query.Where(a => a.StartDate == startDate.Value);
-        if (territoryId.HasValue) query = query.Where(a => a.TerritoryId == territoryId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "SalesTerritoryHistory")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

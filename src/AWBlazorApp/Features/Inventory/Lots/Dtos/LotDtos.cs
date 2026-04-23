@@ -25,11 +25,6 @@ public sealed record UpdateLotRequest
     public LotStatus? Status { get; set; }
 }
 
-public sealed record LotAuditLogDto(
-    int Id, int LotId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int InventoryItemId, string? LotCode, DateTime? ManufacturedAt, DateTime? ReceivedAt,
-    int? VendorBusinessEntityId, LotStatus Status, DateTime SourceModifiedDate);
-
 public static class LotMappings
 {
     public static LotDto ToDto(this Lot e) => new(
@@ -57,8 +52,4 @@ public static class LotMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static LotAuditLogDto ToDto(this LotAuditLog a) => new(
-        a.Id, a.LotId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.InventoryItemId, a.LotCode, a.ManufacturedAt, a.ReceivedAt,
-        a.VendorBusinessEntityId, a.Status, a.SourceModifiedDate);
-}
+    }

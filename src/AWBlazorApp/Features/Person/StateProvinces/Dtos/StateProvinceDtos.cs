@@ -24,11 +24,6 @@ public sealed record UpdateStateProvinceRequest
     public int? TerritoryId { get; set; }
 }
 
-public sealed record StateProvinceAuditLogDto(
-    int Id, int StateProvinceId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? StateProvinceCode, string? CountryRegionCode, bool IsOnlyStateProvinceFlag,
-    string? Name, int TerritoryId, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class StateProvinceMappings
 {
     public static StateProvinceDto ToDto(this StateProvince e) => new(
@@ -56,8 +51,4 @@ public static class StateProvinceMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static StateProvinceAuditLogDto ToDto(this StateProvinceAuditLog a) => new(
-        a.Id, a.StateProvinceId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.StateProvinceCode, a.CountryRegionCode, a.IsOnlyStateProvinceFlag,
-        a.Name, a.TerritoryId, a.RowGuid, a.SourceModifiedDate);
-}
+    }

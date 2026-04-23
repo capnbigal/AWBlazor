@@ -23,11 +23,6 @@ public sealed record UpdateSerialUnitRequest
     public int? CurrentLocationId { get; set; }
 }
 
-public sealed record SerialUnitAuditLogDto(
-    int Id, int SerialUnitId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int InventoryItemId, int? LotId, string? SerialNumber, SerialUnitStatus Status,
-    int? CurrentLocationId, DateTime SourceModifiedDate);
-
 public static class SerialUnitMappings
 {
     public static SerialUnitDto ToDto(this SerialUnit e) => new(
@@ -52,7 +47,4 @@ public static class SerialUnitMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SerialUnitAuditLogDto ToDto(this SerialUnitAuditLog a) => new(
-        a.Id, a.SerialUnitId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.InventoryItemId, a.LotId, a.SerialNumber, a.Status, a.CurrentLocationId, a.SourceModifiedDate);
-}
+    }

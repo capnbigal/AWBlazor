@@ -107,20 +107,15 @@ public static class EmailAddressEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<EmailAddressAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] int? emailAddressId = null,
         CancellationToken ct = default)
     {
-        var query = db.EmailAddressAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (emailAddressId.HasValue) query = query.Where(a => a.EmailAddressId == emailAddressId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "EmailAddress")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

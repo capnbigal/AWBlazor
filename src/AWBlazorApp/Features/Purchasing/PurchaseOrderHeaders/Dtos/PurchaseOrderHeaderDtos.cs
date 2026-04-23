@@ -35,12 +35,6 @@ public sealed record UpdatePurchaseOrderHeaderRequest
     public decimal? Freight { get; set; }
 }
 
-public sealed record PurchaseOrderHeaderAuditLogDto(
-    int Id, int PurchaseOrderId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, byte RevisionNumber, byte Status, int EmployeeId, int VendorId,
-    int ShipMethodId, DateTime OrderDate, DateTime? ShipDate, decimal SubTotal, decimal TaxAmt,
-    decimal Freight, decimal TotalDue, DateTime SourceModifiedDate);
-
 public static class PurchaseOrderHeaderMappings
 {
     public static PurchaseOrderHeaderDto ToDto(this PurchaseOrderHeader e) => new(
@@ -78,8 +72,4 @@ public static class PurchaseOrderHeaderMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PurchaseOrderHeaderAuditLogDto ToDto(this PurchaseOrderHeaderAuditLog a) => new(
-        a.Id, a.PurchaseOrderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RevisionNumber, a.Status, a.EmployeeId, a.VendorId, a.ShipMethodId,
-        a.OrderDate, a.ShipDate, a.SubTotal, a.TaxAmt, a.Freight, a.TotalDue, a.SourceModifiedDate);
-}
+    }

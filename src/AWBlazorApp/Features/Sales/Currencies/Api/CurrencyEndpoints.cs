@@ -89,13 +89,15 @@ public static class CurrencyEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<CurrencyAuditLogDto>>> HistoryAsync(string code, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.CurrencyAuditLogs.AsNoTracking()
-            .Where(a => a.CurrencyCode == code)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "Currency")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

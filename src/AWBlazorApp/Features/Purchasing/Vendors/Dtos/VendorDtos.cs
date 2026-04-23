@@ -28,11 +28,6 @@ public sealed record UpdateVendorRequest
     public string? PurchasingWebServiceUrl { get; set; }
 }
 
-public sealed record VendorAuditLogDto(
-    int Id, int VendorId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? AccountNumber, string? Name, byte CreditRating,
-    bool PreferredVendorStatus, bool ActiveFlag, string? PurchasingWebServiceUrl, DateTime SourceModifiedDate);
-
 public static class VendorMappings
 {
     public static VendorDto ToDto(this Vendor e) => new(
@@ -62,8 +57,4 @@ public static class VendorMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static VendorAuditLogDto ToDto(this VendorAuditLog a) => new(
-        a.Id, a.VendorId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.AccountNumber, a.Name, a.CreditRating,
-        a.PreferredVendorStatus, a.ActiveFlag, a.PurchasingWebServiceUrl, a.SourceModifiedDate);
-}
+    }

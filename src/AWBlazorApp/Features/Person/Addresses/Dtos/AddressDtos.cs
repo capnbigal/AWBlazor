@@ -24,11 +24,6 @@ public sealed record UpdateAddressRequest
     public string? PostalCode { get; set; }
 }
 
-public sealed record AddressAuditLogDto(
-    int Id, int AddressId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? AddressLine1, string? AddressLine2, string? City,
-    int StateProvinceId, string? PostalCode, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class AddressMappings
 {
     public static AddressDto ToDto(this Address e) => new(
@@ -56,8 +51,4 @@ public static class AddressMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static AddressAuditLogDto ToDto(this AddressAuditLog a) => new(
-        a.Id, a.AddressId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.AddressLine1, a.AddressLine2, a.City, a.StateProvinceId, a.PostalCode,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

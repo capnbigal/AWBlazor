@@ -47,11 +47,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProcessStepExecution> ProcessStepExecutions => Set<ProcessStepExecution>();
 
     public DbSet<ToolSlotConfiguration> ToolSlotConfigurations => Set<ToolSlotConfiguration>();
-    public DbSet<ToolSlotAuditLog> ToolSlotAuditLogs => Set<ToolSlotAuditLog>();
 
     // Consolidated audit log — populated automatically by AuditLogInterceptor on every
-    // SaveChangesAsync. Replaces the 117 per-entity *AuditLog tables as the go-forward
-    // source of history. Legacy tables remain read-only tombstones during the transition.
+    // SaveChangesAsync. Replaces the 117 per-entity *AuditLog tables (all dropped in
+    // migration _DropLegacyAuditLogTables).
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
@@ -150,89 +149,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     // Audit logs for the AdventureWorks reference-data tables. Unlike the source tables,
     // these ARE EF-managed (they live in dbo with plain PK/FK-free shapes).
-    public DbSet<AddressTypeAuditLog> AddressTypeAuditLogs => Set<AddressTypeAuditLog>();
-    public DbSet<ContactTypeAuditLog> ContactTypeAuditLogs => Set<ContactTypeAuditLog>();
-    public DbSet<CountryRegionAuditLog> CountryRegionAuditLogs => Set<CountryRegionAuditLog>();
-    public DbSet<PhoneNumberTypeAuditLog> PhoneNumberTypeAuditLogs => Set<PhoneNumberTypeAuditLog>();
-    public DbSet<CultureAuditLog> CultureAuditLogs => Set<CultureAuditLog>();
-    public DbSet<ProductCategoryAuditLog> ProductCategoryAuditLogs => Set<ProductCategoryAuditLog>();
-    public DbSet<ScrapReasonAuditLog> ScrapReasonAuditLogs => Set<ScrapReasonAuditLog>();
-    public DbSet<UnitMeasureAuditLog> UnitMeasureAuditLogs => Set<UnitMeasureAuditLog>();
-    public DbSet<CurrencyAuditLog> CurrencyAuditLogs => Set<CurrencyAuditLog>();
-    public DbSet<SalesReasonAuditLog> SalesReasonAuditLogs => Set<SalesReasonAuditLog>();
-    public DbSet<DepartmentAuditLog> DepartmentAuditLogs => Set<DepartmentAuditLog>();
-    public DbSet<ShiftAuditLog> ShiftAuditLogs => Set<ShiftAuditLog>();
 
     // Batch 2 audit logs.
-    public DbSet<LocationAuditLog> LocationAuditLogs => Set<LocationAuditLog>();
-    public DbSet<ShipMethodAuditLog> ShipMethodAuditLogs => Set<ShipMethodAuditLog>();
-    public DbSet<ProductSubcategoryAuditLog> ProductSubcategoryAuditLogs => Set<ProductSubcategoryAuditLog>();
-    public DbSet<ProductDescriptionAuditLog> ProductDescriptionAuditLogs => Set<ProductDescriptionAuditLog>();
-    public DbSet<SpecialOfferAuditLog> SpecialOfferAuditLogs => Set<SpecialOfferAuditLog>();
-    public DbSet<StateProvinceAuditLog> StateProvinceAuditLogs => Set<StateProvinceAuditLog>();
-    public DbSet<SalesTerritoryAuditLog> SalesTerritoryAuditLogs => Set<SalesTerritoryAuditLog>();
-    public DbSet<SalesTaxRateAuditLog> SalesTaxRateAuditLogs => Set<SalesTaxRateAuditLog>();
-    public DbSet<ShoppingCartItemAuditLog> ShoppingCartItemAuditLogs => Set<ShoppingCartItemAuditLog>();
 
     // Batch 3 audit logs.
-    public DbSet<CustomerAuditLog> CustomerAuditLogs => Set<CustomerAuditLog>();
-    public DbSet<SalesPersonAuditLog> SalesPersonAuditLogs => Set<SalesPersonAuditLog>();
-    public DbSet<SalesPersonQuotaHistoryAuditLog> SalesPersonQuotaHistoryAuditLogs => Set<SalesPersonQuotaHistoryAuditLog>();
-    public DbSet<SalesOrderHeaderSalesReasonAuditLog> SalesOrderHeaderSalesReasonAuditLogs => Set<SalesOrderHeaderSalesReasonAuditLog>();
-    public DbSet<CountryRegionCurrencyAuditLog> CountryRegionCurrencyAuditLogs => Set<CountryRegionCurrencyAuditLog>();
-    public DbSet<CurrencyRateAuditLog> CurrencyRateAuditLogs => Set<CurrencyRateAuditLog>();
-    public DbSet<BillOfMaterialsAuditLog> BillOfMaterialsAuditLogs => Set<BillOfMaterialsAuditLog>();
-    public DbSet<WorkOrderAuditLog> WorkOrderAuditLogs => Set<WorkOrderAuditLog>();
-    public DbSet<EmployeeDepartmentHistoryAuditLog> EmployeeDepartmentHistoryAuditLogs => Set<EmployeeDepartmentHistoryAuditLog>();
-    public DbSet<ProductCostHistoryAuditLog> ProductCostHistoryAuditLogs => Set<ProductCostHistoryAuditLog>();
 
     // Batch 4 audit logs.
-    public DbSet<AddressAuditLog> AddressAuditLogs => Set<AddressAuditLog>();
-    public DbSet<BusinessEntityAuditLog> BusinessEntityAuditLogs => Set<BusinessEntityAuditLog>();
-    public DbSet<PersonAuditLog> PersonAuditLogs => Set<PersonAuditLog>();
-    public DbSet<EmailAddressAuditLog> EmailAddressAuditLogs => Set<EmailAddressAuditLog>();
-    public DbSet<PersonPhoneAuditLog> PersonPhoneAuditLogs => Set<PersonPhoneAuditLog>();
-    public DbSet<BusinessEntityAddressAuditLog> BusinessEntityAddressAuditLogs => Set<BusinessEntityAddressAuditLog>();
-    public DbSet<BusinessEntityContactAuditLog> BusinessEntityContactAuditLogs => Set<BusinessEntityContactAuditLog>();
 
     // Batch 5 audit logs.
-    public DbSet<ProductAuditLog> ProductAuditLogs => Set<ProductAuditLog>();
-    public DbSet<ProductModelAuditLog> ProductModelAuditLogs => Set<ProductModelAuditLog>();
-    public DbSet<IllustrationAuditLog> IllustrationAuditLogs => Set<IllustrationAuditLog>();
-    public DbSet<ProductPhotoAuditLog> ProductPhotoAuditLogs => Set<ProductPhotoAuditLog>();
-    public DbSet<ProductReviewAuditLog> ProductReviewAuditLogs => Set<ProductReviewAuditLog>();
-    public DbSet<ProductInventoryAuditLog> ProductInventoryAuditLogs => Set<ProductInventoryAuditLog>();
-    public DbSet<ProductListPriceHistoryAuditLog> ProductListPriceHistoryAuditLogs => Set<ProductListPriceHistoryAuditLog>();
-    public DbSet<ProductProductPhotoAuditLog> ProductProductPhotoAuditLogs => Set<ProductProductPhotoAuditLog>();
 
     // Batch 6 audit logs.
-    public DbSet<ProductModelIllustrationAuditLog> ProductModelIllustrationAuditLogs => Set<ProductModelIllustrationAuditLog>();
-    public DbSet<ProductModelProductDescriptionCultureAuditLog> ProductModelProductDescriptionCultureAuditLogs => Set<ProductModelProductDescriptionCultureAuditLog>();
-    public DbSet<WorkOrderRoutingAuditLog> WorkOrderRoutingAuditLogs => Set<WorkOrderRoutingAuditLog>();
-    public DbSet<TransactionHistoryAuditLog> TransactionHistoryAuditLogs => Set<TransactionHistoryAuditLog>();
-    public DbSet<TransactionHistoryArchiveAuditLog> TransactionHistoryArchiveAuditLogs => Set<TransactionHistoryArchiveAuditLog>();
 
     // Batch 7 audit logs.
-    public DbSet<CreditCardAuditLog> CreditCardAuditLogs => Set<CreditCardAuditLog>();
-    public DbSet<PersonCreditCardAuditLog> PersonCreditCardAuditLogs => Set<PersonCreditCardAuditLog>();
-    public DbSet<SalesOrderHeaderAuditLog> SalesOrderHeaderAuditLogs => Set<SalesOrderHeaderAuditLog>();
-    public DbSet<SalesOrderDetailAuditLog> SalesOrderDetailAuditLogs => Set<SalesOrderDetailAuditLog>();
-    public DbSet<SalesTerritoryHistoryAuditLog> SalesTerritoryHistoryAuditLogs => Set<SalesTerritoryHistoryAuditLog>();
-    public DbSet<SpecialOfferProductAuditLog> SpecialOfferProductAuditLogs => Set<SpecialOfferProductAuditLog>();
-    public DbSet<StoreAuditLog> StoreAuditLogs => Set<StoreAuditLog>();
 
     // Batch 8 audit logs.
-    public DbSet<VendorAuditLog> VendorAuditLogs => Set<VendorAuditLog>();
-    public DbSet<ProductVendorAuditLog> ProductVendorAuditLogs => Set<ProductVendorAuditLog>();
-    public DbSet<PurchaseOrderHeaderAuditLog> PurchaseOrderHeaderAuditLogs => Set<PurchaseOrderHeaderAuditLog>();
-    public DbSet<PurchaseOrderDetailAuditLog> PurchaseOrderDetailAuditLogs => Set<PurchaseOrderDetailAuditLog>();
-    public DbSet<EmployeeAuditLog> EmployeeAuditLogs => Set<EmployeeAuditLog>();
-    public DbSet<EmployeePayHistoryAuditLog> EmployeePayHistoryAuditLogs => Set<EmployeePayHistoryAuditLog>();
-    public DbSet<JobCandidateAuditLog> JobCandidateAuditLogs => Set<JobCandidateAuditLog>();
 
     // Batch 9 audit logs.
-    public DbSet<DocumentAuditLog> DocumentAuditLogs => Set<DocumentAuditLog>();
-    public DbSet<ProductDocumentAuditLog> ProductDocumentAuditLogs => Set<ProductDocumentAuditLog>();
 
     // Batch 10 — Enterprise master data (org.* schema, EF-managed). Entities and their audit logs.
     public DbSet<Organization> Organizations => Set<Organization>();
@@ -241,12 +173,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<CostCenter> CostCenters => Set<CostCenter>();
     public DbSet<ProductLine> ProductLines => Set<ProductLine>();
-    public DbSet<OrganizationAuditLog> OrganizationAuditLogs => Set<OrganizationAuditLog>();
-    public DbSet<OrgUnitAuditLog> OrgUnitAuditLogs => Set<OrgUnitAuditLog>();
-    public DbSet<StationAuditLog> StationAuditLogs => Set<StationAuditLog>();
-    public DbSet<AssetAuditLog> AssetAuditLogs => Set<AssetAuditLog>();
-    public DbSet<CostCenterAuditLog> CostCenterAuditLogs => Set<CostCenterAuditLog>();
-    public DbSet<ProductLineAuditLog> ProductLineAuditLogs => Set<ProductLineAuditLog>();
 
     // Batch 11 — Advanced inventory (inv.* schema). InventoryBalance is the derived on-hand
     // aggregate, InventoryTransaction is the append-only ledger, Outbox/Queue are operational
@@ -261,11 +187,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<InventoryAdjustment> InventoryAdjustments => Set<InventoryAdjustment>();
     public DbSet<InventoryTransactionOutbox> InventoryTransactionOutbox => Set<InventoryTransactionOutbox>();
     public DbSet<InventoryTransactionQueue> InventoryTransactionQueue => Set<InventoryTransactionQueue>();
-    public DbSet<InventoryLocationAuditLog> InventoryLocationAuditLogs => Set<InventoryLocationAuditLog>();
-    public DbSet<InventoryItemAuditLog> InventoryItemAuditLogs => Set<InventoryItemAuditLog>();
-    public DbSet<LotAuditLog> LotAuditLogs => Set<LotAuditLog>();
-    public DbSet<SerialUnitAuditLog> SerialUnitAuditLogs => Set<SerialUnitAuditLog>();
-    public DbSet<InventoryAdjustmentAuditLog> InventoryAdjustmentAuditLogs => Set<InventoryAdjustmentAuditLog>();
 
     // Batch 12 — Logistics (lgx.* schema). Inbound receipts, outbound shipments, and
     // inter-location/inter-org stock transfers. Posting each writes inv.InventoryTransaction
@@ -276,12 +197,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
     public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
     public DbSet<StockTransferLine> StockTransferLines => Set<StockTransferLine>();
-    public DbSet<GoodsReceiptAuditLog> GoodsReceiptAuditLogs => Set<GoodsReceiptAuditLog>();
-    public DbSet<GoodsReceiptLineAuditLog> GoodsReceiptLineAuditLogs => Set<GoodsReceiptLineAuditLog>();
-    public DbSet<ShipmentAuditLog> ShipmentAuditLogs => Set<ShipmentAuditLog>();
-    public DbSet<ShipmentLineAuditLog> ShipmentLineAuditLogs => Set<ShipmentLineAuditLog>();
-    public DbSet<StockTransferAuditLog> StockTransferAuditLogs => Set<StockTransferAuditLog>();
-    public DbSet<StockTransferLineAuditLog> StockTransferLineAuditLogs => Set<StockTransferLineAuditLog>();
 
     // Batch 13 — Production execution / MES (mes.* schema). Run completion writes WIP_ISSUE
     // and WIP_RECEIPT inventory transactions through IInventoryService; downtime + clock
@@ -294,12 +209,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<WorkInstruction> WorkInstructions => Set<WorkInstruction>();
     public DbSet<WorkInstructionRevision> WorkInstructionRevisions => Set<WorkInstructionRevision>();
     public DbSet<WorkInstructionStep> WorkInstructionSteps => Set<WorkInstructionStep>();
-    public DbSet<ProductionRunAuditLog> ProductionRunAuditLogs => Set<ProductionRunAuditLog>();
-    public DbSet<ProductionRunOperationAuditLog> ProductionRunOperationAuditLogs => Set<ProductionRunOperationAuditLog>();
-    public DbSet<DowntimeReasonAuditLog> DowntimeReasonAuditLogs => Set<DowntimeReasonAuditLog>();
-    public DbSet<WorkInstructionAuditLog> WorkInstructionAuditLogs => Set<WorkInstructionAuditLog>();
-    public DbSet<WorkInstructionRevisionAuditLog> WorkInstructionRevisionAuditLogs => Set<WorkInstructionRevisionAuditLog>();
-    public DbSet<WorkInstructionStepAuditLog> WorkInstructionStepAuditLogs => Set<WorkInstructionStepAuditLog>();
 
     // Batch 14 — Quality (qa.* schema). Inspections / NCRs / CAPA cases. NCR disposition writes
     // SCRAP or paired Available→Quarantine MOVE inventory transactions through IInventoryService.
@@ -311,12 +220,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<NonConformanceAction> NonConformanceActions => Set<NonConformanceAction>();
     public DbSet<CapaCase> CapaCases => Set<CapaCase>();
     public DbSet<CapaCaseNonConformance> CapaCaseNonConformances => Set<CapaCaseNonConformance>();
-    public DbSet<InspectionPlanAuditLog> InspectionPlanAuditLogs => Set<InspectionPlanAuditLog>();
-    public DbSet<InspectionPlanCharacteristicAuditLog> InspectionPlanCharacteristicAuditLogs => Set<InspectionPlanCharacteristicAuditLog>();
-    public DbSet<InspectionAuditLog> InspectionAuditLogs => Set<InspectionAuditLog>();
-    public DbSet<NonConformanceAuditLog> NonConformanceAuditLogs => Set<NonConformanceAuditLog>();
-    public DbSet<NonConformanceActionAuditLog> NonConformanceActionAuditLogs => Set<NonConformanceActionAuditLog>();
-    public DbSet<CapaCaseAuditLog> CapaCaseAuditLogs => Set<CapaCaseAuditLog>();
 
     // Batch 15 — Workforce (wf.* schema). Training, qualifications, attendance, leave,
     // shift handovers, announcements, and the qualification-alert inbox raised by the
@@ -331,13 +234,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<ShiftHandoverNote> ShiftHandoverNotes => Set<ShiftHandoverNote>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
-    public DbSet<TrainingCourseAuditLog> TrainingCourseAuditLogs => Set<TrainingCourseAuditLog>();
-    public DbSet<QualificationAuditLog> QualificationAuditLogs => Set<QualificationAuditLog>();
-    public DbSet<EmployeeQualificationAuditLog> EmployeeQualificationAuditLogs => Set<EmployeeQualificationAuditLog>();
-    public DbSet<StationQualificationAuditLog> StationQualificationAuditLogs => Set<StationQualificationAuditLog>();
-    public DbSet<QualificationAlertAuditLog> QualificationAlertAuditLogs => Set<QualificationAlertAuditLog>();
-    public DbSet<LeaveRequestAuditLog> LeaveRequestAuditLogs => Set<LeaveRequestAuditLog>();
-    public DbSet<AnnouncementAuditLog> AnnouncementAuditLogs => Set<AnnouncementAuditLog>();
 
     // Batch 16 — Engineering (eng.* schema). Routings, BOMs, ECOs, engineering documents,
     // and deviation requests. Feeds MES (which consumes the active routing/BOM revisions
@@ -351,11 +247,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EcoApproval> EcoApprovals => Set<EcoApproval>();
     public DbSet<EngineeringDocument> EngineeringDocuments => Set<EngineeringDocument>();
     public DbSet<DeviationRequest> DeviationRequests => Set<DeviationRequest>();
-    public DbSet<ManufacturingRoutingAuditLog> ManufacturingRoutingAuditLogs => Set<ManufacturingRoutingAuditLog>();
-    public DbSet<BomHeaderAuditLog> BomHeaderAuditLogs => Set<BomHeaderAuditLog>();
-    public DbSet<EngineeringChangeOrderAuditLog> EngineeringChangeOrderAuditLogs => Set<EngineeringChangeOrderAuditLog>();
-    public DbSet<EngineeringDocumentAuditLog> EngineeringDocumentAuditLogs => Set<EngineeringDocumentAuditLog>();
-    public DbSet<DeviationRequestAuditLog> DeviationRequestAuditLogs => Set<DeviationRequestAuditLog>();
 
     // Batch 17 — Maintenance (maint.* schema). PM schedules, work orders with tasks and spare
     // parts usage, meter readings driving usage-based PM, free-form maintenance logs.
@@ -368,10 +259,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<WorkOrderPartUsage> WorkOrderPartUsages => Set<WorkOrderPartUsage>();
     public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
     public DbSet<MaintenanceLog> MaintenanceLogs => Set<MaintenanceLog>();
-    public DbSet<AssetMaintenanceProfileAuditLog> AssetMaintenanceProfileAuditLogs => Set<AssetMaintenanceProfileAuditLog>();
-    public DbSet<PmScheduleAuditLog> PmScheduleAuditLogs => Set<PmScheduleAuditLog>();
-    public DbSet<MaintenanceWorkOrderAuditLog> MaintenanceWorkOrderAuditLogs => Set<MaintenanceWorkOrderAuditLog>();
-    public DbSet<SparePartAuditLog> SparePartAuditLogs => Set<SparePartAuditLog>();
 
     // Batch 18 — Performance (perf.* schema). OEE snapshots, daily/monthly metric rollups,
     // KPI definitions and their evaluated values, scorecards, saved reports.
@@ -384,9 +271,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ScorecardKpi> ScorecardKpis => Set<ScorecardKpi>();
     public DbSet<PerformanceReport> PerformanceReports => Set<PerformanceReport>();
     public DbSet<PerformanceReportRun> PerformanceReportRuns => Set<PerformanceReportRun>();
-    public DbSet<KpiDefinitionAuditLog> KpiDefinitionAuditLogs => Set<KpiDefinitionAuditLog>();
-    public DbSet<ScorecardDefinitionAuditLog> ScorecardDefinitionAuditLogs => Set<ScorecardDefinitionAuditLog>();
-    public DbSet<PerformanceReportAuditLog> PerformanceReportAuditLogs => Set<PerformanceReportAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -509,15 +393,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             b.ToTable("ToolSlotConfigurations", t => t.ExcludeFromMigrations());
             b.HasIndex(x => new { x.Family, x.MtCode, x.Destination });
-        });
-
-        // ToolSlotAuditLogs IS EF-managed (unlike the source table). No FK to
-        // ToolSlotConfigurations because that table is excluded from migrations and lives in
-        // a different-namespace PK ("CID"); we just store the integer id.
-        builder.Entity<ToolSlotAuditLog>(b =>
-        {
-            b.HasIndex(x => x.ToolSlotConfigurationId);
-            b.HasIndex(x => x.ChangedDate);
         });
 
         builder.Entity<ApiKey>(b =>
@@ -643,432 +518,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Audit tables for the AdventureWorks reference data. Each lives in dbo and is
         // indexed by (source PK, ChangedDate) so the history pages can quickly filter rows
         // for one source row in chronological order.
-        builder.Entity<AddressTypeAuditLog>(b =>
-        {
-            b.ToTable("AddressTypeAuditLogs");
-            b.HasIndex(x => x.AddressTypeId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ContactTypeAuditLog>(b =>
-        {
-            b.ToTable("ContactTypeAuditLogs");
-            b.HasIndex(x => x.ContactTypeId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CountryRegionAuditLog>(b =>
-        {
-            b.ToTable("CountryRegionAuditLogs");
-            b.HasIndex(x => x.CountryRegionCode);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PhoneNumberTypeAuditLog>(b =>
-        {
-            b.ToTable("PhoneNumberTypeAuditLogs");
-            b.HasIndex(x => x.PhoneNumberTypeId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CultureAuditLog>(b =>
-        {
-            b.ToTable("CultureAuditLogs");
-            b.HasIndex(x => x.CultureId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductCategoryAuditLog>(b =>
-        {
-            b.ToTable("ProductCategoryAuditLogs");
-            b.HasIndex(x => x.ProductCategoryId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ScrapReasonAuditLog>(b =>
-        {
-            b.ToTable("ScrapReasonAuditLogs");
-            b.HasIndex(x => x.ScrapReasonId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<UnitMeasureAuditLog>(b =>
-        {
-            b.ToTable("UnitMeasureAuditLogs");
-            b.HasIndex(x => x.UnitMeasureCode);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CurrencyAuditLog>(b =>
-        {
-            b.ToTable("CurrencyAuditLogs");
-            b.HasIndex(x => x.CurrencyCode);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesReasonAuditLog>(b =>
-        {
-            b.ToTable("SalesReasonAuditLogs");
-            b.HasIndex(x => x.SalesReasonId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<DepartmentAuditLog>(b =>
-        {
-            b.ToTable("DepartmentAuditLogs");
-            b.HasIndex(x => x.DepartmentId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ShiftAuditLog>(b =>
-        {
-            b.ToTable("ShiftAuditLogs");
-            b.HasIndex(x => x.ShiftId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 2 audit-log configuration.
-        builder.Entity<LocationAuditLog>(b =>
-        {
-            b.ToTable("LocationAuditLogs");
-            b.HasIndex(x => x.LocationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ShipMethodAuditLog>(b =>
-        {
-            b.ToTable("ShipMethodAuditLogs");
-            b.HasIndex(x => x.ShipMethodId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductSubcategoryAuditLog>(b =>
-        {
-            b.ToTable("ProductSubcategoryAuditLogs");
-            b.HasIndex(x => x.ProductSubcategoryId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductDescriptionAuditLog>(b =>
-        {
-            b.ToTable("ProductDescriptionAuditLogs");
-            b.HasIndex(x => x.ProductDescriptionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SpecialOfferAuditLog>(b =>
-        {
-            b.ToTable("SpecialOfferAuditLogs");
-            b.HasIndex(x => x.SpecialOfferId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<StateProvinceAuditLog>(b =>
-        {
-            b.ToTable("StateProvinceAuditLogs");
-            b.HasIndex(x => x.StateProvinceId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesTerritoryAuditLog>(b =>
-        {
-            b.ToTable("SalesTerritoryAuditLogs");
-            b.HasIndex(x => x.SalesTerritoryId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesTaxRateAuditLog>(b =>
-        {
-            b.ToTable("SalesTaxRateAuditLogs");
-            b.HasIndex(x => x.SalesTaxRateId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ShoppingCartItemAuditLog>(b =>
-        {
-            b.ToTable("ShoppingCartItemAuditLogs");
-            b.HasIndex(x => x.ShoppingCartItemId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 3 audit-log configuration.
-        builder.Entity<CustomerAuditLog>(b =>
-        {
-            b.ToTable("CustomerAuditLogs");
-            b.HasIndex(x => x.CustomerId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesPersonAuditLog>(b =>
-        {
-            b.ToTable("SalesPersonAuditLogs");
-            b.HasIndex(x => x.SalesPersonId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesPersonQuotaHistoryAuditLog>(b =>
-        {
-            b.ToTable("SalesPersonQuotaHistoryAuditLogs");
-            // Composite-key audit — index both key components for the history filter.
-            b.HasIndex(x => new { x.BusinessEntityId, x.QuotaDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesOrderHeaderSalesReasonAuditLog>(b =>
-        {
-            b.ToTable("SalesOrderHeaderSalesReasonAuditLogs");
-            b.HasIndex(x => new { x.SalesOrderId, x.SalesReasonId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CountryRegionCurrencyAuditLog>(b =>
-        {
-            b.ToTable("CountryRegionCurrencyAuditLogs");
-            b.HasIndex(x => new { x.CountryRegionCode, x.CurrencyCode });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CurrencyRateAuditLog>(b =>
-        {
-            b.ToTable("CurrencyRateAuditLogs");
-            b.HasIndex(x => x.CurrencyRateId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<BillOfMaterialsAuditLog>(b =>
-        {
-            b.ToTable("BillOfMaterialsAuditLogs");
-            b.HasIndex(x => x.BillOfMaterialsId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<WorkOrderAuditLog>(b =>
-        {
-            b.ToTable("WorkOrderAuditLogs");
-            b.HasIndex(x => x.WorkOrderId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<EmployeeDepartmentHistoryAuditLog>(b =>
-        {
-            b.ToTable("EmployeeDepartmentHistoryAuditLogs");
-            // 4-column composite key — index the (business entity, start date) prefix for
-            // history-page filters. Queries with more specific predicates still benefit.
-            b.HasIndex(x => new { x.BusinessEntityId, x.StartDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductCostHistoryAuditLog>(b =>
-        {
-            b.ToTable("ProductCostHistoryAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.StartDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 4 audit-log configuration.
-        builder.Entity<AddressAuditLog>(b =>
-        {
-            b.ToTable("AddressAuditLogs");
-            b.HasIndex(x => x.AddressId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<BusinessEntityAuditLog>(b =>
-        {
-            b.ToTable("BusinessEntityAuditLogs");
-            b.HasIndex(x => x.BusinessEntityId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PersonAuditLog>(b =>
-        {
-            b.ToTable("PersonAuditLogs");
-            b.HasIndex(x => x.PersonId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<EmailAddressAuditLog>(b =>
-        {
-            b.ToTable("EmailAddressAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.EmailAddressId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PersonPhoneAuditLog>(b =>
-        {
-            b.ToTable("PersonPhoneAuditLogs");
-            // 3-column composite — index the leading (BusinessEntityId, PhoneNumberTypeId)
-            // pair for the most common history-page filter; full-key lookups still work.
-            b.HasIndex(x => new { x.BusinessEntityId, x.PhoneNumberTypeId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<BusinessEntityAddressAuditLog>(b =>
-        {
-            b.ToTable("BusinessEntityAddressAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.AddressId, x.AddressTypeId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<BusinessEntityContactAuditLog>(b =>
-        {
-            b.ToTable("BusinessEntityContactAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.PersonId, x.ContactTypeId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 5 audit-log configuration.
-        builder.Entity<ProductAuditLog>(b =>
-        {
-            b.ToTable("ProductAuditLogs");
-            b.HasIndex(x => x.ProductId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductModelAuditLog>(b =>
-        {
-            b.ToTable("ProductModelAuditLogs");
-            b.HasIndex(x => x.ProductModelId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<IllustrationAuditLog>(b =>
-        {
-            b.ToTable("IllustrationAuditLogs");
-            b.HasIndex(x => x.IllustrationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductPhotoAuditLog>(b =>
-        {
-            b.ToTable("ProductPhotoAuditLogs");
-            b.HasIndex(x => x.ProductPhotoId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductReviewAuditLog>(b =>
-        {
-            b.ToTable("ProductReviewAuditLogs");
-            b.HasIndex(x => x.ProductReviewId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductInventoryAuditLog>(b =>
-        {
-            b.ToTable("ProductInventoryAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.LocationId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductListPriceHistoryAuditLog>(b =>
-        {
-            b.ToTable("ProductListPriceHistoryAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.StartDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductProductPhotoAuditLog>(b =>
-        {
-            b.ToTable("ProductProductPhotoAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.ProductPhotoId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 6 audit-log configuration.
-        builder.Entity<ProductModelIllustrationAuditLog>(b =>
-        {
-            b.ToTable("ProductModelIllustrationAuditLogs");
-            b.HasIndex(x => new { x.ProductModelId, x.IllustrationId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductModelProductDescriptionCultureAuditLog>(b =>
-        {
-            b.ToTable("ProductModelProductDescriptionCultureAuditLogs");
-            b.HasIndex(x => new { x.ProductModelId, x.ProductDescriptionId, x.CultureId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<WorkOrderRoutingAuditLog>(b =>
-        {
-            b.ToTable("WorkOrderRoutingAuditLogs");
-            b.HasIndex(x => new { x.WorkOrderId, x.ProductId, x.OperationSequence });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<TransactionHistoryAuditLog>(b =>
-        {
-            b.ToTable("TransactionHistoryAuditLogs");
-            b.HasIndex(x => x.TransactionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<TransactionHistoryArchiveAuditLog>(b =>
-        {
-            b.ToTable("TransactionHistoryArchiveAuditLogs");
-            b.HasIndex(x => x.TransactionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 7 audit-log configuration.
-        builder.Entity<CreditCardAuditLog>(b =>
-        {
-            b.ToTable("CreditCardAuditLogs");
-            b.HasIndex(x => x.CreditCardId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PersonCreditCardAuditLog>(b =>
-        {
-            b.ToTable("PersonCreditCardAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.CreditCardId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesOrderHeaderAuditLog>(b =>
-        {
-            b.ToTable("SalesOrderHeaderAuditLogs");
-            b.HasIndex(x => x.SalesOrderId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesOrderDetailAuditLog>(b =>
-        {
-            b.ToTable("SalesOrderDetailAuditLogs");
-            b.HasIndex(x => new { x.SalesOrderId, x.SalesOrderDetailId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SalesTerritoryHistoryAuditLog>(b =>
-        {
-            b.ToTable("SalesTerritoryHistoryAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.StartDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<SpecialOfferProductAuditLog>(b =>
-        {
-            b.ToTable("SpecialOfferProductAuditLogs");
-            b.HasIndex(x => new { x.SpecialOfferId, x.ProductId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<StoreAuditLog>(b =>
-        {
-            b.ToTable("StoreAuditLogs");
-            b.HasIndex(x => x.StoreId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 8 audit-log configuration.
-        builder.Entity<VendorAuditLog>(b =>
-        {
-            b.ToTable("VendorAuditLogs");
-            b.HasIndex(x => x.VendorId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductVendorAuditLog>(b =>
-        {
-            b.ToTable("ProductVendorAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.BusinessEntityId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PurchaseOrderHeaderAuditLog>(b =>
-        {
-            b.ToTable("PurchaseOrderHeaderAuditLogs");
-            b.HasIndex(x => x.PurchaseOrderId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PurchaseOrderDetailAuditLog>(b =>
-        {
-            b.ToTable("PurchaseOrderDetailAuditLogs");
-            b.HasIndex(x => new { x.PurchaseOrderId, x.PurchaseOrderDetailId });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<EmployeeAuditLog>(b =>
-        {
-            b.ToTable("EmployeeAuditLogs");
-            b.HasIndex(x => x.EmployeeId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<EmployeePayHistoryAuditLog>(b =>
-        {
-            b.ToTable("EmployeePayHistoryAuditLogs");
-            b.HasIndex(x => new { x.BusinessEntityId, x.RateChangeDate });
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<JobCandidateAuditLog>(b =>
-        {
-            b.ToTable("JobCandidateAuditLogs");
-            b.HasIndex(x => x.JobCandidateId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // Batch 9 audit-log configuration — Document + ProductDocument.
         // DocumentNode is stored as a string in the audit log (not HierarchyId) so it's
         // indexed as a regular nvarchar column.
-        builder.Entity<DocumentAuditLog>(b =>
-        {
-            b.ToTable("DocumentAuditLogs");
-            b.HasIndex(x => x.DocumentNode);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductDocumentAuditLog>(b =>
-        {
-            b.ToTable("ProductDocumentAuditLogs");
-            b.HasIndex(x => new { x.ProductId, x.DocumentNode });
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // --- Enterprise master data (org schema) ---
         builder.Entity<Organization>(b =>
         {
@@ -1136,47 +595,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Enterprise audit logs — all live in dbo with the standard (entity Id + ChangedDate) indexes.
-        builder.Entity<OrganizationAuditLog>(b =>
-        {
-            b.ToTable("OrganizationAuditLogs");
-            b.HasIndex(x => x.OrganizationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<OrgUnitAuditLog>(b =>
-        {
-            b.ToTable("OrgUnitAuditLogs");
-            b.HasIndex(x => x.OrgUnitId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-        });
-        builder.Entity<StationAuditLog>(b =>
-        {
-            b.ToTable("StationAuditLogs");
-            b.HasIndex(x => x.StationId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.StationKind).HasConversion<byte>();
-        });
-        builder.Entity<AssetAuditLog>(b =>
-        {
-            b.ToTable("AssetAuditLogs");
-            b.HasIndex(x => x.AssetId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.AssetType).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<CostCenterAuditLog>(b =>
-        {
-            b.ToTable("CostCenterAuditLogs");
-            b.HasIndex(x => x.CostCenterId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ProductLineAuditLog>(b =>
-        {
-            b.ToTable("ProductLineAuditLogs");
-            b.HasIndex(x => x.ProductLineId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // --- Advanced inventory (inv schema) ---
         builder.Entity<InventoryLocation>(b =>
         {
@@ -1314,42 +732,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Inventory audit logs — dbo, matching the enterprise convention.
-        builder.Entity<InventoryLocationAuditLog>(b =>
-        {
-            b.ToTable("InventoryLocationAuditLogs");
-            b.HasIndex(x => x.InventoryLocationId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-        });
-        builder.Entity<InventoryItemAuditLog>(b =>
-        {
-            b.ToTable("InventoryItemAuditLogs");
-            b.HasIndex(x => x.InventoryItemId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<LotAuditLog>(b =>
-        {
-            b.ToTable("LotAuditLogs");
-            b.HasIndex(x => x.LotId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<SerialUnitAuditLog>(b =>
-        {
-            b.ToTable("SerialUnitAuditLogs");
-            b.HasIndex(x => x.SerialUnitId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<InventoryAdjustmentAuditLog>(b =>
-        {
-            b.ToTable("InventoryAdjustmentAuditLogs");
-            b.HasIndex(x => x.InventoryAdjustmentId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.ReasonCode).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-
         // --- Logistics (lgx schema) ---
         builder.Entity<GoodsReceipt>(b =>
         {
@@ -1444,46 +826,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Audit logs — dbo.
-        builder.Entity<GoodsReceiptAuditLog>(b =>
-        {
-            b.ToTable("GoodsReceiptAuditLogs");
-            b.HasIndex(x => x.GoodsReceiptId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<GoodsReceiptLineAuditLog>(b =>
-        {
-            b.ToTable("GoodsReceiptLineAuditLogs");
-            b.HasIndex(x => x.GoodsReceiptLineId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<ShipmentAuditLog>(b =>
-        {
-            b.ToTable("ShipmentAuditLogs");
-            b.HasIndex(x => x.ShipmentId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<ShipmentLineAuditLog>(b =>
-        {
-            b.ToTable("ShipmentLineAuditLogs");
-            b.HasIndex(x => x.ShipmentLineId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<StockTransferAuditLog>(b =>
-        {
-            b.ToTable("StockTransferAuditLogs");
-            b.HasIndex(x => x.StockTransferId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<StockTransferLineAuditLog>(b =>
-        {
-            b.ToTable("StockTransferLineAuditLogs");
-            b.HasIndex(x => x.StockTransferLineId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // --- MES (mes schema) ---
         builder.Entity<ProductionRun>(b =>
         {
@@ -1563,46 +905,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // MES audit logs — dbo.
-        builder.Entity<ProductionRunAuditLog>(b =>
-        {
-            b.ToTable("ProductionRunAuditLogs");
-            b.HasIndex(x => x.ProductionRunId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<ProductionRunOperationAuditLog>(b =>
-        {
-            b.ToTable("ProductionRunOperationAuditLogs");
-            b.HasIndex(x => x.ProductionRunOperationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<DowntimeReasonAuditLog>(b =>
-        {
-            b.ToTable("DowntimeReasonAuditLogs");
-            b.HasIndex(x => x.DowntimeReasonId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<WorkInstructionAuditLog>(b =>
-        {
-            b.ToTable("WorkInstructionAuditLogs");
-            b.HasIndex(x => x.WorkInstructionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<WorkInstructionRevisionAuditLog>(b =>
-        {
-            b.ToTable("WorkInstructionRevisionAuditLogs");
-            b.HasIndex(x => x.WorkInstructionRevisionId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<WorkInstructionStepAuditLog>(b =>
-        {
-            b.ToTable("WorkInstructionStepAuditLogs");
-            b.HasIndex(x => x.WorkInstructionStepId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // --- Quality (qa schema) ---
         builder.Entity<InspectionPlan>(b =>
         {
@@ -1694,50 +996,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Quality audit logs — dbo.
-        builder.Entity<InspectionPlanAuditLog>(b =>
-        {
-            b.ToTable("InspectionPlanAuditLogs");
-            b.HasIndex(x => x.InspectionPlanId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Scope).HasConversion<byte>();
-        });
-        builder.Entity<InspectionPlanCharacteristicAuditLog>(b =>
-        {
-            b.ToTable("InspectionPlanCharacteristicAuditLogs");
-            b.HasIndex(x => x.InspectionPlanCharacteristicId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-        });
-        builder.Entity<InspectionAuditLog>(b =>
-        {
-            b.ToTable("InspectionAuditLogs");
-            b.HasIndex(x => x.InspectionId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-            b.Property(x => x.SourceKind).HasConversion<byte>();
-        });
-        builder.Entity<NonConformanceAuditLog>(b =>
-        {
-            b.ToTable("NonConformanceAuditLogs");
-            b.HasIndex(x => x.NonConformanceId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-            b.Property(x => x.Disposition).HasConversion<byte?>();
-        });
-        builder.Entity<NonConformanceActionAuditLog>(b =>
-        {
-            b.ToTable("NonConformanceActionAuditLogs");
-            b.HasIndex(x => x.NonConformanceActionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<CapaCaseAuditLog>(b =>
-        {
-            b.ToTable("CapaCaseAuditLogs");
-            b.HasIndex(x => x.CapaCaseId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-
         // --- Workforce (wf schema) ---
         builder.Entity<TrainingCourse>(b =>
         {
@@ -1828,55 +1086,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Workforce audit logs — dbo.
-        builder.Entity<TrainingCourseAuditLog>(b =>
-        {
-            b.ToTable("TrainingCourseAuditLogs");
-            b.HasIndex(x => x.TrainingCourseId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<QualificationAuditLog>(b =>
-        {
-            b.ToTable("QualificationAuditLogs");
-            b.HasIndex(x => x.QualificationId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Category).HasConversion<byte>();
-        });
-        builder.Entity<EmployeeQualificationAuditLog>(b =>
-        {
-            b.ToTable("EmployeeQualificationAuditLogs");
-            b.HasIndex(x => x.EmployeeQualificationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<StationQualificationAuditLog>(b =>
-        {
-            b.ToTable("StationQualificationAuditLogs");
-            b.HasIndex(x => x.StationQualificationId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<QualificationAlertAuditLog>(b =>
-        {
-            b.ToTable("QualificationAlertAuditLogs");
-            b.HasIndex(x => x.QualificationAlertId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Reason).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<LeaveRequestAuditLog>(b =>
-        {
-            b.ToTable("LeaveRequestAuditLogs");
-            b.HasIndex(x => x.LeaveRequestId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.LeaveType).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<AnnouncementAuditLog>(b =>
-        {
-            b.ToTable("AnnouncementAuditLogs");
-            b.HasIndex(x => x.AnnouncementId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Severity).HasConversion<byte>();
-        });
-
         // --- Engineering (eng schema) ---
         builder.Entity<ManufacturingRouting>(b =>
         {
@@ -1951,40 +1160,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Engineering audit logs — dbo.
-        builder.Entity<ManufacturingRoutingAuditLog>(b =>
-        {
-            b.ToTable("ManufacturingRoutingAuditLogs");
-            b.HasIndex(x => x.ManufacturingRoutingId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<BomHeaderAuditLog>(b =>
-        {
-            b.ToTable("BomHeaderAuditLogs");
-            b.HasIndex(x => x.BomHeaderId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<EngineeringChangeOrderAuditLog>(b =>
-        {
-            b.ToTable("EngineeringChangeOrderAuditLogs");
-            b.HasIndex(x => x.EngineeringChangeOrderId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-        builder.Entity<EngineeringDocumentAuditLog>(b =>
-        {
-            b.ToTable("EngineeringDocumentAuditLogs");
-            b.HasIndex(x => x.EngineeringDocumentId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-        });
-        builder.Entity<DeviationRequestAuditLog>(b =>
-        {
-            b.ToTable("DeviationRequestAuditLogs");
-            b.HasIndex(x => x.DeviationRequestId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Status).HasConversion<byte>();
-        });
-
         // --- Maintenance (maint schema) ---
         builder.Entity<AssetMaintenanceProfile>(b =>
         {
@@ -2072,37 +1247,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Maintenance audit logs — dbo.
-        builder.Entity<AssetMaintenanceProfileAuditLog>(b =>
-        {
-            b.ToTable("AssetMaintenanceProfileAuditLogs");
-            b.HasIndex(x => x.AssetMaintenanceProfileId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Criticality).HasConversion<byte>();
-        });
-        builder.Entity<PmScheduleAuditLog>(b =>
-        {
-            b.ToTable("PmScheduleAuditLogs");
-            b.HasIndex(x => x.PmScheduleId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.IntervalKind).HasConversion<byte>();
-            b.Property(x => x.DefaultPriority).HasConversion<byte>();
-        });
-        builder.Entity<MaintenanceWorkOrderAuditLog>(b =>
-        {
-            b.ToTable("MaintenanceWorkOrderAuditLogs");
-            b.HasIndex(x => x.MaintenanceWorkOrderId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Type).HasConversion<byte>();
-            b.Property(x => x.Status).HasConversion<byte>();
-            b.Property(x => x.Priority).HasConversion<byte>();
-        });
-        builder.Entity<SparePartAuditLog>(b =>
-        {
-            b.ToTable("SparePartAuditLogs");
-            b.HasIndex(x => x.SparePartId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-
         // --- Performance (perf schema) ---
         builder.Entity<OeeSnapshot>(b =>
         {
@@ -2180,27 +1324,5 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // Performance audit logs — dbo.
-        builder.Entity<KpiDefinitionAuditLog>(b =>
-        {
-            b.ToTable("KpiDefinitionAuditLogs");
-            b.HasIndex(x => x.KpiDefinitionId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Source).HasConversion<byte>();
-            b.Property(x => x.Aggregation).HasConversion<byte>();
-            b.Property(x => x.Direction).HasConversion<byte>();
-        });
-        builder.Entity<ScorecardDefinitionAuditLog>(b =>
-        {
-            b.ToTable("ScorecardDefinitionAuditLogs");
-            b.HasIndex(x => x.ScorecardDefinitionId);
-            b.HasIndex(x => x.ChangedDate);
-        });
-        builder.Entity<PerformanceReportAuditLog>(b =>
-        {
-            b.ToTable("PerformanceReportAuditLogs");
-            b.HasIndex(x => x.PerformanceReportId);
-            b.HasIndex(x => x.ChangedDate);
-            b.Property(x => x.Kind).HasConversion<byte>();
-        });
     }
 }

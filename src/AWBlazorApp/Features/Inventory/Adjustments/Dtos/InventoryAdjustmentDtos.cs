@@ -26,13 +26,6 @@ public sealed record UpdateInventoryAdjustmentRequest
     public AdjustmentStatus? Status { get; set; }
 }
 
-public sealed record InventoryAdjustmentAuditLogDto(
-    int Id, int InventoryAdjustmentId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? AdjustmentNumber, int InventoryItemId, int LocationId, int? LotId,
-    decimal QuantityDelta, AdjustmentReason ReasonCode, string? Reason, AdjustmentStatus Status,
-    string? RequestedByUserId, DateTime RequestedAt, string? ApprovedByUserId, DateTime? ApprovedAt,
-    long? PostedTransactionId, DateTime SourceModifiedDate);
-
 public static class InventoryAdjustmentMappings
 {
     public static InventoryAdjustmentDto ToDto(this InventoryAdjustment e) => new(
@@ -69,10 +62,4 @@ public static class InventoryAdjustmentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static InventoryAdjustmentAuditLogDto ToDto(this InventoryAdjustmentAuditLog a) => new(
-        a.Id, a.InventoryAdjustmentId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.AdjustmentNumber, a.InventoryItemId, a.LocationId, a.LotId,
-        a.QuantityDelta, a.ReasonCode, a.Reason, a.Status,
-        a.RequestedByUserId, a.RequestedAt, a.ApprovedByUserId, a.ApprovedAt,
-        a.PostedTransactionId, a.SourceModifiedDate);
-}
+    }

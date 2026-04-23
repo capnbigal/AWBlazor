@@ -20,10 +20,6 @@ public sealed record UpdateProductModelIllustrationRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record ProductModelIllustrationAuditLogDto(
-    int Id, int ProductModelId, int IllustrationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class ProductModelIllustrationMappings
 {
     public static ProductModelIllustrationDto ToDto(this ProductModelIllustration e) => new(
@@ -41,6 +37,4 @@ public static class ProductModelIllustrationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductModelIllustrationAuditLogDto ToDto(this ProductModelIllustrationAuditLog a) => new(
-        a.Id, a.ProductModelId, a.IllustrationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary, a.SourceModifiedDate);
-}
+    }
