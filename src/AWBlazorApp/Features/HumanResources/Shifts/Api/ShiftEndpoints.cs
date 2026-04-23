@@ -2,7 +2,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.HumanResources.Departments.Application.Services; using AWBlazorApp.Features.HumanResources.Employees.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services; using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services; using AWBlazorApp.Features.HumanResources.Shifts.Application.Services; 
 using AWBlazorApp.Features.HumanResources.Departments.Domain; using AWBlazorApp.Features.HumanResources.Employees.Domain; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain; using AWBlazorApp.Features.HumanResources.JobCandidates.Domain; using AWBlazorApp.Features.HumanResources.Shifts.Domain; 
 using AWBlazorApp.Features.HumanResources.Departments.Dtos; using AWBlazorApp.Features.HumanResources.Employees.Dtos; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Dtos; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos; using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos; using AWBlazorApp.Features.HumanResources.Shifts.Dtos; 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,24 +20,15 @@ public static class ShiftEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListShifts").WithSummary("List HumanResources.Shift rows.");
 
-        group.MapIntIdCrud<Shift, ShiftDto, CreateShiftRequest, UpdateShiftRequest, ShiftAuditLog, ShiftAuditLogDto, ShiftAuditService.Snapshot, byte>(
+        group.MapCrudWithInterceptor<Shift, ShiftDto, CreateShiftRequest, UpdateShiftRequest, byte>(
             entityName: "Shift",
             routePrefix: "/api/aw/shifts",
             entitySet: db => db.Shifts,
-            auditSet: db => db.ShiftAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.ShiftId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: ShiftAuditService.CaptureSnapshot,
-            recordCreate: ShiftAuditService.RecordCreate,
-            recordUpdate: ShiftAuditService.RecordUpdate,
-            recordDelete: ShiftAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

@@ -10,12 +10,6 @@
 @using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos
 @using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos
 @using AWBlazorApp.Features.HumanResources.Shifts.Dtos
-@using AWBlazorApp.Features.HumanResources.Departments.Application.Services
-@using AWBlazorApp.Features.HumanResources.Employees.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services
-@using AWBlazorApp.Features.HumanResources.Shifts.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateEmployeePayHistoryRequest> CreateValidator
@@ -109,7 +103,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.EmployeePayHistoryAuditLogs.Add(EmployeePayHistoryAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(true));
@@ -120,9 +113,7 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.EmployeePayHistories.FirstOrDefaultAsync(t => t.BusinessEntityId == Model!.BusinessEntityId && t.RateChangeDate == Model.RateChangeDate);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = EmployeePayHistoryAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.EmployeePayHistoryAuditLogs.Add(EmployeePayHistoryAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

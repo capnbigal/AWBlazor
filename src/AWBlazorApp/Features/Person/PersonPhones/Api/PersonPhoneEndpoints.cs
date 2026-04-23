@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.Person.Addresses.Dtos; using AWBlazorApp.Features.Person.AddressTypes.Dtos; using AWBlazorApp.Features.Person.BusinessEntities.Dtos; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos; using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos; using AWBlazorApp.Features.Person.ContactTypes.Dtos; using AWBlazorApp.Features.Person.CountryRegions.Dtos; using AWBlazorApp.Features.Person.EmailAddresses.Dtos; using AWBlazorApp.Features.Person.Persons.Dtos; using AWBlazorApp.Features.Person.PersonPhones.Dtos; using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos; using AWBlazorApp.Features.Person.StateProvinces.Dtos; 
-using AWBlazorApp.Features.Person.Addresses.Application.Services; using AWBlazorApp.Features.Person.AddressTypes.Application.Services; using AWBlazorApp.Features.Person.BusinessEntities.Application.Services; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Application.Services; using AWBlazorApp.Features.Person.BusinessEntityContacts.Application.Services; using AWBlazorApp.Features.Person.ContactTypes.Application.Services; using AWBlazorApp.Features.Person.CountryRegions.Application.Services; using AWBlazorApp.Features.Person.EmailAddresses.Application.Services; using AWBlazorApp.Features.Person.Persons.Application.Services; using AWBlazorApp.Features.Person.PersonPhones.Application.Services; using AWBlazorApp.Features.Person.PhoneNumberTypes.Application.Services; using AWBlazorApp.Features.Person.StateProvinces.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -78,7 +77,6 @@ public static class PersonPhoneEndpoints
         }
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => PersonPhoneAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/person-phones/by-key?businessEntityId={entity.BusinessEntityId}&phoneNumber={Uri.EscapeDataString(entity.PhoneNumber)}&phoneNumberTypeId={entity.PhoneNumberTypeId}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -105,7 +103,6 @@ public static class PersonPhoneEndpoints
         if (entity is null) return TypedResults.NotFound();
 
         request.ApplyTo(entity);
-        db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordUpdate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -126,7 +123,6 @@ public static class PersonPhoneEndpoints
                 && x.PhoneNumberTypeId == phoneNumberTypeId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordDelete(entity, user.Identity?.Name));
         db.PersonPhones.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();

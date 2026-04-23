@@ -10,12 +10,6 @@
 @using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos
 @using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos
 @using AWBlazorApp.Features.HumanResources.Shifts.Dtos
-@using AWBlazorApp.Features.HumanResources.Departments.Application.Services
-@using AWBlazorApp.Features.HumanResources.Employees.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services
-@using AWBlazorApp.Features.HumanResources.Shifts.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateShiftRequest> CreateValidator
@@ -142,7 +136,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.ShiftAuditLogs.Add(ShiftAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
@@ -153,9 +146,7 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.Shifts.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = ShiftAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.ShiftAuditLogs.Add(ShiftAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

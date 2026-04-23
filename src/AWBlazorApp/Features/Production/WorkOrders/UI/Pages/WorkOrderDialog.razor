@@ -47,30 +47,6 @@
 @using AWBlazorApp.Features.Production.UnitMeasures.Dtos
 @using AWBlazorApp.Features.Production.WorkOrders.Dtos
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
-@using AWBlazorApp.Features.Production.Cultures.Application.Services
-@using AWBlazorApp.Features.Production.Documents.Application.Services
-@using AWBlazorApp.Features.Production.Illustrations.Application.Services
-@using AWBlazorApp.Features.Production.Locations.Application.Services
-@using AWBlazorApp.Features.Production.ProductCategories.Application.Services
-@using AWBlazorApp.Features.Production.ProductCostHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductDescriptions.Application.Services
-@using AWBlazorApp.Features.Production.ProductDocuments.Application.Services
-@using AWBlazorApp.Features.Production.ProductInventories.Application.Services
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductModels.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Application.Services
-@using AWBlazorApp.Features.Production.ProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductReviews.Application.Services
-@using AWBlazorApp.Features.Production.Products.Application.Services
-@using AWBlazorApp.Features.Production.ProductSubcategories.Application.Services
-@using AWBlazorApp.Features.Production.ScrapReasons.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistories.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Application.Services
-@using AWBlazorApp.Features.Production.UnitMeasures.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrders.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateWorkOrderRequest> CreateValidator
@@ -212,7 +188,6 @@
                     return;
                 }
                 var reloaded = await db.WorkOrders.AsNoTracking().FirstAsync(x => x.Id == entity.Id);
-                db.WorkOrderAuditLogs.Add(WorkOrderAuditService.RecordCreate(reloaded, changedBy));
                 await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
@@ -222,14 +197,12 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.WorkOrders.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = WorkOrderAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
                 // Validate optional FKs on update
                 if (updateModel.ProductId.HasValue && !await db.Products.AnyAsync(x => x.Id == updateModel.ProductId.Value))
                 { Snackbar.Add($"Product #{updateModel.ProductId.Value} does not exist.", Severity.Error); return; }
                 if (updateModel.ScrapReasonId.HasValue && !await db.ScrapReasons.AnyAsync(x => x.Id == updateModel.ScrapReasonId.Value))
                 { Snackbar.Add($"Scrap reason #{updateModel.ScrapReasonId.Value} does not exist.", Severity.Error); return; }
-                db.WorkOrderAuditLogs.Add(WorkOrderAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

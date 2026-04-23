@@ -16,13 +16,13 @@ for my $file (@ARGV) {
         if ($line =~ /\busing\s+AWBlazorApp\.Features\./) {
             my $new = $line;
             $new =~ s{using\s+AWBlazorApp\.Features\.(Quality|Performance)\.Audit;\s*}{}g;
-            $new =~ s{using\s+AWBlazorApp\.Features\.(Purchasing|Sales)\.\w+\.Application\.Services;\s*}{}g;
+            $new =~ s{using\s+AWBlazorApp\.Features\.(Purchasing|Sales|HumanResources|Person|Production)\.\w+\.Application\.Services;\s*}{}g;
             if ($new =~ /^\s*$/) { $changed++; next; }
             if ($new ne $line) { $changed++; push @out, $new; next; }
         }
         # Razor \@using style.
         if ($line =~ /^\@using\s+AWBlazorApp\.Features\.(Quality|Performance)\.Audit\s*$/) { $changed++; next; }
-        if ($line =~ /^\@using\s+AWBlazorApp\.Features\.(Purchasing|Sales)\.\w+\.Application\.Services\s*$/) { $changed++; next; }
+        if ($line =~ /^\@using\s+AWBlazorApp\.Features\.(Purchasing|Sales|HumanResources|Person|Production)\.\w+\.Application\.Services\s*$/) { $changed++; next; }
         push @out, $line;
     }
     if ($changed) {

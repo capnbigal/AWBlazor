@@ -12,12 +12,6 @@
 @using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos
 @using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos
 @using AWBlazorApp.Features.HumanResources.Shifts.Dtos
-@using AWBlazorApp.Features.HumanResources.Departments.Application.Services
-@using AWBlazorApp.Features.HumanResources.Employees.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services
-@using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services
-@using AWBlazorApp.Features.HumanResources.Shifts.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -161,7 +155,6 @@
         if (entity is null) { Snackbar.Add("Assignment no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
 
         var changedBy = await GetCurrentUserNameAsync();
-        db.EmployeeDepartmentHistoryAuditLogs.Add(EmployeeDepartmentHistoryAuditService.RecordDelete(entity, changedBy));
         db.EmployeeDepartmentHistories.Remove(entity);
         try
         {
