@@ -128,7 +128,6 @@
             await using var tx = await db.Database.BeginTransactionAsync();
             db.InspectionPlans.Add(entity);
             await db.SaveChangesAsync();
-            db.InspectionPlanAuditLogs.Add(InspectionPlanAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.PlanCode}.", Severity.Success);

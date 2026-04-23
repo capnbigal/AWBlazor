@@ -2,7 +2,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services; using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services; using AWBlazorApp.Features.Purchasing.Vendors.Application.Services; 
 using AWBlazorApp.Features.Purchasing.ProductVendors.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain; using AWBlazorApp.Features.Purchasing.ShipMethods.Domain; using AWBlazorApp.Features.Purchasing.Vendors.Domain; 
 using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos; using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos; using AWBlazorApp.Features.Purchasing.Vendors.Dtos; 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,24 +20,15 @@ public static class ShipMethodEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListShipMethods").WithSummary("List Purchasing.ShipMethod rows.");
 
-        group.MapIntIdCrud<ShipMethod, ShipMethodDto, CreateShipMethodRequest, UpdateShipMethodRequest, ShipMethodAuditLog, ShipMethodAuditLogDto, ShipMethodAuditService.Snapshot, int>(
+        group.MapCrudWithInterceptor<ShipMethod, ShipMethodDto, CreateShipMethodRequest, UpdateShipMethodRequest, int>(
             entityName: "ShipMethod",
             routePrefix: "/api/aw/ship-methods",
             entitySet: db => db.ShipMethods,
-            auditSet: db => db.ShipMethodAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.ShipMethodId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: ShipMethodAuditService.CaptureSnapshot,
-            recordCreate: ShipMethodAuditService.RecordCreate,
-            recordUpdate: ShipMethodAuditService.RecordUpdate,
-            recordDelete: ShipMethodAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

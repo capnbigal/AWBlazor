@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Quality.Audit;
 using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
 using AWBlazorApp.Features.Quality.Capa.Dtos; using AWBlazorApp.Features.Quality.Inspections.Dtos; using AWBlazorApp.Features.Quality.Ncrs.Dtos; using AWBlazorApp.Features.Quality.Plans.Dtos; 
 using AWBlazorApp.Features.Quality.Capa.Application.Services; using AWBlazorApp.Features.Quality.Inspections.Application.Services; using AWBlazorApp.Features.Quality.Ncrs.Application.Services; 
@@ -71,7 +71,6 @@ public static class NonConformanceEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => NonConformanceAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/non-conformances/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -86,9 +85,7 @@ public static class NonConformanceEndpoints
         if (entity is null) return TypedResults.NotFound();
         if (entity.Status == NonConformanceStatus.Closed)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["NCR is closed; no further edits allowed."] });
-        var before = NonConformanceAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.NonConformanceAuditLogs.Add(NonConformanceAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -108,16 +105,17 @@ public static class NonConformanceEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<NonConformanceAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.NonConformanceAuditLogs.AsNoTracking().Where(a => a.NonConformanceId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "NonConformance" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<NonConformanceAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<NonConformanceActionDto>>> ListActionsAsync(
@@ -143,7 +141,6 @@ public static class NonConformanceEndpoints
         var entity = request.ToEntity(user.Identity?.Name);
         db.NonConformanceActions.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.NonConformanceActionAuditLogs.Add(NonConformanceActionAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/non-conformances/{id}/actions/{entity.Id}", new IdResponse(entity.Id));
     }

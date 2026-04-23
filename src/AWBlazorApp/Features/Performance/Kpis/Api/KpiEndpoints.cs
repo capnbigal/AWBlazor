@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Performance.Audit;
 using AWBlazorApp.Features.Performance.Kpis.Domain; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain; using AWBlazorApp.Features.Performance.Oee.Domain; using AWBlazorApp.Features.Performance.ProductionMetrics.Domain; using AWBlazorApp.Features.Performance.Reports.Domain; using AWBlazorApp.Features.Performance.Scorecards.Domain; 
 using AWBlazorApp.Features.Performance.Kpis.Dtos; using AWBlazorApp.Features.Performance.ProductionMetrics.Dtos; using AWBlazorApp.Features.Performance.Scorecards.Dtos; 
 using AWBlazorApp.Features.Performance.Kpis.Application.Services; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services; using AWBlazorApp.Features.Performance.Oee.Application.Services; using AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services; using AWBlazorApp.Features.Performance.Reports.Application.Services; 
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -72,7 +72,6 @@ public static class KpiEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => KpiDefinitionAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/kpi-definitions/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -85,9 +84,7 @@ public static class KpiEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.KpiDefinitions.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = KpiDefinitionAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.KpiDefinitionAuditLogs.Add(KpiDefinitionAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -97,20 +94,20 @@ public static class KpiEndpoints
     {
         var entity = await db.KpiDefinitions.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, KpiDefinitionAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<KpiDefinitionAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.KpiDefinitionAuditLogs.AsNoTracking().Where(a => a.KpiDefinitionId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "KpiDefinition" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<KpiDefinitionAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<KpiValueDto>>> ListValuesAsync(

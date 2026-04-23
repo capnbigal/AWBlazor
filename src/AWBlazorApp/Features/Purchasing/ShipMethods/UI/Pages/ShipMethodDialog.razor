@@ -8,11 +8,6 @@
 @using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
 @using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
 @using AWBlazorApp.Features.Purchasing.Vendors.Dtos
-@using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services
-@using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services
-@using AWBlazorApp.Features.Purchasing.Vendors.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateShipMethodRequest> CreateValidator
@@ -102,7 +97,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
@@ -113,9 +107,7 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.ShipMethods.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = ShipMethodAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.ShipMethodAuditLogs.Add(ShipMethodAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

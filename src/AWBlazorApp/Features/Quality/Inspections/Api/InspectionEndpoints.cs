@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Quality.Audit;
 using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
 using AWBlazorApp.Features.Quality.Capa.Dtos; using AWBlazorApp.Features.Quality.Inspections.Dtos; using AWBlazorApp.Features.Quality.Ncrs.Dtos; using AWBlazorApp.Features.Quality.Plans.Dtos; 
 using AWBlazorApp.Features.Quality.Capa.Application.Services; using AWBlazorApp.Features.Quality.Inspections.Application.Services; using AWBlazorApp.Features.Quality.Ncrs.Application.Services; 
@@ -126,15 +126,16 @@ public static class InspectionEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<InspectionAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.InspectionAuditLogs.AsNoTracking().Where(a => a.InspectionId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "Inspection" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<InspectionAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 }

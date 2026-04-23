@@ -2,7 +2,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services; using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services; using AWBlazorApp.Features.Purchasing.Vendors.Application.Services; 
 using AWBlazorApp.Features.Purchasing.ProductVendors.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain; using AWBlazorApp.Features.Purchasing.ShipMethods.Domain; using AWBlazorApp.Features.Purchasing.Vendors.Domain; 
 using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos; using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos; using AWBlazorApp.Features.Purchasing.Vendors.Dtos; 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,24 +20,15 @@ public static class VendorEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListVendors").WithSummary("List Purchasing.Vendor rows.");
 
-        group.MapIntIdCrud<Vendor, VendorDto, CreateVendorRequest, UpdateVendorRequest, VendorAuditLog, VendorAuditLogDto, VendorAuditService.Snapshot, int>(
+        group.MapCrudWithInterceptor<Vendor, VendorDto, CreateVendorRequest, UpdateVendorRequest, int>(
             entityName: "Vendor",
             routePrefix: "/api/aw/vendors",
             entitySet: db => db.Vendors,
-            auditSet: db => db.VendorAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.VendorId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: VendorAuditService.CaptureSnapshot,
-            recordCreate: VendorAuditService.RecordCreate,
-            recordUpdate: VendorAuditService.RecordUpdate,
-            recordDelete: VendorAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos; using AWBlazorApp.Features.Sales.CreditCards.Dtos; using AWBlazorApp.Features.Sales.Currencies.Dtos; using AWBlazorApp.Features.Sales.CurrencyRates.Dtos; using AWBlazorApp.Features.Sales.Customers.Dtos; using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos; using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos; using AWBlazorApp.Features.Sales.SalesPeople.Dtos; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos; using AWBlazorApp.Features.Sales.SalesReasons.Dtos; using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos; using AWBlazorApp.Features.Sales.SalesTerritories.Dtos; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos; using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos; using AWBlazorApp.Features.Sales.SpecialOffers.Dtos; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos; using AWBlazorApp.Features.Sales.Stores.Dtos; 
-using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services; using AWBlazorApp.Features.Sales.CreditCards.Application.Services; using AWBlazorApp.Features.Sales.Currencies.Application.Services; using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services; using AWBlazorApp.Features.Sales.Customers.Application.Services; using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services; using AWBlazorApp.Features.Sales.SalesPeople.Application.Services; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services; using AWBlazorApp.Features.Sales.SalesReasons.Application.Services; using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services; using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services; using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services; using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services; using AWBlazorApp.Features.Sales.Stores.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -71,7 +70,6 @@ public static class CountryRegionCurrencyEndpoints
         }
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => CountryRegionCurrencyAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/country-region-currencies/by-key?countryRegionCode={entity.CountryRegionCode}&currencyCode={entity.CurrencyCode}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -94,8 +92,6 @@ public static class CountryRegionCurrencyEndpoints
         if (entity is null) return TypedResults.NotFound();
 
         request.ApplyTo(entity);
-        db.CountryRegionCurrencyAuditLogs.Add(
-            CountryRegionCurrencyAuditService.RecordUpdate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -112,8 +108,6 @@ public static class CountryRegionCurrencyEndpoints
             .FirstOrDefaultAsync(x => x.CountryRegionCode == countryRegionCode && x.CurrencyCode == currencyCode, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.CountryRegionCurrencyAuditLogs.Add(
-            CountryRegionCurrencyAuditService.RecordDelete(entity, user.Identity?.Name));
         db.CountryRegionCurrencies.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
