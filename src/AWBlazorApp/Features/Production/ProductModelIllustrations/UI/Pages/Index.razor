@@ -1,147 +1,80 @@
 @page "/aw/product-model-illustrations"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Production.Domain
-@using AWBlazorApp.Features.Production.Cultures.Domain
-@using AWBlazorApp.Features.Production.Documents.Domain
-@using AWBlazorApp.Features.Production.Illustrations.Domain
-@using AWBlazorApp.Features.Production.Locations.Domain
-@using AWBlazorApp.Features.Production.ProductCategories.Domain
-@using AWBlazorApp.Features.Production.ProductCostHistories.Domain
-@using AWBlazorApp.Features.Production.ProductDescriptions.Domain
-@using AWBlazorApp.Features.Production.ProductDocuments.Domain
-@using AWBlazorApp.Features.Production.ProductInventories.Domain
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain
-@using AWBlazorApp.Features.Production.ProductModels.Domain
 @using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain
-@using AWBlazorApp.Features.Production.ProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductReviews.Domain
-@using AWBlazorApp.Features.Production.Products.Domain
-@using AWBlazorApp.Features.Production.ProductSubcategories.Domain
-@using AWBlazorApp.Features.Production.ScrapReasons.Domain
-@using AWBlazorApp.Features.Production.TransactionHistories.Domain
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain
-@using AWBlazorApp.Features.Production.UnitMeasures.Domain
-@using AWBlazorApp.Features.Production.WorkOrders.Domain
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
-@using AWBlazorApp.Features.Production.Cultures.Dtos
-@using AWBlazorApp.Features.Production.Documents.Dtos
-@using AWBlazorApp.Features.Production.Illustrations.Dtos
-@using AWBlazorApp.Features.Production.Locations.Dtos
-@using AWBlazorApp.Features.Production.ProductCategories.Dtos
-@using AWBlazorApp.Features.Production.ProductCostHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductDescriptions.Dtos
-@using AWBlazorApp.Features.Production.ProductDocuments.Dtos
-@using AWBlazorApp.Features.Production.ProductInventories.Dtos
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductModels.Dtos
 @using AWBlazorApp.Features.Production.ProductModelIllustrations.Dtos
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Dtos
-@using AWBlazorApp.Features.Production.ProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductReviews.Dtos
-@using AWBlazorApp.Features.Production.Products.Dtos
-@using AWBlazorApp.Features.Production.ProductSubcategories.Dtos
-@using AWBlazorApp.Features.Production.ScrapReasons.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistories.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Dtos
-@using AWBlazorApp.Features.Production.UnitMeasures.Dtos
-@using AWBlazorApp.Features.Production.WorkOrders.Dtos
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Model ↔ illustration</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Model ↔ illustration</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.ProductModelIllustration · composite PK (ProductModelID, IllustrationID)</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/product-model-illustrations/history">View audit history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New link</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="ProductModelIllustrationDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ProductModelId" Title="Product model id">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ProductModelId)" Title="Product model id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.IllustrationId" Title="Illustration id">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.IllustrationId)" Title="Illustration id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="ProductModelIllustrationDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="ProductModelIllustrationDto"
+          @ref="page"
+          Title="Model ↔ illustration"
+          Caption="Production.ProductModelIllustration · composite PK (ProductModelID, IllustrationID)"
+          NewButtonLabel="New link"
+          HistoryRoute="aw/product-model-illustrations/history"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          EntityNameSingular="link">
+    <Filters>
+        <MudItem xs="12"><MudNumericField T="int?" @bind-Value="filterProductModelId" Label="Product model id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="ProductModelIllustrationDto" TProperty="int" Property="x => x.ProductModelId" Title="Product model id">
+            <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ProductModelId)" Title="Product model id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="ProductModelIllustrationDto" TProperty="int" Property="x => x.IllustrationId" Title="Illustration id">
+            <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.IllustrationId)" Title="Illustration id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="ProductModelIllustrationDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+            <HeaderTemplate><GridColumnHeader TEntity="ProductModelIllustration" PropertyName="@nameof(ProductModelIllustrationDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+    <Actions Context="row">
+        <MudStack Row="true" Spacing="1">
+            <MudTooltip Text="History">
+                <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small"
+                               OnClick="@(() => Navigation.NavigateTo($"aw/product-model-illustrations/history?productModelId={row.ProductModelId}&illustrationId={row.IllustrationId}"))" />
+            </MudTooltip>
+            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(row))" />
+            </AuthorizeView>
+        </MudStack>
+    </Actions>
+</CrudPage>
 
 @code {
-    private MudDataGrid<ProductModelIllustrationDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<ProductModelIllustrationDto> page = null!;
     private int? filterProductModelId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<ProductModelIllustrationDto>> LoadServerDataAsync(GridState<ProductModelIllustrationDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.ProductModelIllustrations.AsNoTracking();
+        if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.ProductModelIllustrations.AsNoTracking();
-            if (filterProductModelId.HasValue) query = query.Where(x => x.ProductModelId == filterProductModelId.Value);
-            query = query.ApplyColumnFilters(columnFilters);
+            nameof(ProductModelIllustrationDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
+            nameof(ProductModelIllustrationDto.IllustrationId) => sort.Descending ? query.OrderByDescending(x => x.IllustrationId) : query.OrderBy(x => x.IllustrationId),
+            nameof(ProductModelIllustrationDto.ModifiedDate)   => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)   : query.OrderBy(x => x.ModifiedDate),
+            _                                                  => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.IllustrationId),
+        };
 
-            var total = await query.CountAsync(ct);
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<ProductModelIllustrationDto> { Items = rows, TotalItems = total };
+    }
 
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(ProductModelIllustrationDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
-                nameof(ProductModelIllustrationDto.IllustrationId) => sort.Descending ? query.OrderByDescending(x => x.IllustrationId) : query.OrderBy(x => x.IllustrationId),
-                nameof(ProductModelIllustrationDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-                _ => query.OrderBy(x => x.ProductModelId).ThenBy(x => x.IllustrationId),
-            };
-
-            var rows = await query
-                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<ProductModelIllustrationDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<ProductModelIllustrationDialog>("Link a model to an illustration", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Link created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Link created.", Severity.Success);
     }
 
     private async Task DeleteAsync(ProductModelIllustrationDto row)
@@ -150,30 +83,11 @@
         if (confirm != true) return;
 
         await using var db = await DbFactory.CreateDbContextAsync();
-        var entity = await db.ProductModelIllustrations
-            .FirstOrDefaultAsync(t => t.ProductModelId == row.ProductModelId && t.IllustrationId == row.IllustrationId);
-        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        var entity = await db.ProductModelIllustrations.FirstOrDefaultAsync(t => t.ProductModelId == row.ProductModelId && t.IllustrationId == row.IllustrationId);
+        if (entity is null) { Snackbar.Add("Link no longer exists.", Severity.Warning); await page.ReloadAsync(); return; }
         db.ProductModelIllustrations.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Link deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(ProductModelIllustrationDto row)
-        => Navigation.NavigateTo($"aw/product-model-illustrations/history?productModelId={row.ProductModelId}&illustrationId={row.IllustrationId}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Link deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+        await page.ReloadAsync();
     }
 }

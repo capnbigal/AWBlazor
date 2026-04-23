@@ -1,206 +1,109 @@
 @page "/aw/transaction-history-archives"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Production.Domain
-@using AWBlazorApp.Features.Production.Cultures.Domain
-@using AWBlazorApp.Features.Production.Documents.Domain
-@using AWBlazorApp.Features.Production.Illustrations.Domain
-@using AWBlazorApp.Features.Production.Locations.Domain
-@using AWBlazorApp.Features.Production.ProductCategories.Domain
-@using AWBlazorApp.Features.Production.ProductCostHistories.Domain
-@using AWBlazorApp.Features.Production.ProductDescriptions.Domain
-@using AWBlazorApp.Features.Production.ProductDocuments.Domain
-@using AWBlazorApp.Features.Production.ProductInventories.Domain
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain
-@using AWBlazorApp.Features.Production.ProductModels.Domain
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain
-@using AWBlazorApp.Features.Production.ProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductReviews.Domain
-@using AWBlazorApp.Features.Production.Products.Domain
-@using AWBlazorApp.Features.Production.ProductSubcategories.Domain
-@using AWBlazorApp.Features.Production.ScrapReasons.Domain
-@using AWBlazorApp.Features.Production.TransactionHistories.Domain
 @using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain
-@using AWBlazorApp.Features.Production.UnitMeasures.Domain
-@using AWBlazorApp.Features.Production.WorkOrders.Domain
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
-@using AWBlazorApp.Features.Production.Cultures.Dtos
-@using AWBlazorApp.Features.Production.Documents.Dtos
-@using AWBlazorApp.Features.Production.Illustrations.Dtos
-@using AWBlazorApp.Features.Production.Locations.Dtos
-@using AWBlazorApp.Features.Production.ProductCategories.Dtos
-@using AWBlazorApp.Features.Production.ProductCostHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductDescriptions.Dtos
-@using AWBlazorApp.Features.Production.ProductDocuments.Dtos
-@using AWBlazorApp.Features.Production.ProductInventories.Dtos
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductModels.Dtos
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Dtos
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Dtos
-@using AWBlazorApp.Features.Production.ProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductReviews.Dtos
-@using AWBlazorApp.Features.Production.Products.Dtos
-@using AWBlazorApp.Features.Production.ProductSubcategories.Dtos
-@using AWBlazorApp.Features.Production.ScrapReasons.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistories.Dtos
 @using AWBlazorApp.Features.Production.TransactionHistoryArchives.Dtos
-@using AWBlazorApp.Features.Production.UnitMeasures.Dtos
-@using AWBlazorApp.Features.Production.WorkOrders.Dtos
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 @inject LookupService Lookup
 
-<PageTitle>Transaction history archive</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Transaction history archive</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.TransactionHistoryArchive</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/transaction-history-archives/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New archive entry</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => { filterProductId = v == 0 ? null : v; })" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="TransactionHistoryArchiveDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ReferenceOrderId" Title="Ref order">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ReferenceOrderId)" Title="Ref order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ReferenceOrderLineId" Title="Ref line">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ReferenceOrderLineId)" Title="Ref line" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.TransactionDate" Title="Date" Format="yyyy-MM-dd">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.TransactionDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.TransactionType" Title="Type">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.TransactionType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Quantity" Title="Qty">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ActualCost" Title="Cost" Format="C2">
-                <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ActualCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="TransactionHistoryArchiveDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="TransactionHistoryArchiveDto"
+          @ref="page"
+          Title="Transaction history archive"
+          Caption="Production.TransactionHistoryArchive"
+          NewButtonLabel="New archive entry"
+          HistoryRoute="aw/transaction-history-archives/history"
+          IdOf="row => row.Id"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="archive entry"
+          DeleteConfirmMessage="@(row => $"Permanently delete archive entry #{row.Id}?")">
+    <Filters>
+        <MudItem xs="12"><FkAutocomplete TValue="int" Value="@(filterProductId ?? 0)" ValueChanged="@(v => filterProductId = v == 0 ? null : v)" Label="Product" SearchFunc="@(q => Lookup.SearchProductsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="int" Property="x => x.Id" Title="Id">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="int" Property="x => x.ProductId" Title="Product">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="int" Property="x => x.ReferenceOrderId" Title="Ref order">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ReferenceOrderId)" Title="Ref order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="int" Property="x => x.ReferenceOrderLineId" Title="Ref line">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ReferenceOrderLineId)" Title="Ref line" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="DateTime" Property="x => x.TransactionDate" Title="Date" Format="yyyy-MM-dd">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.TransactionDate)" Title="Date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="string" Property="x => x.TransactionType" Title="Type">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.TransactionType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="int" Property="x => x.Quantity" Title="Qty">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="TransactionHistoryArchiveDto" TProperty="decimal" Property="x => x.ActualCost" Title="Cost" Format="C2">
+            <HeaderTemplate><GridColumnHeader TEntity="TransactionHistoryArchive" PropertyName="@nameof(TransactionHistoryArchiveDto.ActualCost)" Title="Cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+</CrudPage>
 
 @code {
-    private MudDataGrid<TransactionHistoryArchiveDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<TransactionHistoryArchiveDto> page = null!;
     private int? filterProductId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<TransactionHistoryArchiveDto>> LoadServerDataAsync(GridState<TransactionHistoryArchiveDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.TransactionHistoryArchives.AsNoTracking();
+        if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.TransactionHistoryArchives.AsNoTracking();
-            if (filterProductId.HasValue) query = query.Where(x => x.ProductId == filterProductId.Value);
-            query = query.ApplyColumnFilters(columnFilters);
+            nameof(TransactionHistoryArchiveDto.Id)                   => sort.Descending ? query.OrderByDescending(x => x.Id)                   : query.OrderBy(x => x.Id),
+            nameof(TransactionHistoryArchiveDto.ProductId)            => sort.Descending ? query.OrderByDescending(x => x.ProductId)            : query.OrderBy(x => x.ProductId),
+            nameof(TransactionHistoryArchiveDto.ReferenceOrderId)     => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderId)     : query.OrderBy(x => x.ReferenceOrderId),
+            nameof(TransactionHistoryArchiveDto.ReferenceOrderLineId) => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderLineId) : query.OrderBy(x => x.ReferenceOrderLineId),
+            nameof(TransactionHistoryArchiveDto.TransactionDate)      => sort.Descending ? query.OrderByDescending(x => x.TransactionDate)      : query.OrderBy(x => x.TransactionDate),
+            nameof(TransactionHistoryArchiveDto.TransactionType)      => sort.Descending ? query.OrderByDescending(x => x.TransactionType)      : query.OrderBy(x => x.TransactionType),
+            nameof(TransactionHistoryArchiveDto.Quantity)             => sort.Descending ? query.OrderByDescending(x => x.Quantity)             : query.OrderBy(x => x.Quantity),
+            nameof(TransactionHistoryArchiveDto.ActualCost)           => sort.Descending ? query.OrderByDescending(x => x.ActualCost)           : query.OrderBy(x => x.ActualCost),
+            _                                                         => query.OrderByDescending(x => x.Id),
+        };
 
-            var total = await query.CountAsync(ct);
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(TransactionHistoryArchiveDto.Id) => sort.Descending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
-                nameof(TransactionHistoryArchiveDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-                nameof(TransactionHistoryArchiveDto.ReferenceOrderId) => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderId) : query.OrderBy(x => x.ReferenceOrderId),
-                nameof(TransactionHistoryArchiveDto.ReferenceOrderLineId) => sort.Descending ? query.OrderByDescending(x => x.ReferenceOrderLineId) : query.OrderBy(x => x.ReferenceOrderLineId),
-                nameof(TransactionHistoryArchiveDto.TransactionDate) => sort.Descending ? query.OrderByDescending(x => x.TransactionDate) : query.OrderBy(x => x.TransactionDate),
-                nameof(TransactionHistoryArchiveDto.TransactionType) => sort.Descending ? query.OrderByDescending(x => x.TransactionType) : query.OrderBy(x => x.TransactionType),
-                nameof(TransactionHistoryArchiveDto.Quantity) => sort.Descending ? query.OrderByDescending(x => x.Quantity) : query.OrderBy(x => x.Quantity),
-                nameof(TransactionHistoryArchiveDto.ActualCost) => sort.Descending ? query.OrderByDescending(x => x.ActualCost) : query.OrderBy(x => x.ActualCost),
-                _ => query.OrderByDescending(x => x.Id),
-            };
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<TransactionHistoryArchiveDto> { Items = rows, TotalItems = total };
+    }
 
-            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<TransactionHistoryArchiveDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<TransactionHistoryArchiveDialog>("New archive entry", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Archive entry created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Archive entry created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(TransactionHistoryArchiveDto row)
     {
         var parameters = new DialogParameters<TransactionHistoryArchiveDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<TransactionHistoryArchiveDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Archive entry updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Archive entry updated.", Severity.Success);
     }
 
     private async Task DeleteAsync(TransactionHistoryArchiveDto row)
     {
-        var confirm = await DialogService.ShowMessageBoxAsync("Delete archive entry?", $"Permanently delete archive entry #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
-        if (confirm != true) return;
-
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.TransactionHistoryArchives.FirstOrDefaultAsync(t => t.Id == row.Id);
-        if (entity is null) { Snackbar.Add("Entry no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        if (entity is null) { Snackbar.Add("Entry no longer exists.", Severity.Warning); return; }
         db.TransactionHistoryArchives.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Archive entry deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(TransactionHistoryArchiveDto row) => Navigation.NavigateTo($"aw/transaction-history-archives/history/{row.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Archive entry deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
     }
 }

@@ -80,9 +80,15 @@
                  ChildRowContent="@_childRowAdapter">
         <Columns>
             @Columns
-            @if (ShowActions)
+            @if (Actions is not null)
             {
-                <TemplateColumn Title="Actions" Sortable="false">
+                <TemplateColumn T="TDto" Title="Actions" Sortable="false">
+                    <CellTemplate>@Actions(context.Item)</CellTemplate>
+                </TemplateColumn>
+            }
+            else if (ShowActions)
+            {
+                <TemplateColumn T="TDto" Title="Actions" Sortable="false">
                     <CellTemplate>
                         <MudStack Row="true" Spacing="1">
                             @if (!string.IsNullOrWhiteSpace(HistoryRoute) && IdOf is not null)
@@ -184,6 +190,11 @@
 
     /// <summary>MudDataGrid rows-per-page. Defaults to 25.</summary>
     [Parameter] public int RowsPerPage { get; set; } = 25;
+
+    /// <summary>Custom Actions-column cell. When supplied, overrides the built-in
+    /// History/Edit/Delete icon trio — handy for composite-key entities where the
+    /// History URL needs query-string params, or for pages that want extra buttons.</summary>
+    [Parameter] public RenderFragment<TDto>? Actions { get; set; }
 
     private MudDataGrid<TDto> grid = null!;
     private bool _loading = false;

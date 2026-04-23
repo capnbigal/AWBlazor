@@ -1,200 +1,125 @@
 @page "/aw/persons"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Person.Addresses.Domain
-@using AWBlazorApp.Features.Person.AddressTypes.Domain
-@using AWBlazorApp.Features.Person.BusinessEntities.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Domain
-@using AWBlazorApp.Features.Person.ContactTypes.Domain
-@using AWBlazorApp.Features.Person.CountryRegions.Domain
-@using AWBlazorApp.Features.Person.EmailAddresses.Domain
-@using AWBlazorApp.Features.Person.Persons.Domain
-@using AWBlazorApp.Features.Person.PersonPhones.Domain
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Domain
-@using AWBlazorApp.Features.Person.StateProvinces.Domain
-@using AWBlazorApp.Features.Person.Addresses.Dtos
-@using AWBlazorApp.Features.Person.AddressTypes.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntities.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos
-@using AWBlazorApp.Features.Person.ContactTypes.Dtos
-@using AWBlazorApp.Features.Person.CountryRegions.Dtos
-@using AWBlazorApp.Features.Person.EmailAddresses.Dtos
 @using AWBlazorApp.Features.Person.Persons.Dtos
-@using AWBlazorApp.Features.Person.PersonPhones.Dtos
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
-@using AWBlazorApp.Features.Person.StateProvinces.Dtos
 @using PersonEntity = AWBlazorApp.Features.Person.Persons.Domain.Person
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Persons</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Persons</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Person.Person</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/persons/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New person</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterLastName" Label="Last name contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="6">
-                <MudSelect T="string?" @bind-Value="filterPersonType" Label="Person type" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("SC")">SC — Store contact</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("IN")">IN — Individual</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("SP")">SP — Sales person</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("EM")">EM — Employee</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("VC")">VC — Vendor contact</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("GC")">GC — General contact</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <MudDataGrid T="PersonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Id">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.PersonType" Title="Type">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Title" Title="Title">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.FirstName" Title="First name">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.FirstName)" Title="First name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.MiddleName" Title="Middle">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.MiddleName)" Title="Middle" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.LastName" Title="Last name">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.LastName)" Title="Last name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Suffix" Title="Suffix">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Suffix)" Title="Suffix" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="PersonDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="PersonDto"
+          @ref="page"
+          Title="Persons"
+          Caption="Person.Person"
+          NewButtonLabel="New person"
+          HistoryRoute="aw/persons/history"
+          IdOf="row => row.Id"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="person"
+          DeleteConfirmMessage="@(row => $"Permanently delete person #{row.Id} ({row.FirstName} {row.LastName})?")">
+    <Filters>
+        <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterLastName" Label="Last name contains" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string?" @bind-Value="filterPersonType" Label="Person type" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
+                <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("SC")">SC — Store contact</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("IN")">IN — Individual</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("SP")">SP — Sales person</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("EM")">EM — Employee</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("VC")">VC — Vendor contact</MudSelectItem>
+                <MudSelectItem T="string?" Value="@("GC")">GC — General contact</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="PersonDto" TProperty="int" Property="x => x.Id" Title="Id">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.PersonType" Title="Type">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.PersonType)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.Title" Title="Title">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Title)" Title="Title" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.FirstName" Title="First name">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.FirstName)" Title="First name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.MiddleName" Title="Middle">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.MiddleName)" Title="Middle" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.LastName" Title="Last name">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.LastName)" Title="Last name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="string" Property="x => x.Suffix" Title="Suffix">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.Suffix)" Title="Suffix" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="PersonDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+            <HeaderTemplate><GridColumnHeader TEntity="PersonEntity" PropertyName="@nameof(PersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+</CrudPage>
 
 @code {
-    private MudDataGrid<PersonDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<PersonDto> page = null!;
     private string? filterLastName;
     private string? filterPersonType;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<PersonDto>> LoadServerDataAsync(GridState<PersonDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Persons.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterLastName))
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.Persons.AsNoTracking();
-            if (!string.IsNullOrWhiteSpace(filterLastName))
-            {
-                var n = filterLastName.Trim();
-                query = query.Where(x => x.LastName.Contains(n));
-            }
-            if (!string.IsNullOrWhiteSpace(filterPersonType)) query = query.Where(x => x.PersonType == filterPersonType);
-            query = query.ApplyColumnFilters(columnFilters);
+            var n = filterLastName.Trim();
+            query = query.Where(x => x.LastName.Contains(n));
+        }
+        if (!string.IsNullOrWhiteSpace(filterPersonType)) query = query.Where(x => x.PersonType == filterPersonType);
+        query = query.ApplyColumnFilters(columnFilters);
 
-            var total = await query.CountAsync(ct);
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(PersonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
-                nameof(PersonDto.LastName)     => sort.Descending ? query.OrderByDescending(x => x.LastName)     : query.OrderBy(x => x.LastName),
-                nameof(PersonDto.FirstName)    => sort.Descending ? query.OrderByDescending(x => x.FirstName)    : query.OrderBy(x => x.FirstName),
-                nameof(PersonDto.MiddleName)   => sort.Descending ? query.OrderByDescending(x => x.MiddleName)   : query.OrderBy(x => x.MiddleName),
-                nameof(PersonDto.Title)        => sort.Descending ? query.OrderByDescending(x => x.Title)        : query.OrderBy(x => x.Title),
-                nameof(PersonDto.Suffix)       => sort.Descending ? query.OrderByDescending(x => x.Suffix)       : query.OrderBy(x => x.Suffix),
-                nameof(PersonDto.PersonType)   => sort.Descending ? query.OrderByDescending(x => x.PersonType)   : query.OrderBy(x => x.PersonType),
-                nameof(PersonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-                _                              => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
-            };
-
-            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<PersonDto> { Items = rows, TotalItems = total };
-            }
-        finally
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
+            nameof(PersonDto.Id)           => sort.Descending ? query.OrderByDescending(x => x.Id)           : query.OrderBy(x => x.Id),
+            nameof(PersonDto.LastName)     => sort.Descending ? query.OrderByDescending(x => x.LastName)     : query.OrderBy(x => x.LastName),
+            nameof(PersonDto.FirstName)    => sort.Descending ? query.OrderByDescending(x => x.FirstName)    : query.OrderBy(x => x.FirstName),
+            nameof(PersonDto.MiddleName)   => sort.Descending ? query.OrderByDescending(x => x.MiddleName)   : query.OrderBy(x => x.MiddleName),
+            nameof(PersonDto.Title)        => sort.Descending ? query.OrderByDescending(x => x.Title)        : query.OrderBy(x => x.Title),
+            nameof(PersonDto.Suffix)       => sort.Descending ? query.OrderByDescending(x => x.Suffix)       : query.OrderBy(x => x.Suffix),
+            nameof(PersonDto.PersonType)   => sort.Descending ? query.OrderByDescending(x => x.PersonType)   : query.OrderBy(x => x.PersonType),
+            nameof(PersonDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _                              => query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName),
+        };
 
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<PersonDto> { Items = rows, TotalItems = total };
+    }
+
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<PersonDialog>("New person", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Person created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Person created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(PersonDto row)
     {
         var parameters = new DialogParameters<PersonDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<PersonDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Person updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Person updated.", Severity.Success);
     }
 
     private async Task DeleteAsync(PersonDto row)
     {
-        var confirm = await DialogService.ShowMessageBoxAsync("Delete person?", $"Permanently delete person #{row.Id} ({row.FirstName} {row.LastName})?", yesText: "Delete", cancelText: "Cancel");
-        if (confirm != true) return;
-
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.Persons.FirstOrDefaultAsync(t => t.Id == row.Id);
-        if (entity is null) { Snackbar.Add("Person no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        if (entity is null) { Snackbar.Add("Person no longer exists.", Severity.Warning); return; }
         db.Persons.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Person deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(PersonDto row) => Navigation.NavigateTo($"aw/persons/history/{row.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Person deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
     }
 }
