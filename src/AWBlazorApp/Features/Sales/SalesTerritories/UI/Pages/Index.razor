@@ -41,90 +41,45 @@
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Sales territories</PageTitle>
+<CrudPage TDto="SalesTerritoryDto"
+          Title="Sales territories"
+          Caption="Sales.SalesTerritory"
+          NewButtonLabel="New territory"
+          HistoryRoute="aw/sales-territories/history"
+          EditRoles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")"
+          DeleteRoles="@($"{AppRoles.Manager},{AppRoles.Admin}")"
+          LoadData="LoadServerDataAsync"
+          IdOf="row => row.Id"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="territory">
+    <Filters>
+        <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" /></MudItem>
+            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterGroupName" Label="Group" Variant="Variant.Outlined" /></MudItem>
+    </Filters>
+    <Columns>
 
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Sales territories</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesTerritory</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-territories/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New territory</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="6"><MudTextField @bind-Value="filterGroupName" Label="Group" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <MudDataGrid T="SalesTerritoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
             <HierarchyColumn T="SalesTerritoryDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Name" Title="Name">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.CountryRegionCode" Title="Country">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.CountryRegionCode)" Title="Country" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.GroupName" Title="Group">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.GroupName)" Title="Group" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesYtd" Title="Sales YTD" Format="C">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesYtd)" Title="Sales YTD" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesLastYear" Title="Sales last yr" Format="C">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.SalesLastYear)" Title="Sales last yr" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesTerritory" PropertyName="@nameof(SalesTerritoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History">
-                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
-                        </MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <ChildRowContent>
-            <SalesTerritoryExpandedRow TerritoryId="@context.Item.Id" />
-        </ChildRowContent>
-        <PagerContent><MudDataGridPager T="SalesTerritoryDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+            <PropertyColumn T="SalesTerritoryDto" TProperty="int" Property="x => x.Id" Title="Id" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="string" Property="x => x.Name" Title="Name" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="string" Property="x => x.CountryRegionCode" Title="Country" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="string" Property="x => x.GroupName" Title="Group" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="decimal" Property="x => x.SalesYtd" Title="Sales YTD" Format="C" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="decimal" Property="x => x.SalesLastYear" Title="Sales last yr" Format="C" />
+            <PropertyColumn T="SalesTerritoryDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+            
+    </Columns>
+</CrudPage>
 
 @code {
-    private MudDataGrid<SalesTerritoryDto> grid = null!;
-    private bool _loading = true;
     private string? filterName;
     private string? filterGroupName;
-    private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesTerritoryDto>> LoadServerDataAsync(GridState<SalesTerritoryDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
-        {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
             var query = db.SalesTerritories.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(filterName))
             {
@@ -135,10 +90,7 @@
             {
                 var needle = filterGroupName.Trim();
                 query = query.Where(x => x.GroupName == needle);
-            }
-            query = query.ApplyColumnFilters(columnFilters);
-
-            var total = await query.CountAsync(ct);
+            }var total = await query.CountAsync(ct);
             var sort = state.SortDefinitions.FirstOrDefault();
             query = sort?.SortBy switch
             {
@@ -154,56 +106,28 @@
 
             var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
             return new GridData<SalesTerritoryDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+        }
 
     private async Task OpenCreateAsync()
     {
-        var dialog = await DialogService.ShowAsync<SalesTerritoryDialog>("New territory", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Territory created.", Severity.Success); await grid.ReloadServerData(); }
+        var dialog = await DialogService.ShowAsync<SalesTerritoryDialog>("New territory", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Territory created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(SalesTerritoryDto row)
     {
         var parameters = new DialogParameters<SalesTerritoryDialog> { { x => x.Model, row } };
-        var dialog = await DialogService.ShowAsync<SalesTerritoryDialog>($"Edit territory #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Territory updated.", Severity.Success); await grid.ReloadServerData(); }
+        var dialog = await DialogService.ShowAsync<SalesTerritoryDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Territory updated.", Severity.Success);
     }
 
     private async Task DeleteAsync(SalesTerritoryDto row)
     {
-        var confirm = await DialogService.ShowMessageBoxAsync("Delete territory?", $"Permanently delete territory #{row.Id} \"{row.Name}\"?", yesText: "Delete", cancelText: "Cancel");
-        if (confirm != true) return;
-
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.SalesTerritories.FirstOrDefaultAsync(t => t.Id == row.Id);
-        if (entity is null) { Snackbar.Add("Territory no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        if (entity is null) { Snackbar.Add("Already gone.", Severity.Warning); return; }
         db.SalesTerritories.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Territory deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(SalesTerritoryDto row) => Navigation.NavigateTo($"aw/sales-territories/history/{row.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Territory deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
     }
 }
