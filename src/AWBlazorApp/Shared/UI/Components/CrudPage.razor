@@ -76,7 +76,8 @@
                  LoadingProgressColor="Color.Primary"
                  Dense="true" Hover="true" Striped="true"
                  SortMode="SortMode.Single"
-                 RowsPerPage="@RowsPerPage">
+                 RowsPerPage="@RowsPerPage"
+                 ChildRowContent="@_childRowAdapter">
         <Columns>
             @Columns
             @if (ShowActions)
@@ -117,7 +118,6 @@
                 </TemplateColumn>
             }
         </Columns>
-        <ChildRowContent>@(ExpandedContent is null ? null : ExpandedContent(context.Item))</ChildRowContent>
         <PagerContent><MudDataGridPager T="TDto" /></PagerContent>
     </MudDataGrid>
 </MudStack>
@@ -188,6 +188,14 @@
     private MudDataGrid<TDto> grid = null!;
     private bool _loading = false;
     private bool ShowActions => OnEdit.HasDelegate || OnDelete.HasDelegate || (!string.IsNullOrWhiteSpace(HistoryRoute) && IdOf is not null);
+
+    // MudDataGrid.ChildRowContent is typed RenderFragment<CellContext<T>>, but our public
+    // ExpandedContent takes the simpler RenderFragment<TDto>. The adapter unwraps the cell
+    // context so page authors don't have to know about CellContext. When ExpandedContent is
+    // null the adapter stays null too, so MudDataGrid skips the hierarchy column — which is
+    // what keeps non-expandable pages from showing a blank row between every data row.
+    private RenderFragment<CellContext<TDto>>? _childRowAdapter =>
+        ExpandedContent is null ? null : cell => ExpandedContent(cell.Item);
 
     public Task ReloadAsync() => grid?.ReloadServerData() ?? Task.CompletedTask;
 
