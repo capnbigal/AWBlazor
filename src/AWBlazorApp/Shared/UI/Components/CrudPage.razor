@@ -1,0 +1,217 @@
+@* Shared page shell for entity list / create / edit / delete / history.
+   Wraps the roughly-identical boilerplate that every Features/**/UI/Pages/Index.razor
+   used to hand-roll: title bar with caption + "View history" + "New X" button, filter
+   MudPaper, MudDataGrid with server-data loader, and the per-row Edit/Delete/History
+   action icons.
+
+   Entity-specific pieces are supplied as RenderFragments (<Filters>, <Columns>,
+   <ExpandedContent>) or callbacks (OnCreate / OnEdit / OnDelete / LoadData). The
+   component itself owns the MudDataGrid reference, reload-after-mutation, and the
+   delete confirmation dialog + snackbar flow.
+
+   Usage:
+       <CrudPage TDto="CostCenterDto"
+                 Title="Cost centers"
+                 Caption="org.CostCenter"
+                 NewButtonLabel="New cost center"
+                 HistoryRoute="enterprise/cost-centers/history"
+                 LoadData="LoadAsync"
+                 IdOf="row => row.Id"
+                 OnCreate="OpenCreateAsync"
+                 OnEdit="OpenEditAsync"
+                 OnDelete="DeleteAsync"
+                 EntityNameSingular="cost center">
+           <Filters>...</Filters>
+           <Columns>...</Columns>
+       </CrudPage>
+*@
+@typeparam TDto where TDto : class
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>@Title</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">@Title</MudText>
+        @if (!string.IsNullOrWhiteSpace(Caption))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">@Caption</MudText>
+        }
+        <MudSpacer />
+        @if (!string.IsNullOrWhiteSpace(HistoryRoute))
+        {
+            <MudButton Color="Color.Secondary"
+                       Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.History"
+                       Href="@HistoryRoute">
+                View history
+            </MudButton>
+        }
+        @if (OnCreate.HasDelegate)
+        {
+            <AuthorizeView Roles="@EditRoles">
+                <MudButton Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="InvokeCreateAsync">
+                    @NewButtonLabel
+                </MudButton>
+            </AuthorizeView>
+        }
+    </MudStack>
+
+    @if (Filters is not null)
+    {
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">@Filters</MudGrid>
+        </MudPaper>
+    }
+
+    <MudDataGrid T="TDto"
+                 ServerData="LoadData"
+                 @ref="grid"
+                 Loading="@_loading"
+                 LoadingProgressColor="Color.Primary"
+                 Dense="true" Hover="true" Striped="true"
+                 SortMode="SortMode.Single"
+                 RowsPerPage="@RowsPerPage">
+        <Columns>
+            @Columns
+            @if (ShowActions)
+            {
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="1">
+                            @if (!string.IsNullOrWhiteSpace(HistoryRoute) && IdOf is not null)
+                            {
+                                <MudTooltip Text="History">
+                                    <MudIconButton Icon="@Icons.Material.Filled.History"
+                                                   aria-label="View history"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => Navigation.NavigateTo($"{HistoryRoute}/{IdOf(context.Item)}"))" />
+                                </MudTooltip>
+                            }
+                            @if (OnEdit.HasDelegate)
+                            {
+                                <AuthorizeView Roles="@EditRoles" Context="auth">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   aria-label="Edit"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => InvokeEditAsync(context.Item))" />
+                                </AuthorizeView>
+                            }
+                            @if (OnDelete.HasDelegate)
+                            {
+                                <AuthorizeView Roles="@DeleteRoles" Context="auth">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   aria-label="Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => InvokeDeleteAsync(context.Item))" />
+                                </AuthorizeView>
+                            }
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+        </Columns>
+        <ChildRowContent>@(ExpandedContent is null ? null : ExpandedContent(context.Item))</ChildRowContent>
+        <PagerContent><MudDataGridPager T="TDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    /// <summary>h4 header shown top-left and used as the browser tab title.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Optional small caption shown next to the title (e.g. "org.CostCenter").</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>Label on the "New X" button. Omit to hide the create button.</summary>
+    [Parameter] public string NewButtonLabel { get; set; } = "New";
+
+    /// <summary>Base href for the history page ("/x/.../history"). When set, a
+    /// "View history" button appears in the header and a History icon appears in each
+    /// row. Row icon navigates to <c>{HistoryRoute}/{id}</c>.</summary>
+    [Parameter] public string? HistoryRoute { get; set; }
+
+    /// <summary>Comma-separated role names allowed to Create + Edit. Defaults to
+    /// Employee,Manager,Admin.</summary>
+    [Parameter] public string EditRoles { get; set; } = "Employee,Manager,Admin";
+
+    /// <summary>Comma-separated role names allowed to Delete. Defaults to Manager,Admin.</summary>
+    [Parameter] public string DeleteRoles { get; set; } = "Manager,Admin";
+
+    /// <summary>Filter inputs inside the top MudPaper. Wrap each input in a MudItem.</summary>
+    [Parameter] public RenderFragment? Filters { get; set; }
+
+    /// <summary>Column definitions (PropertyColumn / TemplateColumn / HierarchyColumn).
+    /// The component appends an Actions column automatically if any of OnEdit / OnDelete
+    /// or HistoryRoute are set.</summary>
+    [Parameter, EditorRequired] public RenderFragment Columns { get; set; } = default!;
+
+    /// <summary>Optional expanded-row renderer (typically XxxExpandedRow).</summary>
+    [Parameter] public RenderFragment<TDto>? ExpandedContent { get; set; }
+
+    /// <summary>Server-data loader for MudDataGrid. Usually delegates to a DbContextFactory
+    /// query with the filter fields as captured closure variables.</summary>
+    [Parameter, EditorRequired] public Func<GridState<TDto>, CancellationToken, Task<GridData<TDto>>> LoadData { get; set; } = default!;
+
+    /// <summary>Projects a row to its int id — used to build History URLs and in the delete
+    /// confirmation prompt. Required when HistoryRoute is set.</summary>
+    [Parameter] public Func<TDto, object>? IdOf { get; set; }
+
+    /// <summary>Invoked when the "New X" button is clicked. Typically opens a dialog; the
+    /// component reloads the grid afterwards.</summary>
+    [Parameter] public EventCallback OnCreate { get; set; }
+
+    /// <summary>Invoked when a row's Edit icon is clicked. Component reloads afterwards.</summary>
+    [Parameter] public EventCallback<TDto> OnEdit { get; set; }
+
+    /// <summary>Invoked when a row's Delete icon is clicked AFTER the confirmation dialog
+    /// has been accepted. The component shows the confirm prompt itself.</summary>
+    [Parameter] public EventCallback<TDto> OnDelete { get; set; }
+
+    /// <summary>Singular entity name used in the delete-confirmation title (e.g. "cost
+    /// center" → "Delete cost center?"). Defaults to "item".</summary>
+    [Parameter] public string EntityNameSingular { get; set; } = "item";
+
+    /// <summary>Builds the second line of the delete-confirmation prompt. Defaults to
+    /// "Permanently delete this {EntityNameSingular}?".</summary>
+    [Parameter] public Func<TDto, string>? DeleteConfirmMessage { get; set; }
+
+    /// <summary>MudDataGrid rows-per-page. Defaults to 25.</summary>
+    [Parameter] public int RowsPerPage { get; set; } = 25;
+
+    private MudDataGrid<TDto> grid = null!;
+    private bool _loading = false;
+    private bool ShowActions => OnEdit.HasDelegate || OnDelete.HasDelegate || (!string.IsNullOrWhiteSpace(HistoryRoute) && IdOf is not null);
+
+    public Task ReloadAsync() => grid?.ReloadServerData() ?? Task.CompletedTask;
+
+    private async Task InvokeCreateAsync()
+    {
+        await OnCreate.InvokeAsync();
+        await ReloadAsync();
+    }
+
+    private async Task InvokeEditAsync(TDto row)
+    {
+        await OnEdit.InvokeAsync(row);
+        await ReloadAsync();
+    }
+
+    private async Task InvokeDeleteAsync(TDto row)
+    {
+        var confirmMessage = DeleteConfirmMessage?.Invoke(row) ?? $"Permanently delete this {EntityNameSingular}?";
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            $"Delete {EntityNameSingular}?",
+            confirmMessage,
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirm != true) return;
+        await OnDelete.InvokeAsync(row);
+        await ReloadAsync();
+    }
+}
