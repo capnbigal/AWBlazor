@@ -176,7 +176,6 @@
                 { Snackbar.Add($"Scrap reason #{createModel.ScrapReasonId.Value} does not exist.", Severity.Error); return; }
 
                 var entity = createModel.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.WorkOrders.Add(entity);
                 try
                 {
@@ -187,8 +186,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                var reloaded = await db.WorkOrders.AsNoTracking().FirstAsync(x => x.Id == entity.Id);
-                await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else

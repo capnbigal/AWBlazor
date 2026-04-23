@@ -128,7 +128,6 @@
                 { Snackbar.Add($"Special offer #{createModel.SpecialOfferId} does not exist.", Severity.Error); return; }
 
                 var entity = createModel.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.SalesOrderDetails.Add(entity);
                 try
                 {
@@ -139,8 +138,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                var reloaded = await db.SalesOrderDetails.AsNoTracking().FirstAsync(x => x.SalesOrderId == entity.SalesOrderId && x.SalesOrderDetailId == entity.SalesOrderDetailId);
-                await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
