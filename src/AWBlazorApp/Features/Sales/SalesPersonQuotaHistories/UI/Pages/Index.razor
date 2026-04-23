@@ -1,149 +1,95 @@
 @page "/aw/sales-person-quota-histories"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
-@using AWBlazorApp.Features.Sales.CreditCards.Domain
-@using AWBlazorApp.Features.Sales.Currencies.Domain
-@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
-@using AWBlazorApp.Features.Sales.Customers.Domain
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
-@using AWBlazorApp.Features.Sales.SalesPeople.Domain
 @using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
-@using AWBlazorApp.Features.Sales.SalesReasons.Domain
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
-@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
-@using AWBlazorApp.Features.Sales.Stores.Domain
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
-@using AWBlazorApp.Features.Sales.CreditCards.Dtos
-@using AWBlazorApp.Features.Sales.Currencies.Dtos
-@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
-@using AWBlazorApp.Features.Sales.Customers.Dtos
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
-@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
 @using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
-@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
-@using AWBlazorApp.Features.Sales.Stores.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 @inject LookupService Lookup
 
-<PageTitle>Sales person quota history</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Sales person quota history</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesPersonQuotaHistory · composite PK (BusinessEntityID, QuotaDate)</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-person-quota-histories/history">View audit history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New quota row</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => { filterBusinessEntityId = v == 0 ? null : v; })" Label="Sales person" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="SalesPersonQuotaHistoryDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Sales person id">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.BusinessEntityId)" Title="Sales person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.QuotaDate" Title="Quota date" Format="yyyy-MM-dd">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.QuotaDate)" Title="Quota date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="SalesPersonQuotaHistoryDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="SalesPersonQuotaHistoryDto"
+          @ref="page"
+          Title="Sales person quota history"
+          Caption="Sales.SalesPersonQuotaHistory · composite PK (BusinessEntityID, QuotaDate)"
+          NewButtonLabel="New quota row"
+          HistoryRoute="aw/sales-person-quota-histories/history"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          EntityNameSingular="quota row">
+    <Filters>
+        <MudItem xs="12"><FkAutocomplete TValue="int" Value="@(filterBusinessEntityId ?? 0)" ValueChanged="@(v => filterBusinessEntityId = v == 0 ? null : v)" Label="Sales person" SearchFunc="@(q => Lookup.SearchSalesPersonsAsync(q))" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="SalesPersonQuotaHistoryDto" TProperty="int" Property="x => x.BusinessEntityId" Title="Sales person id">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.BusinessEntityId)" Title="Sales person id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonQuotaHistoryDto" TProperty="DateTime" Property="x => x.QuotaDate" Title="Quota date" Format="yyyy-MM-dd">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.QuotaDate)" Title="Quota date" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonQuotaHistoryDto" TProperty="decimal" Property="x => x.SalesQuota" Title="Quota" Format="C0">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonQuotaHistoryDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPersonQuotaHistory" PropertyName="@nameof(SalesPersonQuotaHistoryDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+    <Actions Context="row">
+        <MudStack Row="true" Spacing="1">
+            <MudTooltip Text="History">
+                <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small"
+                               OnClick="@(() => Navigation.NavigateTo($"aw/sales-person-quota-histories/history?businessEntityId={row.BusinessEntityId}&quotaDate={row.QuotaDate:yyyy-MM-dd}"))" />
+            </MudTooltip>
+            <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(row))" />
+            </AuthorizeView>
+            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(row))" />
+            </AuthorizeView>
+        </MudStack>
+    </Actions>
+</CrudPage>
 
 @code {
-    private MudDataGrid<SalesPersonQuotaHistoryDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<SalesPersonQuotaHistoryDto> page = null!;
     private int? filterBusinessEntityId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<SalesPersonQuotaHistoryDto>> LoadServerDataAsync(GridState<SalesPersonQuotaHistoryDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SalesPersonQuotaHistories.AsNoTracking();
+        if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.SalesPersonQuotaHistories.AsNoTracking();
-            if (filterBusinessEntityId.HasValue) query = query.Where(x => x.BusinessEntityId == filterBusinessEntityId.Value);
-            query = query.ApplyColumnFilters(columnFilters);
+            nameof(SalesPersonQuotaHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
+            nameof(SalesPersonQuotaHistoryDto.QuotaDate)        => sort.Descending ? query.OrderByDescending(x => x.QuotaDate)        : query.OrderBy(x => x.QuotaDate),
+            nameof(SalesPersonQuotaHistoryDto.SalesQuota)       => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)       : query.OrderBy(x => x.SalesQuota),
+            nameof(SalesPersonQuotaHistoryDto.ModifiedDate)     => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)     : query.OrderBy(x => x.ModifiedDate),
+            _                                                   => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.QuotaDate),
+        };
 
-            var total = await query.CountAsync(ct);
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(SalesPersonQuotaHistoryDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(x => x.BusinessEntityId) : query.OrderBy(x => x.BusinessEntityId),
-                nameof(SalesPersonQuotaHistoryDto.QuotaDate)        => sort.Descending ? query.OrderByDescending(x => x.QuotaDate)        : query.OrderBy(x => x.QuotaDate),
-                nameof(SalesPersonQuotaHistoryDto.SalesQuota)       => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)       : query.OrderBy(x => x.SalesQuota),
-                nameof(SalesPersonQuotaHistoryDto.ModifiedDate)     => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)     : query.OrderBy(x => x.ModifiedDate),
-                _                                                   => query.OrderBy(x => x.BusinessEntityId).ThenByDescending(x => x.QuotaDate),
-            };
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<SalesPersonQuotaHistoryDto> { Items = rows, TotalItems = total };
+    }
 
-            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<SalesPersonQuotaHistoryDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<SalesPersonQuotaHistoryDialog>("New quota row", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Quota row created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Quota row created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(SalesPersonQuotaHistoryDto row)
     {
         var parameters = new DialogParameters<SalesPersonQuotaHistoryDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<SalesPersonQuotaHistoryDialog>($"Edit ({row.BusinessEntityId}, {row.QuotaDate:yyyy-MM-dd})", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Quota row updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Quota row updated.", Severity.Success); await page.ReloadAsync(); }
     }
 
     private async Task DeleteAsync(SalesPersonQuotaHistoryDto row)
@@ -152,30 +98,11 @@
         if (confirm != true) return;
 
         await using var db = await DbFactory.CreateDbContextAsync();
-        var entity = await db.SalesPersonQuotaHistories
-            .FirstOrDefaultAsync(t => t.BusinessEntityId == row.BusinessEntityId && t.QuotaDate == row.QuotaDate);
-        if (entity is null) { Snackbar.Add("Row no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        var entity = await db.SalesPersonQuotaHistories.FirstOrDefaultAsync(t => t.BusinessEntityId == row.BusinessEntityId && t.QuotaDate == row.QuotaDate);
+        if (entity is null) { Snackbar.Add("Row no longer exists.", Severity.Warning); await page.ReloadAsync(); return; }
         db.SalesPersonQuotaHistories.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Quota row deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(SalesPersonQuotaHistoryDto row)
-        => Navigation.NavigateTo($"aw/sales-person-quota-histories/history?businessEntityId={row.BusinessEntityId}&quotaDate={row.QuotaDate:yyyy-MM-dd}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Quota row deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+        await page.ReloadAsync();
     }
 }

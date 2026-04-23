@@ -1,180 +1,92 @@
 @page "/aw/currencies"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
-@using AWBlazorApp.Features.Sales.CreditCards.Domain
 @using AWBlazorApp.Features.Sales.Currencies.Domain
-@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
-@using AWBlazorApp.Features.Sales.Customers.Domain
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
-@using AWBlazorApp.Features.Sales.SalesPeople.Domain
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
-@using AWBlazorApp.Features.Sales.SalesReasons.Domain
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
-@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
-@using AWBlazorApp.Features.Sales.Stores.Domain
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
-@using AWBlazorApp.Features.Sales.CreditCards.Dtos
 @using AWBlazorApp.Features.Sales.Currencies.Dtos
-@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
-@using AWBlazorApp.Features.Sales.Customers.Dtos
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
-@using AWBlazorApp.Features.Sales.SalesPeople.Dtos
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
-@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
-@using AWBlazorApp.Features.Sales.Stores.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Currencies</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Currencies</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.Currency</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/currencies/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New currency</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="CurrencyDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.CurrencyCode" Title="Code">
-                <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.CurrencyCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Name" Title="Name">
-                <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History">
-                            <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" />
-                        </MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="CurrencyDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="CurrencyDto"
+          @ref="page"
+          Title="Currencies"
+          Caption="Sales.Currency"
+          NewButtonLabel="New currency"
+          HistoryRoute="aw/currencies/history"
+          IdOf="row => row.CurrencyCode"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="currency"
+          DeleteConfirmMessage="@(row => $"Permanently delete currency {row.CurrencyCode} ({row.Name})?")">
+    <Filters>
+        <MudItem xs="12"><MudTextField @bind-Value="filterName" Label="Name contains" Variant="Variant.Outlined" Immediate="false" OnBlur="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="CurrencyDto" TProperty="string" Property="x => x.CurrencyCode" Title="Code">
+            <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.CurrencyCode)" Title="Code" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="CurrencyDto" TProperty="string" Property="x => x.Name" Title="Name">
+            <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.Name)" Title="Name" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="CurrencyDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+            <HeaderTemplate><GridColumnHeader TEntity="Currency" PropertyName="@nameof(CurrencyDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+</CrudPage>
 
 @code {
-    private MudDataGrid<CurrencyDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<CurrencyDto> page = null!;
     private string? filterName;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<CurrencyDto>> LoadServerDataAsync(GridState<CurrencyDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.Currencies.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filterName))
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.Currencies.AsNoTracking();
-            if (!string.IsNullOrWhiteSpace(filterName))
-            {
-                var needle = filterName.Trim();
-                query = query.Where(x => x.Name.Contains(needle));
-            }
-            query = query.ApplyColumnFilters(columnFilters);
+            var needle = filterName.Trim();
+            query = query.Where(x => x.Name.Contains(needle));
+        }
+        query = query.ApplyColumnFilters(columnFilters);
 
-            var total = await query.CountAsync(ct);
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(CurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
-                nameof(CurrencyDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
-                nameof(CurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
-                _                                => query.OrderBy(x => x.CurrencyCode),
-            };
-
-            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<CurrencyDto> { Items = rows, TotalItems = total };
-            }
-        finally
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
+            nameof(CurrencyDto.CurrencyCode) => sort.Descending ? query.OrderByDescending(x => x.CurrencyCode) : query.OrderBy(x => x.CurrencyCode),
+            nameof(CurrencyDto.Name)         => sort.Descending ? query.OrderByDescending(x => x.Name)         : query.OrderBy(x => x.Name),
+            nameof(CurrencyDto.ModifiedDate) => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate) : query.OrderBy(x => x.ModifiedDate),
+            _                                => query.OrderBy(x => x.CurrencyCode),
+        };
 
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<CurrencyDto> { Items = rows, TotalItems = total };
+    }
+
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<CurrencyDialog>("New currency", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Currency created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Currency created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(CurrencyDto row)
     {
         var parameters = new DialogParameters<CurrencyDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<CurrencyDialog>($"Edit {row.CurrencyCode}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Currency updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Currency updated.", Severity.Success);
     }
 
     private async Task DeleteAsync(CurrencyDto row)
     {
-        var confirm = await DialogService.ShowMessageBoxAsync("Delete currency?", $"Permanently delete currency {row.CurrencyCode} ({row.Name})?", yesText: "Delete", cancelText: "Cancel");
-        if (confirm != true) return;
-
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.Currencies.FirstOrDefaultAsync(t => t.CurrencyCode == row.CurrencyCode);
-        if (entity is null) { Snackbar.Add("Currency no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        if (entity is null) { Snackbar.Add("Currency no longer exists.", Severity.Warning); return; }
         db.Currencies.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Currency deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(CurrencyDto row) => Navigation.NavigateTo($"aw/currencies/history/{row.CurrencyCode}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Currency deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
     }
 }

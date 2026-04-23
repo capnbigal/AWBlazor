@@ -1,119 +1,62 @@
 @page "/aw/sales-persons"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain
-@using AWBlazorApp.Features.Sales.CreditCards.Domain
-@using AWBlazorApp.Features.Sales.Currencies.Domain
-@using AWBlazorApp.Features.Sales.CurrencyRates.Domain
-@using AWBlazorApp.Features.Sales.Customers.Domain
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain
 @using AWBlazorApp.Features.Sales.SalesPeople.Domain
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain
-@using AWBlazorApp.Features.Sales.SalesReasons.Domain
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritories.Domain
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain
-@using AWBlazorApp.Features.Sales.SpecialOffers.Domain
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain
-@using AWBlazorApp.Features.Sales.Stores.Domain
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos
-@using AWBlazorApp.Features.Sales.CreditCards.Dtos
-@using AWBlazorApp.Features.Sales.Currencies.Dtos
-@using AWBlazorApp.Features.Sales.CurrencyRates.Dtos
-@using AWBlazorApp.Features.Sales.Customers.Dtos
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos
 @using AWBlazorApp.Features.Sales.SalesPeople.Dtos
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos
-@using AWBlazorApp.Features.Sales.SalesReasons.Dtos
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritories.Dtos
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
-@using AWBlazorApp.Features.Sales.Stores.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 @inject LookupService Lookup
 
-<PageTitle>Sales persons</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Sales persons</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesPerson</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-persons/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New sales person</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <FkSelect TValue="int" Value="@(filterTerritoryId ?? 0)" ValueChanged="@(v => { filterTerritoryId = v == 0 ? null : v; })" Label="Territory" Items="_territories" Clearable="true" OnSelectionChanged="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="SalesPersonDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <HierarchyColumn T="SalesPersonDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.TerritoryId" Title="Territory id">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesQuota" Title="Quota" Format="C0">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Bonus" Title="Bonus" Format="C0">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Bonus)" Title="Bonus" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.CommissionPct" Title="Commission %" Format="P2">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.CommissionPct)" Title="Commission %" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesYtd" Title="YTD" Format="C0">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesYtd)" Title="YTD" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.SalesLastYear" Title="Last year" Format="C0">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesLastYear)" Title="Last year" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
-                <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <ChildRowContent><SalesPersonExpandedRow SalesPersonId="@context.Item.Id" /></ChildRowContent>
-        <PagerContent><MudDataGridPager T="SalesPersonDto" /></PagerContent>
-        <NoRecordsContent>
-            <EmptyState />
-        </NoRecordsContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="SalesPersonDto"
+          @ref="page"
+          Title="Sales persons"
+          Caption="Sales.SalesPerson"
+          NewButtonLabel="New sales person"
+          HistoryRoute="aw/sales-persons/history"
+          IdOf="row => row.Id"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="sales person"
+          DeleteConfirmMessage="@(row => $"Permanently delete sales person #{row.Id}?")">
+    <ExpandedContent Context="row">
+        <SalesPersonExpandedRow SalesPersonId="@row.Id" />
+    </ExpandedContent>
+    <Filters>
+        <MudItem xs="12"><FkSelect TValue="int" Value="@(filterTerritoryId ?? 0)" ValueChanged="@(v => filterTerritoryId = v == 0 ? null : v)" Label="Territory" Items="_territories" Clearable="true" OnSelectionChanged="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <HierarchyColumn T="SalesPersonDto" />
+        <PropertyColumn T="SalesPersonDto" TProperty="int" Property="x => x.Id" Title="Id">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="int?" Property="x => x.TerritoryId" Title="Territory id">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.TerritoryId)" Title="Territory id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="decimal?" Property="x => x.SalesQuota" Title="Quota" Format="C0">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesQuota)" Title="Quota" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="decimal" Property="x => x.Bonus" Title="Bonus" Format="C0">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.Bonus)" Title="Bonus" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="decimal" Property="x => x.CommissionPct" Title="Commission %" Format="P2">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.CommissionPct)" Title="Commission %" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="decimal" Property="x => x.SalesYtd" Title="YTD" Format="C0">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesYtd)" Title="YTD" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="decimal" Property="x => x.SalesLastYear" Title="Last year" Format="C0">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.SalesLastYear)" Title="Last year" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="SalesPersonDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm">
+            <HeaderTemplate><GridColumnHeader TEntity="SalesPerson" PropertyName="@nameof(SalesPersonDto.ModifiedDate)" Title="Modified" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+</CrudPage>
 
 @code {
-    private MudDataGrid<SalesPersonDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<SalesPersonDto> page = null!;
     private int? filterTerritoryId;
     private List<LookupItem<int>> _territories = [];
     private readonly ColumnFilterState columnFilters = new();
@@ -125,82 +68,52 @@
 
     private async Task<GridData<SalesPersonDto>> LoadServerDataAsync(GridState<SalesPersonDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SalesPersons.AsNoTracking();
+        if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.SalesPersons.AsNoTracking();
-            if (filterTerritoryId.HasValue) query = query.Where(x => x.TerritoryId == filterTerritoryId.Value);
-            query = query.ApplyColumnFilters(columnFilters);
+            nameof(SalesPersonDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
+            nameof(SalesPersonDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
+            nameof(SalesPersonDto.SalesQuota)    => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)    : query.OrderBy(x => x.SalesQuota),
+            nameof(SalesPersonDto.Bonus)         => sort.Descending ? query.OrderByDescending(x => x.Bonus)         : query.OrderBy(x => x.Bonus),
+            nameof(SalesPersonDto.CommissionPct) => sort.Descending ? query.OrderByDescending(x => x.CommissionPct) : query.OrderBy(x => x.CommissionPct),
+            nameof(SalesPersonDto.SalesYtd)      => sort.Descending ? query.OrderByDescending(x => x.SalesYtd)      : query.OrderBy(x => x.SalesYtd),
+            nameof(SalesPersonDto.SalesLastYear) => sort.Descending ? query.OrderByDescending(x => x.SalesLastYear) : query.OrderBy(x => x.SalesLastYear),
+            nameof(SalesPersonDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
+            _                                    => query.OrderBy(x => x.Id),
+        };
 
-            var total = await query.CountAsync(ct);
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(SalesPersonDto.Id)            => sort.Descending ? query.OrderByDescending(x => x.Id)            : query.OrderBy(x => x.Id),
-                nameof(SalesPersonDto.TerritoryId)   => sort.Descending ? query.OrderByDescending(x => x.TerritoryId)   : query.OrderBy(x => x.TerritoryId),
-                nameof(SalesPersonDto.SalesQuota)    => sort.Descending ? query.OrderByDescending(x => x.SalesQuota)    : query.OrderBy(x => x.SalesQuota),
-                nameof(SalesPersonDto.Bonus)         => sort.Descending ? query.OrderByDescending(x => x.Bonus)         : query.OrderBy(x => x.Bonus),
-                nameof(SalesPersonDto.CommissionPct) => sort.Descending ? query.OrderByDescending(x => x.CommissionPct) : query.OrderBy(x => x.CommissionPct),
-                nameof(SalesPersonDto.SalesYtd)      => sort.Descending ? query.OrderByDescending(x => x.SalesYtd)      : query.OrderBy(x => x.SalesYtd),
-                nameof(SalesPersonDto.SalesLastYear) => sort.Descending ? query.OrderByDescending(x => x.SalesLastYear) : query.OrderBy(x => x.SalesLastYear),
-                nameof(SalesPersonDto.ModifiedDate)  => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)  : query.OrderBy(x => x.ModifiedDate),
-                _                                    => query.OrderBy(x => x.Id),
-            };
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<SalesPersonDto> { Items = rows, TotalItems = total };
+    }
 
-            var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<SalesPersonDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<SalesPersonDialog>("New sales person", new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales person created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Sales person created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(SalesPersonDto row)
     {
         var parameters = new DialogParameters<SalesPersonDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<SalesPersonDialog>($"Edit #{row.Id}", parameters, new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Sales person updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Sales person updated.", Severity.Success);
     }
 
     private async Task DeleteAsync(SalesPersonDto row)
     {
-        var confirm = await DialogService.ShowMessageBoxAsync("Delete sales person?", $"Permanently delete sales person #{row.Id}?", yesText: "Delete", cancelText: "Cancel");
-        if (confirm != true) return;
-
         await using var db = await DbFactory.CreateDbContextAsync();
         var entity = await db.SalesPersons.FirstOrDefaultAsync(t => t.Id == row.Id);
-        if (entity is null) { Snackbar.Add("Sales person no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        if (entity is null) { Snackbar.Add("Sales person no longer exists.", Severity.Warning); return; }
         db.SalesPersons.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Sales person deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(SalesPersonDto row) => Navigation.NavigateTo($"aw/sales-persons/history/{row.Id}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Sales person deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
     }
 }

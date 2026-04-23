@@ -1,177 +1,110 @@
 @page "/aw/work-order-routings"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Production.Domain
-@using AWBlazorApp.Features.Production.Cultures.Domain
-@using AWBlazorApp.Features.Production.Documents.Domain
-@using AWBlazorApp.Features.Production.Illustrations.Domain
-@using AWBlazorApp.Features.Production.Locations.Domain
-@using AWBlazorApp.Features.Production.ProductCategories.Domain
-@using AWBlazorApp.Features.Production.ProductCostHistories.Domain
-@using AWBlazorApp.Features.Production.ProductDescriptions.Domain
-@using AWBlazorApp.Features.Production.ProductDocuments.Domain
-@using AWBlazorApp.Features.Production.ProductInventories.Domain
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Domain
-@using AWBlazorApp.Features.Production.ProductModels.Domain
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Domain
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain
-@using AWBlazorApp.Features.Production.ProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Domain
-@using AWBlazorApp.Features.Production.ProductReviews.Domain
-@using AWBlazorApp.Features.Production.Products.Domain
-@using AWBlazorApp.Features.Production.ProductSubcategories.Domain
-@using AWBlazorApp.Features.Production.ScrapReasons.Domain
-@using AWBlazorApp.Features.Production.TransactionHistories.Domain
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain
-@using AWBlazorApp.Features.Production.UnitMeasures.Domain
-@using AWBlazorApp.Features.Production.WorkOrders.Domain
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Domain
-@using AWBlazorApp.Features.Production.Cultures.Dtos
-@using AWBlazorApp.Features.Production.Documents.Dtos
-@using AWBlazorApp.Features.Production.Illustrations.Dtos
-@using AWBlazorApp.Features.Production.Locations.Dtos
-@using AWBlazorApp.Features.Production.ProductCategories.Dtos
-@using AWBlazorApp.Features.Production.ProductCostHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductDescriptions.Dtos
-@using AWBlazorApp.Features.Production.ProductDocuments.Dtos
-@using AWBlazorApp.Features.Production.ProductInventories.Dtos
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductModels.Dtos
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Dtos
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Dtos
-@using AWBlazorApp.Features.Production.ProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductReviews.Dtos
-@using AWBlazorApp.Features.Production.Products.Dtos
-@using AWBlazorApp.Features.Production.ProductSubcategories.Dtos
-@using AWBlazorApp.Features.Production.ScrapReasons.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistories.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Dtos
-@using AWBlazorApp.Features.Production.UnitMeasures.Dtos
-@using AWBlazorApp.Features.Production.WorkOrders.Dtos
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Work order routings</PageTitle>
-
-<MudStack Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4">Work order routings</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.WorkOrderRouting · 3-col PK</MudText>
-        <MudSpacer />
-        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/work-order-routings/history">View history</MudButton>
-        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateAsync">New routing</MudButton>
-        </AuthorizeView>
-    </MudStack>
-
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" />
-    </MudPaper>
-
-    <MudDataGrid T="WorkOrderRoutingDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.WorkOrderId" Title="Work order">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.WorkOrderId)" Title="Work order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.OperationSequence" Title="Op seq">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.OperationSequence)" Title="Op seq" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.LocationId" Title="Location">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.LocationId)" Title="Location" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ScheduledStartDate" Title="Sched start" Format="yyyy-MM-dd">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledStartDate)" Title="Sched start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ScheduledEndDate" Title="Sched end" Format="yyyy-MM-dd">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledEndDate)" Title="Sched end" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.PlannedCost" Title="Planned cost" Format="C2">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.PlannedCost)" Title="Planned cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ActualCost" Title="Actual cost" Format="C2">
-                <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ActualCost)" Title="Actual cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
-                        <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
-                        <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
-                        </AuthorizeView>
-                        <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
-                        </AuthorizeView>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="WorkOrderRoutingDto" /></PagerContent>
-    </MudDataGrid>
-</MudStack>
+<CrudPage TDto="WorkOrderRoutingDto"
+          @ref="page"
+          Title="Work order routings"
+          Caption="Production.WorkOrderRouting · 3-col PK"
+          NewButtonLabel="New routing"
+          HistoryRoute="aw/work-order-routings/history"
+          LoadData="LoadServerDataAsync"
+          OnCreate="OpenCreateAsync"
+          EntityNameSingular="routing">
+    <Filters>
+        <MudItem xs="12"><MudNumericField T="int?" @bind-Value="filterWorkOrderId" Label="Work order id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="int" Property="x => x.WorkOrderId" Title="Work order">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.WorkOrderId)" Title="Work order" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="int" Property="x => x.ProductId" Title="Product">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="short" Property="x => x.OperationSequence" Title="Op seq">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.OperationSequence)" Title="Op seq" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="short" Property="x => x.LocationId" Title="Location">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.LocationId)" Title="Location" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="DateTime" Property="x => x.ScheduledStartDate" Title="Sched start" Format="yyyy-MM-dd">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledStartDate)" Title="Sched start" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="DateTime" Property="x => x.ScheduledEndDate" Title="Sched end" Format="yyyy-MM-dd">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ScheduledEndDate)" Title="Sched end" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="decimal" Property="x => x.PlannedCost" Title="Planned cost" Format="C2">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.PlannedCost)" Title="Planned cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn T="WorkOrderRoutingDto" TProperty="decimal?" Property="x => x.ActualCost" Title="Actual cost" Format="C2">
+            <HeaderTemplate><GridColumnHeader TEntity="WorkOrderRouting" PropertyName="@nameof(WorkOrderRoutingDto.ActualCost)" Title="Actual cost" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
+        </PropertyColumn>
+    </Columns>
+    <Actions Context="row">
+        <MudStack Row="true" Spacing="1">
+            <MudTooltip Text="History">
+                <MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small"
+                               OnClick="@(() => Navigation.NavigateTo($"aw/work-order-routings/history?workOrderId={row.WorkOrderId}&productId={row.ProductId}&operationSequence={row.OperationSequence}"))" />
+            </MudTooltip>
+            <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(row))" />
+            </AuthorizeView>
+            <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(row))" />
+            </AuthorizeView>
+        </MudStack>
+    </Actions>
+</CrudPage>
 
 @code {
-    private MudDataGrid<WorkOrderRoutingDto> grid = null!;
-    private bool _loading = true;
+    private CrudPage<WorkOrderRoutingDto> page = null!;
     private int? filterWorkOrderId;
     private readonly ColumnFilterState columnFilters = new();
 
     private async Task<GridData<WorkOrderRoutingDto>> LoadServerDataAsync(GridState<WorkOrderRoutingDto> state, CancellationToken ct)
     {
-        _loading = true;
-        await InvokeAsync(StateHasChanged);
-        try
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.WorkOrderRoutings.AsNoTracking();
+        if (filterWorkOrderId.HasValue) query = query.Where(x => x.WorkOrderId == filterWorkOrderId.Value);
+        query = query.ApplyColumnFilters(columnFilters);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
         {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var query = db.WorkOrderRoutings.AsNoTracking();
-            if (filterWorkOrderId.HasValue) query = query.Where(x => x.WorkOrderId == filterWorkOrderId.Value);
-            query = query.ApplyColumnFilters(columnFilters);
+            nameof(WorkOrderRoutingDto.WorkOrderId)        => sort.Descending ? query.OrderByDescending(x => x.WorkOrderId)        : query.OrderBy(x => x.WorkOrderId),
+            nameof(WorkOrderRoutingDto.ProductId)          => sort.Descending ? query.OrderByDescending(x => x.ProductId)          : query.OrderBy(x => x.ProductId),
+            nameof(WorkOrderRoutingDto.OperationSequence)  => sort.Descending ? query.OrderByDescending(x => x.OperationSequence)  : query.OrderBy(x => x.OperationSequence),
+            nameof(WorkOrderRoutingDto.LocationId)         => sort.Descending ? query.OrderByDescending(x => x.LocationId)         : query.OrderBy(x => x.LocationId),
+            nameof(WorkOrderRoutingDto.ScheduledStartDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledStartDate) : query.OrderBy(x => x.ScheduledStartDate),
+            nameof(WorkOrderRoutingDto.ScheduledEndDate)   => sort.Descending ? query.OrderByDescending(x => x.ScheduledEndDate)   : query.OrderBy(x => x.ScheduledEndDate),
+            nameof(WorkOrderRoutingDto.PlannedCost)        => sort.Descending ? query.OrderByDescending(x => x.PlannedCost)        : query.OrderBy(x => x.PlannedCost),
+            nameof(WorkOrderRoutingDto.ActualCost)         => sort.Descending ? query.OrderByDescending(x => x.ActualCost)         : query.OrderBy(x => x.ActualCost),
+            _                                              => query.OrderBy(x => x.WorkOrderId).ThenBy(x => x.ProductId).ThenBy(x => x.OperationSequence),
+        };
 
-            var total = await query.CountAsync(ct);
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<WorkOrderRoutingDto> { Items = rows, TotalItems = total };
+    }
 
-            var sort = state.SortDefinitions.FirstOrDefault();
-            query = sort?.SortBy switch
-            {
-                nameof(WorkOrderRoutingDto.WorkOrderId) => sort.Descending ? query.OrderByDescending(x => x.WorkOrderId) : query.OrderBy(x => x.WorkOrderId),
-                nameof(WorkOrderRoutingDto.ProductId) => sort.Descending ? query.OrderByDescending(x => x.ProductId) : query.OrderBy(x => x.ProductId),
-                nameof(WorkOrderRoutingDto.OperationSequence) => sort.Descending ? query.OrderByDescending(x => x.OperationSequence) : query.OrderBy(x => x.OperationSequence),
-                nameof(WorkOrderRoutingDto.LocationId) => sort.Descending ? query.OrderByDescending(x => x.LocationId) : query.OrderBy(x => x.LocationId),
-                nameof(WorkOrderRoutingDto.ScheduledStartDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledStartDate) : query.OrderBy(x => x.ScheduledStartDate),
-                nameof(WorkOrderRoutingDto.ScheduledEndDate) => sort.Descending ? query.OrderByDescending(x => x.ScheduledEndDate) : query.OrderBy(x => x.ScheduledEndDate),
-                nameof(WorkOrderRoutingDto.PlannedCost) => sort.Descending ? query.OrderByDescending(x => x.PlannedCost) : query.OrderBy(x => x.PlannedCost),
-                nameof(WorkOrderRoutingDto.ActualCost) => sort.Descending ? query.OrderByDescending(x => x.ActualCost) : query.OrderBy(x => x.ActualCost),
-                _ => query.OrderBy(x => x.WorkOrderId).ThenBy(x => x.ProductId).ThenBy(x => x.OperationSequence),
-            };
-
-            var rows = await query
-                .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(x => x.ToDto()).ToListAsync(ct);
-            return new GridData<WorkOrderRoutingDto> { Items = rows, TotalItems = total };
-            }
-        finally
-        {
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
-        }}
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
+    private Task ApplyFilter() => page.ReloadAsync();
 
     private async Task OpenCreateAsync()
     {
         var dialog = await DialogService.ShowAsync<WorkOrderRoutingDialog>("New routing", new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Routing created.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Routing created.", Severity.Success);
     }
 
     private async Task OpenEditAsync(WorkOrderRoutingDto row)
     {
         var parameters = new DialogParameters<WorkOrderRoutingDialog> { { x => x.Model, row } };
         var dialog = await DialogService.ShowAsync<WorkOrderRoutingDialog>($"Edit routing ({row.WorkOrderId}, {row.ProductId}, {row.OperationSequence})", parameters, new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
-        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Routing updated.", Severity.Success); await grid.ReloadServerData(); }
+        if ((await dialog.Result) is { Canceled: false }) { Snackbar.Add("Routing updated.", Severity.Success); await page.ReloadAsync(); }
     }
 
     private async Task DeleteAsync(WorkOrderRoutingDto row)
@@ -180,30 +113,11 @@
         if (confirm != true) return;
 
         await using var db = await DbFactory.CreateDbContextAsync();
-        var entity = await db.WorkOrderRoutings
-            .FirstOrDefaultAsync(t => t.WorkOrderId == row.WorkOrderId && t.ProductId == row.ProductId && t.OperationSequence == row.OperationSequence);
-        if (entity is null) { Snackbar.Add("Routing no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
-
-        var changedBy = await GetCurrentUserNameAsync();
+        var entity = await db.WorkOrderRoutings.FirstOrDefaultAsync(t => t.WorkOrderId == row.WorkOrderId && t.ProductId == row.ProductId && t.OperationSequence == row.OperationSequence);
+        if (entity is null) { Snackbar.Add("Routing no longer exists.", Severity.Warning); await page.ReloadAsync(); return; }
         db.WorkOrderRoutings.Remove(entity);
-        try
-        {
-            await db.SaveChangesAsync();
-            Snackbar.Add("Routing deleted.", Severity.Success);
-        }
-        catch (DbUpdateException ex)
-        {
-            Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
-        }
-        await grid.ReloadServerData();
-    }
-
-    private void OpenHistory(WorkOrderRoutingDto row)
-        => Navigation.NavigateTo($"aw/work-order-routings/history?workOrderId={row.WorkOrderId}&productId={row.ProductId}&operationSequence={row.OperationSequence}");
-
-    private async Task<string?> GetCurrentUserNameAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        return state.User.Identity?.IsAuthenticated == true ? state.User.Identity.Name : null;
+        try { await db.SaveChangesAsync(); Snackbar.Add("Routing deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+        await page.ReloadAsync();
     }
 }
