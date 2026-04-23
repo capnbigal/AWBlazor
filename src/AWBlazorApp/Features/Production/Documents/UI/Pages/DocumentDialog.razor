@@ -187,7 +187,6 @@
                     return;
                 }
                 var entity = createModel.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.Documents.Add(entity);
                 try
                 {
@@ -198,8 +197,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                var reloaded = await db.Documents.AsNoTracking().FirstAsync(x => x.DocumentNode == entity.DocumentNode);
-                await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
