@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Inventory.Adjustments.Application.Services; using AWBlazorApp.Features.Inventory.Items.Application.Services; using AWBlazorApp.Features.Inventory.Locations.Application.Services; using AWBlazorApp.Features.Inventory.Lots.Application.Services; using AWBlazorApp.Features.Inventory.Serials.Application.Services; 
 using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
 using AWBlazorApp.Features.Inventory.Adjustments.Dtos; using AWBlazorApp.Features.Inventory.Items.Dtos; using AWBlazorApp.Features.Inventory.Locations.Dtos; using AWBlazorApp.Features.Inventory.Lots.Dtos; using AWBlazorApp.Features.Inventory.Serials.Dtos; 
 using FluentValidation;
@@ -77,7 +77,8 @@ public static class InventoryLocationEndpoints
         var entity = request.ToEntity();
         await ResolvePathAndDepthAsync(db, entity, ct);
 
-        await db.AddWithAuditAsync(entity, e => InventoryLocationAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.InventoryLocations.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/inventory-locations/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -92,19 +93,19 @@ public static class InventoryLocationEndpoints
         var entity = await db.InventoryLocations.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = InventoryLocationAuditService.CaptureSnapshot(entity);
+        var beforeParent = entity.ParentLocationId;
+        var beforeCode = entity.Code;
         var oldPath = entity.Path;
         request.ApplyTo(entity);
 
-        var parentChanged = request.ParentLocationId is not null && request.ParentLocationId != before.ParentLocationId;
-        var codeChanged = request.Code is not null && request.Code.Trim().ToUpperInvariant() != before.Code;
+        var parentChanged = request.ParentLocationId is not null && request.ParentLocationId != beforeParent;
+        var codeChanged = request.Code is not null && request.Code.Trim().ToUpperInvariant() != beforeCode;
         if (parentChanged || codeChanged)
         {
             await ResolvePathAndDepthAsync(db, entity, ct);
             await CascadePathAsync(db, entity.Id, oldPath, entity.Path, entity.Depth, ct);
         }
 
-        db.InventoryLocationAuditLogs.Add(InventoryLocationAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -124,20 +125,22 @@ public static class InventoryLocationEndpoints
             });
         }
 
-        await db.DeleteWithAuditAsync(entity, InventoryLocationAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.InventoryLocations.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<InventoryLocationAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var query = db.InventoryLocationAuditLogs.AsNoTracking().Where(x => x.InventoryLocationId == id);
+        var idStr = id.ToString();
+        var query = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "InventoryLocation" && a.EntityId == idStr);
         var total = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(x => x.ChangedDate).ThenByDescending(x => x.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<InventoryLocationAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task ResolvePathAndDepthAsync(ApplicationDbContext db, InventoryLocation entity, CancellationToken ct)

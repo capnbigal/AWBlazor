@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Logistics.Receipts.Application.Services; using AWBlazorApp.Features.Logistics.Shipments.Application.Services; using AWBlazorApp.Features.Logistics.Transfers.Application.Services; 
-using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
-using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos; 
+using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain;
+using AWBlazorApp.Features.Logistics.Receipts.Dtos; using AWBlazorApp.Features.Logistics.Shipments.Dtos; using AWBlazorApp.Features.Logistics.Transfers.Dtos;
 using AWBlazorApp.Features.Logistics.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -78,7 +78,8 @@ public static class GoodsReceiptEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => GoodsReceiptAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.GoodsReceipts.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/goods-receipts/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -95,9 +96,7 @@ public static class GoodsReceiptEndpoints
         if (entity.Status is GoodsReceiptStatus.Posted or GoodsReceiptStatus.Cancelled)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = [$"Receipt is {entity.Status}; no further edits allowed."] });
 
-        var before = GoodsReceiptAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.GoodsReceiptAuditLogs.Add(GoodsReceiptAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -110,7 +109,8 @@ public static class GoodsReceiptEndpoints
         if (entity.Status == GoodsReceiptStatus.Posted)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a posted receipt."] });
 
-        await db.DeleteWithAuditAsync(entity, GoodsReceiptAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.GoodsReceipts.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
@@ -121,16 +121,17 @@ public static class GoodsReceiptEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<GoodsReceiptAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.GoodsReceiptAuditLogs.AsNoTracking().Where(a => a.GoodsReceiptId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "GoodsReceipt" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<GoodsReceiptAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<GoodsReceiptLineDto>>> ListLinesAsync(
@@ -159,8 +160,6 @@ public static class GoodsReceiptEndpoints
         var entity = request.ToEntity();
         db.GoodsReceiptLines.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.GoodsReceiptLineAuditLogs.Add(GoodsReceiptLineAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/goods-receipts/{id}/lines/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -174,9 +173,7 @@ public static class GoodsReceiptEndpoints
         var entity = await db.GoodsReceiptLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = GoodsReceiptLineAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.GoodsReceiptLineAuditLogs.Add(GoodsReceiptLineAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -187,7 +184,6 @@ public static class GoodsReceiptEndpoints
         var entity = await db.GoodsReceiptLines.FirstOrDefaultAsync(x => x.Id == lineId, ct);
         if (entity is null) return TypedResults.NotFound();
         db.GoodsReceiptLines.Remove(entity);
-        db.GoodsReceiptLineAuditLogs.Add(GoodsReceiptLineAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

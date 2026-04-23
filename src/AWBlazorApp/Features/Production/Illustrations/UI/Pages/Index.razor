@@ -49,30 +49,6 @@
 @using AWBlazorApp.Features.Production.UnitMeasures.Dtos
 @using AWBlazorApp.Features.Production.WorkOrders.Dtos
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
-@using AWBlazorApp.Features.Production.Cultures.Application.Services
-@using AWBlazorApp.Features.Production.Documents.Application.Services
-@using AWBlazorApp.Features.Production.Illustrations.Application.Services
-@using AWBlazorApp.Features.Production.Locations.Application.Services
-@using AWBlazorApp.Features.Production.ProductCategories.Application.Services
-@using AWBlazorApp.Features.Production.ProductCostHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductDescriptions.Application.Services
-@using AWBlazorApp.Features.Production.ProductDocuments.Application.Services
-@using AWBlazorApp.Features.Production.ProductInventories.Application.Services
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductModels.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Application.Services
-@using AWBlazorApp.Features.Production.ProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductReviews.Application.Services
-@using AWBlazorApp.Features.Production.Products.Application.Services
-@using AWBlazorApp.Features.Production.ProductSubcategories.Application.Services
-@using AWBlazorApp.Features.Production.ScrapReasons.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistories.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Application.Services
-@using AWBlazorApp.Features.Production.UnitMeasures.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrders.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -167,7 +143,6 @@
         db.Illustrations.Add(entity);
         await db.SaveChangesAsync();
         var changedBy = await GetCurrentUserNameAsync();
-        db.IllustrationAuditLogs.Add(IllustrationAuditService.RecordCreate(entity, changedBy));
         await db.SaveChangesAsync();
         Snackbar.Add($"Illustration #{entity.Id} created.", Severity.Success);
         await grid.ReloadServerData();
@@ -183,7 +158,6 @@
         if (entity is null) { Snackbar.Add("Illustration no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
 
         var changedBy = await GetCurrentUserNameAsync();
-        db.IllustrationAuditLogs.Add(IllustrationAuditService.RecordDelete(entity, changedBy));
         db.Illustrations.Remove(entity);
         try
         {

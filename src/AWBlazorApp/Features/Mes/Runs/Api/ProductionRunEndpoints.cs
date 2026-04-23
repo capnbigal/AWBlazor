@@ -2,11 +2,11 @@ using AWBlazorApp.Features.Mes.Runs.Dtos;
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Mes.Audit;
-using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
+using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain;
 using AWBlazorApp.Features.Mes.Dtos;
-using AWBlazorApp.Features.Mes.Runs.Application.Services; using AWBlazorApp.Features.Mes.Instructions.Application.Services; 
+using AWBlazorApp.Features.Mes.Runs.Application.Services; using AWBlazorApp.Features.Mes.Instructions.Application.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -89,7 +89,8 @@ public static class ProductionRunEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => ProductionRunAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.ProductionRuns.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/production-runs/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -105,9 +106,7 @@ public static class ProductionRunEndpoints
         if (entity.Status is ProductionRunStatus.Completed or ProductionRunStatus.Cancelled)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = [$"Run is {entity.Status}; no further edits allowed."] });
 
-        var before = ProductionRunAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.ProductionRunAuditLogs.Add(ProductionRunAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -120,7 +119,8 @@ public static class ProductionRunEndpoints
         if (entity.Status == ProductionRunStatus.Completed)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Status"] = ["Cannot delete a completed run; cancel it instead."] });
 
-        await db.DeleteWithAuditAsync(entity, ProductionRunAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.ProductionRuns.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
@@ -160,16 +160,17 @@ public static class ProductionRunEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<ProductionRunAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.ProductionRunAuditLogs.AsNoTracking().Where(a => a.ProductionRunId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "ProductionRun" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<ProductionRunAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<ProductionRunOperationDto>>> ListOperationsAsync(
@@ -196,8 +197,6 @@ public static class ProductionRunEndpoints
         var entity = request.ToEntity();
         db.ProductionRunOperations.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.ProductionRunOperationAuditLogs.Add(ProductionRunOperationAuditService.RecordCreate(entity, user.Identity?.Name));
-        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/production-runs/{id}/operations/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -210,9 +209,7 @@ public static class ProductionRunEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.ProductionRunOperations.FirstOrDefaultAsync(x => x.Id == opId, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = ProductionRunOperationAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.ProductionRunOperationAuditLogs.Add(ProductionRunOperationAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -223,7 +220,6 @@ public static class ProductionRunEndpoints
         var entity = await db.ProductionRunOperations.FirstOrDefaultAsync(x => x.Id == opId, ct);
         if (entity is null) return TypedResults.NotFound();
         db.ProductionRunOperations.Remove(entity);
-        db.ProductionRunOperationAuditLogs.Add(ProductionRunOperationAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

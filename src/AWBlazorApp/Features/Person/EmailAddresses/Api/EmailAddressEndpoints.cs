@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.Person.Addresses.Dtos; using AWBlazorApp.Features.Person.AddressTypes.Dtos; using AWBlazorApp.Features.Person.BusinessEntities.Dtos; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos; using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos; using AWBlazorApp.Features.Person.ContactTypes.Dtos; using AWBlazorApp.Features.Person.CountryRegions.Dtos; using AWBlazorApp.Features.Person.EmailAddresses.Dtos; using AWBlazorApp.Features.Person.Persons.Dtos; using AWBlazorApp.Features.Person.PersonPhones.Dtos; using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos; using AWBlazorApp.Features.Person.StateProvinces.Dtos; 
-using AWBlazorApp.Features.Person.Addresses.Application.Services; using AWBlazorApp.Features.Person.AddressTypes.Application.Services; using AWBlazorApp.Features.Person.BusinessEntities.Application.Services; using AWBlazorApp.Features.Person.BusinessEntityAddresses.Application.Services; using AWBlazorApp.Features.Person.BusinessEntityContacts.Application.Services; using AWBlazorApp.Features.Person.ContactTypes.Application.Services; using AWBlazorApp.Features.Person.CountryRegions.Application.Services; using AWBlazorApp.Features.Person.EmailAddresses.Application.Services; using AWBlazorApp.Features.Person.Persons.Application.Services; using AWBlazorApp.Features.Person.PersonPhones.Application.Services; using AWBlazorApp.Features.Person.PhoneNumberTypes.Application.Services; using AWBlazorApp.Features.Person.StateProvinces.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -65,7 +64,6 @@ public static class EmailAddressEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => EmailAddressAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/email-addresses/by-key?businessEntityId={entity.BusinessEntityId}&emailAddressId={entity.EmailAddressId}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -87,9 +85,7 @@ public static class EmailAddressEndpoints
             .FirstOrDefaultAsync(x => x.BusinessEntityId == businessEntityId && x.EmailAddressId == emailAddressId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = EmailAddressAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.EmailAddressAuditLogs.Add(EmailAddressAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -106,7 +102,6 @@ public static class EmailAddressEndpoints
             .FirstOrDefaultAsync(x => x.BusinessEntityId == businessEntityId && x.EmailAddressId == emailAddressId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.EmailAddressAuditLogs.Add(EmailAddressAuditService.RecordDelete(entity, user.Identity?.Name));
         db.EmailAddresses.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();

@@ -36,25 +36,6 @@
 @using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
 @using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
 @using AWBlazorApp.Features.Sales.Stores.Dtos
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services
-@using AWBlazorApp.Features.Sales.CreditCards.Application.Services
-@using AWBlazorApp.Features.Sales.Currencies.Application.Services
-@using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services
-@using AWBlazorApp.Features.Sales.Customers.Application.Services
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services
-@using AWBlazorApp.Features.Sales.SalesPeople.Application.Services
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services
-@using AWBlazorApp.Features.Sales.SalesReasons.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services
-@using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services
-@using AWBlazorApp.Features.Sales.Stores.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateSalesOrderDetailRequest> CreateValidator
@@ -159,7 +140,6 @@
                     return;
                 }
                 var reloaded = await db.SalesOrderDetails.AsNoTracking().FirstAsync(x => x.SalesOrderId == entity.SalesOrderId && x.SalesOrderDetailId == entity.SalesOrderDetailId);
-                db.SalesOrderDetailAuditLogs.Add(SalesOrderDetailAuditService.RecordCreate(reloaded, changedBy));
                 await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(true));
             }
@@ -169,9 +149,7 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.SalesOrderDetails.FirstOrDefaultAsync(t => t.SalesOrderId == Model!.SalesOrderId && t.SalesOrderDetailId == Model.SalesOrderDetailId);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = SalesOrderDetailAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.SalesOrderDetailAuditLogs.Add(SalesOrderDetailAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

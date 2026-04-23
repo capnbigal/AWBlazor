@@ -47,30 +47,6 @@
 @using AWBlazorApp.Features.Production.UnitMeasures.Dtos
 @using AWBlazorApp.Features.Production.WorkOrders.Dtos
 @using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
-@using AWBlazorApp.Features.Production.Cultures.Application.Services
-@using AWBlazorApp.Features.Production.Documents.Application.Services
-@using AWBlazorApp.Features.Production.Illustrations.Application.Services
-@using AWBlazorApp.Features.Production.Locations.Application.Services
-@using AWBlazorApp.Features.Production.ProductCategories.Application.Services
-@using AWBlazorApp.Features.Production.ProductCostHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductDescriptions.Application.Services
-@using AWBlazorApp.Features.Production.ProductDocuments.Application.Services
-@using AWBlazorApp.Features.Production.ProductInventories.Application.Services
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Application.Services
-@using AWBlazorApp.Features.Production.ProductModels.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Application.Services
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Application.Services
-@using AWBlazorApp.Features.Production.ProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Application.Services
-@using AWBlazorApp.Features.Production.ProductReviews.Application.Services
-@using AWBlazorApp.Features.Production.Products.Application.Services
-@using AWBlazorApp.Features.Production.ProductSubcategories.Application.Services
-@using AWBlazorApp.Features.Production.ScrapReasons.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistories.Application.Services
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Application.Services
-@using AWBlazorApp.Features.Production.UnitMeasures.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrders.Application.Services
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateTransactionHistoryArchiveRequest> CreateValidator
@@ -214,7 +190,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.TransactionHistoryArchiveAuditLogs.Add(TransactionHistoryArchiveAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
@@ -225,9 +200,7 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.TransactionHistoryArchives.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = TransactionHistoryArchiveAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.TransactionHistoryArchiveAuditLogs.Add(TransactionHistoryArchiveAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

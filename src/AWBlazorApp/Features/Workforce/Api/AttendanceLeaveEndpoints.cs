@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Workforce.Audit;
 using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
 using AWBlazorApp.Features.Workforce.Dtos;
 using AWBlazorApp.Features.Workforce.LeaveRequests.Application.Services; using AWBlazorApp.Features.Workforce.Qualifications.Application.Services; using AWBlazorApp.Features.Workforce.Qualifications.Application.Hooks; 
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -143,7 +143,8 @@ public static class AttendanceLeaveEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await db.AddWithAuditAsync(entity, e => LeaveRequestAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.LeaveRequests.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/leave-requests/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -203,15 +204,16 @@ public static class AttendanceLeaveEndpoints
         }
     }
 
-    private static async Task<Ok<PagedResult<LeaveRequestAuditLogDto>>> LeaveHistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> LeaveHistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.LeaveRequestAuditLogs.AsNoTracking().Where(a => a.LeaveRequestId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "LeaveRequest" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<LeaveRequestAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 }

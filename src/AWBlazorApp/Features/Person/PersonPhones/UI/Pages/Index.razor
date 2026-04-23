@@ -24,18 +24,6 @@
 @using AWBlazorApp.Features.Person.PersonPhones.Dtos
 @using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
 @using AWBlazorApp.Features.Person.StateProvinces.Dtos
-@using AWBlazorApp.Features.Person.Addresses.Application.Services
-@using AWBlazorApp.Features.Person.AddressTypes.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntities.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Application.Services
-@using AWBlazorApp.Features.Person.ContactTypes.Application.Services
-@using AWBlazorApp.Features.Person.CountryRegions.Application.Services
-@using AWBlazorApp.Features.Person.EmailAddresses.Application.Services
-@using AWBlazorApp.Features.Person.Persons.Application.Services
-@using AWBlazorApp.Features.Person.PersonPhones.Application.Services
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Application.Services
-@using AWBlazorApp.Features.Person.StateProvinces.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -160,7 +148,6 @@
         if (entity is null) { Snackbar.Add("Phone no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
 
         var changedBy = await GetCurrentUserNameAsync();
-        db.PersonPhoneAuditLogs.Add(PersonPhoneAuditService.RecordDelete(entity, changedBy));
         db.PersonPhones.Remove(entity);
         try
         {

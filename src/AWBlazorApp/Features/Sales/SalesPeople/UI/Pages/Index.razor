@@ -38,25 +38,6 @@
 @using AWBlazorApp.Features.Sales.SpecialOffers.Dtos
 @using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos
 @using AWBlazorApp.Features.Sales.Stores.Dtos
-@using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services
-@using AWBlazorApp.Features.Sales.CreditCards.Application.Services
-@using AWBlazorApp.Features.Sales.Currencies.Application.Services
-@using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services
-@using AWBlazorApp.Features.Sales.Customers.Application.Services
-@using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services
-@using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services
-@using AWBlazorApp.Features.Sales.SalesPeople.Application.Services
-@using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services
-@using AWBlazorApp.Features.Sales.SalesReasons.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services
-@using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services
-@using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services
-@using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services
-@using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services
-@using AWBlazorApp.Features.Sales.Stores.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -202,7 +183,6 @@
         if (entity is null) { Snackbar.Add("Sales person no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
 
         var changedBy = await GetCurrentUserNameAsync();
-        db.SalesPersonAuditLogs.Add(SalesPersonAuditService.RecordDelete(entity, changedBy));
         db.SalesPersons.Remove(entity);
         try
         {

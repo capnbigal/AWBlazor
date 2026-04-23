@@ -186,13 +186,8 @@
                 }
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = createModel.ToEntity();
-                await using var tx = await db.Database.BeginTransactionAsync();
                 db.ToolSlotConfigurations.Add(entity);
-                // Save to get the identity-generated Id, then write the audit row.
                 await db.SaveChangesAsync();
-                db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordCreate(entity, changedBy));
-                await db.SaveChangesAsync();
-                await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }
             else
@@ -208,9 +203,7 @@
                     MudDialog.Close(DialogResult.Cancel());
                     return;
                 }
-                var before = ToolSlotAuditService.Snapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordUpdate(before, entity, changedBy));
                 await db.SaveChangesAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
             }

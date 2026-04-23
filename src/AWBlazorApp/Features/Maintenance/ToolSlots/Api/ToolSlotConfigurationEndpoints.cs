@@ -1,11 +1,9 @@
 using System.Security.Claims;
-using AWBlazorApp.Features.Maintenance.ToolSlots.Application.Services;
 using AWBlazorApp.Features.Maintenance.ToolSlots.Domain;
 using AWBlazorApp.Features.Maintenance.ToolSlots.Dtos;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Shared.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -97,7 +95,8 @@ public static class ToolSlotConfigurationEndpoints
         }
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => ToolSlotAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.ToolSlotConfigurations.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/tool-slots/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -118,9 +117,7 @@ public static class ToolSlotConfigurationEndpoints
         var entity = await db.ToolSlotConfigurations.FirstOrDefaultAsync(t => t.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = ToolSlotAuditService.Snapshot(entity);
         request.ApplyTo(entity);
-        db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
 
         return TypedResults.Ok(new IdResponse(entity.Id));
@@ -132,7 +129,6 @@ public static class ToolSlotConfigurationEndpoints
         var entity = await db.ToolSlotConfigurations.FirstOrDefaultAsync(t => t.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.ToolSlotAuditLogs.Add(ToolSlotAuditService.RecordDelete(entity, user.Identity?.Name));
         db.ToolSlotConfigurations.Remove(entity);
         await db.SaveChangesAsync(ct);
 

@@ -111,12 +111,10 @@
             var entity = await db.QualificationAlerts.FirstOrDefaultAsync(a => a.Id == id);
             if (entity is null) { Snackbar.Add("Alert not found.", Severity.Error); return; }
             var by = await GetUserNameAsync();
-            var before = QualificationAlertAuditService.CaptureSnapshot(entity);
             entity.Status = target;
             entity.AcknowledgedAt = DateTime.UtcNow;
             entity.AcknowledgedByUserId = by;
             entity.ModifiedDate = DateTime.UtcNow;
-            db.QualificationAlertAuditLogs.Add(QualificationAlertAuditService.RecordUpdate(before, entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add($"Alert {target}.", Severity.Success);
             await grid.ReloadServerData();

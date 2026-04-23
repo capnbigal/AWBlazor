@@ -104,12 +104,8 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var by = await GetUserNameAsync();
             var entity = newAdj.ToEntity(by);
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.InventoryAdjustments.Add(entity);
             await db.SaveChangesAsync();
-            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Adjustment {entity.AdjustmentNumber} created.", Severity.Success);
             dialogOpen = false;
             await grid.ReloadServerData();
@@ -126,7 +122,6 @@
             var entity = await db.InventoryAdjustments.FirstOrDefaultAsync(x => x.Id == row.Id);
             if (entity is null) { Snackbar.Add("Not found.", Severity.Warning); return; }
 
-            var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
             var by = await GetUserNameAsync();
             var typeCode = entity.QuantityDelta > 0 ? InventoryTransactionTypeCodes.AdjustInc : InventoryTransactionTypeCodes.AdjustDec;
             var result = await InventoryService.PostTransactionAsync(new PostTransactionRequest(
@@ -142,7 +137,6 @@
             entity.ApprovedAt = DateTime.UtcNow;
             entity.PostedTransactionId = result.TransactionId;
             entity.ModifiedDate = DateTime.UtcNow;
-            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add($"Approved and posted as tx {result.TransactionNumber}.", Severity.Success);
             await grid.ReloadServerData();
@@ -157,13 +151,11 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = await db.InventoryAdjustments.FirstOrDefaultAsync(x => x.Id == row.Id);
             if (entity is null) return;
-            var before = InventoryAdjustmentAuditService.CaptureSnapshot(entity);
             var by = await GetUserNameAsync();
             entity.Status = AdjustmentStatus.Rejected;
             entity.ApprovedByUserId = by;
             entity.ApprovedAt = DateTime.UtcNow;
             entity.ModifiedDate = DateTime.UtcNow;
-            db.InventoryAdjustmentAuditLogs.Add(InventoryAdjustmentAuditService.RecordUpdate(before, entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Adjustment rejected.", Severity.Info);
             await grid.ReloadServerData();

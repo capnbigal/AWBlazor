@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Maintenance.Audit;
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos; 
-using AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services; using AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services; 
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain;
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos;
+using AWBlazorApp.Features.Maintenance.PmSchedules.Application.Services; using AWBlazorApp.Features.Maintenance.WorkOrders.Application.Services;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -80,7 +80,8 @@ public static class MaintenanceWorkOrderEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await db.AddWithAuditAsync(entity, e => MaintenanceWorkOrderAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.MaintenanceWorkOrders.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/maintenance-work-orders/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -95,9 +96,7 @@ public static class MaintenanceWorkOrderEndpoints
         if (entity is null) return TypedResults.NotFound();
         if (entity.Status is WorkOrderStatus.Completed or WorkOrderStatus.Cancelled)
             return TypedResults.BadRequest("Cannot edit a Completed or Cancelled work order.");
-        var before = MaintenanceWorkOrderAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.MaintenanceWorkOrderAuditLogs.Add(MaintenanceWorkOrderAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -107,20 +106,22 @@ public static class MaintenanceWorkOrderEndpoints
     {
         var entity = await db.MaintenanceWorkOrders.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, MaintenanceWorkOrderAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.MaintenanceWorkOrders.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<MaintenanceWorkOrderAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.MaintenanceWorkOrderAuditLogs.AsNoTracking().Where(a => a.MaintenanceWorkOrderId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "MaintenanceWorkOrder" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<MaintenanceWorkOrderAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Results<NoContent, NotFound, BadRequest<string>>> ScheduleAsync(

@@ -1,15 +1,11 @@
-using AWBlazorApp.Features.Engineering.Audit;
 using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
 using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
 using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
 using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
-using AWBlazorApp.Features.Maintenance.Audit;
 using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
 using AWBlazorApp.Features.Mes.Downtime.Domain; using AWBlazorApp.Features.Mes.Instructions.Domain; using AWBlazorApp.Features.Mes.Runs.Domain; 
-using AWBlazorApp.Features.Performance.Audit;
 using AWBlazorApp.Features.Performance.Kpis.Domain; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain; using AWBlazorApp.Features.Performance.Oee.Domain; using AWBlazorApp.Features.Performance.ProductionMetrics.Domain; using AWBlazorApp.Features.Performance.Reports.Domain; using AWBlazorApp.Features.Performance.Scorecards.Domain; 
 using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
-using AWBlazorApp.Features.Workforce.Audit;
 using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -217,7 +213,6 @@ public sealed class DemoDataSeeder
         };
         db.TrainingCourses.AddRange(courses);
         await db.SaveChangesAsync(ct);
-        foreach (var c in courses) db.TrainingCourseAuditLogs.Add(TrainingCourseAuditService.RecordCreate(c, "demo-seed"));
         rows += courses.Length;
 
         var quals = new[]
@@ -233,7 +228,6 @@ public sealed class DemoDataSeeder
         };
         db.Qualifications.AddRange(quals);
         await db.SaveChangesAsync(ct);
-        foreach (var q in quals) db.QualificationAuditLogs.Add(QualificationAuditService.RecordCreate(q, "demo-seed"));
         rows += quals.Length;
 
         var rnd = new Random(42);
@@ -333,7 +327,6 @@ public sealed class DemoDataSeeder
         };
         db.LeaveRequests.AddRange(leaves);
         await db.SaveChangesAsync(ct);
-        foreach (var l in leaves) db.LeaveRequestAuditLogs.Add(LeaveRequestAuditService.RecordCreate(l, "demo-seed"));
         rows += leaves.Length;
 
         // Shift handover notes.
@@ -366,7 +359,6 @@ public sealed class DemoDataSeeder
         };
         db.Announcements.AddRange(announcements);
         await db.SaveChangesAsync(ct);
-        foreach (var a in announcements) db.AnnouncementAuditLogs.Add(AnnouncementAuditService.RecordCreate(a, "demo-seed"));
         rows += announcements.Length;
 
         await db.SaveChangesAsync(ct);
@@ -447,7 +439,6 @@ public sealed class DemoDataSeeder
         };
         db.ManufacturingRoutings.AddRange(routings);
         await db.SaveChangesAsync(ct);
-        foreach (var r in routings) db.ManufacturingRoutingAuditLogs.Add(ManufacturingRoutingAuditService.RecordCreate(r, "demo-seed"));
         rows += routings.Length;
 
         var stationCount = stationIds.Count;
@@ -474,7 +465,6 @@ public sealed class DemoDataSeeder
         };
         db.BomHeaders.AddRange(boms);
         await db.SaveChangesAsync(ct);
-        foreach (var b in boms) db.BomHeaderAuditLogs.Add(BomHeaderAuditService.RecordCreate(b, "demo-seed"));
         rows += boms.Length;
 
         foreach (var bom in boms)
@@ -501,8 +491,6 @@ public sealed class DemoDataSeeder
         var reviewEco = new EngineeringChangeOrder { Code = "DEMO-ECO-002", Title = "Revise road bike BOM", Description = "New lighter crankset component.", Status = EcoStatus.UnderReview, RaisedByUserId = "demo-seed", RaisedAt = now.AddDays(-5), SubmittedAt = now.AddDays(-2), ModifiedDate = now };
         db.EngineeringChangeOrders.AddRange(draftEco, reviewEco);
         await db.SaveChangesAsync(ct);
-        db.EngineeringChangeOrderAuditLogs.Add(EngineeringChangeOrderAuditService.RecordCreate(draftEco, "demo-seed"));
-        db.EngineeringChangeOrderAuditLogs.Add(EngineeringChangeOrderAuditService.RecordCreate(reviewEco, "demo-seed"));
         rows += 2;
 
         db.EcoAffectedItems.Add(new EcoAffectedItem
@@ -526,7 +514,6 @@ public sealed class DemoDataSeeder
         };
         db.EngineeringDocuments.AddRange(docs);
         await db.SaveChangesAsync(ct);
-        foreach (var d in docs) db.EngineeringDocumentAuditLogs.Add(EngineeringDocumentAuditService.RecordCreate(d, "demo-seed"));
         rows += docs.Length;
 
         // Deviations.
@@ -537,7 +524,6 @@ public sealed class DemoDataSeeder
         };
         db.DeviationRequests.AddRange(deviations);
         await db.SaveChangesAsync(ct);
-        foreach (var d in deviations) db.DeviationRequestAuditLogs.Add(DeviationRequestAuditService.RecordCreate(d, "demo-seed"));
         rows += deviations.Length;
 
         await db.SaveChangesAsync(ct);
@@ -590,7 +576,6 @@ public sealed class DemoDataSeeder
         };
         db.PmSchedules.AddRange(schedules);
         await db.SaveChangesAsync(ct);
-        foreach (var s in schedules) db.PmScheduleAuditLogs.Add(PmScheduleAuditService.RecordCreate(s, "demo-seed"));
         rows += schedules.Length;
 
         foreach (var s in schedules)
@@ -617,7 +602,6 @@ public sealed class DemoDataSeeder
         };
         db.MaintenanceWorkOrders.AddRange(workOrders);
         await db.SaveChangesAsync(ct);
-        foreach (var w in workOrders) db.MaintenanceWorkOrderAuditLogs.Add(MaintenanceWorkOrderAuditService.RecordCreate(w, "demo-seed"));
         rows += workOrders.Length;
 
         // Tasks on the In-Progress WO.
@@ -643,7 +627,6 @@ public sealed class DemoDataSeeder
         };
         db.SpareParts.AddRange(parts);
         await db.SaveChangesAsync(ct);
-        foreach (var p in parts) db.SparePartAuditLogs.Add(SparePartAuditService.RecordCreate(p, "demo-seed"));
         rows += parts.Length;
 
         // Part usage on the completed WO.
@@ -822,7 +805,6 @@ public sealed class DemoDataSeeder
         };
         db.PerformanceReports.AddRange(reports);
         await db.SaveChangesAsync(ct);
-        foreach (var r in reports) db.PerformanceReportAuditLogs.Add(PerformanceReportAuditService.RecordCreate(r, "demo-seed"));
         rows += reports.Length;
 
         await db.SaveChangesAsync(ct);
@@ -883,7 +865,6 @@ public sealed class DemoDataSeeder
             await db.SaveChangesAsync(ct);
             foreach (var k in kpisToInsert)
             {
-                db.KpiDefinitionAuditLogs.Add(KpiDefinitionAuditService.RecordCreate(k, "demo-seed"));
                 idByCode[k.Code] = k.Id;
             }
             await db.SaveChangesAsync(ct);
@@ -928,7 +909,6 @@ public sealed class DemoDataSeeder
             pmScorecard = new ScorecardDefinition { Code = "DEMO-SC-PLANT", Name = "Plant Manager Dashboard", Description = "Top-level plant performance at a glance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
             db.ScorecardDefinitions.Add(pmScorecard);
             await db.SaveChangesAsync(ct);
-            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(pmScorecard, "demo-seed"));
             rows++;
         }
         var maintScorecard = await db.ScorecardDefinitions.FirstOrDefaultAsync(s => s.Code == "DEMO-SC-MAINT", ct);
@@ -937,7 +917,6 @@ public sealed class DemoDataSeeder
             maintScorecard = new ScorecardDefinition { Code = "DEMO-SC-MAINT", Name = "Maintenance Lead Dashboard", Description = "Reliability + PM compliance.", OwnerUserId = "demo-seed", IsActive = true, ModifiedDate = now };
             db.ScorecardDefinitions.Add(maintScorecard);
             await db.SaveChangesAsync(ct);
-            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(maintScorecard, "demo-seed"));
             rows++;
         }
 

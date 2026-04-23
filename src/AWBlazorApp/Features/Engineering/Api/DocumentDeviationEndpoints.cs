@@ -1,11 +1,10 @@
 using AWBlazorApp.Features.Engineering.Dtos;
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Engineering.Audit;
-using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
-using AWBlazorApp.Features.Engineering.Boms.Dtos; using AWBlazorApp.Features.Engineering.Ecos.Dtos; using AWBlazorApp.Features.Engineering.Routings.Dtos; 
-using AWBlazorApp.Features.Engineering.Deviations.Application.Services; using AWBlazorApp.Features.Engineering.Ecos.Application.Services; 
+using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain;
+using AWBlazorApp.Features.Engineering.Deviations.Application.Services;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -83,7 +82,9 @@ public static class DocumentDeviationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => EngineeringDocumentAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.EngineeringDocuments.Add(entity);
+        // AuditLogInterceptor writes the audit row inside this SaveChangesAsync.
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/engineering-documents/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -96,9 +97,7 @@ public static class DocumentDeviationEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.EngineeringDocuments.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = EngineeringDocumentAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.EngineeringDocumentAuditLogs.Add(EngineeringDocumentAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -108,20 +107,22 @@ public static class DocumentDeviationEndpoints
     {
         var entity = await db.EngineeringDocuments.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, EngineeringDocumentAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.EngineeringDocuments.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<EngineeringDocumentAuditLogDto>>> DocHistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> DocHistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.EngineeringDocumentAuditLogs.AsNoTracking().Where(a => a.EngineeringDocumentId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "EngineeringDocument" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<EngineeringDocumentAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<DeviationRequestDto>>> ListDevAsync(
@@ -156,7 +157,8 @@ public static class DocumentDeviationEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity(user.Identity?.Name);
-        await db.AddWithAuditAsync(entity, e => DeviationRequestAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.DeviationRequests.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/deviation-requests/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -183,15 +185,16 @@ public static class DocumentDeviationEndpoints
         catch (InvalidOperationException ex) { return TypedResults.BadRequest(ex.Message); }
     }
 
-    private static async Task<Ok<PagedResult<DeviationRequestAuditLogDto>>> DevHistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> DevHistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.DeviationRequestAuditLogs.AsNoTracking().Where(a => a.DeviationRequestId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "DeviationRequest" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<DeviationRequestAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 }

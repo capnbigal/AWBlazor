@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.Purchasing.ProductVendors.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Dtos; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos; using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos; using AWBlazorApp.Features.Purchasing.Vendors.Dtos; 
-using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services; using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services; using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services; using AWBlazorApp.Features.Purchasing.Vendors.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -62,7 +61,6 @@ public static class PurchaseOrderDetailEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => PurchaseOrderDetailAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/purchase-order-details/by-key?purchaseOrderId={entity.PurchaseOrderId}&purchaseOrderDetailId={entity.PurchaseOrderDetailId}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -84,10 +82,7 @@ public static class PurchaseOrderDetailEndpoints
             .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId && x.PurchaseOrderDetailId == purchaseOrderDetailId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = PurchaseOrderDetailAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.PurchaseOrderDetailAuditLogs.Add(
-            PurchaseOrderDetailAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -104,7 +99,6 @@ public static class PurchaseOrderDetailEndpoints
             .FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId && x.PurchaseOrderDetailId == purchaseOrderDetailId, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.PurchaseOrderDetailAuditLogs.Add(PurchaseOrderDetailAuditService.RecordDelete(entity, user.Identity?.Name));
         db.PurchaseOrderDetails.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();

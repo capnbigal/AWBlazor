@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Maintenance.Audit;
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
-using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos; 
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain;
+using AWBlazorApp.Features.Maintenance.AssetProfiles.Dtos; using AWBlazorApp.Features.Maintenance.PmSchedules.Dtos; using AWBlazorApp.Features.Maintenance.SpareParts.Dtos; using AWBlazorApp.Features.Maintenance.WorkOrders.Dtos;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -83,7 +83,8 @@ public static class AssetMaintenanceEndpoints
         var exists = await db.AssetMaintenanceProfiles.AnyAsync(p => p.AssetId == request.AssetId, ct);
         if (exists) return TypedResults.Conflict("This asset already has a maintenance profile.");
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => AssetMaintenanceProfileAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.AssetMaintenanceProfiles.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/asset-maintenance-profiles/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -96,9 +97,7 @@ public static class AssetMaintenanceEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.AssetMaintenanceProfiles.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = AssetMaintenanceProfileAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.AssetMaintenanceProfileAuditLogs.Add(AssetMaintenanceProfileAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -108,20 +107,22 @@ public static class AssetMaintenanceEndpoints
     {
         var entity = await db.AssetMaintenanceProfiles.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, AssetMaintenanceProfileAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.AssetMaintenanceProfiles.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<AssetMaintenanceProfileAuditLogDto>>> ProfileHistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> ProfileHistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.AssetMaintenanceProfileAuditLogs.AsNoTracking().Where(a => a.AssetMaintenanceProfileId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "AssetMaintenanceProfile" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<AssetMaintenanceProfileAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<MeterReadingDto>>> ListMetersAsync(

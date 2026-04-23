@@ -153,12 +153,8 @@
             var by = await GetUserNameAsync();
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = newRow.ToEntity(by);
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.LeaveRequests.Add(entity);
             await db.SaveChangesAsync();
-            db.LeaveRequestAuditLogs.Add(LeaveRequestAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add("Submitted.", Severity.Success);
             dialogOpen = false;
             await grid.ReloadServerData();

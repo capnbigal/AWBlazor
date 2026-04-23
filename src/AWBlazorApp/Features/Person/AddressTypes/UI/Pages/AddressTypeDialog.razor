@@ -22,18 +22,6 @@
 @using AWBlazorApp.Features.Person.PersonPhones.Dtos
 @using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
 @using AWBlazorApp.Features.Person.StateProvinces.Dtos
-@using AWBlazorApp.Features.Person.Addresses.Application.Services
-@using AWBlazorApp.Features.Person.AddressTypes.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntities.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Application.Services
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Application.Services
-@using AWBlazorApp.Features.Person.ContactTypes.Application.Services
-@using AWBlazorApp.Features.Person.CountryRegions.Application.Services
-@using AWBlazorApp.Features.Person.EmailAddresses.Application.Services
-@using AWBlazorApp.Features.Person.Persons.Application.Services
-@using AWBlazorApp.Features.Person.PersonPhones.Application.Services
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Application.Services
-@using AWBlazorApp.Features.Person.StateProvinces.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreateAddressTypeRequest> CreateValidator
@@ -116,7 +104,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
@@ -135,9 +122,7 @@
                     MudDialog.Close(DialogResult.Cancel());
                     return;
                 }
-                var before = AddressTypeAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
-                db.AddressTypeAuditLogs.Add(AddressTypeAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

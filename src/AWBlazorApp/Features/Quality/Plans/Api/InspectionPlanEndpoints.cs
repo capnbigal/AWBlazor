@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Quality.Audit;
 using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quality.Inspections.Domain; using AWBlazorApp.Features.Quality.Ncrs.Domain; using AWBlazorApp.Features.Quality.Plans.Domain; 
 using AWBlazorApp.Features.Quality.Capa.Dtos; using AWBlazorApp.Features.Quality.Inspections.Dtos; using AWBlazorApp.Features.Quality.Ncrs.Dtos; using AWBlazorApp.Features.Quality.Plans.Dtos; 
 using FluentValidation;
@@ -76,7 +76,6 @@ public static class InspectionPlanEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => InspectionPlanAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/inspection-plans/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -89,9 +88,7 @@ public static class InspectionPlanEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.InspectionPlans.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = InspectionPlanAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.InspectionPlanAuditLogs.Add(InspectionPlanAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -101,20 +98,20 @@ public static class InspectionPlanEndpoints
     {
         var entity = await db.InspectionPlans.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, InspectionPlanAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<InspectionPlanAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.InspectionPlanAuditLogs.AsNoTracking().Where(a => a.InspectionPlanId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "InspectionPlan" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<InspectionPlanAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<InspectionPlanCharacteristicDto>>> ListCharsAsync(
@@ -140,7 +137,6 @@ public static class InspectionPlanEndpoints
         var entity = request.ToEntity();
         db.InspectionPlanCharacteristics.Add(entity);
         await db.SaveChangesAsync(ct);
-        db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordCreate(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/inspection-plans/{id}/characteristics/{entity.Id}", new IdResponse(entity.Id));
     }
@@ -154,9 +150,7 @@ public static class InspectionPlanEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.InspectionPlanCharacteristics.FirstOrDefaultAsync(c => c.Id == cId, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = InspectionPlanCharacteristicAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -167,7 +161,6 @@ public static class InspectionPlanEndpoints
         var entity = await db.InspectionPlanCharacteristics.FirstOrDefaultAsync(c => c.Id == cId, ct);
         if (entity is null) return TypedResults.NotFound();
         db.InspectionPlanCharacteristics.Remove(entity);
-        db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordDelete(entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }

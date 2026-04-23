@@ -125,7 +125,6 @@ else
         {
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = await db.CapaCases.FirstAsync(c => c.Id == Id);
-            var before = CapaCaseAuditService.CaptureSnapshot(entity);
             new UpdateCapaCaseRequest
             {
                 RootCause = editedRootCause,
@@ -134,7 +133,6 @@ else
                 VerificationNotes = editedVerification,
             }.ApplyTo(entity);
             var by = await GetUserNameAsync();
-            db.CapaCaseAuditLogs.Add(CapaCaseAuditService.RecordUpdate(before, entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Edits saved.", Severity.Success);
             await LoadAsync();

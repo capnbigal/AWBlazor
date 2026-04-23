@@ -100,7 +100,6 @@
             await using var tx = await db.Database.BeginTransactionAsync();
             db.ManufacturingRoutings.Add(entity);
             await db.SaveChangesAsync();
-            db.ManufacturingRoutingAuditLogs.Add(ManufacturingRoutingAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.Code}.", Severity.Success);

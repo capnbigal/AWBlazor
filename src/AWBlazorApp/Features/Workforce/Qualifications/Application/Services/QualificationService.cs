@@ -1,5 +1,5 @@
-using AWBlazorApp.Features.Workforce.Audit;
-using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
+using AWBlazorApp.Features.Workforce.Alerts.Domain;
+using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain;
 using AWBlazorApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,19 +34,15 @@ public sealed class QualificationService(
                 ModifiedDate = DateTime.UtcNow,
             };
             db.EmployeeQualifications.Add(entity);
-            await db.SaveChangesAsync(ct);
-            db.EmployeeQualificationAuditLogs.Add(EmployeeQualificationAuditService.RecordCreate(entity, userId));
         }
         else
         {
-            var before = EmployeeQualificationAuditService.CaptureSnapshot(existing);
             existing.EarnedDate = earnedDate;
             existing.ExpiresOn = expiresOn;
             existing.EvidenceUrl = evidenceUrl?.Trim();
             existing.VerifiedByUserId = userId;
             existing.Notes = notes?.Trim();
             existing.ModifiedDate = DateTime.UtcNow;
-            db.EmployeeQualificationAuditLogs.Add(EmployeeQualificationAuditService.RecordUpdate(before, existing, userId));
             entity = existing;
         }
         await db.SaveChangesAsync(ct);
@@ -80,7 +76,6 @@ public sealed class QualificationService(
         var entity = await db.EmployeeQualifications.FirstOrDefaultAsync(eq => eq.Id == employeeQualificationId, ct)
             ?? throw new InvalidOperationException($"EmployeeQualification {employeeQualificationId} not found.");
         db.EmployeeQualifications.Remove(entity);
-        db.EmployeeQualificationAuditLogs.Add(EmployeeQualificationAuditService.RecordDelete(entity, userId));
         await db.SaveChangesAsync(ct);
         logger.LogInformation("Revoked qual {Q} from employee {E}", entity.QualificationId, entity.BusinessEntityId);
     }

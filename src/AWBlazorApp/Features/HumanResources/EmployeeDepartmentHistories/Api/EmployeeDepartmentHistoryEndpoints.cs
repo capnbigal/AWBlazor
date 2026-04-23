@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.HumanResources.Departments.Dtos; using AWBlazorApp.Features.HumanResources.Employees.Dtos; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Dtos; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos; using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos; using AWBlazorApp.Features.HumanResources.Shifts.Dtos; 
-using AWBlazorApp.Features.HumanResources.Departments.Application.Services; using AWBlazorApp.Features.HumanResources.Employees.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services; using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services; using AWBlazorApp.Features.HumanResources.Shifts.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -83,7 +82,6 @@ public static class EmployeeDepartmentHistoryEndpoints
         }
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => EmployeeDepartmentHistoryAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/employee-department-histories/by-key?businessEntityId={entity.BusinessEntityId}&departmentId={entity.DepartmentId}&shiftId={entity.ShiftId}&startDate={entity.StartDate:yyyy-MM-dd}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -113,10 +111,7 @@ public static class EmployeeDepartmentHistoryEndpoints
                 && x.StartDate == key, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = EmployeeDepartmentHistoryAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.EmployeeDepartmentHistoryAuditLogs.Add(
-            EmployeeDepartmentHistoryAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -140,8 +135,6 @@ public static class EmployeeDepartmentHistoryEndpoints
                 && x.StartDate == key, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.EmployeeDepartmentHistoryAuditLogs.Add(
-            EmployeeDepartmentHistoryAuditService.RecordDelete(entity, user.Identity?.Name));
         db.EmployeeDepartmentHistories.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();

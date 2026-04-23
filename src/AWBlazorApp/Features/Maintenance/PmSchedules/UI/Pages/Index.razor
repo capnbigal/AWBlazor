@@ -108,13 +108,8 @@
         {
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = newRow.ToEntity();
-            var by = await GetUserNameAsync();
-            await using var tx = await db.Database.BeginTransactionAsync();
             db.PmSchedules.Add(entity);
             await db.SaveChangesAsync();
-            db.PmScheduleAuditLogs.Add(PmScheduleAuditService.RecordCreate(entity, by));
-            await db.SaveChangesAsync();
-            await tx.CommitAsync();
             Snackbar.Add($"Created {entity.Code}.", Severity.Success);
             dialogOpen = false;
             Navigation.NavigateTo($"maintenance/pm-schedules/{entity.Id}");

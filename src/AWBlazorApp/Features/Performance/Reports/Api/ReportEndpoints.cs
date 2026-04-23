@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Performance.Audit;
 using AWBlazorApp.Features.Performance.Kpis.Dtos; using AWBlazorApp.Features.Performance.ProductionMetrics.Dtos; using AWBlazorApp.Features.Performance.Scorecards.Dtos; 
 using AWBlazorApp.Features.Performance.Kpis.Application.Services; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Application.Services; using AWBlazorApp.Features.Performance.Oee.Application.Services; using AWBlazorApp.Features.Performance.ProductionMetrics.Application.Services; using AWBlazorApp.Features.Performance.Reports.Application.Services; 
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -84,7 +84,6 @@ public static class ReportEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => PerformanceReportAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created($"/api/performance-reports/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -97,9 +96,7 @@ public static class ReportEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.PerformanceReports.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = PerformanceReportAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.PerformanceReportAuditLogs.Add(PerformanceReportAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -109,20 +106,20 @@ public static class ReportEndpoints
     {
         var entity = await db.PerformanceReports.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, PerformanceReportAuditService.RecordDelete(entity, user.Identity?.Name), ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<PerformanceReportAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.PerformanceReportAuditLogs.AsNoTracking().Where(a => a.PerformanceReportId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "PerformanceReport" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<PerformanceReportAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<PerformanceReportRunDto>>> ListRunsAsync(

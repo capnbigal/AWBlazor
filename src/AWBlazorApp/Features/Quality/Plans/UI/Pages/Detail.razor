@@ -155,7 +155,6 @@ else
             var by = await GetUserNameAsync();
             db.InspectionPlanCharacteristics.Add(entity);
             await db.SaveChangesAsync();
-            db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Characteristic added.", Severity.Success);
             charDialogOpen = false;
@@ -172,7 +171,6 @@ else
         if (entity is null) return;
         var by = await GetUserNameAsync();
         db.InspectionPlanCharacteristics.Remove(entity);
-        db.InspectionPlanCharacteristicAuditLogs.Add(InspectionPlanCharacteristicAuditService.RecordDelete(entity, by));
         await db.SaveChangesAsync();
         await LoadAsync();
     }

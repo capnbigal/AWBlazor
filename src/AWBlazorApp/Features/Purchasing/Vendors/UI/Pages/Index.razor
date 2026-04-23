@@ -10,11 +10,6 @@
 @using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
 @using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
 @using AWBlazorApp.Features.Purchasing.Vendors.Dtos
-@using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services
-@using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services
-@using AWBlazorApp.Features.Purchasing.Vendors.Application.Services
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -156,7 +151,6 @@
         if (entity is null) { Snackbar.Add("Vendor no longer exists.", Severity.Warning); await grid.ReloadServerData(); return; }
 
         var changedBy = await GetCurrentUserNameAsync();
-        db.VendorAuditLogs.Add(VendorAuditService.RecordDelete(entity, changedBy));
         db.Vendors.Remove(entity);
         try
         {

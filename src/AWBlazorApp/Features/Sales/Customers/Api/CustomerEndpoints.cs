@@ -2,7 +2,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Application.Services; using AWBlazorApp.Features.Sales.CreditCards.Application.Services; using AWBlazorApp.Features.Sales.Currencies.Application.Services; using AWBlazorApp.Features.Sales.CurrencyRates.Application.Services; using AWBlazorApp.Features.Sales.Customers.Application.Services; using AWBlazorApp.Features.Sales.PersonCreditCards.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderDetails.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Application.Services; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Application.Services; using AWBlazorApp.Features.Sales.SalesPeople.Application.Services; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Application.Services; using AWBlazorApp.Features.Sales.SalesReasons.Application.Services; using AWBlazorApp.Features.Sales.SalesTaxRates.Application.Services; using AWBlazorApp.Features.Sales.SalesTerritories.Application.Services; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Application.Services; using AWBlazorApp.Features.Sales.ShoppingCartItems.Application.Services; using AWBlazorApp.Features.Sales.SpecialOffers.Application.Services; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Application.Services; using AWBlazorApp.Features.Sales.Stores.Application.Services; 
 using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain; using AWBlazorApp.Features.Sales.CreditCards.Domain; using AWBlazorApp.Features.Sales.Currencies.Domain; using AWBlazorApp.Features.Sales.CurrencyRates.Domain; using AWBlazorApp.Features.Sales.Customers.Domain; using AWBlazorApp.Features.Sales.PersonCreditCards.Domain; using AWBlazorApp.Features.Sales.SalesOrderDetails.Domain; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain; using AWBlazorApp.Features.Sales.SalesPeople.Domain; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain; using AWBlazorApp.Features.Sales.SalesReasons.Domain; using AWBlazorApp.Features.Sales.SalesTaxRates.Domain; using AWBlazorApp.Features.Sales.SalesTerritories.Domain; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain; using AWBlazorApp.Features.Sales.ShoppingCartItems.Domain; using AWBlazorApp.Features.Sales.SpecialOffers.Domain; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain; using AWBlazorApp.Features.Sales.Stores.Domain; 
 using AWBlazorApp.Features.Sales.CountryRegionCurrencies.Dtos; using AWBlazorApp.Features.Sales.CreditCards.Dtos; using AWBlazorApp.Features.Sales.Currencies.Dtos; using AWBlazorApp.Features.Sales.CurrencyRates.Dtos; using AWBlazorApp.Features.Sales.Customers.Dtos; using AWBlazorApp.Features.Sales.PersonCreditCards.Dtos; using AWBlazorApp.Features.Sales.SalesOrderDetails.Dtos; using AWBlazorApp.Features.Sales.SalesOrderHeaders.Dtos; using AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Dtos; using AWBlazorApp.Features.Sales.SalesPeople.Dtos; using AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Dtos; using AWBlazorApp.Features.Sales.SalesReasons.Dtos; using AWBlazorApp.Features.Sales.SalesTaxRates.Dtos; using AWBlazorApp.Features.Sales.SalesTerritories.Dtos; using AWBlazorApp.Features.Sales.SalesTerritoryHistories.Dtos; using AWBlazorApp.Features.Sales.ShoppingCartItems.Dtos; using AWBlazorApp.Features.Sales.SpecialOffers.Dtos; using AWBlazorApp.Features.Sales.SpecialOfferProducts.Dtos; using AWBlazorApp.Features.Sales.Stores.Dtos; 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,24 +20,15 @@ public static class CustomerEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListCustomers").WithSummary("List Sales.Customer rows.");
 
-        group.MapIntIdCrud<Customer, CustomerDto, CreateCustomerRequest, UpdateCustomerRequest, CustomerAuditLog, CustomerAuditLogDto, CustomerAuditService.Snapshot, int>(
+        group.MapCrudWithInterceptor<Customer, CustomerDto, CreateCustomerRequest, UpdateCustomerRequest, int>(
             entityName: "Customer",
             routePrefix: "/api/aw/customers",
             entitySet: db => db.Customers,
-            auditSet: db => db.CustomerAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.CustomerId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: CustomerAuditService.CaptureSnapshot,
-            recordCreate: CustomerAuditService.RecordCreate,
-            recordUpdate: CustomerAuditService.RecordUpdate,
-            recordDelete: CustomerAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }

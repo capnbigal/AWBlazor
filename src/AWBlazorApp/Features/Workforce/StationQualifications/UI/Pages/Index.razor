@@ -99,10 +99,7 @@
                 return;
             }
             var entity = newRow.ToEntity();
-            var by = await GetUserNameAsync();
             db.StationQualifications.Add(entity);
-            await db.SaveChangesAsync();
-            db.StationQualificationAuditLogs.Add(StationQualificationAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Assigned.", Severity.Success);
             dialogOpen = false;
@@ -119,9 +116,7 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var entity = await db.StationQualifications.FirstOrDefaultAsync(x => x.Id == id);
             if (entity is null) return;
-            var by = await GetUserNameAsync();
             db.StationQualifications.Remove(entity);
-            db.StationQualificationAuditLogs.Add(StationQualificationAuditService.RecordDelete(entity, by));
             await db.SaveChangesAsync();
             Snackbar.Add("Removed.", Severity.Success);
             await grid.ReloadServerData();

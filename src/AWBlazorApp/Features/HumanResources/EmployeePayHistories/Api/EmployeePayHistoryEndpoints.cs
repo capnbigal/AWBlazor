@@ -3,7 +3,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Dtos;
 using AWBlazorApp.Features.HumanResources.Departments.Dtos; using AWBlazorApp.Features.HumanResources.Employees.Dtos; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Dtos; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos; using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos; using AWBlazorApp.Features.HumanResources.Shifts.Dtos; 
-using AWBlazorApp.Features.HumanResources.Departments.Application.Services; using AWBlazorApp.Features.HumanResources.Employees.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services; using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services; using AWBlazorApp.Features.HumanResources.Shifts.Application.Services; 
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -68,7 +67,6 @@ public static class EmployeePayHistoryEndpoints
         }
 
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => EmployeePayHistoryAuditService.RecordCreate(e, user.Identity?.Name), ct);
         return TypedResults.Created(
             $"/api/aw/employee-pay-histories/by-key?businessEntityId={entity.BusinessEntityId}&rateChangeDate={entity.RateChangeDate:O}",
             new CompositeKeyResponse(new Dictionary<string, object>
@@ -90,10 +88,7 @@ public static class EmployeePayHistoryEndpoints
             .FirstOrDefaultAsync(x => x.BusinessEntityId == businessEntityId && x.RateChangeDate == rateChangeDate, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        var before = EmployeePayHistoryAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.EmployeePayHistoryAuditLogs.Add(
-            EmployeePayHistoryAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new CompositeKeyResponse(new Dictionary<string, object>
         {
@@ -110,7 +105,6 @@ public static class EmployeePayHistoryEndpoints
             .FirstOrDefaultAsync(x => x.BusinessEntityId == businessEntityId && x.RateChangeDate == rateChangeDate, ct);
         if (entity is null) return TypedResults.NotFound();
 
-        db.EmployeePayHistoryAuditLogs.Add(EmployeePayHistoryAuditService.RecordDelete(entity, user.Identity?.Name));
         db.EmployeePayHistories.Remove(entity);
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();

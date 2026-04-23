@@ -8,11 +8,6 @@
 @using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Dtos
 @using AWBlazorApp.Features.Purchasing.ShipMethods.Dtos
 @using AWBlazorApp.Features.Purchasing.Vendors.Dtos
-@using AWBlazorApp.Features.Purchasing.ProductVendors.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Application.Services
-@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Application.Services
-@using AWBlazorApp.Features.Purchasing.ShipMethods.Application.Services
-@using AWBlazorApp.Features.Purchasing.Vendors.Application.Services
 @using AWBlazorApp.Shared.Validation
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject MudFormValidator<CreatePurchaseOrderHeaderRequest> CreateValidator
@@ -133,7 +128,6 @@
                     Snackbar.Add($"A referenced record does not exist: {ex.InnerException.Message}", Severity.Error);
                     return;
                 }
-                db.PurchaseOrderHeaderAuditLogs.Add(PurchaseOrderHeaderAuditService.RecordCreate(entity, changedBy));
                 await db.SaveChangesAsync();
                 await tx.CommitAsync();
                 MudDialog.Close(DialogResult.Ok(entity.Id));
@@ -144,14 +138,12 @@
                 await using var db = await DbFactory.CreateDbContextAsync();
                 var entity = await db.PurchaseOrderHeaders.FirstOrDefaultAsync(t => t.Id == Model!.Id);
                 if (entity is null) { MudDialog.Close(DialogResult.Cancel()); return; }
-                var before = PurchaseOrderHeaderAuditService.CaptureSnapshot(entity);
                 updateModel.ApplyTo(entity);
                 // Validate optional FKs on update
                 if (updateModel.VendorId.HasValue && !await db.Vendors.AnyAsync(x => x.Id == updateModel.VendorId.Value))
                 { Snackbar.Add($"Vendor #{updateModel.VendorId.Value} does not exist.", Severity.Error); return; }
                 if (updateModel.ShipMethodId.HasValue && !await db.ShipMethods.AnyAsync(x => x.Id == updateModel.ShipMethodId.Value))
                 { Snackbar.Add($"Ship method #{updateModel.ShipMethodId.Value} does not exist.", Severity.Error); return; }
-                db.PurchaseOrderHeaderAuditLogs.Add(PurchaseOrderHeaderAuditService.RecordUpdate(before, entity, changedBy));
                 try
                 {
                     await db.SaveChangesAsync();

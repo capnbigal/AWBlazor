@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
-using AWBlazorApp.Features.Engineering.Audit;
-using AWBlazorApp.Features.Engineering.Boms.Dtos; using AWBlazorApp.Features.Engineering.Ecos.Dtos; using AWBlazorApp.Features.Engineering.Routings.Dtos; 
+using AWBlazorApp.Features.Engineering.Routings.Dtos;
 using AWBlazorApp.Infrastructure.Persistence;
+using AWBlazorApp.Shared.Audit;
 using AWBlazorApp.Shared.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -70,7 +70,8 @@ public static class RoutingEndpoints
         var v = await validator.ValidateAsync(request, ct);
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = request.ToEntity();
-        await db.AddWithAuditAsync(entity, e => ManufacturingRoutingAuditService.RecordCreate(e, user.Identity?.Name), ct);
+        db.ManufacturingRoutings.Add(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/manufacturing-routings/{entity.Id}", new IdResponse(entity.Id));
     }
 
@@ -83,9 +84,7 @@ public static class RoutingEndpoints
         if (!v.IsValid) return TypedResults.ValidationProblem(v.ToDictionary());
         var entity = await db.ManufacturingRoutings.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        var before = ManufacturingRoutingAuditService.CaptureSnapshot(entity);
         request.ApplyTo(entity);
-        db.ManufacturingRoutingAuditLogs.Add(ManufacturingRoutingAuditService.RecordUpdate(before, entity, user.Identity?.Name));
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new IdResponse(entity.Id));
     }
@@ -95,20 +94,22 @@ public static class RoutingEndpoints
     {
         var entity = await db.ManufacturingRoutings.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entity is null) return TypedResults.NotFound();
-        await db.DeleteWithAuditAsync(entity, ManufacturingRoutingAuditService.RecordDelete(entity, user.Identity?.Name), ct);
+        db.ManufacturingRoutings.Remove(entity);
+        await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<PagedResult<ManufacturingRoutingAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<PagedResult<AuditLog>>> HistoryAsync(
         int id, ApplicationDbContext db,
         [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var q = db.ManufacturingRoutingAuditLogs.AsNoTracking().Where(a => a.ManufacturingRoutingId == id);
+        var idStr = id.ToString();
+        var q = db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "ManufacturingRouting" && a.EntityId == idStr);
         var total = await q.CountAsync(ct);
         var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Skip(skip).Take(take).Select(a => a.ToDto()).ToListAsync(ct);
-        return TypedResults.Ok(new PagedResult<ManufacturingRoutingAuditLogDto>(rows, total, skip, take));
+            .Skip(skip).Take(take).ToListAsync(ct);
+        return TypedResults.Ok(new PagedResult<AuditLog>(rows, total, skip, take));
     }
 
     private static async Task<Ok<PagedResult<RoutingStepDto>>> ListStepsAsync(

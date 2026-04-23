@@ -83,7 +83,6 @@
             await using var tx = await db.Database.BeginTransactionAsync();
             db.ScorecardDefinitions.Add(entity);
             await db.SaveChangesAsync();
-            db.ScorecardDefinitionAuditLogs.Add(ScorecardDefinitionAuditService.RecordCreate(entity, by));
             await db.SaveChangesAsync();
             await tx.CommitAsync();
             Snackbar.Add($"Created {entity.Code}.", Severity.Success);

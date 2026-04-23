@@ -2,7 +2,6 @@ using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Per
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Dtos;
-using AWBlazorApp.Features.HumanResources.Departments.Application.Services; using AWBlazorApp.Features.HumanResources.Employees.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Application.Services; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Application.Services; using AWBlazorApp.Features.HumanResources.JobCandidates.Application.Services; using AWBlazorApp.Features.HumanResources.Shifts.Application.Services; 
 using AWBlazorApp.Features.HumanResources.Departments.Domain; using AWBlazorApp.Features.HumanResources.Employees.Domain; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain; using AWBlazorApp.Features.HumanResources.JobCandidates.Domain; using AWBlazorApp.Features.HumanResources.Shifts.Domain; 
 using AWBlazorApp.Features.HumanResources.Departments.Dtos; using AWBlazorApp.Features.HumanResources.Employees.Dtos; using AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Dtos; using AWBlazorApp.Features.HumanResources.EmployeePayHistories.Dtos; using AWBlazorApp.Features.HumanResources.JobCandidates.Dtos; using AWBlazorApp.Features.HumanResources.Shifts.Dtos; 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,24 +20,15 @@ public static class DepartmentEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListDepartments").WithSummary("List HumanResources.Department rows.");
 
-        group.MapIntIdCrud<Department, DepartmentDto, CreateDepartmentRequest, UpdateDepartmentRequest, DepartmentAuditLog, DepartmentAuditLogDto, DepartmentAuditService.Snapshot, short>(
+        group.MapCrudWithInterceptor<Department, DepartmentDto, CreateDepartmentRequest, UpdateDepartmentRequest, short>(
             entityName: "Department",
             routePrefix: "/api/aw/departments",
             entitySet: db => db.Departments,
-            auditSet: db => db.DepartmentAuditLogs,
             idSelector: e => e.Id,
-            auditIdSelector: a => a.DepartmentId,
-            auditChangedDateSelector: a => a.ChangedDate,
-            auditPrimaryKeySelector: a => a.Id,
             getId: e => e.Id,
             toDto: e => e.ToDto(),
             toEntity: r => r.ToEntity(),
-            applyUpdate: (r, e) => r.ApplyTo(e),
-            captureSnapshot: DepartmentAuditService.CaptureSnapshot,
-            recordCreate: DepartmentAuditService.RecordCreate,
-            recordUpdate: DepartmentAuditService.RecordUpdate,
-            recordDelete: DepartmentAuditService.RecordDelete,
-            auditToDto: a => a.ToDto());
+            applyUpdate: (r, e) => r.ApplyTo(e));
 
         return app;
     }
