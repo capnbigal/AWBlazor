@@ -15,10 +15,6 @@ public sealed record UpdateCultureRequest
     public string? Name { get; set; }
 }
 
-public sealed record CultureAuditLogDto(
-    int Id, string CultureId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class CultureMappings
 {
     public static CultureDto ToDto(this Culture e) => new(e.CultureId, e.Name, e.ModifiedDate);
@@ -36,7 +32,4 @@ public static class CultureMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CultureAuditLogDto ToDto(this CultureAuditLog a) => new(
-        a.Id, a.CultureId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

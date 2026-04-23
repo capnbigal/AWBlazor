@@ -44,15 +44,6 @@ public sealed record CompleteWorkOrderRequest
 
 public sealed record WorkOrderStateChangeRequest { public string? Reason { get; set; } }
 
-public sealed record MaintenanceWorkOrderAuditLogDto(
-    int Id, int MaintenanceWorkOrderId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? WorkOrderNumber, string? Title, string? Description,
-    int AssetId, WorkOrderType Type, WorkOrderStatus Status, WorkOrderPriority Priority,
-    int? PmScheduleId, DateTime? ScheduledFor, int? AssignedBusinessEntityId,
-    DateTime? StartedAt, DateTime? CompletedAt, DateTime? HeldAt, DateTime? CancelledAt,
-    string? CompletionNotes, string? RaisedByUserId, DateTime RaisedAt,
-    decimal? CompletedMeterValue, DateTime SourceModifiedDate);
-
 public sealed record MaintenanceWorkOrderTaskDto(
     int Id, int MaintenanceWorkOrderId, int SequenceNumber, string TaskName,
     string? Instructions, int? EstimatedMinutes, int? ActualMinutes,
@@ -113,15 +104,6 @@ public static class WorkOrderMappings
         if (r.AssignedBusinessEntityId is not null) e.AssignedBusinessEntityId = r.AssignedBusinessEntityId;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static MaintenanceWorkOrderAuditLogDto ToDto(this MaintenanceWorkOrderAuditLog a) => new(
-        a.Id, a.MaintenanceWorkOrderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.WorkOrderNumber, a.Title, a.Description,
-        a.AssetId, a.Type, a.Status, a.Priority,
-        a.PmScheduleId, a.ScheduledFor, a.AssignedBusinessEntityId,
-        a.StartedAt, a.CompletedAt, a.HeldAt, a.CancelledAt,
-        a.CompletionNotes, a.RaisedByUserId, a.RaisedAt,
-        a.CompletedMeterValue, a.SourceModifiedDate);
 
     public static MaintenanceWorkOrderTaskDto ToDto(this MaintenanceWorkOrderTask e) => new(
         e.Id, e.MaintenanceWorkOrderId, e.SequenceNumber, e.TaskName,

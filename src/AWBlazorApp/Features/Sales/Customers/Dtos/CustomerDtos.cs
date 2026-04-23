@@ -20,11 +20,6 @@ public sealed record UpdateCustomerRequest
     public int? TerritoryId { get; set; }
 }
 
-public sealed record CustomerAuditLogDto(
-    int Id, int CustomerId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int? PersonId, int? StoreId, int? TerritoryId,
-    string? AccountNumber, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class CustomerMappings
 {
     public static CustomerDto ToDto(this Customer e) => new(
@@ -50,7 +45,4 @@ public static class CustomerMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CustomerAuditLogDto ToDto(this CustomerAuditLog a) => new(
-        a.Id, a.CustomerId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.PersonId, a.StoreId, a.TerritoryId, a.AccountNumber, a.RowGuid, a.SourceModifiedDate);
-}
+    }

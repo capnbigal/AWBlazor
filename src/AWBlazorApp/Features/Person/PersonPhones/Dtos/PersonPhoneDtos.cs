@@ -19,11 +19,6 @@ public sealed record CreatePersonPhoneRequest
 /// </summary>
 public sealed record UpdatePersonPhoneRequest;
 
-public sealed record PersonPhoneAuditLogDto(
-    int Id, int BusinessEntityId, string PhoneNumber, int PhoneNumberTypeId,
-    string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    DateTime SourceModifiedDate);
-
 public static class PersonPhoneMappings
 {
     public static PersonPhoneDto ToDto(this PersonPhone e) => new(
@@ -42,7 +37,4 @@ public static class PersonPhoneMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PersonPhoneAuditLogDto ToDto(this PersonPhoneAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.PhoneNumber, a.PhoneNumberTypeId,
-        a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

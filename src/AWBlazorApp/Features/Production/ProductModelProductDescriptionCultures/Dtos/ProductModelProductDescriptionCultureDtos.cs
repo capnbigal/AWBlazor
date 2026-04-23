@@ -21,11 +21,6 @@ public sealed record UpdateProductModelProductDescriptionCultureRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record ProductModelProductDescriptionCultureAuditLogDto(
-    int Id, int ProductModelId, int ProductDescriptionId, string CultureId,
-    string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class ProductModelProductDescriptionCultureMappings
 {
     public static ProductModelProductDescriptionCultureDto ToDto(this ProductModelProductDescriptionCulture e) => new(
@@ -44,7 +39,4 @@ public static class ProductModelProductDescriptionCultureMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductModelProductDescriptionCultureAuditLogDto ToDto(this ProductModelProductDescriptionCultureAuditLog a) => new(
-        a.Id, a.ProductModelId, a.ProductDescriptionId, a.CultureId, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

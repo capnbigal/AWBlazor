@@ -1,48 +1,16 @@
 @page "/logistics/shipments/history"
 @attribute [Authorize]
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 
 <PageTitle>Shipment history</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h5">Shipment audit history</MudText>
-        @if (Id.HasValue) { <MudChip T="string" Variant="Variant.Outlined">Filtering: shipment #@Id</MudChip> }
+
+        <MudText Typo="Typo.h4">"Shipment history"</MudText>
     </MudStack>
 
-    <MudDataGrid T="ShipmentAuditLogDto" ServerData="LoadAsync" @ref="grid" Loading="@_loading" Dense="true" Hover="true" RowsPerPage="100">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
-            <PropertyColumn Property="x => x.ShipmentId" Title="Shipment" />
-            <PropertyColumn Property="x => x.ShipmentNumber" Title="Number" />
-            <PropertyColumn Property="x => x.Action" Title="Action" />
-            <PropertyColumn Property="x => x.Status" Title="Status" />
-            <PropertyColumn Property="x => x.ChangedBy" Title="By" />
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Summary" />
-        </Columns>
-        <PagerContent><MudDataGridPager T="ShipmentAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="Shipment"  />
 </MudStack>
 
 @code {
-    [SupplyParameterFromQuery] public int? Id { get; set; }
-    private MudDataGrid<ShipmentAuditLogDto> grid = null!;
-    private bool _loading = true;
-
-    private async Task<GridData<ShipmentAuditLogDto>> LoadAsync(GridState<ShipmentAuditLogDto> state, CancellationToken ct)
-    {
-        _loading = true; await InvokeAsync(StateHasChanged);
-        try
-        {
-            await using var db = await DbFactory.CreateDbContextAsync(ct);
-            var q = db.ShipmentAuditLogs.AsNoTracking();
-            if (Id.HasValue) q = q.Where(a => a.ShipmentId == Id.Value);
-            var total = await q.CountAsync(ct);
-            var rows = await q.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-                .Skip(state.Page * state.PageSize).Take(state.PageSize)
-                .Select(a => a.ToDto()).ToListAsync(ct);
-            return new GridData<ShipmentAuditLogDto> { Items = rows, TotalItems = total };
-        }
-        finally { _loading = false; await InvokeAsync(StateHasChanged); }
-    }
 }

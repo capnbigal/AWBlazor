@@ -26,12 +26,6 @@ public sealed record UpdateGoodsReceiptRequest
     public string? Notes { get; set; }
 }
 
-public sealed record GoodsReceiptAuditLogDto(
-    int Id, int GoodsReceiptId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? ReceiptNumber, int? PurchaseOrderId, int? VendorBusinessEntityId, int ReceivedLocationId,
-    GoodsReceiptStatus Status, DateTime ReceivedAt, DateTime? PostedAt, string? PostedByUserId,
-    string? Notes, DateTime SourceModifiedDate);
-
 public sealed record GoodsReceiptLineDto(
     int Id, int GoodsReceiptId, int? PurchaseOrderDetailId, int InventoryItemId,
     decimal Quantity, string UnitMeasureCode, int? LotId, long? PostedTransactionId, DateTime ModifiedDate);
@@ -54,11 +48,6 @@ public sealed record UpdateGoodsReceiptLineRequest
     public string? UnitMeasureCode { get; set; }
     public int? LotId { get; set; }
 }
-
-public sealed record GoodsReceiptLineAuditLogDto(
-    int Id, int GoodsReceiptLineId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int GoodsReceiptId, int? PurchaseOrderDetailId, int InventoryItemId,
-    decimal Quantity, string? UnitMeasureCode, int? LotId, long? PostedTransactionId, DateTime SourceModifiedDate);
 
 public static class GoodsReceiptMappings
 {
@@ -93,11 +82,6 @@ public static class GoodsReceiptMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static GoodsReceiptAuditLogDto ToDto(this GoodsReceiptAuditLog a) => new(
-        a.Id, a.GoodsReceiptId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ReceiptNumber, a.PurchaseOrderId, a.VendorBusinessEntityId, a.ReceivedLocationId,
-        a.Status, a.ReceivedAt, a.PostedAt, a.PostedByUserId, a.Notes, a.SourceModifiedDate);
-
     public static GoodsReceiptLineDto ToDto(this GoodsReceiptLine e) => new(
         e.Id, e.GoodsReceiptId, e.PurchaseOrderDetailId, e.InventoryItemId,
         e.Quantity, e.UnitMeasureCode, e.LotId, e.PostedTransactionId, e.ModifiedDate);
@@ -123,8 +107,4 @@ public static class GoodsReceiptMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static GoodsReceiptLineAuditLogDto ToDto(this GoodsReceiptLineAuditLog a) => new(
-        a.Id, a.GoodsReceiptLineId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.GoodsReceiptId, a.PurchaseOrderDetailId, a.InventoryItemId,
-        a.Quantity, a.UnitMeasureCode, a.LotId, a.PostedTransactionId, a.SourceModifiedDate);
-}
+    }

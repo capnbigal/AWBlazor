@@ -14,10 +14,6 @@ public sealed record UpdateContactTypeRequest
     public string? Name { get; set; }
 }
 
-public sealed record ContactTypeAuditLogDto(
-    int Id, int ContactTypeId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class ContactTypeMappings
 {
     public static ContactTypeDto ToDto(this ContactType e) => new(e.Id, e.Name, e.ModifiedDate);
@@ -34,7 +30,4 @@ public static class ContactTypeMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ContactTypeAuditLogDto ToDto(this ContactTypeAuditLog a) => new(
-        a.Id, a.ContactTypeId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

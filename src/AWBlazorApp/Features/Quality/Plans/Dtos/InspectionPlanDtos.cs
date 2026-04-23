@@ -39,13 +39,6 @@ public sealed record UpdateInspectionPlanRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record InspectionPlanAuditLogDto(
-    int Id, int InspectionPlanId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? PlanCode, string? Name, string? Description, InspectionScope Scope,
-    int? ProductId, int? WorkOrderRoutingId, int? VendorBusinessEntityId,
-    string? SamplingRule, bool AutoTriggerOnReceipt, bool AutoTriggerOnShipment, bool AutoTriggerOnProductionRun,
-    bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record InspectionPlanCharacteristicDto(
     int Id, int InspectionPlanId, int SequenceNumber, string Name, CharacteristicKind Kind,
     decimal? MinValue, decimal? MaxValue, decimal? TargetValue, string? UnitMeasureCode,
@@ -76,12 +69,6 @@ public sealed record UpdateInspectionPlanCharacteristicRequest
     public string? ExpectedValue { get; set; }
     public bool? IsCritical { get; set; }
 }
-
-public sealed record InspectionPlanCharacteristicAuditLogDto(
-    int Id, int InspectionPlanCharacteristicId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int InspectionPlanId, int SequenceNumber, string? Name, CharacteristicKind Kind,
-    decimal? MinValue, decimal? MaxValue, decimal? TargetValue, string? UnitMeasureCode,
-    string? ExpectedValue, bool IsCritical, DateTime SourceModifiedDate);
 
 public static class InspectionPlanMappings
 {
@@ -124,13 +111,6 @@ public static class InspectionPlanMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static InspectionPlanAuditLogDto ToDto(this InspectionPlanAuditLog a) => new(
-        a.Id, a.InspectionPlanId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.PlanCode, a.Name, a.Description, a.Scope,
-        a.ProductId, a.WorkOrderRoutingId, a.VendorBusinessEntityId,
-        a.SamplingRule, a.AutoTriggerOnReceipt, a.AutoTriggerOnShipment, a.AutoTriggerOnProductionRun,
-        a.IsActive, a.SourceModifiedDate);
-
     public static InspectionPlanCharacteristicDto ToDto(this InspectionPlanCharacteristic e) => new(
         e.Id, e.InspectionPlanId, e.SequenceNumber, e.Name, e.Kind,
         e.MinValue, e.MaxValue, e.TargetValue, e.UnitMeasureCode,
@@ -164,9 +144,4 @@ public static class InspectionPlanMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static InspectionPlanCharacteristicAuditLogDto ToDto(this InspectionPlanCharacteristicAuditLog a) => new(
-        a.Id, a.InspectionPlanCharacteristicId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.InspectionPlanId, a.SequenceNumber, a.Name, a.Kind,
-        a.MinValue, a.MaxValue, a.TargetValue, a.UnitMeasureCode,
-        a.ExpectedValue, a.IsCritical, a.SourceModifiedDate);
-}
+    }

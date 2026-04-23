@@ -14,10 +14,6 @@ public sealed record UpdatePhoneNumberTypeRequest
     public string? Name { get; set; }
 }
 
-public sealed record PhoneNumberTypeAuditLogDto(
-    int Id, int PhoneNumberTypeId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class PhoneNumberTypeMappings
 {
     public static PhoneNumberTypeDto ToDto(this PhoneNumberType e) => new(e.Id, e.Name, e.ModifiedDate);
@@ -34,7 +30,4 @@ public static class PhoneNumberTypeMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PhoneNumberTypeAuditLogDto ToDto(this PhoneNumberTypeAuditLog a) => new(
-        a.Id, a.PhoneNumberTypeId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

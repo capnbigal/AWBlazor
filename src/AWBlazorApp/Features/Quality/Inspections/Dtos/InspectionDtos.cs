@@ -25,13 +25,6 @@ public sealed record StartInspectionRequest
     public int? InspectorBusinessEntityId { get; set; }
 }
 
-public sealed record InspectionAuditLogDto(
-    int Id, int InspectionId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? InspectionNumber, int InspectionPlanId, InspectionStatus Status,
-    InspectionSourceKind SourceKind, int SourceId, int? InspectorBusinessEntityId,
-    DateTime? InspectedAt, int? InventoryItemId, int? LotId,
-    decimal Quantity, string? UnitMeasureCode, string? Notes, string? PostedByUserId, DateTime SourceModifiedDate);
-
 public sealed record InspectionResultDto(
     long Id, int InspectionId, int InspectionPlanCharacteristicId,
     decimal? NumericResult, string? AttributeResult, bool Passed, string? Notes,
@@ -53,13 +46,6 @@ public static class InspectionMappings
         e.SourceKind, e.SourceId, e.InspectorBusinessEntityId,
         e.InspectedAt, e.InventoryItemId, e.LotId,
         e.Quantity, e.UnitMeasureCode, e.Notes, e.PostedByUserId, e.ModifiedDate);
-
-    public static InspectionAuditLogDto ToDto(this InspectionAuditLog a) => new(
-        a.Id, a.InspectionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.InspectionNumber, a.InspectionPlanId, a.Status,
-        a.SourceKind, a.SourceId, a.InspectorBusinessEntityId,
-        a.InspectedAt, a.InventoryItemId, a.LotId,
-        a.Quantity, a.UnitMeasureCode, a.Notes, a.PostedByUserId, a.SourceModifiedDate);
 
     public static InspectionResultDto ToDto(this InspectionResult e) => new(
         e.Id, e.InspectionId, e.InspectionPlanCharacteristicId,

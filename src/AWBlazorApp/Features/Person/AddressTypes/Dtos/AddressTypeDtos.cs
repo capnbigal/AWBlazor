@@ -14,17 +14,6 @@ public sealed record UpdateAddressTypeRequest
     public string? Name { get; set; }
 }
 
-public sealed record AddressTypeAuditLogDto(
-    int Id,
-    int AddressTypeId,
-    string Action,
-    string? ChangedBy,
-    DateTime ChangedDate,
-    string? ChangeSummary,
-    string? Name,
-    Guid RowGuid,
-    DateTime SourceModifiedDate);
-
 public static class AddressTypeMappings
 {
     public static AddressTypeDto ToDto(this AddressType e)
@@ -43,7 +32,4 @@ public static class AddressTypeMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static AddressTypeAuditLogDto ToDto(this AddressTypeAuditLog a) => new(
-        a.Id, a.AddressTypeId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.RowGuid, a.SourceModifiedDate);
-}
+    }

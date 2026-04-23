@@ -19,10 +19,6 @@ public sealed record UpdateEmployeePayHistoryRequest
     public byte? PayFrequency { get; set; }
 }
 
-public sealed record EmployeePayHistoryAuditLogDto(
-    int Id, int BusinessEntityId, DateTime RateChangeDate, string Action, string? ChangedBy,
-    DateTime ChangedDate, string? ChangeSummary, decimal Rate, byte PayFrequency, DateTime SourceModifiedDate);
-
 public static class EmployeePayHistoryMappings
 {
     public static EmployeePayHistoryDto ToDto(this EmployeePayHistory e) => new(
@@ -44,7 +40,4 @@ public static class EmployeePayHistoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static EmployeePayHistoryAuditLogDto ToDto(this EmployeePayHistoryAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.RateChangeDate, a.Action, a.ChangedBy,
-        a.ChangedDate, a.ChangeSummary, a.Rate, a.PayFrequency, a.SourceModifiedDate);
-}
+    }

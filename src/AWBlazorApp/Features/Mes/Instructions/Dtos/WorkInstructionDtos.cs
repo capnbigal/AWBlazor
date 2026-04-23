@@ -17,18 +17,9 @@ public sealed record UpdateWorkInstructionRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record WorkInstructionAuditLogDto(
-    int Id, int WorkInstructionId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int WorkOrderRoutingId, string? Title, int? ActiveRevisionId, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record WorkInstructionRevisionDto(
     int Id, int WorkInstructionId, int RevisionNumber, WorkInstructionRevisionStatus Status,
     string? CreatedByUserId, DateTime CreatedDate, DateTime? PublishedAt, string? Notes, DateTime ModifiedDate);
-
-public sealed record WorkInstructionRevisionAuditLogDto(
-    int Id, int WorkInstructionRevisionId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int WorkInstructionId, int RevisionNumber, WorkInstructionRevisionStatus Status,
-    string? CreatedByUserId, DateTime CreatedDate, DateTime? PublishedAt, string? Notes, DateTime SourceModifiedDate);
 
 public sealed record WorkInstructionStepDto(
     int Id, int WorkInstructionRevisionId, int SequenceNumber, string Title, string Body,
@@ -53,11 +44,6 @@ public sealed record UpdateWorkInstructionStepRequest
     public int? EstimatedDurationMinutes { get; set; }
 }
 
-public sealed record WorkInstructionStepAuditLogDto(
-    int Id, int WorkInstructionStepId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int WorkInstructionRevisionId, int SequenceNumber, string? Title,
-    string? AttachmentUrl, int? EstimatedDurationMinutes, DateTime SourceModifiedDate);
-
 public static class WorkInstructionMappings
 {
     public static WorkInstructionDto ToDto(this WorkInstruction e) => new(
@@ -78,18 +64,9 @@ public static class WorkInstructionMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static WorkInstructionAuditLogDto ToDto(this WorkInstructionAuditLog a) => new(
-        a.Id, a.WorkInstructionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.WorkOrderRoutingId, a.Title, a.ActiveRevisionId, a.IsActive, a.SourceModifiedDate);
-
     public static WorkInstructionRevisionDto ToDto(this WorkInstructionRevision e) => new(
         e.Id, e.WorkInstructionId, e.RevisionNumber, e.Status, e.CreatedByUserId,
         e.CreatedDate, e.PublishedAt, e.Notes, e.ModifiedDate);
-
-    public static WorkInstructionRevisionAuditLogDto ToDto(this WorkInstructionRevisionAuditLog a) => new(
-        a.Id, a.WorkInstructionRevisionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.WorkInstructionId, a.RevisionNumber, a.Status, a.CreatedByUserId,
-        a.CreatedDate, a.PublishedAt, a.Notes, a.SourceModifiedDate);
 
     public static WorkInstructionStepDto ToDto(this WorkInstructionStep e) => new(
         e.Id, e.WorkInstructionRevisionId, e.SequenceNumber, e.Title, e.Body,
@@ -116,8 +93,4 @@ public static class WorkInstructionMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static WorkInstructionStepAuditLogDto ToDto(this WorkInstructionStepAuditLog a) => new(
-        a.Id, a.WorkInstructionStepId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.WorkInstructionRevisionId, a.SequenceNumber, a.Title,
-        a.AttachmentUrl, a.EstimatedDurationMinutes, a.SourceModifiedDate);
-}
+    }

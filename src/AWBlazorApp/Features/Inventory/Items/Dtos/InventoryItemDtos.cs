@@ -32,12 +32,6 @@ public sealed record UpdateInventoryItemRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record InventoryItemAuditLogDto(
-    int Id, int InventoryItemId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int ProductId, bool TracksLot, bool TracksSerial, int? DefaultLocationId,
-    decimal MinQty, decimal MaxQty, decimal ReorderPoint, decimal ReorderQty,
-    bool IsActive, DateTime SourceModifiedDate);
-
 public static class InventoryItemMappings
 {
     public static InventoryItemDto ToDto(this InventoryItem e) => new(
@@ -71,8 +65,4 @@ public static class InventoryItemMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static InventoryItemAuditLogDto ToDto(this InventoryItemAuditLog a) => new(
-        a.Id, a.InventoryItemId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductId, a.TracksLot, a.TracksSerial, a.DefaultLocationId,
-        a.MinQty, a.MaxQty, a.ReorderPoint, a.ReorderQty, a.IsActive, a.SourceModifiedDate);
-}
+    }

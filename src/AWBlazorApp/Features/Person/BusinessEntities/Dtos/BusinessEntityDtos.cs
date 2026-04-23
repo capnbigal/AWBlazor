@@ -13,10 +13,6 @@ public sealed record CreateBusinessEntityRequest;
 
 public sealed record UpdateBusinessEntityRequest;
 
-public sealed record BusinessEntityAuditLogDto(
-    int Id, int BusinessEntityId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class BusinessEntityMappings
 {
     public static BusinessEntityDto ToDto(this BusinessEntity e) => new(e.Id, e.RowGuid, e.ModifiedDate);
@@ -32,7 +28,4 @@ public static class BusinessEntityMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static BusinessEntityAuditLogDto ToDto(this BusinessEntityAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

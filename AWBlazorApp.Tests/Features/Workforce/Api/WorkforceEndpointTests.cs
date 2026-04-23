@@ -181,10 +181,6 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
             await using var cleanup = await GetDbContextAsync();
             var alerts = cleanup.QualificationAlerts.Where(a => a.Id == alertId);
             cleanup.QualificationAlerts.RemoveRange(alerts);
-            var audits = cleanup.EmployeeQualificationAuditLogs.Where(a => a.BusinessEntityId == employeeBeId && a.QualificationId == qualificationId);
-            cleanup.EmployeeQualificationAuditLogs.RemoveRange(audits);
-            var qAudits = cleanup.QualificationAlertAuditLogs.Where(a => a.QualificationAlertId == alertId);
-            cleanup.QualificationAlertAuditLogs.RemoveRange(qAudits);
             var remainingEmp = cleanup.EmployeeQualifications.Where(x => x.BusinessEntityId == employeeBeId && x.QualificationId == qualificationId);
             cleanup.EmployeeQualifications.RemoveRange(remainingEmp);
             await cleanup.SaveChangesAsync();
@@ -192,8 +188,6 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
             await using var cleanup2 = await GetDbContextAsync();
             var qual = await cleanup2.Qualifications.FirstOrDefaultAsync(q => q.Id == qualificationId);
             if (qual is not null) cleanup2.Qualifications.Remove(qual);
-            var qAuditLogs = cleanup2.QualificationAuditLogs.Where(a => a.QualificationId == qualificationId);
-            cleanup2.QualificationAuditLogs.RemoveRange(qAuditLogs);
             await cleanup2.SaveChangesAsync();
         }
     }
@@ -236,8 +230,6 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
         finally
         {
             await using var cleanup = await GetDbContextAsync();
-            var audits = cleanup.LeaveRequestAuditLogs.Where(a => a.LeaveRequestId == leaveId);
-            cleanup.LeaveRequestAuditLogs.RemoveRange(audits);
             var leave = await cleanup.LeaveRequests.FirstOrDefaultAsync(l => l.Id == leaveId);
             if (leave is not null) cleanup.LeaveRequests.Remove(leave);
             await cleanup.SaveChangesAsync();
@@ -276,8 +268,6 @@ public class WorkforceEndpointTests : IntegrationTestFixtureBase
         finally
         {
             await using var cleanup = await GetDbContextAsync();
-            var audits = cleanup.LeaveRequestAuditLogs.Where(a => a.LeaveRequestId == leaveId);
-            cleanup.LeaveRequestAuditLogs.RemoveRange(audits);
             var leave = await cleanup.LeaveRequests.FirstOrDefaultAsync(l => l.Id == leaveId);
             if (leave is not null) cleanup.LeaveRequests.Remove(leave);
             await cleanup.SaveChangesAsync();

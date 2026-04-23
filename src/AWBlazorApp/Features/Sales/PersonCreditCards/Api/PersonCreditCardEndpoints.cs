@@ -110,20 +110,15 @@ public static class PersonCreditCardEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<PersonCreditCardAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] int? creditCardId = null,
         CancellationToken ct = default)
     {
-        var query = db.PersonCreditCardAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (creditCardId.HasValue) query = query.Where(a => a.CreditCardId == creditCardId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "PersonCreditCard")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

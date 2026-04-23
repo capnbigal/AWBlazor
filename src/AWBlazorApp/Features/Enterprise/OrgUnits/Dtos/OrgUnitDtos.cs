@@ -30,12 +30,6 @@ public sealed record UpdateOrgUnitRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record OrgUnitAuditLogDto(
-    int Id, int OrgUnitId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrganizationId, int? ParentOrgUnitId, OrgUnitKind Kind,
-    string? Code, string? Name, string? Path, byte Depth,
-    int? CostCenterId, int? ManagerBusinessEntityId, bool IsActive, DateTime SourceModifiedDate);
-
 public static class OrgUnitMappings
 {
     public static OrgUnitDto ToDto(this OrgUnit e) => new(
@@ -69,8 +63,4 @@ public static class OrgUnitMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static OrgUnitAuditLogDto ToDto(this OrgUnitAuditLog a) => new(
-        a.Id, a.OrgUnitId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrganizationId, a.ParentOrgUnitId, a.Kind, a.Code, a.Name, a.Path, a.Depth,
-        a.CostCenterId, a.ManagerBusinessEntityId, a.IsActive, a.SourceModifiedDate);
-}
+    }

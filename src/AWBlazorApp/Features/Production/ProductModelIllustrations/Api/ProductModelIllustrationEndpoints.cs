@@ -112,20 +112,15 @@ public static class ProductModelIllustrationEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductModelIllustrationAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productModelId = null,
-        [FromQuery] int? illustrationId = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductModelIllustrationAuditLogs.AsNoTracking();
-        if (productModelId.HasValue) query = query.Where(a => a.ProductModelId == productModelId.Value);
-        if (illustrationId.HasValue) query = query.Where(a => a.IllustrationId == illustrationId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductModelIllustration")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

@@ -21,11 +21,6 @@ public sealed record UpdateCreditCardRequest
     public short? ExpYear { get; set; }
 }
 
-public sealed record CreditCardAuditLogDto(
-    int Id, int CreditCardId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? CardType, string? CardNumber, byte ExpMonth, short ExpYear,
-    DateTime SourceModifiedDate);
-
 public static class CreditCardMappings
 {
     public static CreditCardDto ToDto(this CreditCard e) => new(
@@ -49,7 +44,4 @@ public static class CreditCardMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CreditCardAuditLogDto ToDto(this CreditCardAuditLog a) => new(
-        a.Id, a.CreditCardId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.CardType, a.CardNumber, a.ExpMonth, a.ExpYear, a.SourceModifiedDate);
-}
+    }

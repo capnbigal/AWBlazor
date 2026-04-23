@@ -89,13 +89,15 @@ public static class CountryRegionEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<CountryRegionAuditLogDto>>> HistoryAsync(string code, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.CountryRegionAuditLogs.AsNoTracking()
-            .Where(a => a.CountryRegionCode == code)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "CountryRegion")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

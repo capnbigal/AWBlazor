@@ -60,10 +60,6 @@ public sealed record UpdateDowntimeReasonRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record DowntimeReasonAuditLogDto(
-    int Id, int DowntimeReasonId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description, bool IsActive, DateTime SourceModifiedDate);
-
 public static class ShopFloorMappings
 {
     public static OperatorClockEventDto ToDto(this OperatorClockEvent e) => new(
@@ -114,7 +110,4 @@ public static class ShopFloorMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static DowntimeReasonAuditLogDto ToDto(this DowntimeReasonAuditLog a) => new(
-        a.Id, a.DowntimeReasonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.IsActive, a.SourceModifiedDate);
-}
+    }

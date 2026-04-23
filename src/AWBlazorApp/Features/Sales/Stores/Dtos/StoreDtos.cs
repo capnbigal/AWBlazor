@@ -19,11 +19,6 @@ public sealed record UpdateStoreRequest
     public int? SalesPersonId { get; set; }
 }
 
-public sealed record StoreAuditLogDto(
-    int Id, int StoreId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, int? SalesPersonId,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class StoreMappings
 {
     public static StoreDto ToDto(this Store e) => new(
@@ -45,7 +40,4 @@ public static class StoreMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static StoreAuditLogDto ToDto(this StoreAuditLog a) => new(
-        a.Id, a.StoreId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SalesPersonId, a.RowGuid, a.SourceModifiedDate);
-}
+    }

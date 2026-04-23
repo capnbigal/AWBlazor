@@ -8,8 +8,8 @@ namespace AWBlazorApp.Infrastructure.Jobs;
 
 /// <summary>
 /// Hangfire recurring job that purges audit-log rows older than the configured retention period
-/// (default 365 days). Audit logs grow unbounded otherwise — every entity write produces one
-/// audit row across 67 AdventureWorks tables plus ToolSlot, SecurityAuditLog, and others.
+/// (default 365 days). Covers the consolidated <c>audit.AuditLog</c> table (populated by
+/// <see cref="Persistence.AuditLogInterceptor"/>) and <c>SecurityAuditLogs</c>.
 ///
 /// Configure retention via Features:AuditLogRetentionDays in appsettings (default: 365).
 /// Registered daily at 03:30 UTC in MiddlewarePipeline.cs.
@@ -24,12 +24,17 @@ public sealed class AuditLogCleanupJob(
     [AutomaticRetry(Attempts = 2)]
     public async Task ExecuteAsync()
     {
-        // Enumerate every audit log table (PascalCase entity name + "AuditLogs" suffix) and
-        // delete rows older than the cutoff. We use raw SQL because there are 70+ audit tables
-        // and EF would issue one DELETE per row otherwise.
+        // Enumerate every audit log table — the consolidated audit.AuditLog plus any entity
+        // whose table name ends in "AuditLogs" (currently SecurityAuditLogs). Raw SQL so we
+        // issue one DELETE per table rather than a round-trip per row.
         await using var db = await dbFactory.CreateDbContextAsync();
         var auditTables = db.Model.GetEntityTypes()
-            .Where(e => e.GetTableName()?.EndsWith("AuditLogs", StringComparison.Ordinal) == true)
+            .Where(e =>
+            {
+                var name = e.GetTableName();
+                return name is not null
+                    && (name.EndsWith("AuditLogs", StringComparison.Ordinal) || name == "AuditLog");
+            })
             .Select(e => new
             {
                 Schema = e.GetSchema() ?? "dbo",

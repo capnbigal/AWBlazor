@@ -15,10 +15,6 @@ public sealed record CreateProductDocumentRequest
 /// <summary>Pure junction — no non-key columns to update beyond ModifiedDate.</summary>
 public sealed record UpdateProductDocumentRequest;
 
-public sealed record ProductDocumentAuditLogDto(
-    int Id, int ProductId, string DocumentNode, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class ProductDocumentMappings
 {
     public static ProductDocumentDto ToDto(this ProductDocument e) => new(
@@ -36,7 +32,4 @@ public static class ProductDocumentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductDocumentAuditLogDto ToDto(this ProductDocumentAuditLog a) => new(
-        a.Id, a.ProductId, a.DocumentNode, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

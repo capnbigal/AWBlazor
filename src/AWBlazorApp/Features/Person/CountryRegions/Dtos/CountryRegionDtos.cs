@@ -15,10 +15,6 @@ public sealed record UpdateCountryRegionRequest
     public string? Name { get; set; }
 }
 
-public sealed record CountryRegionAuditLogDto(
-    int Id, string CountryRegionCode, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, DateTime SourceModifiedDate);
-
 public static class CountryRegionMappings
 {
     public static CountryRegionDto ToDto(this CountryRegion e)
@@ -37,7 +33,4 @@ public static class CountryRegionMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static CountryRegionAuditLogDto ToDto(this CountryRegionAuditLog a) => new(
-        a.Id, a.CountryRegionCode, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.SourceModifiedDate);
-}
+    }

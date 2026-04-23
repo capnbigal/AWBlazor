@@ -14,10 +14,6 @@ public sealed record UpdateProductDescriptionRequest
     public string? Description { get; set; }
 }
 
-public sealed record ProductDescriptionAuditLogDto(
-    int Id, int ProductDescriptionId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Description, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class ProductDescriptionMappings
 {
     public static ProductDescriptionDto ToDto(this ProductDescription e)
@@ -36,7 +32,4 @@ public static class ProductDescriptionMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductDescriptionAuditLogDto ToDto(this ProductDescriptionAuditLog a) => new(
-        a.Id, a.ProductDescriptionId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Description, a.RowGuid, a.SourceModifiedDate);
-}
+    }

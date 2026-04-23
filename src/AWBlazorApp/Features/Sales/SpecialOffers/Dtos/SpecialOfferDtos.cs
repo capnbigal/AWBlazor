@@ -39,11 +39,6 @@ public sealed record UpdateSpecialOfferRequest
     public int? MaxQty { get; set; }
 }
 
-public sealed record SpecialOfferAuditLogDto(
-    int Id, int SpecialOfferId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Description, decimal DiscountPct, string? OfferType, string? Category,
-    DateTime StartDate, DateTime EndDate, int MinQty, int? MaxQty, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SpecialOfferMappings
 {
     public static SpecialOfferDto ToDto(this SpecialOffer e) => new(
@@ -80,8 +75,4 @@ public static class SpecialOfferMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SpecialOfferAuditLogDto ToDto(this SpecialOfferAuditLog a) => new(
-        a.Id, a.SpecialOfferId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Description, a.DiscountPct, a.OfferType, a.Category,
-        a.StartDate, a.EndDate, a.MinQty, a.MaxQty, a.RowGuid, a.SourceModifiedDate);
-}
+    }

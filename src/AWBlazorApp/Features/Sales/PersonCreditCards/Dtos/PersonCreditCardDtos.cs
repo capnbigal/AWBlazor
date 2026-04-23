@@ -20,10 +20,6 @@ public sealed record UpdatePersonCreditCardRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record PersonCreditCardAuditLogDto(
-    int Id, int BusinessEntityId, int CreditCardId, string Action,
-    string? ChangedBy, DateTime ChangedDate, string? ChangeSummary, DateTime SourceModifiedDate);
-
 public static class PersonCreditCardMappings
 {
     public static PersonCreditCardDto ToDto(this PersonCreditCard e) => new(
@@ -41,7 +37,4 @@ public static class PersonCreditCardMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static PersonCreditCardAuditLogDto ToDto(this PersonCreditCardAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.CreditCardId, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.SourceModifiedDate);
-}
+    }

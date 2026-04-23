@@ -17,11 +17,6 @@ public sealed record CreateBusinessEntityContactRequest
 /// </summary>
 public sealed record UpdateBusinessEntityContactRequest;
 
-public sealed record BusinessEntityContactAuditLogDto(
-    int Id, int BusinessEntityId, int PersonId, int ContactTypeId,
-    string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class BusinessEntityContactMappings
 {
     public static BusinessEntityContactDto ToDto(this BusinessEntityContact e) => new(
@@ -41,8 +36,4 @@ public static class BusinessEntityContactMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static BusinessEntityContactAuditLogDto ToDto(this BusinessEntityContactAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.PersonId, a.ContactTypeId,
-        a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

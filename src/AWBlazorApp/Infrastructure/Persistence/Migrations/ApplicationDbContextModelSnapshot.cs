@@ -70,66 +70,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("BomHeader", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomHeaderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BomHeaderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RevisionNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BomHeaderId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("BomHeaderAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Engineering.Boms.Domain.BomLine", b =>
                 {
                     b.Property<int>("Id")
@@ -246,94 +186,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DeviationRequest", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Deviations.Domain.DeviationRequestAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal?>("AuthorizedQuantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime?>("DecidedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DecidedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("DecisionNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("DeviationRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProposedDisposition")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("RaisedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RaisedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateOnly?>("ValidFrom")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("ValidTo")
-                        .HasColumnType("date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("DeviationRequestId");
-
-                    b.ToTable("DeviationRequestAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Engineering.Documents.Domain.EngineeringDocument", b =>
                 {
                     b.Property<int>("Id")
@@ -383,73 +235,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductId", "Kind");
 
                     b.ToTable("EngineeringDocument", "eng");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Documents.Domain.EngineeringDocumentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("EngineeringDocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RevisionNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Url")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("EngineeringDocumentId");
-
-                    b.ToTable("EngineeringDocumentAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EcoAffectedItem", b =>
@@ -585,81 +370,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("EngineeringChangeOrder", "eng");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Ecos.Domain.EngineeringChangeOrderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime?>("DecidedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DecidedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("DecisionNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<int>("EngineeringChangeOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("RaisedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RaisedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("EngineeringChangeOrderId");
-
-                    b.ToTable("EngineeringChangeOrderAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.ManufacturingRouting", b =>
                 {
                     b.Property<int>("Id")
@@ -705,66 +415,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ManufacturingRouting", "eng");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.ManufacturingRoutingAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ManufacturingRoutingId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RevisionNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ManufacturingRoutingId");
-
-                    b.ToTable("ManufacturingRoutingAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Engineering.Routings.Domain.RoutingStep", b =>
@@ -879,86 +529,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Asset", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Assets.Domain.AssetAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssetTag")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<byte>("AssetType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CommissionedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DecommissionedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Manufacturer")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("Model")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("OrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentAssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SerialNumber")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("AssetAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenter", b =>
                 {
                     b.Property<int>("Id")
@@ -995,62 +565,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("CostCenter", "org");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.CostCenters.Domain.CostCenterAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int>("CostCenterId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("OwnerBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CostCenterId");
-
-                    b.ToTable("CostCenterAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnit", b =>
@@ -1114,78 +628,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("OrgUnit", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.OrgUnits.Domain.OrgUnitAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int?>("CostCenterId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Depth")
-                        .HasColumnType("tinyint");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("ManagerBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("OrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentOrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Path")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("OrgUnitId");
-
-                    b.ToTable("OrgUnitAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Organizations.Domain.Organization", b =>
                 {
                     b.Property<int>("Id")
@@ -1234,66 +676,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Organization", "org");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Organizations.Domain.OrganizationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("ExternalRef")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentOrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("OrganizationId");
-
-                    b.ToTable("OrganizationAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Enterprise.ProductLines.Domain.ProductLine", b =>
                 {
                     b.Property<int>("Id")
@@ -1331,63 +713,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductLine", "org");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.ProductLines.Domain.ProductLineAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductLineId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductLineId");
-
-                    b.ToTable("ProductLineAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Stations.Domain.Station", b =>
@@ -1439,71 +764,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Station", "org");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Enterprise.Stations.Domain.StationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<decimal?>("IdealCycleSeconds")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("OperatorBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StationId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("StationKind")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StationId");
-
-                    b.ToTable("StationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Forecasting.Domain.ForecastDataPoint", b =>
@@ -1675,53 +935,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Departments.Domain.DepartmentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short>("DepartmentId")
-                        .HasColumnType("smallint");
-
-                    b.Property<string>("GroupName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.ToTable("DepartmentAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain.EmployeeDepartmentHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -1756,57 +969,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeeDepartmentHistories.Domain.EmployeeDepartmentHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short>("DepartmentId")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("ShiftId")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "StartDate");
-
-                    b.ToTable("EmployeeDepartmentHistoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain.EmployeePayHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -1835,54 +997,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.EmployeePayHistories.Domain.EmployeePayHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("PayFrequency")
-                        .HasColumnType("tinyint");
-
-                    b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("RateChangeDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "RateChangeDate");
-
-                    b.ToTable("EmployeePayHistoryAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Employees.Domain.Employee", b =>
@@ -1961,86 +1075,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Employees.Domain.EmployeeAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<DateTime>("BirthDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("CurrentFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
-
-                    b.Property<DateTime>("HireDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("JobTitle")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("LoginID")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("MaritalStatus")
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
-
-                    b.Property<string>("NationalIDNumber")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("SalariedFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<short>("SickLeaveHours")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short>("VacationHours")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("EmployeeAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.JobCandidates.Domain.JobCandidate", b =>
                 {
                     b.Property<int>("Id")
@@ -2064,48 +1098,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.JobCandidates.Domain.JobCandidateAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int?>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("JobCandidateId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("JobCandidateId");
-
-                    b.ToTable("JobCandidateAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Shifts.Domain.Shift", b =>
@@ -2141,55 +1133,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.HumanResources.Shifts.Domain.ShiftAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("time");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<byte>("ShiftId")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan>("StartTime")
-                        .HasColumnType("time");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ShiftId");
-
-                    b.ToTable("ShiftAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Identity.Domain.ApiKey", b =>
@@ -2645,88 +1588,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryAdjustment", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Adjustments.Domain.InventoryAdjustmentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("AdjustmentNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ApprovedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InventoryAdjustmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("PostedTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("QuantityDelta")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<byte>("ReasonCode")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RequestedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InventoryAdjustmentId");
-
-                    b.ToTable("InventoryAdjustmentAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItem", b =>
                 {
                     b.Property<int>("Id")
@@ -2773,72 +1634,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("InventoryItem", "inv");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Items.Domain.InventoryItemAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("DefaultLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("MaxQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MinQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ReorderPoint")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ReorderQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("TracksLot")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("TracksSerial")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InventoryItemId");
-
-                    b.ToTable("InventoryItemAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocation", b =>
@@ -2902,78 +1697,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InventoryLocation", "inv");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Locations.Domain.InventoryLocationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<byte>("Depth")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int>("InventoryLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("OrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Path")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<short?>("ProductionLocationId")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InventoryLocationId");
-
-                    b.ToTable("InventoryLocationAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Inventory.Lots.Domain.Lot", b =>
                 {
                     b.Property<int>("Id")
@@ -3013,64 +1736,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Lot", "inv");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Lots.Domain.LotAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LotCode")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<int>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ManufacturedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ReceivedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("VendorBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("LotId");
-
-                    b.ToTable("LotAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Inventory.Outbox.Domain.InventoryTransactionOutbox", b =>
@@ -3249,61 +1914,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("SerialUnit", "inv");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Inventory.Serials.Domain.SerialUnitAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("CurrentLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SerialNumber")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<int>("SerialUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SerialUnitId");
-
-                    b.ToTable("SerialUnitAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Inventory.Transactions.Domain.InventoryTransaction", b =>
@@ -3498,75 +2108,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("GoodsReceipt", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GoodsReceiptId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("PostedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PostedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("PurchaseOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReceiptNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime>("ReceivedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ReceivedLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("VendorBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("GoodsReceiptId");
-
-                    b.ToTable("GoodsReceiptAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptLine", b =>
                 {
                     b.Property<int>("Id")
@@ -3614,67 +2155,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("PurchaseOrderDetailId");
 
                     b.ToTable("GoodsReceiptLine", "lgx");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Receipts.Domain.GoodsReceiptLineAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GoodsReceiptId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GoodsReceiptLineId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("PostedTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("PurchaseOrderDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("GoodsReceiptLineId");
-
-                    b.ToTable("GoodsReceiptLineAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.Shipment", b =>
@@ -3746,85 +2226,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Shipment", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("CustomerBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("PostedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PostedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("SalesOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ShipMethodId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShipmentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ShipmentNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime?>("ShippedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ShippedFromLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("TrackingNumber")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ShipmentId");
-
-                    b.ToTable("ShipmentAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentLine", b =>
                 {
                     b.Property<int>("Id")
@@ -3877,70 +2278,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("ShipmentId");
 
                     b.ToTable("ShipmentLine", "lgx");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Shipments.Domain.ShipmentLineAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("PostedTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("SalesOrderDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SerialUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShipmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShipmentLineId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ShipmentLineId");
-
-                    b.ToTable("ShipmentLineAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransfer", b =>
@@ -4011,81 +2348,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransfer", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CorrelationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("FromLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("FromOrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("InitiatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("PostedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int>("StockTransferId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ToLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ToOrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransferNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StockTransferId");
-
-                    b.ToTable("StockTransferAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferLine", b =>
                 {
                     b.Property<int>("Id")
@@ -4140,70 +2402,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("StockTransferLine", "lgx");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Logistics.Transfers.Domain.StockTransferLineAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("FromTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("SerialUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StockTransferId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StockTransferLineId")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("ToTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StockTransferLineId");
-
-                    b.ToTable("StockTransferLineAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Maintenance.AssetProfiles.Domain.AssetMaintenanceProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -4242,64 +2440,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("NextPmDueAt");
 
                     b.ToTable("AssetMaintenanceProfile", "maint");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.AssetProfiles.Domain.AssetMaintenanceProfileAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AssetMaintenanceProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Criticality")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("NextPmDueAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int?>("OwnerBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("TargetMtbfHours")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetMaintenanceProfileId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("AssetMaintenanceProfileAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Maintenance.Logs.Domain.MaintenanceLog", b =>
@@ -4442,81 +2582,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PmSchedule", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmScheduleAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<byte>("DefaultPriority")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("EstimatedMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("IntervalKind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int>("IntervalValue")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastCompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("LastCompletedMeterValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PmScheduleId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PmScheduleId");
-
-                    b.ToTable("PmScheduleAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Maintenance.PmSchedules.Domain.PmScheduleTask", b =>
                 {
                     b.Property<int>("Id")
@@ -4612,187 +2677,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("SparePart", "maint");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.SpareParts.Domain.SparePartAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("PartNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReorderPoint")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReorderQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SparePartId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("StandardCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SparePartId");
-
-                    b.ToTable("SparePartAuditLogs", (string)null);
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.ToolSlots.Domain.ToolSlotAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Destination")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Family")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Fcl1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Fcl2")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Fcr1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffl1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffl2")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffr1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffr2")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffr3")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Ffr4")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MtCode")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rcl1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rcr1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rcr2")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rfl1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rfr1")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Rfr2")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("ToolSlotConfigurationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ToolSlotConfigurationId");
-
-                    b.ToTable("ToolSlotAuditLogs");
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Maintenance.ToolSlots.Domain.ToolSlotConfiguration", b =>
@@ -4999,104 +2883,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("MaintenanceWorkOrder", "maint");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("AssignedBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("CompletedMeterValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("CompletionNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<DateTime?>("HeldAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MaintenanceWorkOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PmScheduleId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Priority")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("RaisedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RaisedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ScheduledFor")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<byte>("Type")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("WorkOrderNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("MaintenanceWorkOrderId");
-
-                    b.ToTable("MaintenanceWorkOrderAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Maintenance.WorkOrders.Domain.MaintenanceWorkOrderTask", b =>
                 {
                     b.Property<int>("Id")
@@ -5277,60 +3063,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("DowntimeReason", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Downtime.Domain.DowntimeReasonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("DowntimeReasonId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("DowntimeReasonId");
-
-                    b.ToTable("DowntimeReasonAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstruction", b =>
                 {
                     b.Property<int>("Id")
@@ -5364,58 +3096,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("WorkInstruction", "mes");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int?>("ActiveRevisionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("WorkInstructionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkOrderRoutingId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("WorkInstructionId");
-
-                    b.ToTable("WorkInstructionAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevision", b =>
@@ -5462,68 +3142,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkInstructionRevision", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionRevisionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("PublishedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RevisionNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int>("WorkInstructionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkInstructionRevisionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("WorkInstructionRevisionId");
-
-                    b.ToTable("WorkInstructionRevisionAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionStep", b =>
                 {
                     b.Property<int>("Id")
@@ -5563,62 +3181,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("WorkInstructionStep", "mes");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Instructions.Domain.WorkInstructionStepAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("AttachmentUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("EstimatedDurationMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SequenceNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("WorkInstructionRevisionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkInstructionStepId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("WorkInstructionStepId");
-
-                    b.ToTable("WorkInstructionStepAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.OperatorClockEvent", b =>
@@ -5741,90 +3303,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductionRun", "mes");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<DateTime?>("ActualEndAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ActualStartAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("PlannedStartAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PostedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ProductionRunId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("QuantityPlanned")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("QuantityProduced")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("QuantityScrapped")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("RunNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("StationId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("WorkOrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductionRunId");
-
-                    b.ToTable("ProductionRunAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunOperation", b =>
                 {
                     b.Property<int>("Id")
@@ -5864,67 +3342,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProductionRunId");
 
                     b.ToTable("ProductionRunOperation", "mes");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Mes.Runs.Domain.ProductionRunOperationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("ActualHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("OperationDescription")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<short?>("OperationSequence")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("ProductionRunId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductionRunOperationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SequenceNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("StartAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductionRunOperationId");
-
-                    b.ToTable("ProductionRunOperationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinition", b =>
@@ -5985,82 +3402,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("KpiDefinition", "perf");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiDefinitionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<byte>("Aggregation")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<decimal?>("CriticalThreshold")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<byte>("Direction")
-                        .HasColumnType("tinyint");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("KpiDefinitionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<byte>("Source")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("TargetValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Unit")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<decimal?>("WarningThreshold")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("KpiDefinitionId");
-
-                    b.ToTable("KpiDefinitionAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Performance.Kpis.Domain.KpiValue", b =>
@@ -6334,78 +3675,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PerformanceReport", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReportAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int?>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("DefinitionJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("LastRunAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("PerformanceReportId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("RangePreset")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("StationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PerformanceReportId");
-
-                    b.ToTable("PerformanceReportAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Performance.Reports.Domain.PerformanceReportRun", b =>
                 {
                     b.Property<long>("Id")
@@ -6492,64 +3761,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ScorecardDefinition", "perf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardDefinitionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("OwnerUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ScorecardDefinitionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ScorecardDefinitionId");
-
-                    b.ToTable("ScorecardDefinitionAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Performance.Scorecards.Domain.ScorecardKpi", b =>
                 {
                     b.Property<int>("Id")
@@ -6616,52 +3827,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.AddressTypes.Domain.AddressTypeAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AddressTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddressTypeId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("AddressTypeAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.Addresses.Domain.Address", b =>
                 {
                     b.Property<int>("Id")
@@ -6714,67 +3879,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Addresses.Domain.AddressAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AddressId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AddressLine1")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<string>("AddressLine2")
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StateProvinceId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddressId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("AddressAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntities.Domain.BusinessEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -6798,48 +3902,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntities.Domain.BusinessEntityAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BusinessEntityId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("BusinessEntityAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain.BusinessEntityAddress", b =>
@@ -6872,54 +3934,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain.BusinessEntityAddressAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AddressId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AddressTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "AddressId", "AddressTypeId");
-
-                    b.ToTable("BusinessEntityAddressAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityContacts.Domain.BusinessEntityContact", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -6950,54 +3964,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.BusinessEntityContacts.Domain.BusinessEntityContactAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ContactTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PersonId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "PersonId", "ContactTypeId");
-
-                    b.ToTable("BusinessEntityContactAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.ContactTypes.Domain.ContactType", b =>
                 {
                     b.Property<int>("Id")
@@ -7025,49 +3991,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.ContactTypes.Domain.ContactTypeAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ContactTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ContactTypeId");
-
-                    b.ToTable("ContactTypeAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.CountryRegions.Domain.CountryRegion", b =>
                 {
                     b.Property<string>("CountryRegionCode")
@@ -7091,51 +4014,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Person.CountryRegions.Domain.CountryRegionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CountryRegionCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CountryRegionCode");
-
-                    b.ToTable("CountryRegionAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Person.EmailAddresses.Domain.EmailAddress", b =>
@@ -7172,55 +4050,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.EmailAddresses.Domain.EmailAddressAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmailAddressId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EmailAddressValue")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "EmailAddressId");
-
-                    b.ToTable("EmailAddressAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.PersonPhones.Domain.PersonPhone", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -7246,53 +4075,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Person.PersonPhones.Domain.PersonPhoneAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<int>("PhoneNumberTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "PhoneNumberTypeId");
-
-                    b.ToTable("PersonPhoneAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Person.Persons.Domain.Person", b =>
@@ -7358,78 +4140,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Person.Persons.Domain.PersonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmailPromotion")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("MiddleName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("NameStyle")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("PersonId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PersonType")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Suffix")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PersonId");
-
-                    b.ToTable("PersonAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Person.PhoneNumberTypes.Domain.PhoneNumberType", b =>
                 {
                     b.Property<int>("Id")
@@ -7455,49 +4165,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Person.PhoneNumberTypes.Domain.PhoneNumberTypeAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("PhoneNumberTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PhoneNumberTypeId");
-
-                    b.ToTable("PhoneNumberTypeAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Person.StateProvinces.Domain.StateProvince", b =>
@@ -7549,66 +4216,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Person.StateProvinces.Domain.StateProvinceAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CountryRegionCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<bool>("IsOnlyStateProvinceFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("StateProvinceCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<int>("StateProvinceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TerritoryId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StateProvinceId");
-
-                    b.ToTable("StateProvinceAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.Process", b =>
@@ -7868,67 +4475,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Boms.Domain.BillOfMaterialsAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BillOfMaterialsId")
-                        .HasColumnType("int");
-
-                    b.Property<short>("BomLevel")
-                        .HasColumnType("smallint");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ComponentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("PerAssemblyQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("ProductAssemblyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BillOfMaterialsId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("BillOfMaterialsAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.Cultures.Domain.Culture", b =>
                 {
                     b.Property<string>("CultureId")
@@ -7952,51 +4498,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Cultures.Domain.CultureAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CultureId")
-                        .IsRequired()
-                        .HasMaxLength(6)
-                        .HasColumnType("nvarchar(6)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CultureId");
-
-                    b.ToTable("CultureAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.Documents.Domain.Document", b =>
@@ -8074,78 +4575,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Documents.Domain.DocumentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("ChangeNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DocumentNode")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("FileExtension")
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
-
-                    b.Property<string>("FileName")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
-
-                    b.Property<bool>("FolderFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Owner")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Revision")
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("DocumentNode");
-
-                    b.ToTable("DocumentAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.Illustrations.Domain.Illustration", b =>
                 {
                     b.Property<int>("Id")
@@ -8165,45 +4594,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Illustrations.Domain.IllustrationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IllustrationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("IllustrationId");
-
-                    b.ToTable("IllustrationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.Locations.Domain.Location", b =>
@@ -8241,55 +4631,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Locations.Domain.LocationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("Availability")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("CostRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<short>("LocationId")
-                        .HasColumnType("smallint");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("LocationId");
-
-                    b.ToTable("LocationAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCategories.Domain.ProductCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -8321,52 +4662,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCategories.Domain.ProductCategoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductCategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductCategoryId");
-
-                    b.ToTable("ProductCategoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCostHistories.Domain.ProductCostHistory", b =>
                 {
                     b.Property<int>("ProductId")
@@ -8395,54 +4690,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductCostHistories.Domain.ProductCostHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("StandardCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "StartDate");
-
-                    b.ToTable("ProductCostHistoryAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDescriptions.Domain.ProductDescription", b =>
@@ -8476,52 +4723,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDescriptions.Domain.ProductDescriptionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
-
-                    b.Property<int>("ProductDescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductDescriptionId");
-
-                    b.ToTable("ProductDescriptionAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDocuments.Domain.ProductDocument", b =>
                 {
                     b.Property<int>("ProductId")
@@ -8542,50 +4743,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductDocuments.Domain.ProductDocumentAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DocumentNode")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "DocumentNode");
-
-                    b.ToTable("ProductDocumentAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductInventories.Domain.ProductInventory", b =>
@@ -8628,61 +4785,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductInventories.Domain.ProductInventoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<byte>("Bin")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short>("LocationId")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<short>("Quantity")
-                        .HasColumnType("smallint");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Shelf")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "LocationId");
-
-                    b.ToTable("ProductInventoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductListPriceHistories.Domain.ProductListPriceHistory", b =>
                 {
                     b.Property<int>("ProductId")
@@ -8713,54 +4815,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductListPriceHistories.Domain.ProductListPriceHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("ListPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "StartDate");
-
-                    b.ToTable("ProductListPriceHistoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelIllustrations.Domain.ProductModelIllustration", b =>
                 {
                     b.Property<int>("ProductModelId")
@@ -8781,48 +4835,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelIllustrations.Domain.ProductModelIllustrationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IllustrationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductModelId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductModelId", "IllustrationId");
-
-                    b.ToTable("ProductModelIllustrationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain.ProductModelProductDescriptionCulture", b =>
@@ -8850,53 +4862,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Domain.ProductModelProductDescriptionCultureAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CultureId")
-                        .IsRequired()
-                        .HasMaxLength(6)
-                        .HasColumnType("nvarchar(6)");
-
-                    b.Property<int>("ProductDescriptionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductModelId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductModelId", "ProductDescriptionId", "CultureId");
-
-                    b.ToTable("ProductModelProductDescriptionCultureAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModels.Domain.ProductModel", b =>
@@ -8928,52 +4893,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductModels.Domain.ProductModelAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductModelId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductModelId");
-
-                    b.ToTable("ProductModelAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductPhotos.Domain.ProductPhoto", b =>
@@ -9015,53 +4934,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductPhotos.Domain.ProductPhotoAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LargePhotoFileName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductPhotoId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ThumbnailPhotoFileName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductPhotoId");
-
-                    b.ToTable("ProductPhotoAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductProductPhotos.Domain.ProductProductPhoto", b =>
                 {
                     b.Property<int>("ProductId")
@@ -9086,51 +4958,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductProductPhotos.Domain.ProductProductPhotoAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Primary")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductPhotoId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "ProductPhotoId");
-
-                    b.ToTable("ProductProductPhotoAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductReviews.Domain.ProductReview", b =>
@@ -9183,66 +5010,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductReviews.Domain.ProductReviewAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Comments")
-                        .HasMaxLength(3850)
-                        .HasColumnType("nvarchar(3850)");
-
-                    b.Property<string>("EmailAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductReviewId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReviewDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReviewerName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductReviewId");
-
-                    b.ToTable("ProductReviewAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ProductSubcategories.Domain.ProductSubcategory", b =>
                 {
                     b.Property<int>("Id")
@@ -9276,55 +5043,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ProductSubcategories.Domain.ProductSubcategoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductCategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductSubcategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductSubcategoryId");
-
-                    b.ToTable("ProductSubcategoryAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.Products.Domain.Product", b =>
@@ -9451,123 +5169,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.Products.Domain.ProductAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Class")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<int>("DaysToManufacture")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DiscontinuedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("FinishedGoodsFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("ListPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("MakeFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProductLine")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
-
-                    b.Property<int?>("ProductModelId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProductNumber")
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<int?>("ProductSubcategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<short>("ReorderPoint")
-                        .HasColumnType("smallint");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<short>("SafetyStockLevel")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime?>("SellEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SellStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Size")
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
-
-                    b.Property<string>("SizeUnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("StandardCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Style")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
-
-                    b.Property<decimal?>("Weight")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("WeightUnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.ScrapReasons.Domain.ScrapReason", b =>
                 {
                     b.Property<short>("Id")
@@ -9593,49 +5194,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.ScrapReasons.Domain.ScrapReasonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<short>("ScrapReasonId")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ScrapReasonId");
-
-                    b.ToTable("ScrapReasonAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistories.Domain.TransactionHistory", b =>
@@ -9689,68 +5247,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistories.Domain.TransactionHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("ActualCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReferenceOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReferenceOrderLineId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("TransactionId");
-
-                    b.ToTable("TransactionHistoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain.TransactionHistoryArchive", b =>
                 {
                     b.Property<int>("Id")
@@ -9799,68 +5295,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.TransactionHistoryArchives.Domain.TransactionHistoryArchiveAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("ActualCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReferenceOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReferenceOrderLineId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("TransactionId");
-
-                    b.ToTable("TransactionHistoryArchiveAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.UnitMeasures.Domain.UnitMeasure", b =>
                 {
                     b.Property<string>("UnitMeasureCode")
@@ -9884,51 +5318,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.UnitMeasures.Domain.UnitMeasureAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("UnitMeasureCode");
-
-                    b.ToTable("UnitMeasureAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrderRoutings.Domain.WorkOrderRouting", b =>
@@ -9989,75 +5378,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrderRoutings.Domain.WorkOrderRoutingAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal?>("ActualCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("ActualEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("ActualResourceHrs")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("ActualStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<short>("LocationId")
-                        .HasColumnType("smallint");
-
-                    b.Property<short>("OperationSequence")
-                        .HasColumnType("smallint");
-
-                    b.Property<decimal>("PlannedCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ScheduledEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ScheduledStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("WorkOrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("WorkOrderId", "ProductId", "OperationSequence");
-
-                    b.ToTable("WorkOrderRoutingAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrders.Domain.WorkOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -10110,69 +5430,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Production.WorkOrders.Domain.WorkOrderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("OrderQty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<short?>("ScrapReasonId")
-                        .HasColumnType("smallint");
-
-                    b.Property<short>("ScrappedQty")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StockedQty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkOrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("WorkOrderId");
-
-                    b.ToTable("WorkOrderAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ProductVendors.Domain.ProductVendor", b =>
@@ -10229,73 +5486,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ProductVendors.Domain.ProductVendorAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AverageLeadTime")
-                        .HasColumnType("int");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("LastReceiptCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("LastReceiptDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MaxOrderQty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinOrderQty")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("OnOrderQty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("StandardPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ProductId", "BusinessEntityId");
-
-                    b.ToTable("ProductVendorAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain.PurchaseOrderDetail", b =>
@@ -10355,72 +5545,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderDetails.Domain.PurchaseOrderDetailAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<short>("OrderQty")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PurchaseOrderDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PurchaseOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ReceivedQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("RejectedQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("StockedQty")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PurchaseOrderId", "PurchaseOrderDetailId");
-
-                    b.ToTable("PurchaseOrderDetailAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain.PurchaseOrderHeader", b =>
@@ -10489,78 +5613,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain.PurchaseOrderHeaderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Freight")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PurchaseOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("RevisionNumber")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime?>("ShipDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ShipMethodId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TaxAmt")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalDue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("VendorId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.ToTable("PurchaseOrderHeaderAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ShipMethods.Domain.ShipMethod", b =>
                 {
                     b.Property<int>("Id")
@@ -10598,58 +5650,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ShipMethods.Domain.ShipMethodAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("ShipBase")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ShipMethodId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ShipRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ShipMethodId");
-
-                    b.ToTable("ShipMethodAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Vendors.Domain.Vendor", b =>
@@ -10697,66 +5697,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Purchasing.Vendors.Domain.VendorAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AccountNumber")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<bool>("ActiveFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("CreditRating")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("PreferredVendorStatus")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PurchasingWebServiceUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("VendorId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("VendorId");
-
-                    b.ToTable("VendorAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCase", b =>
@@ -10819,81 +5759,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("CapaCase", "qa");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCaseAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("CapaCaseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CaseNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CorrectiveAction")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("OpenedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("OwnerBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PreventiveAction")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("RootCause")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("VerificationNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CapaCaseId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("CapaCaseAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCaseNonConformance", b =>
@@ -10995,88 +5860,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("SourceKind", "SourceId");
 
                     b.ToTable("Inspection", "qa");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.InspectionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("InspectedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InspectionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InspectionNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int>("InspectionPlanId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InspectorBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("PostedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("SourceId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("SourceKind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InspectionId");
-
-                    b.ToTable("InspectionAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Inspections.Domain.InspectionResult", b =>
@@ -11246,144 +6029,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("NonConformanceAction", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceActionAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("NonConformanceActionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("NonConformanceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("PerformedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PerformedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("NonConformanceActionId");
-
-                    b.ToTable("NonConformanceActionAuditLogs", (string)null);
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Ncrs.Domain.NonConformanceAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<byte?>("Disposition")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("DispositionNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime?>("DispositionedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DispositionedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("InspectionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LotId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NcrNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int>("NonConformanceId")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("PostedTransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("NonConformanceId");
-
-                    b.ToTable("NonConformanceAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlan", b =>
                 {
                     b.Property<int>("Id")
@@ -11451,85 +6096,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlan", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<bool>("AutoTriggerOnProductionRun")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AutoTriggerOnReceipt")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AutoTriggerOnShipment")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("InspectionPlanId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("PlanCode")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SamplingRule")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<byte>("Scope")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("VendorBusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WorkOrderRoutingId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InspectionPlanId");
-
-                    b.ToTable("InspectionPlanAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristic", b =>
                 {
                     b.Property<int>("Id")
@@ -11583,78 +6149,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("InspectionPlanCharacteristic", "qa");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Quality.Plans.Domain.InspectionPlanCharacteristicAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ExpectedValue")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("InspectionPlanCharacteristicId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InspectionPlanId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsCritical")
-                        .HasColumnType("bit");
-
-                    b.Property<byte>("Kind")
-                        .HasColumnType("tinyint");
-
-                    b.Property<decimal?>("MaxValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("MinValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("SequenceNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("TargetValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UnitMeasureCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("InspectionPlanCharacteristicId");
-
-                    b.ToTable("InspectionPlanCharacteristicAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain.CountryRegionCurrency", b =>
                 {
                     b.Property<string>("CountryRegionCode")
@@ -11677,52 +6171,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.CountryRegionCurrencies.Domain.CountryRegionCurrencyAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CountryRegionCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CountryRegionCode", "CurrencyCode");
-
-                    b.ToTable("CountryRegionCurrencyAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.CreditCards.Domain.CreditCard", b =>
@@ -11766,59 +6214,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.CreditCards.Domain.CreditCardAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("CardNumber")
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<string>("CardType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreditCardId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("ExpMonth")
-                        .HasColumnType("tinyint");
-
-                    b.Property<short>("ExpYear")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CreditCardId");
-
-                    b.ToTable("CreditCardAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.Currencies.Domain.Currency", b =>
                 {
                     b.Property<string>("CurrencyCode")
@@ -11842,51 +6237,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Currencies.Domain.CurrencyAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CurrencyCode");
-
-                    b.ToTable("CurrencyAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.CurrencyRates.Domain.CurrencyRate", b =>
@@ -11934,62 +6284,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.CurrencyRates.Domain.CurrencyRateAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("AverageRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CurrencyRateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CurrencyRateId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("EndOfDayRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("FromCurrencyCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ToCurrencyCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CurrencyRateId");
-
-                    b.ToTable("CurrencyRateAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.Customers.Domain.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -12034,61 +6328,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Customers.Domain.CustomerAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AccountNumber")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PersonId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("StoreId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TerritoryId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("CustomerId");
-
-                    b.ToTable("CustomerAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.PersonCreditCards.Domain.PersonCreditCard", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -12109,48 +6348,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.PersonCreditCards.Domain.PersonCreditCardAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreditCardId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "CreditCardId");
-
-                    b.ToTable("PersonCreditCardAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderDetails.Domain.SalesOrderDetail", b =>
@@ -12212,73 +6409,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderDetails.Domain.SalesOrderDetailAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("CarrierTrackingNumber")
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<short>("OrderQty")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SalesOrderDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SalesOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SpecialOfferId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("UnitPriceDiscount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesOrderId", "SalesOrderDetailId");
-
-                    b.ToTable("SalesOrderDetailAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain.SalesOrderHeaderSalesReason", b =>
                 {
                     b.Property<int>("SalesOrderId")
@@ -12299,48 +6429,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain.SalesOrderHeaderSalesReasonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SalesOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SalesReasonId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesOrderId", "SalesReasonId");
-
-                    b.ToTable("SalesOrderHeaderSalesReasonAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain.SalesOrderHeader", b =>
@@ -12468,122 +6556,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaders.Domain.SalesOrderHeaderAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AccountNumber")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BillToAddressId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("CreditCardApprovalCode")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<int?>("CreditCardId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CurrencyRateId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Freight")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("OnlineOrderFlag")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PurchaseOrderNumber")
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<byte>("RevisionNumber")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SalesOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SalesOrderNumber")
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<int?>("SalesPersonId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ShipDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ShipMethodId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShipToAddressId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TaxAmt")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("TerritoryId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotalDue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesOrderId");
-
-                    b.ToTable("SalesOrderHeaderAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPeople.Domain.SalesPerson", b =>
                 {
                     b.Property<int>("Id")
@@ -12630,66 +6602,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPeople.Domain.SalesPersonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal>("Bonus")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("CommissionPct")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("SalesLastYear")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("SalesPersonId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("SalesQuota")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SalesYtd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("TerritoryId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesPersonId");
-
-                    b.ToTable("SalesPersonAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain.SalesPersonQuotaHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -12718,54 +6630,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPersonQuotaHistories.Domain.SalesPersonQuotaHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("QuotaDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("SalesQuota")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "QuotaDate");
-
-                    b.ToTable("SalesPersonQuotaHistoryAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesReasons.Domain.SalesReason", b =>
@@ -12799,53 +6663,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesReasons.Domain.SalesReasonAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ReasonType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("SalesReasonId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesReasonId");
-
-                    b.ToTable("SalesReasonAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTaxRates.Domain.SalesTaxRate", b =>
@@ -12889,61 +6706,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTaxRates.Domain.SalesTaxRateAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SalesTaxRateId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StateProvinceId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TaxRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<byte>("TaxType")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesTaxRateId");
-
-                    b.ToTable("SalesTaxRateAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritories.Domain.SalesTerritory", b =>
@@ -13005,72 +6767,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritories.Domain.SalesTerritoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("CostLastYear")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("CostYtd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("CountryRegionCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("GroupName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("SalesLastYear")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("SalesTerritoryId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("SalesYtd")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SalesTerritoryId");
-
-                    b.ToTable("SalesTerritoryAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain.SalesTerritoryHistory", b =>
                 {
                     b.Property<int>("BusinessEntityId")
@@ -13103,57 +6799,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesTerritoryHistories.Domain.SalesTerritoryHistoryAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TerritoryId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("BusinessEntityId", "StartDate");
-
-                    b.ToTable("SalesTerritoryHistoryAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.ShoppingCartItems.Domain.ShoppingCartItem", b =>
@@ -13195,58 +6840,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.ShoppingCartItems.Domain.ShoppingCartItemAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ShoppingCartId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("ShoppingCartItemId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("ShoppingCartItemId");
-
-                    b.ToTable("ShoppingCartItemAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain.SpecialOfferProduct", b =>
                 {
                     b.Property<int>("SpecialOfferId")
@@ -13271,51 +6864,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOfferProducts.Domain.SpecialOfferProductAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SpecialOfferId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SpecialOfferId", "ProductId");
-
-                    b.ToTable("SpecialOfferProductAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOffers.Domain.SpecialOffer", b =>
@@ -13381,75 +6929,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.SpecialOffers.Domain.SpecialOfferAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<decimal>("DiscountPct")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("MaxQty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinQty")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OfferType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SpecialOfferId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("SpecialOfferId");
-
-                    b.ToTable("SpecialOfferAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Sales.Stores.Domain.Store", b =>
                 {
                     b.Property<int>("Id")
@@ -13480,55 +6959,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Sales.Stores.Domain.StoreAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("RowGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("SalesPersonId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StoreId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StoreId");
-
-                    b.ToTable("StoreAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.UserGuide.Domain.ArticleRead", b =>
@@ -13621,77 +7051,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("QualificationAlert", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Alerts.Domain.QualificationAlertAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("AcknowledgedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AcknowledgedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<long?>("OperatorClockEventId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("QualificationAlertId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("QualificationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("RaisedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Reason")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StationId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("QualificationAlertId");
-
-                    b.ToTable("QualificationAlertAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.Announcements.Domain.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -13744,71 +7103,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrganizationId", "OrgUnitId", "IsActive");
 
                     b.ToTable("Announcement", "wf");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Announcements.Domain.AnnouncementAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("AnnouncementId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AuthoredByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("OrgUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("OrganizationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("PublishedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Severity")
-                        .HasColumnType("tinyint");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AnnouncementId");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.ToTable("AnnouncementAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.Attendance.Domain.AttendanceEvent", b =>
@@ -13899,69 +7193,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("EmployeeQualification", "wf");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain.EmployeeQualificationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EarnedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmployeeQualificationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EvidenceUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("ExpiresOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("QualificationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("VerifiedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("EmployeeQualificationId");
-
-                    b.ToTable("EmployeeQualificationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.HandoverNotes.Domain.ShiftHandoverNote", b =>
@@ -14079,82 +7310,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("LeaveRequest", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.LeaveRequests.Domain.LeaveRequestAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("BusinessEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("LeaveRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("LeaveType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RequestedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReviewedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("LeaveRequestId");
-
-                    b.ToTable("LeaveRequestAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.Qualifications.Domain.Qualification", b =>
                 {
                     b.Property<int>("Id")
@@ -14194,63 +7349,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Qualification", "wf");
                 });
 
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.Qualifications.Domain.QualificationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<byte>("Category")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("QualificationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("QualificationId");
-
-                    b.ToTable("QualificationAuditLogs", (string)null);
-                });
-
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.StationQualifications.Domain.StationQualification", b =>
                 {
                     b.Property<int>("Id")
@@ -14279,54 +7377,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("StationQualification", "wf");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.StationQualifications.Domain.StationQualificationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("QualificationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StationQualificationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("StationQualificationId");
-
-                    b.ToTable("StationQualificationAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingCourses.Domain.TrainingCourse", b =>
@@ -14371,66 +7421,6 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("TrainingCourse", "wf");
-                });
-
-            modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingCourses.Domain.TrainingCourseAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("ChangeSummary")
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
-
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int?>("DurationMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("RecurrenceMonths")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SourceModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TrainingCourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedDate");
-
-                    b.HasIndex("TrainingCourseId");
-
-                    b.ToTable("TrainingCourseAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Workforce.TrainingRecords.Domain.TrainingRecord", b =>

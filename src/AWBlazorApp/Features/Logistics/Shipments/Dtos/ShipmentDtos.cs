@@ -31,13 +31,6 @@ public sealed record UpdateShipmentRequest
     public string? Notes { get; set; }
 }
 
-public sealed record ShipmentAuditLogDto(
-    int Id, int ShipmentId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? ShipmentNumber, int? SalesOrderId, int? CustomerBusinessEntityId, int? ShipMethodId,
-    string? TrackingNumber, int ShippedFromLocationId, ShipmentStatus Status,
-    DateTime? ShippedAt, DateTime? DeliveredAt, DateTime? PostedAt, string? PostedByUserId,
-    string? Notes, DateTime SourceModifiedDate);
-
 public sealed record ShipmentLineDto(
     int Id, int ShipmentId, int? SalesOrderDetailId, int InventoryItemId,
     decimal Quantity, string UnitMeasureCode, int? LotId, int? SerialUnitId,
@@ -60,12 +53,6 @@ public sealed record UpdateShipmentLineRequest
     public int? LotId { get; set; }
     public int? SerialUnitId { get; set; }
 }
-
-public sealed record ShipmentLineAuditLogDto(
-    int Id, int ShipmentLineId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int ShipmentId, int? SalesOrderDetailId, int InventoryItemId,
-    decimal Quantity, string? UnitMeasureCode, int? LotId, int? SerialUnitId,
-    long? PostedTransactionId, DateTime SourceModifiedDate);
 
 public static class ShipmentMappings
 {
@@ -105,12 +92,6 @@ public static class ShipmentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ShipmentAuditLogDto ToDto(this ShipmentAuditLog a) => new(
-        a.Id, a.ShipmentId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ShipmentNumber, a.SalesOrderId, a.CustomerBusinessEntityId, a.ShipMethodId,
-        a.TrackingNumber, a.ShippedFromLocationId, a.Status, a.ShippedAt, a.DeliveredAt,
-        a.PostedAt, a.PostedByUserId, a.Notes, a.SourceModifiedDate);
-
     public static ShipmentLineDto ToDto(this ShipmentLine e) => new(
         e.Id, e.ShipmentId, e.SalesOrderDetailId, e.InventoryItemId,
         e.Quantity, e.UnitMeasureCode, e.LotId, e.SerialUnitId, e.PostedTransactionId, e.ModifiedDate);
@@ -135,8 +116,4 @@ public static class ShipmentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ShipmentLineAuditLogDto ToDto(this ShipmentLineAuditLog a) => new(
-        a.Id, a.ShipmentLineId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ShipmentId, a.SalesOrderDetailId, a.InventoryItemId,
-        a.Quantity, a.UnitMeasureCode, a.LotId, a.SerialUnitId, a.PostedTransactionId, a.SourceModifiedDate);
-}
+    }

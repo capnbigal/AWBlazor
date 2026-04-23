@@ -125,22 +125,15 @@ public static class BusinessEntityAddressEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<BusinessEntityAddressAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] int? addressId = null,
-        [FromQuery] int? addressTypeId = null,
         CancellationToken ct = default)
     {
-        var query = db.BusinessEntityAddressAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (addressId.HasValue) query = query.Where(a => a.AddressId == addressId.Value);
-        if (addressTypeId.HasValue) query = query.Where(a => a.AddressTypeId == addressTypeId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "BusinessEntityAddress")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

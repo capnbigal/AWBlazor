@@ -29,12 +29,6 @@ public sealed record UpdateBillOfMaterialsRequest
     public decimal? PerAssemblyQty { get; set; }
 }
 
-public sealed record BillOfMaterialsAuditLogDto(
-    int Id, int BillOfMaterialsId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int? ProductAssemblyId, int ComponentId,
-    DateTime StartDate, DateTime? EndDate, string? UnitMeasureCode,
-    short BomLevel, decimal PerAssemblyQty, DateTime SourceModifiedDate);
-
 public static class BillOfMaterialsMappings
 {
     public static BillOfMaterialsDto ToDto(this BillOfMaterials e) => new(
@@ -65,8 +59,4 @@ public static class BillOfMaterialsMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static BillOfMaterialsAuditLogDto ToDto(this BillOfMaterialsAuditLog a) => new(
-        a.Id, a.BillOfMaterialsId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductAssemblyId, a.ComponentId, a.StartDate, a.EndDate,
-        a.UnitMeasureCode, a.BomLevel, a.PerAssemblyQty, a.SourceModifiedDate);
-}
+    }

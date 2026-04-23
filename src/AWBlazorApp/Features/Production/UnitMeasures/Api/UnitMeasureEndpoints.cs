@@ -89,13 +89,15 @@ public static class UnitMeasureEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<UnitMeasureAuditLogDto>>> HistoryAsync(string code, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.UnitMeasureAuditLogs.AsNoTracking()
-            .Where(a => a.UnitMeasureCode == code)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "UnitMeasure")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

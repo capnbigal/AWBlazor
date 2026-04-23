@@ -1,30 +1,5 @@
 @page "/aw/business-entity-contacts/history"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Person.Addresses.Domain
-@using AWBlazorApp.Features.Person.AddressTypes.Domain
-@using AWBlazorApp.Features.Person.BusinessEntities.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Domain
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Domain
-@using AWBlazorApp.Features.Person.ContactTypes.Domain
-@using AWBlazorApp.Features.Person.CountryRegions.Domain
-@using AWBlazorApp.Features.Person.EmailAddresses.Domain
-@using AWBlazorApp.Features.Person.Persons.Domain
-@using AWBlazorApp.Features.Person.PersonPhones.Domain
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Domain
-@using AWBlazorApp.Features.Person.StateProvinces.Domain
-@using AWBlazorApp.Features.Person.Addresses.Dtos
-@using AWBlazorApp.Features.Person.AddressTypes.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntities.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityAddresses.Dtos
-@using AWBlazorApp.Features.Person.BusinessEntityContacts.Dtos
-@using AWBlazorApp.Features.Person.ContactTypes.Dtos
-@using AWBlazorApp.Features.Person.CountryRegions.Dtos
-@using AWBlazorApp.Features.Person.EmailAddresses.Dtos
-@using AWBlazorApp.Features.Person.Persons.Dtos
-@using AWBlazorApp.Features.Person.PersonPhones.Dtos
-@using AWBlazorApp.Features.Person.PhoneNumberTypes.Dtos
-@using AWBlazorApp.Features.Person.StateProvinces.Dtos
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Business entity contact audit</PageTitle>
@@ -32,96 +7,12 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/business-entity-contacts"))" />
-        <MudText Typo="Typo.h4">Business entity contact audit</MudText>
+
+        <MudText Typo="Typo.h4">"Business entity contact audit"</MudText>
     </MudStack>
 
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="BusinessEntityId" Label="Business entity id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="PersonId" Label="Person id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="ContactTypeId" Label="Contact type id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3">
-                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <MudDataGrid T="BusinessEntityContactAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.BusinessEntityId" Title="Business entity">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.BusinessEntityId)" Title="Business entity" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.PersonId" Title="Person">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.PersonId)" Title="Person" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ContactTypeId" Title="Type">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.ContactTypeId)" Title="Type" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Action" Sortable="false">
-                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <HeaderTemplate><GridColumnHeader TEntity="BusinessEntityContactAuditLog" PropertyName="@nameof(BusinessEntityContactAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="BusinessEntityContactAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="BusinessEntityContact"  />
 </MudStack>
 
 @code {
-    [SupplyParameterFromQuery] public int? BusinessEntityId { get; set; }
-    [SupplyParameterFromQuery] public int? PersonId { get; set; }
-    [SupplyParameterFromQuery] public int? ContactTypeId { get; set; }
-
-    private MudDataGrid<BusinessEntityContactAuditLogDto> grid = null!;
-    private string? filterAction;
-    private readonly ColumnFilterState columnFilters = new();
-
-    private async Task<GridData<BusinessEntityContactAuditLogDto>> LoadServerDataAsync(GridState<BusinessEntityContactAuditLogDto> state, CancellationToken ct)
-    {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.BusinessEntityContactAuditLogs.AsNoTracking();
-
-        if (BusinessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == BusinessEntityId.Value);
-        if (PersonId.HasValue) query = query.Where(a => a.PersonId == PersonId.Value);
-        if (ContactTypeId.HasValue) query = query.Where(a => a.ContactTypeId == ContactTypeId.Value);
-        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(BusinessEntityContactAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(BusinessEntityContactAuditLogDto.BusinessEntityId) => sort.Descending ? query.OrderByDescending(a => a.BusinessEntityId) : query.OrderBy(a => a.BusinessEntityId),
-            nameof(BusinessEntityContactAuditLogDto.PersonId) => sort.Descending ? query.OrderByDescending(a => a.PersonId) : query.OrderBy(a => a.PersonId),
-            nameof(BusinessEntityContactAuditLogDto.ContactTypeId) => sort.Descending ? query.OrderByDescending(a => a.ContactTypeId) : query.OrderBy(a => a.ContactTypeId),
-            nameof(BusinessEntityContactAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
-            nameof(BusinessEntityContactAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
-            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
-        return new GridData<BusinessEntityContactAuditLogDto> { Items = rows, TotalItems = total };
-    }
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-
-    private static Color ActionColor(string action) => action switch
-    {
-        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
-    };
 }

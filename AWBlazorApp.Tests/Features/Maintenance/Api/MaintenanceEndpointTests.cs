@@ -307,8 +307,6 @@ public class MaintenanceEndpointTests : IntegrationTestFixtureBase
     private async Task CleanupWorkOrderAsync(int woId)
     {
         await using var cleanup = await GetDbContextAsync();
-        var audits = cleanup.MaintenanceWorkOrderAuditLogs.Where(a => a.MaintenanceWorkOrderId == woId);
-        cleanup.MaintenanceWorkOrderAuditLogs.RemoveRange(audits);
         var wo = await cleanup.MaintenanceWorkOrders.FirstOrDefaultAsync(w => w.Id == woId);
         if (wo is not null) cleanup.MaintenanceWorkOrders.Remove(wo);
         await cleanup.SaveChangesAsync();
@@ -320,14 +318,10 @@ public class MaintenanceEndpointTests : IntegrationTestFixtureBase
         // Cascade would handle tasks, but we also need to clean WOs generated from this schedule.
         var wos = cleanup.MaintenanceWorkOrders.Where(w => w.PmScheduleId == scheduleId);
         var woIds = await wos.Select(w => w.Id).ToListAsync();
-        var woAudits = cleanup.MaintenanceWorkOrderAuditLogs.Where(a => woIds.Contains(a.MaintenanceWorkOrderId));
-        cleanup.MaintenanceWorkOrderAuditLogs.RemoveRange(woAudits);
         var woTasks = cleanup.MaintenanceWorkOrderTasks.Where(t => woIds.Contains(t.MaintenanceWorkOrderId));
         cleanup.MaintenanceWorkOrderTasks.RemoveRange(woTasks);
         cleanup.MaintenanceWorkOrders.RemoveRange(wos);
 
-        var schAudits = cleanup.PmScheduleAuditLogs.Where(a => a.PmScheduleId == scheduleId);
-        cleanup.PmScheduleAuditLogs.RemoveRange(schAudits);
         var schTasks = cleanup.PmScheduleTasks.Where(t => t.PmScheduleId == scheduleId);
         cleanup.PmScheduleTasks.RemoveRange(schTasks);
         var schedule = await cleanup.PmSchedules.FirstOrDefaultAsync(s => s.Id == scheduleId);

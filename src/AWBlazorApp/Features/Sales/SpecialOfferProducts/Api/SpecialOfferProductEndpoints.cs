@@ -112,20 +112,15 @@ public static class SpecialOfferProductEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<SpecialOfferProductAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? specialOfferId = null,
-        [FromQuery] int? productId = null,
         CancellationToken ct = default)
     {
-        var query = db.SpecialOfferProductAuditLogs.AsNoTracking();
-        if (specialOfferId.HasValue) query = query.Where(a => a.SpecialOfferId == specialOfferId.Value);
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "SpecialOfferProduct")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

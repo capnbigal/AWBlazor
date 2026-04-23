@@ -18,10 +18,6 @@ public sealed record UpdateShiftRequest
     public TimeSpan? EndTime { get; set; }
 }
 
-public sealed record ShiftAuditLogDto(
-    int Id, byte ShiftId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, TimeSpan StartTime, TimeSpan EndTime, DateTime SourceModifiedDate);
-
 public static class ShiftMappings
 {
     public static ShiftDto ToDto(this Shift e) => new(e.Id, e.Name, e.StartTime, e.EndTime, e.ModifiedDate);
@@ -42,7 +38,4 @@ public static class ShiftMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ShiftAuditLogDto ToDto(this ShiftAuditLog a) => new(
-        a.Id, a.ShiftId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.StartTime, a.EndTime, a.SourceModifiedDate);
-}
+    }

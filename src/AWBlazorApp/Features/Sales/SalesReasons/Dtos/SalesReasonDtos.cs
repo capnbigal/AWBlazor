@@ -16,10 +16,6 @@ public sealed record UpdateSalesReasonRequest
     public string? ReasonType { get; set; }
 }
 
-public sealed record SalesReasonAuditLogDto(
-    int Id, int SalesReasonId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, string? ReasonType, DateTime SourceModifiedDate);
-
 public static class SalesReasonMappings
 {
     public static SalesReasonDto ToDto(this SalesReason e)
@@ -39,7 +35,4 @@ public static class SalesReasonMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesReasonAuditLogDto ToDto(this SalesReasonAuditLog a) => new(
-        a.Id, a.SalesReasonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.ReasonType, a.SourceModifiedDate);
-}
+    }

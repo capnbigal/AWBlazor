@@ -24,11 +24,6 @@ public sealed record UpdateBomHeaderRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record BomHeaderAuditLogDto(
-    int Id, int BomHeaderId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description,
-    int ProductId, int RevisionNumber, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record BomLineDto(
     int Id, int BomHeaderId, int ComponentProductId, decimal Quantity,
     string UnitMeasureCode, decimal ScrapPercentage, string? Notes, DateTime ModifiedDate);
@@ -76,10 +71,6 @@ public static class BomMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static BomHeaderAuditLogDto ToDto(this BomHeaderAuditLog a) => new(
-        a.Id, a.BomHeaderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.ProductId, a.RevisionNumber, a.IsActive, a.SourceModifiedDate);
 
     public static BomLineDto ToDto(this BomLine e) => new(
         e.Id, e.BomHeaderId, e.ComponentProductId, e.Quantity,

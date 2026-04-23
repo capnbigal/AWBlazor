@@ -19,10 +19,6 @@ public sealed record UpdateProductCostHistoryRequest
     public decimal? StandardCost { get; set; }
 }
 
-public sealed record ProductCostHistoryAuditLogDto(
-    int Id, int ProductId, DateTime StartDate, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, DateTime? EndDate, decimal StandardCost, DateTime SourceModifiedDate);
-
 public static class ProductCostHistoryMappings
 {
     public static ProductCostHistoryDto ToDto(this ProductCostHistory e) => new(
@@ -44,7 +40,4 @@ public static class ProductCostHistoryMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductCostHistoryAuditLogDto ToDto(this ProductCostHistoryAuditLog a) => new(
-        a.Id, a.ProductId, a.StartDate, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.EndDate, a.StandardCost, a.SourceModifiedDate);
-}
+    }

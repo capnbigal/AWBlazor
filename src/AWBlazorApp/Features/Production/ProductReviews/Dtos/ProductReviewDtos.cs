@@ -26,11 +26,6 @@ public sealed record UpdateProductReviewRequest
     public string? Comments { get; set; }
 }
 
-public sealed record ProductReviewAuditLogDto(
-    int Id, int ProductReviewId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int ProductId, string? ReviewerName, DateTime ReviewDate,
-    string? EmailAddress, int Rating, string? Comments, DateTime SourceModifiedDate);
-
 public static class ProductReviewMappings
 {
     public static ProductReviewDto ToDto(this ProductReview e) => new(
@@ -59,8 +54,4 @@ public static class ProductReviewMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static ProductReviewAuditLogDto ToDto(this ProductReviewAuditLog a) => new(
-        a.Id, a.ProductReviewId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.ProductId, a.ReviewerName, a.ReviewDate, a.EmailAddress,
-        a.Rating, a.Comments, a.SourceModifiedDate);
-}
+    }

@@ -1,30 +1,5 @@
 @page "/aw/product-inventories/history"
 @attribute [Authorize]
-@using AWBlazorApp.Features.Production.Cultures.Dtos
-@using AWBlazorApp.Features.Production.Documents.Dtos
-@using AWBlazorApp.Features.Production.Illustrations.Dtos
-@using AWBlazorApp.Features.Production.Locations.Dtos
-@using AWBlazorApp.Features.Production.ProductCategories.Dtos
-@using AWBlazorApp.Features.Production.ProductCostHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductDescriptions.Dtos
-@using AWBlazorApp.Features.Production.ProductDocuments.Dtos
-@using AWBlazorApp.Features.Production.ProductInventories.Dtos
-@using AWBlazorApp.Features.Production.ProductListPriceHistories.Dtos
-@using AWBlazorApp.Features.Production.ProductModels.Dtos
-@using AWBlazorApp.Features.Production.ProductModelIllustrations.Dtos
-@using AWBlazorApp.Features.Production.ProductModelProductDescriptionCultures.Dtos
-@using AWBlazorApp.Features.Production.ProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductProductPhotos.Dtos
-@using AWBlazorApp.Features.Production.ProductReviews.Dtos
-@using AWBlazorApp.Features.Production.Products.Dtos
-@using AWBlazorApp.Features.Production.ProductSubcategories.Dtos
-@using AWBlazorApp.Features.Production.ScrapReasons.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistories.Dtos
-@using AWBlazorApp.Features.Production.TransactionHistoryArchives.Dtos
-@using AWBlazorApp.Features.Production.UnitMeasures.Dtos
-@using AWBlazorApp.Features.Production.WorkOrders.Dtos
-@using AWBlazorApp.Features.Production.WorkOrderRoutings.Dtos
-@inject IDbContextFactory<ApplicationDbContext> DbFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Product inventory audit</PageTitle>
@@ -32,108 +7,12 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" Size="Size.Medium" OnClick="@(() => Navigation.NavigateTo("aw/product-inventories"))" />
-        <MudText Typo="Typo.h4">Product inventory audit</MudText>
+
+        <MudText Typo="Typo.h4">"Product inventory audit"</MudText>
     </MudStack>
 
-    <MudPaper Class="pa-3" Elevation="1">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="3"><MudNumericField T="int?" @bind-Value="ProductId" Label="Product id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3"><MudNumericField T="short?" @bind-Value="LocationId" Label="Location id" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3"><MudTextField @bind-Value="filterChangedBy" Label="Changed by" Variant="Variant.Outlined" OnBlur="ApplyFilter" /></MudItem>
-            <MudItem xs="12" sm="3">
-                <MudSelect T="string?" @bind-Value="filterAction" Label="Action" Variant="Variant.Outlined" Clearable="true" OnBlur="ApplyFilter">
-                    <MudSelectItem T="string?" Value="@null">(any)</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Created")">Created</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Updated")">Updated</MudSelectItem>
-                    <MudSelectItem T="string?" Value="@("Deleted")">Deleted</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <MudDataGrid T="ProductInventoryAuditLogDto" ServerData="LoadServerDataAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
-        <Columns>
-            <PropertyColumn Property="x => x.ChangedDate" Title="When" Format="yyyy-MM-dd HH:mm:ss">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.ChangedDate)" Title="When" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ProductId" Title="Product">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.ProductId)" Title="Product" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.LocationId" Title="Location">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.LocationId)" Title="Location" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Action" Sortable="false">
-                <CellTemplate><MudChip T="string" Size="Size.Small" Color="@ActionColor(context.Item.Action)" Variant="Variant.Filled">@context.Item.Action</MudChip></CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="x => x.ChangedBy" Title="By">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.ChangedBy)" Title="By" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Shelf" Title="Shelf">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.Shelf)" Title="Shelf" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Bin" Title="Bin">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.Bin)" Title="Bin" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Quantity" Title="Qty">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.Quantity)" Title="Qty" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.ChangeSummary" Title="Change summary">
-                <HeaderTemplate><GridColumnHeader TEntity="ProductInventoryAuditLog" PropertyName="@nameof(ProductInventoryAuditLogDto.ChangeSummary)" Title="Change summary" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
-            </PropertyColumn>
-        </Columns>
-        <PagerContent><MudDataGridPager T="ProductInventoryAuditLogDto" /></PagerContent>
-    </MudDataGrid>
+    <AuditHistoryGrid EntityType="ProductInventory"  />
 </MudStack>
 
 @code {
-    [SupplyParameterFromQuery] public int? ProductId { get; set; }
-    [SupplyParameterFromQuery] public short? LocationId { get; set; }
-
-    private MudDataGrid<ProductInventoryAuditLogDto> grid = null!;
-    private string? filterChangedBy;
-    private string? filterAction;
-    private readonly ColumnFilterState columnFilters = new();
-
-    private async Task<GridData<ProductInventoryAuditLogDto>> LoadServerDataAsync(GridState<ProductInventoryAuditLogDto> state, CancellationToken ct)
-    {
-        await using var db = await DbFactory.CreateDbContextAsync(ct);
-        var query = db.ProductInventoryAuditLogs.AsNoTracking();
-
-        if (ProductId.HasValue) query = query.Where(a => a.ProductId == ProductId.Value);
-        if (LocationId.HasValue) query = query.Where(a => a.LocationId == LocationId.Value);
-        if (!string.IsNullOrWhiteSpace(filterAction)) query = query.Where(a => a.Action == filterAction);
-        if (!string.IsNullOrWhiteSpace(filterChangedBy))
-        {
-            var needle = filterChangedBy.Trim();
-            query = query.Where(a => a.ChangedBy != null && a.ChangedBy.Contains(needle));
-        }
-        query = query.ApplyColumnFilters(columnFilters);
-
-        var total = await query.CountAsync(ct);
-
-        var sort = state.SortDefinitions.FirstOrDefault();
-        query = sort?.SortBy switch
-        {
-            nameof(ProductInventoryAuditLogDto.ChangedDate) => sort.Descending ? query.OrderByDescending(a => a.ChangedDate) : query.OrderBy(a => a.ChangedDate),
-            nameof(ProductInventoryAuditLogDto.ProductId) => sort.Descending ? query.OrderByDescending(a => a.ProductId) : query.OrderBy(a => a.ProductId),
-            nameof(ProductInventoryAuditLogDto.LocationId) => sort.Descending ? query.OrderByDescending(a => a.LocationId) : query.OrderBy(a => a.LocationId),
-            nameof(ProductInventoryAuditLogDto.ChangedBy) => sort.Descending ? query.OrderByDescending(a => a.ChangedBy) : query.OrderBy(a => a.ChangedBy),
-            nameof(ProductInventoryAuditLogDto.Shelf) => sort.Descending ? query.OrderByDescending(a => a.Shelf) : query.OrderBy(a => a.Shelf),
-            nameof(ProductInventoryAuditLogDto.Bin) => sort.Descending ? query.OrderByDescending(a => a.Bin) : query.OrderBy(a => a.Bin),
-            nameof(ProductInventoryAuditLogDto.Quantity) => sort.Descending ? query.OrderByDescending(a => a.Quantity) : query.OrderBy(a => a.Quantity),
-            nameof(ProductInventoryAuditLogDto.ChangeSummary) => sort.Descending ? query.OrderByDescending(a => a.ChangeSummary) : query.OrderBy(a => a.ChangeSummary),
-            _ => query.OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id),
-        };
-
-        var rows = await query
-            .Skip(state.Page * state.PageSize).Take(state.PageSize).Select(a => a.ToDto()).ToListAsync(ct);
-        return new GridData<ProductInventoryAuditLogDto> { Items = rows, TotalItems = total };
-    }
-
-    private async Task ApplyFilter() => await grid.ReloadServerData();
-
-    private static Color ActionColor(string action) => action switch
-    {
-        "Created" => Color.Success, "Updated" => Color.Info, "Deleted" => Color.Error, _ => Color.Default,
-    };
 }

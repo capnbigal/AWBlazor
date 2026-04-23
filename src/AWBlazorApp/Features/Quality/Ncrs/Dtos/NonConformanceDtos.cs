@@ -35,14 +35,6 @@ public sealed record DispositionNonConformanceRequest
     public string? Notes { get; set; }
 }
 
-public sealed record NonConformanceAuditLogDto(
-    int Id, int NonConformanceId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? NcrNumber, int? InspectionId, int InventoryItemId, int? LotId, int? LocationId,
-    decimal Quantity, string? UnitMeasureCode, string? Description,
-    NonConformanceStatus Status, NonConformanceDisposition? Disposition,
-    string? DispositionedByUserId, DateTime? DispositionedAt, string? DispositionNotes,
-    long? PostedTransactionId, DateTime SourceModifiedDate);
-
 public sealed record NonConformanceActionDto(
     int Id, int NonConformanceId, string Action, string? PerformedByUserId,
     DateTime PerformedAt, string? Notes, DateTime ModifiedDate);
@@ -89,13 +81,6 @@ public static class NonConformanceMappings
         if (r.Status is not null) e.Status = r.Status.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static NonConformanceAuditLogDto ToDto(this NonConformanceAuditLog a) => new(
-        a.Id, a.NonConformanceId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.NcrNumber, a.InspectionId, a.InventoryItemId, a.LotId, a.LocationId,
-        a.Quantity, a.UnitMeasureCode, a.Description,
-        a.Status, a.Disposition, a.DispositionedByUserId, a.DispositionedAt, a.DispositionNotes,
-        a.PostedTransactionId, a.SourceModifiedDate);
 
     public static NonConformanceActionDto ToDto(this NonConformanceAction e) => new(
         e.Id, e.NonConformanceId, e.Action, e.PerformedByUserId,

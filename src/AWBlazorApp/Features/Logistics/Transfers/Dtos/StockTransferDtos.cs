@@ -27,13 +27,6 @@ public sealed record UpdateStockTransferRequest
     public string? Notes { get; set; }
 }
 
-public sealed record StockTransferAuditLogDto(
-    int Id, int StockTransferId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? TransferNumber, int FromLocationId, int ToLocationId,
-    int? FromOrganizationId, int? ToOrganizationId, StockTransferStatus Status,
-    Guid? CorrelationId, DateTime InitiatedAt, DateTime? CompletedAt,
-    string? PostedByUserId, string? Notes, DateTime SourceModifiedDate);
-
 public sealed record StockTransferLineDto(
     int Id, int StockTransferId, int InventoryItemId, decimal Quantity, string UnitMeasureCode,
     int? LotId, int? SerialUnitId, long? FromTransactionId, long? ToTransactionId, DateTime ModifiedDate);
@@ -54,11 +47,6 @@ public sealed record UpdateStockTransferLineRequest
     public int? LotId { get; set; }
     public int? SerialUnitId { get; set; }
 }
-
-public sealed record StockTransferLineAuditLogDto(
-    int Id, int StockTransferLineId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    int StockTransferId, int InventoryItemId, decimal Quantity, string? UnitMeasureCode,
-    int? LotId, int? SerialUnitId, long? FromTransactionId, long? ToTransactionId, DateTime SourceModifiedDate);
 
 public static class StockTransferMappings
 {
@@ -95,12 +83,6 @@ public static class StockTransferMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static StockTransferAuditLogDto ToDto(this StockTransferAuditLog a) => new(
-        a.Id, a.StockTransferId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.TransferNumber, a.FromLocationId, a.ToLocationId,
-        a.FromOrganizationId, a.ToOrganizationId, a.Status, a.CorrelationId,
-        a.InitiatedAt, a.CompletedAt, a.PostedByUserId, a.Notes, a.SourceModifiedDate);
-
     public static StockTransferLineDto ToDto(this StockTransferLine e) => new(
         e.Id, e.StockTransferId, e.InventoryItemId, e.Quantity, e.UnitMeasureCode,
         e.LotId, e.SerialUnitId, e.FromTransactionId, e.ToTransactionId, e.ModifiedDate);
@@ -124,8 +106,4 @@ public static class StockTransferMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static StockTransferLineAuditLogDto ToDto(this StockTransferLineAuditLog a) => new(
-        a.Id, a.StockTransferLineId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.StockTransferId, a.InventoryItemId, a.Quantity, a.UnitMeasureCode,
-        a.LotId, a.SerialUnitId, a.FromTransactionId, a.ToTransactionId, a.SourceModifiedDate);
-}
+    }

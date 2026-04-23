@@ -14,10 +14,6 @@ public sealed record UpdateJobCandidateRequest
     public int? BusinessEntityId { get; set; }
 }
 
-public sealed record JobCandidateAuditLogDto(
-    int Id, int JobCandidateId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int? BusinessEntityId, DateTime SourceModifiedDate);
-
 public static class JobCandidateMappings
 {
     public static JobCandidateDto ToDto(this JobCandidate e) => new(e.Id, e.BusinessEntityId, e.ModifiedDate);
@@ -34,7 +30,4 @@ public static class JobCandidateMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static JobCandidateAuditLogDto ToDto(this JobCandidateAuditLog a) => new(
-        a.Id, a.JobCandidateId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.BusinessEntityId, a.SourceModifiedDate);
-}
+    }

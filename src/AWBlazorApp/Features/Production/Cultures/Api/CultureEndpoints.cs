@@ -89,13 +89,15 @@ public static class CultureEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<CultureAuditLogDto>>> HistoryAsync(string id, ApplicationDbContext db, CancellationToken ct)
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
+        ApplicationDbContext db,
+        CancellationToken ct = default)
     {
-        var rows = await db.CultureAuditLogs.AsNoTracking()
-            .Where(a => a.CultureId == id)
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "Culture")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

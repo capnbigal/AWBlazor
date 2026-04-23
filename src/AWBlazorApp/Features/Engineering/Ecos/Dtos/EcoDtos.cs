@@ -20,12 +20,6 @@ public sealed record UpdateEngineeringChangeOrderRequest
     public string? Description { get; set; }
 }
 
-public sealed record EngineeringChangeOrderAuditLogDto(
-    int Id, int EngineeringChangeOrderId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Title, string? Description, EcoStatus Status,
-    string? RaisedByUserId, DateTime RaisedAt, DateTime? SubmittedAt,
-    DateTime? DecidedAt, string? DecidedByUserId, string? DecisionNotes, DateTime SourceModifiedDate);
-
 public sealed record EcoAffectedItemDto(
     int Id, int EngineeringChangeOrderId, EcoAffectedKind AffectedKind, int TargetId, string? Notes, DateTime ModifiedDate);
 
@@ -70,12 +64,6 @@ public static class EcoMappings
         if (r.Description is not null) e.Description = r.Description.Trim();
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static EngineeringChangeOrderAuditLogDto ToDto(this EngineeringChangeOrderAuditLog a) => new(
-        a.Id, a.EngineeringChangeOrderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Title, a.Description, a.Status,
-        a.RaisedByUserId, a.RaisedAt, a.SubmittedAt,
-        a.DecidedAt, a.DecidedByUserId, a.DecisionNotes, a.SourceModifiedDate);
 
     public static EcoAffectedItemDto ToDto(this EcoAffectedItem e) => new(
         e.Id, e.EngineeringChangeOrderId, e.AffectedKind, e.TargetId, e.Notes, e.ModifiedDate);

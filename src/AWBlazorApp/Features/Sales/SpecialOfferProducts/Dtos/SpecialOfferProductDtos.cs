@@ -20,11 +20,6 @@ public sealed record UpdateSpecialOfferProductRequest
     // Reserved for future expansion. Touching this row updates ModifiedDate.
 }
 
-public sealed record SpecialOfferProductAuditLogDto(
-    int Id, int SpecialOfferId, int ProductId, string Action,
-    string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SpecialOfferProductMappings
 {
     public static SpecialOfferProductDto ToDto(this SpecialOfferProduct e) => new(
@@ -43,7 +38,4 @@ public static class SpecialOfferProductMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SpecialOfferProductAuditLogDto ToDto(this SpecialOfferProductAuditLog a) => new(
-        a.Id, a.SpecialOfferId, a.ProductId, a.Action, a.ChangedBy, a.ChangedDate,
-        a.ChangeSummary, a.RowGuid, a.SourceModifiedDate);
-}
+    }

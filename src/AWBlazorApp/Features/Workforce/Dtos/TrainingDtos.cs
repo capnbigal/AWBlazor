@@ -25,11 +25,6 @@ public sealed record UpdateTrainingCourseRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record TrainingCourseAuditLogDto(
-    int Id, int TrainingCourseId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? Code, string? Name, string? Description,
-    int? DurationMinutes, int? RecurrenceMonths, bool IsActive, DateTime SourceModifiedDate);
-
 public sealed record TrainingRecordDto(
     int Id, int TrainingCourseId, int BusinessEntityId,
     DateTime CompletedAt, DateTime? ExpiresOn,
@@ -71,10 +66,6 @@ public static class TrainingMappings
         if (r.IsActive is not null) e.IsActive = r.IsActive.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static TrainingCourseAuditLogDto ToDto(this TrainingCourseAuditLog a) => new(
-        a.Id, a.TrainingCourseId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Code, a.Name, a.Description, a.DurationMinutes, a.RecurrenceMonths, a.IsActive, a.SourceModifiedDate);
 
     public static TrainingRecordDto ToDto(this TrainingRecord e) => new(
         e.Id, e.TrainingCourseId, e.BusinessEntityId,

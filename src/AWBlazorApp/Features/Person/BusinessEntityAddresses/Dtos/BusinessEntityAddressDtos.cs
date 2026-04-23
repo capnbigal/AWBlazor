@@ -17,11 +17,6 @@ public sealed record CreateBusinessEntityAddressRequest
 /// </summary>
 public sealed record UpdateBusinessEntityAddressRequest;
 
-public sealed record BusinessEntityAddressAuditLogDto(
-    int Id, int BusinessEntityId, int AddressId, int AddressTypeId,
-    string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class BusinessEntityAddressMappings
 {
     public static BusinessEntityAddressDto ToDto(this BusinessEntityAddress e) => new(
@@ -41,8 +36,4 @@ public static class BusinessEntityAddressMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static BusinessEntityAddressAuditLogDto ToDto(this BusinessEntityAddressAuditLog a) => new(
-        a.Id, a.BusinessEntityId, a.AddressId, a.AddressTypeId,
-        a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

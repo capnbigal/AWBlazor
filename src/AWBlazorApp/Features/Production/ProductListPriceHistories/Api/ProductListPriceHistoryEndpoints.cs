@@ -110,20 +110,15 @@ public static class ProductListPriceHistoryEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductListPriceHistoryAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productId = null,
-        [FromQuery] DateTime? startDate = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductListPriceHistoryAuditLogs.AsNoTracking();
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-        if (startDate.HasValue) query = query.Where(a => a.StartDate == startDate.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductListPriceHistory")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

@@ -30,13 +30,6 @@ public sealed record UpdateProductionRunRequest
     public string? Notes { get; set; }
 }
 
-public sealed record ProductionRunAuditLogDto(
-    int Id, int ProductionRunId, string Action, string? ChangedBy, DateTime ChangedDate, string? ChangeSummary,
-    string? RunNumber, ProductionRunKind Kind, int? WorkOrderId, int? StationId, int? AssetId,
-    ProductionRunStatus Status, DateTime? PlannedStartAt, DateTime? ActualStartAt, DateTime? ActualEndAt,
-    decimal QuantityPlanned, decimal QuantityProduced, decimal QuantityScrapped,
-    string? Notes, string? PostedByUserId, DateTime SourceModifiedDate);
-
 public sealed record ProductionRunOperationDto(
     int Id, int ProductionRunId, short? OperationSequence, int SequenceNumber, string OperationDescription,
     DateTime? StartAt, DateTime? EndAt, decimal ActualHours, DateTime ModifiedDate);
@@ -108,13 +101,6 @@ public static class ProductionRunMappings
         if (r.Notes is not null) e.Notes = r.Notes.Trim();
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static ProductionRunAuditLogDto ToDto(this ProductionRunAuditLog a) => new(
-        a.Id, a.ProductionRunId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RunNumber, a.Kind, a.WorkOrderId, a.StationId, a.AssetId,
-        a.Status, a.PlannedStartAt, a.ActualStartAt, a.ActualEndAt,
-        a.QuantityPlanned, a.QuantityProduced, a.QuantityScrapped,
-        a.Notes, a.PostedByUserId, a.SourceModifiedDate);
 
     public static ProductionRunOperationDto ToDto(this ProductionRunOperation e) => new(
         e.Id, e.ProductionRunId, e.OperationSequence, e.SequenceNumber, e.OperationDescription,

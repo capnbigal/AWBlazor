@@ -36,12 +36,6 @@ public sealed record UpdateDocumentRequest
     public string? DocumentSummary { get; set; }
 }
 
-public sealed record DocumentAuditLogDto(
-    int Id, string DocumentNode, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Title, int Owner, bool FolderFlag, string? FileName,
-    string? FileExtension, string? Revision, int ChangeNumber, byte Status,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class DocumentMappings
 {
     public static DocumentDto ToDto(this Document e) => new(
@@ -80,8 +74,4 @@ public static class DocumentMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static DocumentAuditLogDto ToDto(this DocumentAuditLog a) => new(
-        a.Id, a.DocumentNode, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Title, a.Owner, a.FolderFlag, a.FileName, a.FileExtension, a.Revision,
-        a.ChangeNumber, a.Status, a.RowGuid, a.SourceModifiedDate);
-}
+    }

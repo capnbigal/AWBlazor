@@ -140,27 +140,13 @@ public static class EmployeeDepartmentHistoryEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<EmployeeDepartmentHistoryAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] short? departmentId = null,
-        [FromQuery] byte? shiftId = null,
-        [FromQuery] DateTime? startDate = null,
         CancellationToken ct = default)
     {
-        var query = db.EmployeeDepartmentHistoryAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (departmentId.HasValue) query = query.Where(a => a.DepartmentId == departmentId.Value);
-        if (shiftId.HasValue) query = query.Where(a => a.ShiftId == shiftId.Value);
-        if (startDate.HasValue)
-        {
-            var key = startDate.Value.Date;
-            query = query.Where(a => a.StartDate == key);
-        }
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "EmployeeDepartmentHistory")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }

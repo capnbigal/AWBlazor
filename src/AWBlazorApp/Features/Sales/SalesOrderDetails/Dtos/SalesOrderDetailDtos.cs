@@ -27,12 +27,6 @@ public sealed record UpdateSalesOrderDetailRequest
     public decimal? UnitPriceDiscount { get; set; }
 }
 
-public sealed record SalesOrderDetailAuditLogDto(
-    int Id, int SalesOrderId, int SalesOrderDetailId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? CarrierTrackingNumber, short OrderQty, int ProductId, int SpecialOfferId,
-    decimal UnitPrice, decimal UnitPriceDiscount, decimal LineTotal,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesOrderDetailMappings
 {
     public static SalesOrderDetailDto ToDto(this SalesOrderDetail e) => new(
@@ -63,9 +57,4 @@ public static class SalesOrderDetailMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesOrderDetailAuditLogDto ToDto(this SalesOrderDetailAuditLog a) => new(
-        a.Id, a.SalesOrderId, a.SalesOrderDetailId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.CarrierTrackingNumber, a.OrderQty, a.ProductId, a.SpecialOfferId,
-        a.UnitPrice, a.UnitPriceDiscount, a.LineTotal,
-        a.RowGuid, a.SourceModifiedDate);
-}
+    }

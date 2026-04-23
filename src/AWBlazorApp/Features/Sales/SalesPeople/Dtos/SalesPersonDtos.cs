@@ -26,11 +26,6 @@ public sealed record UpdateSalesPersonRequest
     public decimal? SalesLastYear { get; set; }
 }
 
-public sealed record SalesPersonAuditLogDto(
-    int Id, int SalesPersonId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int? TerritoryId, decimal? SalesQuota, decimal Bonus, decimal CommissionPct,
-    decimal SalesYtd, decimal SalesLastYear, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesPersonMappings
 {
     public static SalesPersonDto ToDto(this SalesPerson e) => new(
@@ -61,8 +56,4 @@ public static class SalesPersonMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesPersonAuditLogDto ToDto(this SalesPersonAuditLog a) => new(
-        a.Id, a.SalesPersonId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.TerritoryId, a.SalesQuota, a.Bonus, a.CommissionPct,
-        a.SalesYtd, a.SalesLastYear, a.RowGuid, a.SourceModifiedDate);
-}
+    }

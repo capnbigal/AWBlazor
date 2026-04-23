@@ -30,12 +30,6 @@ public sealed record UpdateInventoryLocationRequest
     public bool? IsActive { get; set; }
 }
 
-public sealed record InventoryLocationAuditLogDto(
-    int Id, int InventoryLocationId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrganizationId, int? OrgUnitId, string? Code, string? Name,
-    InventoryLocationKind Kind, int? ParentLocationId, string? Path, byte Depth,
-    short? ProductionLocationId, bool IsActive, DateTime SourceModifiedDate);
-
 public static class InventoryLocationMappings
 {
     public static InventoryLocationDto ToDto(this InventoryLocation e) => new(
@@ -67,8 +61,4 @@ public static class InventoryLocationMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static InventoryLocationAuditLogDto ToDto(this InventoryLocationAuditLog a) => new(
-        a.Id, a.InventoryLocationId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrganizationId, a.OrgUnitId, a.Code, a.Name, a.Kind, a.ParentLocationId, a.Path, a.Depth,
-        a.ProductionLocationId, a.IsActive, a.SourceModifiedDate);
-}
+    }

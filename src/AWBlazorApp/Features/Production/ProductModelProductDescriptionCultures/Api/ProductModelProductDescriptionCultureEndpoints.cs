@@ -122,22 +122,15 @@ public static class ProductModelProductDescriptionCultureEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<ProductModelProductDescriptionCultureAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? productModelId = null,
-        [FromQuery] int? productDescriptionId = null,
-        [FromQuery] string? cultureId = null,
         CancellationToken ct = default)
     {
-        var query = db.ProductModelProductDescriptionCultureAuditLogs.AsNoTracking();
-        if (productModelId.HasValue) query = query.Where(a => a.ProductModelId == productModelId.Value);
-        if (productDescriptionId.HasValue) query = query.Where(a => a.ProductDescriptionId == productDescriptionId.Value);
-        if (!string.IsNullOrWhiteSpace(cultureId)) query = query.Where(a => a.CultureId == cultureId);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "ProductModelProductDescriptionCulture")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

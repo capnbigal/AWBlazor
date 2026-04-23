@@ -21,11 +21,6 @@ public sealed record UpdateSalesTaxRateRequest
     public string? Name { get; set; }
 }
 
-public sealed record SalesTaxRateAuditLogDto(
-    int Id, int SalesTaxRateId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int StateProvinceId, byte TaxType, decimal TaxRate, string? Name,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesTaxRateMappings
 {
     public static SalesTaxRateDto ToDto(this SalesTaxRate e)
@@ -50,7 +45,4 @@ public static class SalesTaxRateMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static SalesTaxRateAuditLogDto ToDto(this SalesTaxRateAuditLog a) => new(
-        a.Id, a.SalesTaxRateId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.StateProvinceId, a.TaxType, a.TaxRate, a.Name, a.RowGuid, a.SourceModifiedDate);
-}
+    }

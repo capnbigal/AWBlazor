@@ -39,13 +39,6 @@ public sealed record UpdateAssetRequest
     public int? ParentAssetId { get; set; }
 }
 
-public sealed record AssetAuditLogDto(
-    int Id, int AssetId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, int OrganizationId, int? OrgUnitId, string? AssetTag, string? Name,
-    string? Manufacturer, string? Model, string? SerialNumber,
-    AssetType AssetType, DateTime? CommissionedAt, DateTime? DecommissionedAt,
-    AssetStatus Status, int? ParentAssetId, DateTime SourceModifiedDate);
-
 public static class AssetMappings
 {
     public static AssetDto ToDto(this Asset e) => new(
@@ -87,10 +80,4 @@ public static class AssetMappings
         e.ModifiedDate = DateTime.UtcNow;
     }
 
-    public static AssetAuditLogDto ToDto(this AssetAuditLog a) => new(
-        a.Id, a.AssetId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.OrganizationId, a.OrgUnitId, a.AssetTag, a.Name,
-        a.Manufacturer, a.Model, a.SerialNumber,
-        a.AssetType, a.CommissionedAt, a.DecommissionedAt,
-        a.Status, a.ParentAssetId, a.SourceModifiedDate);
-}
+    }

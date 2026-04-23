@@ -120,22 +120,15 @@ public static class WorkOrderRoutingEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<WorkOrderRoutingAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? workOrderId = null,
-        [FromQuery] int? productId = null,
-        [FromQuery] short? operationSequence = null,
         CancellationToken ct = default)
     {
-        var query = db.WorkOrderRoutingAuditLogs.AsNoTracking();
-        if (workOrderId.HasValue) query = query.Where(a => a.WorkOrderId == workOrderId.Value);
-        if (productId.HasValue) query = query.Where(a => a.ProductId == productId.Value);
-        if (operationSequence.HasValue) query = query.Where(a => a.OperationSequence == operationSequence.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "WorkOrderRouting")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

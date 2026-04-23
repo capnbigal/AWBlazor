@@ -54,16 +54,6 @@ public sealed record UpdateSalesOrderHeaderRequest
     public string? Comment { get; set; }
 }
 
-public sealed record SalesOrderHeaderAuditLogDto(
-    int Id, int SalesOrderId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, byte RevisionNumber, DateTime OrderDate, DateTime DueDate, DateTime? ShipDate,
-    byte Status, bool OnlineOrderFlag, string? SalesOrderNumber, string? PurchaseOrderNumber,
-    string? AccountNumber, int CustomerId, int? SalesPersonId, int? TerritoryId,
-    int BillToAddressId, int ShipToAddressId, int ShipMethodId,
-    int? CreditCardId, string? CreditCardApprovalCode, int? CurrencyRateId,
-    decimal SubTotal, decimal TaxAmt, decimal Freight, decimal TotalDue,
-    string? Comment, Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class SalesOrderHeaderMappings
 {
     public static SalesOrderHeaderDto ToDto(this SalesOrderHeader e) => new(
@@ -121,16 +111,6 @@ public static class SalesOrderHeaderMappings
         if (r.Comment is not null) e.Comment = TrimToNull(r.Comment);
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static SalesOrderHeaderAuditLogDto ToDto(this SalesOrderHeaderAuditLog a) => new(
-        a.Id, a.SalesOrderId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.RevisionNumber, a.OrderDate, a.DueDate, a.ShipDate,
-        a.Status, a.OnlineOrderFlag, a.SalesOrderNumber, a.PurchaseOrderNumber,
-        a.AccountNumber, a.CustomerId, a.SalesPersonId, a.TerritoryId,
-        a.BillToAddressId, a.ShipToAddressId, a.ShipMethodId,
-        a.CreditCardId, a.CreditCardApprovalCode, a.CurrencyRateId,
-        a.SubTotal, a.TaxAmt, a.Freight, a.TotalDue,
-        a.Comment, a.RowGuid, a.SourceModifiedDate);
 
     private static string? TrimToNull(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

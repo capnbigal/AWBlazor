@@ -128,22 +128,15 @@ public static class PersonPhoneEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<List<PersonPhoneAuditLogDto>>> HistoryAsync(
+    private static async Task<Ok<List<AWBlazorApp.Shared.Audit.AuditLog>>> HistoryAsync(
         ApplicationDbContext db,
-        [FromQuery] int? businessEntityId = null,
-        [FromQuery] string? phoneNumber = null,
-        [FromQuery] int? phoneNumberTypeId = null,
         CancellationToken ct = default)
     {
-        var query = db.PersonPhoneAuditLogs.AsNoTracking();
-        if (businessEntityId.HasValue) query = query.Where(a => a.BusinessEntityId == businessEntityId.Value);
-        if (!string.IsNullOrWhiteSpace(phoneNumber)) query = query.Where(a => a.PhoneNumber == phoneNumber);
-        if (phoneNumberTypeId.HasValue) query = query.Where(a => a.PhoneNumberTypeId == phoneNumberTypeId.Value);
-
-        var rows = await query
+        var rows = await db.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == "PersonPhone")
             .OrderByDescending(a => a.ChangedDate).ThenByDescending(a => a.Id)
-            .Select(a => a.ToDto())
             .ToListAsync(ct);
         return TypedResults.Ok(rows);
     }
+
 }

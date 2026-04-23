@@ -64,16 +64,6 @@ public sealed record UpdateProductRequest
     public DateTime? DiscontinuedDate { get; set; }
 }
 
-public sealed record ProductAuditLogDto(
-    int Id, int ProductId, string Action, string? ChangedBy, DateTime ChangedDate,
-    string? ChangeSummary, string? Name, string? ProductNumber, bool MakeFlag, bool FinishedGoodsFlag,
-    string? Color, short SafetyStockLevel, short ReorderPoint, decimal StandardCost, decimal ListPrice,
-    string? Size, string? SizeUnitMeasureCode, string? WeightUnitMeasureCode, decimal? Weight,
-    int DaysToManufacture, string? ProductLine, string? Class, string? Style,
-    int? ProductSubcategoryId, int? ProductModelId,
-    DateTime SellStartDate, DateTime? SellEndDate, DateTime? DiscontinuedDate,
-    Guid RowGuid, DateTime SourceModifiedDate);
-
 public static class ProductMappings
 {
     public static ProductDto ToDto(this Product e) => new(
@@ -139,16 +129,6 @@ public static class ProductMappings
         if (r.DiscontinuedDate.HasValue) e.DiscontinuedDate = r.DiscontinuedDate.Value;
         e.ModifiedDate = DateTime.UtcNow;
     }
-
-    public static ProductAuditLogDto ToDto(this ProductAuditLog a) => new(
-        a.Id, a.ProductId, a.Action, a.ChangedBy, a.ChangedDate, a.ChangeSummary,
-        a.Name, a.ProductNumber, a.MakeFlag, a.FinishedGoodsFlag,
-        a.Color, a.SafetyStockLevel, a.ReorderPoint, a.StandardCost, a.ListPrice,
-        a.Size, a.SizeUnitMeasureCode, a.WeightUnitMeasureCode, a.Weight,
-        a.DaysToManufacture, a.ProductLine, a.Class, a.Style,
-        a.ProductSubcategoryId, a.ProductModelId,
-        a.SellStartDate, a.SellEndDate, a.DiscontinuedDate,
-        a.RowGuid, a.SourceModifiedDate);
 
     private static string? TrimToNull(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

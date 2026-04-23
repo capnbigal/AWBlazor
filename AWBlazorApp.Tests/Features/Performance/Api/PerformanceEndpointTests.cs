@@ -161,8 +161,6 @@ public class PerformanceEndpointTests : IntegrationTestFixtureBase
             }
             var values = cleanup.KpiValues.Where(v => v.KpiDefinitionId == kpiId);
             cleanup.KpiValues.RemoveRange(values);
-            var audits = cleanup.KpiDefinitionAuditLogs.Where(a => a.KpiDefinitionId == kpiId);
-            cleanup.KpiDefinitionAuditLogs.RemoveRange(audits);
             var def = await cleanup.KpiDefinitions.FirstOrDefaultAsync(k => k.Id == kpiId);
             if (def is not null) cleanup.KpiDefinitions.Remove(def);
             await cleanup.SaveChangesAsync();
@@ -211,8 +209,6 @@ public class PerformanceEndpointTests : IntegrationTestFixtureBase
             await using var cleanup = await GetDbContextAsync();
             var values = cleanup.KpiValues.Where(v => v.KpiDefinitionId == kpiId);
             cleanup.KpiValues.RemoveRange(values);
-            var audits = cleanup.KpiDefinitionAuditLogs.Where(a => a.KpiDefinitionId == kpiId);
-            cleanup.KpiDefinitionAuditLogs.RemoveRange(audits);
             var def = await cleanup.KpiDefinitions.FirstOrDefaultAsync(k => k.Id == kpiId);
             if (def is not null) cleanup.KpiDefinitions.Remove(def);
             await cleanup.SaveChangesAsync();
