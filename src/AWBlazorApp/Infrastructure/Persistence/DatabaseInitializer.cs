@@ -1,5 +1,7 @@
 using System.Data;
-using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Features.Identity.Domain;
+using AWBlazorApp.Features.Processes.Timelines.Domain;
 using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -712,6 +714,7 @@ WHERE a.SpatialLocation IS NULL;";
         await SeedPrimaryOrganizationAsync(db, cancellationToken);
         await SeedInventoryTransactionTypesAsync(db, cancellationToken);
         await SeedDowntimeReasonsAsync(db, cancellationToken);
+        await SeedProcessChainDefinitionsAsync(db, cancellationToken);
     }
 
     /// <summary>
@@ -837,6 +840,59 @@ WHERE a.SpatialLocation IS NULL;";
 
         if (toAdd.Count == 0) return;
         db.DowntimeReasons.AddRange(toAdd);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds the two slice-1 process chains on first boot. Idempotent per-Code: missing codes are
+    /// inserted; existing rows (including ones an admin may later edit) are left untouched.
+    /// </summary>
+    private static async Task SeedProcessChainDefinitionsAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        const string SalesToShip = @"[
+        { ""entity"": ""SalesOrderHeader"", ""role"": ""Root"" },
+        { ""entity"": ""Shipment"",         ""role"": ""Child"", ""parentEntity"": ""SalesOrderHeader"", ""foreignKey"": ""SalesOrderId"" },
+        { ""entity"": ""ShipmentLine"",     ""role"": ""Child"", ""parentEntity"": ""Shipment"",         ""foreignKey"": ""ShipmentId"" }
+    ]";
+        const string PurchaseToReceive = @"[
+        { ""entity"": ""PurchaseOrderHeader"", ""role"": ""Root"" },
+        { ""entity"": ""GoodsReceipt"",        ""role"": ""Child"", ""parentEntity"": ""PurchaseOrderHeader"", ""foreignKey"": ""PurchaseOrderId"" },
+        { ""entity"": ""GoodsReceiptLine"",    ""role"": ""Child"", ""parentEntity"": ""GoodsReceipt"",        ""foreignKey"": ""GoodsReceiptId"" }
+    ]";
+
+        var existingCodes = await db.ProcessChainDefinitions.AsNoTracking()
+            .Select(x => x.Code).ToListAsync(ct);
+        var toAdd = new List<ProcessChainDefinition>();
+
+        if (!existingCodes.Contains("sales-to-ship"))
+        {
+            toAdd.Add(new ProcessChainDefinition
+            {
+                Code = "sales-to-ship",
+                Name = "Sales to Ship",
+                Description = "SalesOrderHeader → Shipment → ShipmentLine",
+                StepsJson = SalesToShip,
+                IsActive = true,
+                SortOrder = 100,
+                ModifiedDate = DateTime.UtcNow,
+            });
+        }
+        if (!existingCodes.Contains("purchase-to-receive"))
+        {
+            toAdd.Add(new ProcessChainDefinition
+            {
+                Code = "purchase-to-receive",
+                Name = "Purchase to Receive",
+                Description = "PurchaseOrderHeader → GoodsReceipt → GoodsReceiptLine",
+                StepsJson = PurchaseToReceive,
+                IsActive = true,
+                SortOrder = 200,
+                ModifiedDate = DateTime.UtcNow,
+            });
+        }
+
+        if (toAdd.Count == 0) return;
+        db.ProcessChainDefinitions.AddRange(toAdd);
         await db.SaveChangesAsync(ct);
     }
 }
