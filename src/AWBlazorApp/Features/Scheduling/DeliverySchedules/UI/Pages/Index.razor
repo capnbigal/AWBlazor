@@ -27,11 +27,11 @@
     @if (_rows is not null)
     {
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="2"><KpiCard Title="Items planned" Value="@_rows.Count.ToString()" /></MudItem>
-            <MudItem xs="12" sm="2"><KpiCard Title="Drifted" Value="@_rows.Count(r => (r.SequenceDrift ?? 0) != 0).ToString()" /></MudItem>
-            <MudItem xs="12" sm="2"><KpiCard Title="Over capacity" Value="@_rows.Count(r => r.PlannedStart is not null && r.PlannedEnd is not null && (r.PromiseDriftMinutes ?? 0) > 0).ToString()" /></MudItem>
-            <MudItem xs="12" sm="2"><KpiCard Title="Open exceptions" Value="@_openExceptions.ToString()" /></MudItem>
-            <MudItem xs="12" sm="2"><KpiCard Title="Open alerts" Value="@_openAlerts.ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Items planned" Value="@_rows.Count.ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Drifted" Value="@_rows.Count(r => (r.SequenceDrift ?? 0) != 0).ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Over capacity" Value="@_rows.Count(r => r.PlannedStart is not null && r.PlannedEnd is not null && (r.PromiseDriftMinutes ?? 0) > 0).ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Open exceptions" Value="@_openExceptions.ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Open alerts" Value="@_openAlerts.ToString()" /></MudItem>
         </MudGrid>
     }
 
