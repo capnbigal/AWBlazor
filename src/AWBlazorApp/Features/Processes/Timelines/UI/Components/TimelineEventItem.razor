@@ -1,0 +1,41 @@
+@using AWBlazorApp.Features.Processes.Timelines.Dtos
+
+<MudTimelineItem Color="@ActionColor" Size="Size.Small">
+    <ItemContent>
+        <MudStack Spacing="1">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@Event.At.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
+                <EntityTypeChip EntityType="@Event.EntityType" EntityId="@Event.EntityId" />
+                <MudChip T="string" Color="@ActionColor" Size="Size.Small">@Event.Action</MudChip>
+                @if (!string.IsNullOrWhiteSpace(Event.ChangedBy))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@Event.ChangedBy</MudText>
+                }
+            </MudStack>
+            @if (!string.IsNullOrWhiteSpace(Event.Summary))
+            {
+                <MudText Typo="Typo.body2">@Event.Summary</MudText>
+            }
+            @if (!string.IsNullOrWhiteSpace(Event.ChangesJson))
+            {
+                <MudExpansionPanels Dense="true" Elevation="0">
+                    <MudExpansionPanel Text="Show changes">
+                        <pre style="white-space:pre-wrap;font-family:monospace;font-size:0.8rem">@Event.ChangesJson</pre>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+        </MudStack>
+    </ItemContent>
+</MudTimelineItem>
+
+@code {
+    [Parameter, EditorRequired] public TimelineEventDto Event { get; set; } = null!;
+
+    private Color ActionColor => Event.Action switch
+    {
+        "Created" => Color.Success,
+        "Updated" => Color.Warning,
+        "Deleted" => Color.Error,
+        _         => Color.Default,
+    };
+}

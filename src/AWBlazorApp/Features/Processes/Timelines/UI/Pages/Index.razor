@@ -1,0 +1,187 @@
+@page "/processes/timeline"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Processes.Timelines.Dtos
+@using AWBlazorApp.Features.Processes.Timelines.UI.Components
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>Process timelines</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Process timelines</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Cross-entity audit-log walk</MudText>
+    </MudStack>
+
+    <MudTabs Elevation="1" Rounded="true" @bind-ActivePanelIndex="activeTab">
+        <MudTabPanel Text="Lookup" Icon="@Icons.Material.Filled.Search">
+            <MudPaper Class="pa-3" Elevation="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="string" @bind-Value="chainCode" Label="Process chain" Variant="Variant.Outlined">
+                            @foreach (var c in chains)
+                            {
+                                <MudSelectItem Value="@c.Code">@c.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField T="string" @bind-Value="rootEntityId" Label="Root entity ID" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   OnClick="LoadTimelineAsync" Disabled="_loading">
+                            Load timeline
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (payload is not null)
+            {
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.subtitle1">
+                        @payload.Chain.Name — <strong>@(payload.RootLabel ?? $"#{payload.RootEntityId}")</strong>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">
+                            @payload.Events.Count event@(payload.Events.Count == 1 ? "" : "s")
+                        </MudText>
+                    </MudText>
+                    @if (payload.Truncated)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">Showing most recent 500 events. Older activity trimmed.</MudAlert>
+                    }
+                    @if (payload.Events.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Normal" Dense="true">No activity found for this chain and root entity.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTimeline TimelinePosition="TimelinePosition.Start" TimelineOrientation="TimelineOrientation.Vertical">
+                            @foreach (var ev in payload.Events)
+                            {
+                                <TimelineEventItem Event="@ev" />
+                            }
+                        </MudTimeline>
+                    }
+                </MudStack>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Browse" Icon="@Icons.Material.Filled.List">
+            <MudPaper Class="pa-3" Elevation="0">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="3">
+                        <MudSelect T="string" @bind-Value="browseChainCode" Label="Chain (any)" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelectItem T="string" Value="@null">(any)</MudSelectItem>
+                            @foreach (var c in chains)
+                            {
+                                <MudSelectItem Value="@c.Code">@c.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField T="string" @bind-Value="browseOwner" Label="Owner (user name)" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudDateRangePicker DateRange="@browseRange" DateRangeChanged="OnBrowseRangeChanged" Label="Date range" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudButton OnClick="LoadBrowseAsync" Color="Color.Primary" Variant="Variant.Filled">Search</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudDataGrid T="ChainInstanceSummaryDto" Items="summaries" Dense="true" Hover="true" Striped="true" RowClick="OnSummaryClick">
+                <Columns>
+                    <PropertyColumn T="ChainInstanceSummaryDto" TProperty="string" Property="x => x.ChainCode" Title="Chain" />
+                    <TemplateColumn T="ChainInstanceSummaryDto" Title="Root" Sortable="false">
+                        <CellTemplate>@(context.Item.RootLabel ?? $"#{context.Item.RootEntityId}")</CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn T="ChainInstanceSummaryDto" TProperty="DateTime" Property="x => x.FirstEventAt" Title="First event" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn T="ChainInstanceSummaryDto" TProperty="DateTime" Property="x => x.LastEventAt" Title="Last event" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn T="ChainInstanceSummaryDto" TProperty="int" Property="x => x.EventCount" Title="Events" />
+                    <TemplateColumn T="ChainInstanceSummaryDto" Title="Contributors" Sortable="false">
+                        <CellTemplate>@string.Join(", ", context.Item.ContributorUsers)</CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudTabPanel>
+    </MudTabs>
+</MudStack>
+
+@code {
+    [SupplyParameterFromQuery(Name = "chain")] public string? ChainFromUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "root")]  public string? RootFromUrl { get; set; }
+
+    private int activeTab;
+    private bool _loading;
+    private List<ChainDescriptorDto> chains = new();
+
+    // Lookup tab state
+    private string chainCode = "sales-to-ship";
+    private string rootEntityId = "";
+    private TimelinePayloadDto? payload;
+
+    // Browse tab state
+    private string? browseChainCode;
+    private string? browseOwner;
+    private DateRange browseRange = new(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+    private List<ChainInstanceSummaryDto> summaries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        chains = await Http.GetFromJsonAsync<List<ChainDescriptorDto>>("/api/processes/chains") ?? new();
+        if (!string.IsNullOrWhiteSpace(ChainFromUrl) && !string.IsNullOrWhiteSpace(RootFromUrl))
+        {
+            chainCode = ChainFromUrl;
+            rootEntityId = RootFromUrl;
+            await LoadTimelineAsync();
+        }
+    }
+
+    private async Task LoadTimelineAsync()
+    {
+        if (string.IsNullOrWhiteSpace(chainCode) || string.IsNullOrWhiteSpace(rootEntityId)) return;
+        _loading = true; payload = null; StateHasChanged();
+        try
+        {
+            payload = await Http.GetFromJsonAsync<TimelinePayloadDto>(
+                $"/api/processes/chains/{chainCode}/timeline?rootEntityId={Uri.EscapeDataString(rootEntityId)}");
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Could not load timeline: {ex.Message}", Severity.Error);
+        }
+        finally { _loading = false; StateHasChanged(); }
+    }
+
+    private async Task LoadBrowseAsync()
+    {
+        var qs = new List<string>();
+        if (!string.IsNullOrWhiteSpace(browseChainCode)) qs.Add($"chainCode={Uri.EscapeDataString(browseChainCode)}");
+        if (!string.IsNullOrWhiteSpace(browseOwner)) qs.Add($"owner={Uri.EscapeDataString(browseOwner)}");
+        if (browseRange.Start.HasValue) qs.Add($"since={browseRange.Start:o}");
+        if (browseRange.End.HasValue) qs.Add($"until={browseRange.End:o}");
+        var url = "/api/processes/chains/recent" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+        summaries = await Http.GetFromJsonAsync<List<ChainInstanceSummaryDto>>(url) ?? new();
+        StateHasChanged();
+    }
+
+    private void OnBrowseRangeChanged(DateRange r)
+    {
+        browseRange = r;
+    }
+
+    private void OnSummaryClick(DataGridRowClickEventArgs<ChainInstanceSummaryDto> args)
+    {
+        chainCode = args.Item.ChainCode;
+        rootEntityId = args.Item.RootEntityId;
+        activeTab = 0;
+        _ = LoadTimelineAsync();
+    }
+}

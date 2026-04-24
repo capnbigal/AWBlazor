@@ -1,0 +1,24 @@
+<MudChip T="string" Color="@Color" Size="Size.Small" Variant="Variant.Text">@Label</MudChip>
+
+@code {
+    [Parameter, EditorRequired] public string EntityType { get; set; } = "";
+    [Parameter] public string EntityId { get; set; } = "";
+    [Parameter] public bool Deleted { get; set; }
+
+    private string Label => Deleted
+        ? $"{EntityType} #{EntityId} (deleted)"
+        : $"{EntityType} #{EntityId}";
+
+    private Color Color => EntityType switch
+    {
+        "SalesOrderHeader"  => MudBlazor.Color.Primary,
+        "SalesOrderDetail"  => MudBlazor.Color.Primary,
+        "Shipment"          => MudBlazor.Color.Warning,
+        "ShipmentLine"      => MudBlazor.Color.Warning,
+        "PurchaseOrderHeader" => MudBlazor.Color.Info,
+        "PurchaseOrderDetail" => MudBlazor.Color.Info,
+        "GoodsReceipt"      => MudBlazor.Color.Success,
+        "GoodsReceiptLine"  => MudBlazor.Color.Success,
+        _                   => MudBlazor.Color.Default,
+    };
+}
