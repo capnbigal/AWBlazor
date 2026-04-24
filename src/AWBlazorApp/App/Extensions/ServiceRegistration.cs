@@ -12,6 +12,7 @@ using AWBlazorApp.Features.Maintenance;
 using AWBlazorApp.Features.Mes;
 using AWBlazorApp.Features.Performance;
 using AWBlazorApp.Features.ProcessManagement;
+using AWBlazorApp.Features.Processes.Timelines;
 using AWBlazorApp.Features.Quality;
 using AWBlazorApp.Features.UserGuide;
 using AWBlazorApp.Features.Workforce;
@@ -167,39 +168,8 @@ public static class ServiceRegistration
         services.AddInsightsServices();
         services.AddForecastingServices();
         services.AddProcessManagementServices();
+        services.AddProcessTimelineServices();
         services.AddUserGuideServices();
-
-        // Process timelines — temporary inline registration until Task 16 consolidates into ProcessTimelineServiceRegistration.
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
-            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.ShipmentFromSalesOrderHeader>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
-            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.ShipmentLineFromShipment>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
-            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.GoodsReceiptFromPurchaseOrderHeader>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
-            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.GoodsReceiptLineFromGoodsReceipt>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IProcessChainResolver,
-            AWBlazorApp.Features.Processes.Timelines.Application.ProcessChainResolver>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IProcessTimelineComposer,
-            AWBlazorApp.Features.Processes.Timelines.Application.ProcessTimelineComposer>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
-            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.SalesOrderHeaderLabeler>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
-            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.PurchaseOrderHeaderLabeler>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
-            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.ShipmentLabeler>();
-        services.AddSingleton<
-            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
-            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.GoodsReceiptLabeler>();
 
         return services;
     }
