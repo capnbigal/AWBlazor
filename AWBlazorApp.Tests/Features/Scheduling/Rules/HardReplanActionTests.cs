@@ -13,6 +13,23 @@ namespace AWBlazorApp.Tests.Features.Scheduling.Rules;
 
 public class HardReplanActionTests : IntegrationTestFixtureBase
 {
+    private const int TestWeekId = 202650;
+    private const short TestLocation = 60;
+    private const int TestSoId = 999_996;
+
+    [SetUp]
+    public async Task CleanupBefore()
+    {
+        // Crash-resilient: clear any residue from a prior failing run.
+        using var scope = Factory.Services.CreateScope();
+        await using var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.SchedulingAlerts.Where(a => a.SalesOrderId == TestSoId).ExecuteDeleteAsync();
+        await db.WeeklyPlans.Where(p => p.WeekId == TestWeekId && p.LocationId == TestLocation).ExecuteDeleteAsync();
+    }
+
+    [TearDown]
+    public Task CleanupAfter() => CleanupBefore();
+
     [Test]
     public async Task Execute_WritesCriticalAlert_And_SetsBaselineDiverged()
     {
@@ -21,16 +38,16 @@ public class HardReplanActionTests : IntegrationTestFixtureBase
 
         var plan = new WeeklyPlan
         {
-            WeekId = 202650, LocationId = 60, Version = 1,
+            WeekId = TestWeekId, LocationId = TestLocation, Version = 1,
             PublishedAt = DateTime.UtcNow, PublishedBy = "test", BaselineDiverged = false
         };
         db.WeeklyPlans.Add(plan);
         await db.SaveChangesAsync();
 
         var action = new HardReplanAction();
-        var soh = new SalesOrderHeader { Id = 999_996, DueDate = DateTime.UtcNow.AddHours(24), TotalDue = 100m };
+        var soh = new SalesOrderHeader { Id = TestSoId, DueDate = DateTime.UtcNow.AddHours(24), TotalDue = 100m };
         var rule = new SchedulingRule { Action = RecalcActionType.HardReplan, EventType = SchedulingEventType.NewSO };
-        var ctx = new RecalcContext(db, rule, soh, 60, 202650, InFrozenWindow: true, DateTime.UtcNow);
+        var ctx = new RecalcContext(db, rule, soh, TestLocation, TestWeekId, InFrozenWindow: true, DateTime.UtcNow);
 
         var result = await action.ExecuteAsync(ctx, CancellationToken.None);
         await db.SaveChangesAsync();
@@ -42,11 +59,6 @@ public class HardReplanActionTests : IntegrationTestFixtureBase
 
         var alert = await db.SchedulingAlerts.OrderByDescending(a => a.Id).FirstAsync();
         Assert.That(alert.Severity, Is.EqualTo(AlertSeverity.Critical));
-        Assert.That(alert.SalesOrderId, Is.EqualTo(999_996));
-
-        // cleanup
-        db.SchedulingAlerts.Remove(alert);
-        db.WeeklyPlans.Remove(refreshed);
-        await db.SaveChangesAsync();
+        Assert.That(alert.SalesOrderId, Is.EqualTo(TestSoId));
     }
 }
