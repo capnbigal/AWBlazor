@@ -174,6 +174,14 @@ public static class ServiceRegistration
                            AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
         services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingRuleResolver,
                              AWBlazorApp.Features.Scheduling.Services.SchedulingRuleResolver>();
+        services.AddScoped<AWBlazorApp.Features.Scheduling.Services.ISchedulingDispatcher,
+                           AWBlazorApp.Features.Scheduling.Services.SchedulingDispatcher>();
+        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                           AWBlazorApp.Features.Scheduling.Rules.Application.SoftResortAction>();
+        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                           AWBlazorApp.Features.Scheduling.Rules.Application.AlertOnlyAction>();
+        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                           AWBlazorApp.Features.Scheduling.Rules.Application.HardReplanAction>();
 
         return services;
     }
