@@ -168,6 +168,11 @@ public static class ServiceRegistration
         services.AddForecastingServices();
         services.AddProcessManagementServices();
         services.AddUserGuideServices();
+
+        // Scheduling services — temporary inline registration until T23 consolidates into SchedulingServiceRegistration.
+        services.AddScoped<AWBlazorApp.Features.Scheduling.Services.IFrozenWindowEvaluator,
+                           AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
+
         return services;
     }
 
