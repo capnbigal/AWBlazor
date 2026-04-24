@@ -172,6 +172,8 @@ public static class ServiceRegistration
         // Scheduling services — temporary inline registration until T23 consolidates into SchedulingServiceRegistration.
         services.AddScoped<AWBlazorApp.Features.Scheduling.Services.IFrozenWindowEvaluator,
                            AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingRuleResolver,
+                             AWBlazorApp.Features.Scheduling.Services.SchedulingRuleResolver>();
 
         return services;
     }
