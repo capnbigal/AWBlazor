@@ -187,6 +187,8 @@ public static class ServiceRegistration
                               AWBlazorApp.Features.Scheduling.Rules.Application.AlertOnlyAction>();
         services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
                               AWBlazorApp.Features.Scheduling.Rules.Application.HardReplanAction>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.WeeklyPlans.Application.IWeeklyPlanGenerator,
+                              AWBlazorApp.Features.Scheduling.WeeklyPlans.Application.WeeklyPlanGenerator>();
 
         return services;
     }

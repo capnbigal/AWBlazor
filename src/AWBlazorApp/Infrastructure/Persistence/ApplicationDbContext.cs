@@ -1393,7 +1393,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<WeeklyPlan>(b =>
         {
             b.HasIndex(x => new { x.WeekId, x.LocationId, x.Version }).IsUnique();
-            b.HasMany(x => x.Items).WithOne().HasForeignKey(i => i.WeeklyPlanId);
+            b.HasMany(x => x.Items).WithOne(i => i.WeeklyPlan).HasForeignKey(i => i.WeeklyPlanId);
         });
 
         builder.Entity<WeeklyPlanItem>(b =>

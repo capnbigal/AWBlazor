@@ -16,4 +16,6 @@ public class WeeklyPlanItem
     [Column("PlannedEnd")] public DateTime PlannedEnd { get; set; }
     [Column("PlannedQty")] public short PlannedQty { get; set; }
     [Column("OverCapacity")] public bool OverCapacity { get; set; }
+
+    public WeeklyPlan WeeklyPlan { get; set; } = null!;
 }
