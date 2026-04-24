@@ -264,6 +264,9 @@ WHERE a.SpatialLocation IS NULL;";
         // written by AuditLogInterceptor). Marker is AuditLog (pure audit product — no
         // legacy equivalent).
         ("_AddConsolidatedAuditLog",    "AuditLog"),
+        // 2026-04 — AddProcessesSchema: creates processes.ProcessChainDefinition.
+        // Marker is ProcessChainDefinition itself — pure to this module, nothing fabricates it at runtime.
+        ("_AddProcessesSchema",         "ProcessChainDefinition"),
     ];
 
     /// <summary>
