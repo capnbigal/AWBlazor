@@ -1072,7 +1072,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Employee", "HumanResources", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("dEmployee");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.HumanResources.JobCandidates.Domain.JobCandidate", b =>
@@ -4137,7 +4141,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Person", "Person", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("iuPerson");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Person.PhoneNumberTypes.Domain.PhoneNumberType", b =>
@@ -5429,7 +5437,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkOrder", "Production", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("iWorkOrder");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ProductVendors.Domain.ProductVendor", b =>
@@ -5544,7 +5556,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PurchaseOrderDetail", "Purchasing", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("iPurchaseOrderDetail");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain.PurchaseOrderHeader", b =>
@@ -5610,7 +5626,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("PurchaseOrderHeader", "Purchasing", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("uPurchaseOrderHeader");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Purchasing.ShipMethods.Domain.ShipMethod", b =>
@@ -5696,7 +5716,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("Vendor", "Purchasing", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("dVendor");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Quality.Capa.Domain.CapaCase", b =>
@@ -6406,7 +6430,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesOrderDetail", "Sales", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("iduSalesOrderDetail");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesOrderHeaderSalesReasons.Domain.SalesOrderHeaderSalesReason", b =>
@@ -6553,7 +6581,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                     b.ToTable("SalesOrderHeader", "Sales", t =>
                         {
                             t.ExcludeFromMigrations();
+
+                            t.HasTrigger("uSalesOrderHeader");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.Sales.SalesPeople.Domain.SalesPerson", b =>
@@ -6959,6 +6991,440 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.Alerts.Domain.SchedulingAlert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("SchedulingAlertID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("AcknowledgedAt");
+
+                    b.Property<string>("AcknowledgedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("AcknowledgedBy");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<byte>("EventType")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("EventType");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Message");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PayloadJson");
+
+                    b.Property<int?>("SalesOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderID");
+
+                    b.Property<byte>("Severity")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("Severity");
+
+                    b.Property<int>("WeekId")
+                        .HasColumnType("int")
+                        .HasColumnName("WeekId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcknowledgedAt", "CreatedAt");
+
+                    b.ToTable("SchedulingAlert", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain.CurrentDeliveryScheduleRow", b =>
+                {
+                    b.Property<DateTime?>("CurrentEnd")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CurrentEnd");
+
+                    b.Property<short?>("CurrentQty")
+                        .HasColumnType("smallint")
+                        .HasColumnName("CurrentQty");
+
+                    b.Property<int?>("CurrentSequence")
+                        .HasColumnType("int")
+                        .HasColumnName("CurrentSequence");
+
+                    b.Property<DateTime?>("CurrentStart")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CurrentStart");
+
+                    b.Property<string>("ExceptionReason")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExceptionReason");
+
+                    b.Property<byte?>("ExceptionType")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("ExceptionType");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsCancelled");
+
+                    b.Property<bool>("IsHotOrder")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsHotOrder");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<DateTime?>("PlannedEnd")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PlannedEnd");
+
+                    b.Property<short?>("PlannedQty")
+                        .HasColumnType("smallint")
+                        .HasColumnName("PlannedQty");
+
+                    b.Property<int?>("PlannedSequence")
+                        .HasColumnType("int")
+                        .HasColumnName("PlannedSequence");
+
+                    b.Property<DateTime?>("PlannedStart")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PlannedStart");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("ProductID");
+
+                    b.Property<DateTime?>("PromiseDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PromiseDate");
+
+                    b.Property<int?>("PromiseDriftMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("PromiseDriftMinutes");
+
+                    b.Property<int>("SalesOrderDetailId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderDetailID");
+
+                    b.Property<int>("SalesOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderID");
+
+                    b.Property<int?>("SequenceDrift")
+                        .HasColumnType("int")
+                        .HasColumnName("SequenceDrift");
+
+                    b.Property<byte?>("SoStatus")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("SoStatus");
+
+                    b.Property<int?>("StartDriftMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("StartDriftMinutes");
+
+                    b.Property<int>("WeekId")
+                        .HasColumnType("int")
+                        .HasColumnName("WeekId");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_CurrentDeliverySchedule", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain.SchedulingException", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("SchedulingExceptionID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<byte>("ExceptionType")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("ExceptionType");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<int?>("PinnedSequence")
+                        .HasColumnType("int")
+                        .HasColumnName("PinnedSequence");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Reason");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ResolvedAt");
+
+                    b.Property<string>("ResolvedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("ResolvedBy");
+
+                    b.Property<int>("SalesOrderDetailId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderDetailID");
+
+                    b.Property<int>("WeekId")
+                        .HasColumnType("int")
+                        .HasColumnName("WeekId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WeekId", "LocationId", "SalesOrderDetailId")
+                        .IsUnique()
+                        .HasFilter("[ResolvedAt] IS NULL");
+
+                    b.ToTable("SchedulingException", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.LineConfigurations.Domain.LineConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("LineConfigurationID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FrozenLookaheadHours")
+                        .HasColumnType("int")
+                        .HasColumnName("FrozenLookaheadHours");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsActive");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<short>("MinutesPerShift")
+                        .HasColumnType("smallint")
+                        .HasColumnName("MinutesPerShift");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ModifiedDate");
+
+                    b.Property<byte>("ShiftsPerDay")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("ShiftsPerDay");
+
+                    b.Property<int>("TaktSeconds")
+                        .HasColumnType("int")
+                        .HasColumnName("TaktSeconds");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId")
+                        .IsUnique();
+
+                    b.ToTable("LineConfiguration", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.LineProductAssignments.Domain.LineProductAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("LineProductAssignmentID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsActive");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ModifiedDate");
+
+                    b.Property<int>("ProductModelId")
+                        .HasColumnType("int")
+                        .HasColumnName("ProductModelID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId", "ProductModelId")
+                        .IsUnique();
+
+                    b.ToTable("LineProductAssignment", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.Rules.Domain.SchedulingRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("SchedulingRuleID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte>("Action")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("Action");
+
+                    b.Property<byte>("EventType")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("EventType");
+
+                    b.Property<bool>("InFrozenWindow")
+                        .HasColumnType("bit")
+                        .HasColumnName("InFrozenWindow");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsActive");
+
+                    b.Property<string>("ParametersJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ParametersJson");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int")
+                        .HasColumnName("Priority");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SchedulingRule", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain.WeeklyPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("WeeklyPlanID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("BaselineDiverged")
+                        .HasColumnType("bit")
+                        .HasColumnName("BaselineDiverged");
+
+                    b.Property<string>("GenerationOptionsJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("GenerationOptionsJson");
+
+                    b.Property<short>("LocationId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("LocationID");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PublishedAt");
+
+                    b.Property<string>("PublishedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("PublishedBy");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("Version");
+
+                    b.Property<int>("WeekId")
+                        .HasColumnType("int")
+                        .HasColumnName("WeekId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WeekId", "LocationId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("WeeklyPlan", "Scheduling");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain.WeeklyPlanItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("WeeklyPlanItemID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("OverCapacity")
+                        .HasColumnType("bit")
+                        .HasColumnName("OverCapacity");
+
+                    b.Property<DateTime>("PlannedEnd")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PlannedEnd");
+
+                    b.Property<short>("PlannedQty")
+                        .HasColumnType("smallint")
+                        .HasColumnName("PlannedQty");
+
+                    b.Property<int>("PlannedSequence")
+                        .HasColumnType("int")
+                        .HasColumnName("PlannedSequence");
+
+                    b.Property<DateTime>("PlannedStart")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PlannedStart");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("ProductID");
+
+                    b.Property<int>("SalesOrderDetailId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderDetailID");
+
+                    b.Property<int>("SalesOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("SalesOrderID");
+
+                    b.Property<int>("WeeklyPlanId")
+                        .HasColumnType("int")
+                        .HasColumnName("WeeklyPlanID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalesOrderDetailId");
+
+                    b.HasIndex("WeeklyPlanId", "PlannedSequence");
+
+                    b.ToTable("WeeklyPlanItem", "Scheduling");
                 });
 
             modelBuilder.Entity("AWBlazorApp.Features.UserGuide.Domain.ArticleRead", b =>
@@ -8499,6 +8965,15 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain.WeeklyPlanItem", b =>
+                {
+                    b.HasOne("AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain.WeeklyPlan", null)
+                        .WithMany("Items")
+                        .HasForeignKey("WeeklyPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AWBlazorApp.Features.UserGuide.Domain.ArticleRead", b =>
                 {
                     b.HasOne("AWBlazorApp.Features.Identity.Domain.ApplicationUser", "User")
@@ -8653,6 +9128,11 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("AWBlazorApp.Features.ProcessManagement.Domain.ProcessExecution", b =>
                 {
                     b.Navigation("StepExecutions");
+                });
+
+            modelBuilder.Entity("AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain.WeeklyPlan", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

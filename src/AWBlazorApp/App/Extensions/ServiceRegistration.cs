@@ -39,6 +39,7 @@ public static class ServiceRegistration
         services.AddHttpContextAccessor();
         services.AddSingleton<AuditingInterceptor>();
         services.AddSingleton<AuditLogInterceptor>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.SchedulingDispatchInterceptor>();
 
         services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
         {
@@ -49,7 +50,8 @@ public static class ServiceRegistration
             });
             options.AddInterceptors(
                 sp.GetRequiredService<AuditingInterceptor>(),
-                sp.GetRequiredService<AuditLogInterceptor>());
+                sp.GetRequiredService<AuditLogInterceptor>(),
+                sp.GetRequiredService<AWBlazorApp.Features.Scheduling.Services.SchedulingDispatchInterceptor>());
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
@@ -170,18 +172,21 @@ public static class ServiceRegistration
         services.AddUserGuideServices();
 
         // Scheduling services — temporary inline registration until T23 consolidates into SchedulingServiceRegistration.
-        services.AddScoped<AWBlazorApp.Features.Scheduling.Services.IFrozenWindowEvaluator,
-                           AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
+        // Singletons because: (1) dispatcher has no DbContext field (caller passes it),
+        // (2) evaluator uses IDbContextFactory to mint its own, (3) actions are stateless,
+        // (4) the dispatch interceptor is a singleton and must inject these.
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.IFrozenWindowEvaluator,
+                              AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
         services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingRuleResolver,
-                             AWBlazorApp.Features.Scheduling.Services.SchedulingRuleResolver>();
-        services.AddScoped<AWBlazorApp.Features.Scheduling.Services.ISchedulingDispatcher,
-                           AWBlazorApp.Features.Scheduling.Services.SchedulingDispatcher>();
-        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                           AWBlazorApp.Features.Scheduling.Rules.Application.SoftResortAction>();
-        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                           AWBlazorApp.Features.Scheduling.Rules.Application.AlertOnlyAction>();
-        services.AddScoped<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                           AWBlazorApp.Features.Scheduling.Rules.Application.HardReplanAction>();
+                              AWBlazorApp.Features.Scheduling.Services.SchedulingRuleResolver>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingDispatcher,
+                              AWBlazorApp.Features.Scheduling.Services.SchedulingDispatcher>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                              AWBlazorApp.Features.Scheduling.Rules.Application.SoftResortAction>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                              AWBlazorApp.Features.Scheduling.Rules.Application.AlertOnlyAction>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
+                              AWBlazorApp.Features.Scheduling.Rules.Application.HardReplanAction>();
 
         return services;
     }

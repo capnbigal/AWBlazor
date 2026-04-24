@@ -45,7 +45,7 @@ public class SchedulingDispatcherTests : IntegrationTestFixtureBase
 
         var soh = new SalesOrderHeader { Id = TestSoId, DueDate = DateTime.UtcNow.AddDays(30), TotalDue = 100m };
         var before = await db.SchedulingAlerts.CountAsync(a => a.SalesOrderId == TestSoId);
-        await sut.OnSalesOrderCreatedAsync(soh, Loc, CancellationToken.None);
+        await sut.OnSalesOrderCreatedAsync(soh, Loc, db, CancellationToken.None);
         await db.SaveChangesAsync();
         var after = await db.SchedulingAlerts.CountAsync(a => a.SalesOrderId == TestSoId);
 
