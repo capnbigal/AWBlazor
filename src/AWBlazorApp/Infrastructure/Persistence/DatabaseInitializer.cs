@@ -264,6 +264,10 @@ WHERE a.SpatialLocation IS NULL;";
         // written by AuditLogInterceptor). Marker is AuditLog (pure audit product — no
         // legacy equivalent).
         ("_AddConsolidatedAuditLog",    "AuditLog"),
+        // 2026-04 — AddSchedulingSchema: creates sched.LineConfiguration/LineProductAssignment/
+        // WeeklyPlan/WeeklyPlanItem/SchedulingException/SchedulingRule/SchedulingAlert plus the
+        // vw_CurrentDeliverySchedule SQL view. Marker is LineConfiguration (pure to this module).
+        ("_AddSchedulingSchema",        "LineConfiguration"),
     ];
 
     /// <summary>
