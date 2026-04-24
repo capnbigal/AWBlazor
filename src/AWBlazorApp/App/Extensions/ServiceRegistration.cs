@@ -13,6 +13,7 @@ using AWBlazorApp.Features.Mes;
 using AWBlazorApp.Features.Performance;
 using AWBlazorApp.Features.ProcessManagement;
 using AWBlazorApp.Features.Quality;
+using AWBlazorApp.Features.Scheduling;
 using AWBlazorApp.Features.UserGuide;
 using AWBlazorApp.Features.Workforce;
 using AWBlazorApp.Infrastructure.Persistence;
@@ -171,24 +172,7 @@ public static class ServiceRegistration
         services.AddProcessManagementServices();
         services.AddUserGuideServices();
 
-        // Scheduling services — temporary inline registration until T23 consolidates into SchedulingServiceRegistration.
-        // Singletons because: (1) dispatcher has no DbContext field (caller passes it),
-        // (2) evaluator uses IDbContextFactory to mint its own, (3) actions are stateless,
-        // (4) the dispatch interceptor is a singleton and must inject these.
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.IFrozenWindowEvaluator,
-                              AWBlazorApp.Features.Scheduling.Services.FrozenWindowEvaluator>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingRuleResolver,
-                              AWBlazorApp.Features.Scheduling.Services.SchedulingRuleResolver>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.ISchedulingDispatcher,
-                              AWBlazorApp.Features.Scheduling.Services.SchedulingDispatcher>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                              AWBlazorApp.Features.Scheduling.Rules.Application.SoftResortAction>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                              AWBlazorApp.Features.Scheduling.Rules.Application.AlertOnlyAction>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.Rules.Application.IRecalcAction,
-                              AWBlazorApp.Features.Scheduling.Rules.Application.HardReplanAction>();
-        services.AddSingleton<AWBlazorApp.Features.Scheduling.WeeklyPlans.Application.IWeeklyPlanGenerator,
-                              AWBlazorApp.Features.Scheduling.WeeklyPlans.Application.WeeklyPlanGenerator>();
+        services.AddSchedulingServices();
 
         return services;
     }
