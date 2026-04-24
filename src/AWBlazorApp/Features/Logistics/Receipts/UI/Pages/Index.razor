@@ -42,7 +42,18 @@
             <PropertyColumn Property="x => x.PostedByUserId" Title="By" />
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"logistics/receipts/{context.Item.Id}"))" />
+                    <MudStack Row="true" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"logistics/receipts/{context.Item.Id}"))" />
+                        @if (context.Item.PurchaseOrderId != null)
+                        {
+                            <MudTooltip Text="Open process timeline">
+                                <MudIconButton Icon="@Icons.Material.Filled.Timeline"
+                                               aria-label="Timeline"
+                                               Size="Size.Small"
+                                               Href="@($"/processes/timeline?chain=purchase-to-receive&root={context.Item.PurchaseOrderId}")" />
+                            </MudTooltip>
+                        }
+                    </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

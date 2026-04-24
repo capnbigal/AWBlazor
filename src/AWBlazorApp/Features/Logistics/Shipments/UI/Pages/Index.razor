@@ -41,7 +41,18 @@
             <PropertyColumn Property="x => x.ShippedAt" Title="Shipped" Format="yyyy-MM-dd HH:mm" />
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"logistics/shipments/{context.Item.Id}"))" />
+                    <MudStack Row="true" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"logistics/shipments/{context.Item.Id}"))" />
+                        @if (context.Item.SalesOrderId != null)
+                        {
+                            <MudTooltip Text="Open process timeline">
+                                <MudIconButton Icon="@Icons.Material.Filled.Timeline"
+                                               aria-label="Timeline"
+                                               Size="Size.Small"
+                                               Href="@($"/processes/timeline?chain=sales-to-ship&root={context.Item.SalesOrderId}")" />
+                            </MudTooltip>
+                        }
+                    </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

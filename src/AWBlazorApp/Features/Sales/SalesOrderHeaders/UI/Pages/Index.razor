@@ -115,6 +115,12 @@
                         <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))" />
                         </AuthorizeView>
+                        <MudTooltip Text="Open process timeline">
+                            <MudIconButton Icon="@Icons.Material.Filled.Timeline"
+                                           aria-label="Timeline"
+                                           Size="Size.Small"
+                                           Href="@($"/processes/timeline?chain=sales-to-ship&root={context.Item.Id}")" />
+                        </MudTooltip>
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
