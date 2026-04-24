@@ -188,6 +188,18 @@ public static class ServiceRegistration
         services.AddSingleton<
             AWBlazorApp.Features.Processes.Timelines.Application.IProcessTimelineComposer,
             AWBlazorApp.Features.Processes.Timelines.Application.ProcessTimelineComposer>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
+            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.SalesOrderHeaderLabeler>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
+            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.PurchaseOrderHeaderLabeler>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
+            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.ShipmentLabeler>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IRootEntityLabeler,
+            AWBlazorApp.Features.Processes.Timelines.Application.RootLabelers.GoodsReceiptLabeler>();
 
         return services;
     }
