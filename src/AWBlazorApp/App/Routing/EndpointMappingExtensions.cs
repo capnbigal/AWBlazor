@@ -173,6 +173,10 @@ public static class EndpointMappingExtensions
         // Cross-module plant dashboard. Aggregates from every module schema.
         AWBlazorApp.Features.Dashboard.Api.DashboardEndpoints.MapDashboardEndpoints(app);
 
+        // Batch 19 — Scheduling (Scheduling schema). Lines, line-product assignments,
+        // weekly plans + generator, delivery view + exceptions, alerts.
+        AWBlazorApp.Features.Scheduling.SchedulingEndpoints.MapSchedulingEndpoints(app);
+
         // CSV export endpoint (Admin only).
         app.MapExportEndpoints();
 
