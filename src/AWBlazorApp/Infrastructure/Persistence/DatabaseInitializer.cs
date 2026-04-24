@@ -1,5 +1,6 @@
 using System.Data;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Features.Scheduling.Rules.Domain;
 using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -713,6 +714,7 @@ WHERE a.SpatialLocation IS NULL;";
         await SeedPrimaryOrganizationAsync(db, cancellationToken);
         await SeedInventoryTransactionTypesAsync(db, cancellationToken);
         await SeedDowntimeReasonsAsync(db, cancellationToken);
+        await SeedSchedulingRulesAsync(db, cancellationToken);
     }
 
     /// <summary>
@@ -838,6 +840,43 @@ WHERE a.SpatialLocation IS NULL;";
 
         if (toAdd.Count == 0) return;
         db.DowntimeReasons.AddRange(toAdd);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds three baseline <c>SchedulingRule</c> rows on first boot: SoftResort for outside-frozen
+    /// new SOs, AlertOnly (with $5000 min-order threshold) and HardReplan fallback for inside-frozen
+    /// new SOs. Skips if any rule already exists so manual edits (priority tweaks, parameter changes)
+    /// survive the next startup.
+    /// </summary>
+    private static async Task SeedSchedulingRulesAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        if (await db.SchedulingRules.AsNoTracking().AnyAsync(ct)) return;
+
+        db.SchedulingRules.AddRange(
+            new SchedulingRule {
+                EventType = SchedulingEventType.NewSO,
+                InFrozenWindow = false,
+                Action = RecalcActionType.SoftResort,
+                Priority = 100,
+                IsActive = true
+            },
+            new SchedulingRule {
+                EventType = SchedulingEventType.NewSO,
+                InFrozenWindow = true,
+                Action = RecalcActionType.AlertOnly,
+                ParametersJson = "{\"minOrderValue\":5000}",
+                Priority = 100,
+                IsActive = true
+            },
+            new SchedulingRule {
+                EventType = SchedulingEventType.NewSO,
+                InFrozenWindow = true,
+                Action = RecalcActionType.HardReplan,
+                Priority = 50,
+                IsActive = true
+            });
+
         await db.SaveChangesAsync(ct);
     }
 }
