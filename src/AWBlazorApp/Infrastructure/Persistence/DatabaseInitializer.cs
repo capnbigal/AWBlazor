@@ -1,5 +1,7 @@
 using System.Data;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
+using AWBlazorApp.Features.Scheduling.LineConfigurations.Domain;
+using AWBlazorApp.Features.Scheduling.LineProductAssignments.Domain;
 using AWBlazorApp.Features.Scheduling.Rules.Domain;
 using AWBlazorApp.Shared.Domain;
 using Microsoft.AspNetCore.Identity;
@@ -715,6 +717,8 @@ WHERE a.SpatialLocation IS NULL;";
         await SeedInventoryTransactionTypesAsync(db, cancellationToken);
         await SeedDowntimeReasonsAsync(db, cancellationToken);
         await SeedSchedulingRulesAsync(db, cancellationToken);
+        await SeedSchedulingDemoLineAsync(db, cancellationToken);
+        await SeedSchedulingDemoLineProductAssignmentsAsync(db, cancellationToken);
     }
 
     /// <summary>
@@ -878,5 +882,80 @@ WHERE a.SpatialLocation IS NULL;";
             });
 
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds the slice-1 demo <c>LineConfiguration</c> for Production.Location 60 (Final Assembly)
+    /// so the scheduling feature has something to generate against on a fresh database. No-op if
+    /// a row for Location 60 already exists — a planner who hand-edits takt or shifts via
+    /// <c>/scheduling/lines</c> won't get their changes overwritten on restart.
+    /// </summary>
+    private static async Task SeedSchedulingDemoLineAsync(ApplicationDbContext db, CancellationToken ct)
+    {
+        const short FinalAssembly = 60;
+        var exists = await db.LineConfigurations.AsNoTracking()
+            .AnyAsync(l => l.LocationId == FinalAssembly, ct);
+        if (exists) return;
+
+        db.LineConfigurations.Add(new LineConfiguration
+        {
+            LocationId = FinalAssembly,
+            TaktSeconds = 600,         // 10-min takt — realistic for a bike final-assembly line
+            ShiftsPerDay = 2,
+            MinutesPerShift = 480,     // 8-hour shifts
+            FrozenLookaheadHours = 72, // 3-day freeze boundary
+            IsActive = true,
+            ModifiedDate = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Seeds the slice-1 demo <c>LineProductAssignment</c> rows for the Final Assembly line so
+    /// the weekly-plan generator's product-model filter finds real AdventureWorks bike models.
+    /// Adds any rows that don't already exist; existing rows (including ones a planner has flipped
+    /// to <c>IsActive=false</c>) are left untouched.
+    /// </summary>
+    /// <remarks>
+    /// ProductModelIDs come from AdventureWorks:
+    ///   19 Mountain-100, 20 Mountain-200, 21 Mountain-300, 25 Road-250,
+    ///   26 Road-450, 28 Touring-1000, 30 Touring-3000.
+    /// If any of these don't exist in the target database (non-AW schema), the FK insert will
+    /// fail — that's a clear signal the target isn't AdventureWorks and slice-1 demo seeding
+    /// should be skipped by design.
+    /// </remarks>
+    private static async Task SeedSchedulingDemoLineProductAssignmentsAsync(
+        ApplicationDbContext db, CancellationToken ct)
+    {
+        const short FinalAssembly = 60;
+        int[] bikeModelIds = [19, 20, 21, 25, 26, 28, 30];
+
+        var existingModelIds = await db.LineProductAssignments.AsNoTracking()
+            .Where(a => a.LocationId == FinalAssembly)
+            .Select(a => a.ProductModelId)
+            .ToListAsync(ct);
+        var missing = bikeModelIds.Except(existingModelIds).ToList();
+        if (missing.Count == 0) return;
+
+        // Verify each missing ProductModelID actually exists in Production.ProductModel before
+        // inserting; harmlessly skips any that don't so seeding never trips an FK.
+        var availableIds = await db.Set<AWBlazorApp.Features.Production.ProductModels.Domain.ProductModel>()
+            .AsNoTracking()
+            .Where(m => missing.Contains(m.Id))
+            .Select(m => m.Id)
+            .ToListAsync(ct);
+
+        foreach (var id in availableIds)
+        {
+            db.LineProductAssignments.Add(new LineProductAssignment
+            {
+                LocationId = FinalAssembly,
+                ProductModelId = id,
+                IsActive = true,
+                ModifiedDate = DateTime.UtcNow,
+            });
+        }
+        if (availableIds.Count > 0)
+            await db.SaveChangesAsync(ct);
     }
 }
