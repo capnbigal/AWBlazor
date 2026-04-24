@@ -1,0 +1,25 @@
+@if (Planned is null && Current is null)
+{
+    <span>—</span>
+}
+else if (Planned == Current || (Current is null))
+{
+    <span>@(Planned ?? Current)</span>
+}
+else if (Planned is null)
+{
+    <span>@Current</span>
+}
+else
+{
+    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+        <span>@Planned</span>
+        <MudIcon Icon="@(Current > Planned ? Icons.Material.Filled.ArrowDownward : Icons.Material.Filled.ArrowUpward)" Size="Size.Small" Color="@(Current > Planned ? Color.Warning : Color.Success)" />
+        <span><strong>@Current</strong></span>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int? Planned { get; set; }
+    [Parameter] public int? Current { get; set; }
+}
