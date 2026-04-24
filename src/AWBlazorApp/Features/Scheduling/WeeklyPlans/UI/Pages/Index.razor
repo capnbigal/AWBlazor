@@ -1,0 +1,135 @@
+@page "/scheduling/weekly-plans"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.Application
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.Dtos
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.UI.Components
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IWeeklyPlanGenerator Generator
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Weekly plans</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Weekly plans</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Scheduling.WeeklyPlan</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3">
+                <MudNumericField T="short" @bind-Value="locationId" Label="Location" Min="1" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudNumericField T="int" @bind-Value="weekId" Label="Week (YYYYWW)" Min="200001" Variant="Variant.Outlined" HelperText="ISO: year*100+week, e.g. 202618" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="height:100%">
+                    <AuthorizeView Roles="@($"{AppRoles.Manager},{AppRoles.Admin}")">
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="OpenGenerateDialogAsync" Disabled="_generating">
+                            Generate plan
+                        </MudButton>
+                    </AuthorizeView>
+                    <MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="RefreshAsync">
+                        Refresh list
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" @bind-Value="includeShippedOrders"
+                             Label="Include Shipped orders (demo/back-test)"
+                             Color="Color.Primary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Sample databases (AdventureWorks) have every order already Shipped. Leave unchecked for production.
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudDataGrid T="WeeklyPlanDto" Items="_plans" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
+        <Columns>
+            <HierarchyColumn T="WeeklyPlanDto" />
+            <PropertyColumn T="WeeklyPlanDto" TProperty="int"    Property="x => x.WeekId" Title="Week" />
+            <PropertyColumn T="WeeklyPlanDto" TProperty="short"  Property="x => x.LocationId" Title="Location" />
+            <PropertyColumn T="WeeklyPlanDto" TProperty="int"    Property="x => x.Version" Title="Version" />
+            <PropertyColumn T="WeeklyPlanDto" TProperty="DateTime" Property="x => x.PublishedAt" Title="Published" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn T="WeeklyPlanDto" TProperty="string" Property="x => x.PublishedBy" Title="By" />
+            <TemplateColumn T="WeeklyPlanDto" Title="Diverged" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.BaselineDiverged)
+                    {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">Diverged</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <ChildRowContent>
+            <MudTd colspan="7">
+                <WeeklyPlanItemsGrid WeeklyPlanId="@context.Item.Id" DbFactory="DbFactory" />
+            </MudTd>
+        </ChildRowContent>
+        <PagerContent><MudDataGridPager T="WeeklyPlanDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private List<WeeklyPlanDto> _plans = new();
+    private short locationId = 60;
+    private int weekId = 202618;
+    private bool _generating;
+    private bool includeShippedOrders;
+
+    private static readonly HashSet<byte> DemoPlannableWithShipped = new() { 1, 2, 5 };
+
+    protected override async Task OnInitializedAsync() => await RefreshAsync();
+
+    private async Task RefreshAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _plans = await db.WeeklyPlans.AsNoTracking()
+            .OrderByDescending(x => x.PublishedAt)
+            .Select(x => x.ToDto())
+            .ToListAsync();
+        StateHasChanged();
+    }
+
+    private async Task OpenGenerateDialogAsync()
+    {
+        // dry-run first to get preview
+        _generating = true;
+        StateHasChanged();
+        try
+        {
+            var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User?.Identity?.Name ?? "planner";
+            var statuses = includeShippedOrders ? DemoPlannableWithShipped : null;
+            var preview = await Generator.GenerateAsync(weekId, locationId,
+                new WeeklyPlanGenerationOptions(DryRun: true, PlannableSalesOrderStatuses: statuses),
+                user, CancellationToken.None);
+
+            var parameters = new DialogParameters<GeneratePreviewDialog>
+            {
+                { x => x.WeekId, weekId },
+                { x => x.LocationId, locationId },
+                { x => x.Preview, preview },
+            };
+            var dialog = await DialogService.ShowAsync<GeneratePreviewDialog>(
+                $"Preview {weekId} @ line {locationId}", parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+            var result = await dialog.Result;
+            if (result is { Canceled: false, Data: true })
+            {
+                var final = await Generator.GenerateAsync(weekId, locationId,
+                    new WeeklyPlanGenerationOptions(PlannableSalesOrderStatuses: statuses),
+                    user, CancellationToken.None);
+                Snackbar.Add($"Plan v{final.Version} generated — {final.ItemCount} items.", Severity.Success);
+                await RefreshAsync();
+            }
+        }
+        catch (InvalidOperationException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch (Exception ex) { Snackbar.Add($"Generation failed: {ex.Message}", Severity.Error); }
+        finally { _generating = false; StateHasChanged(); }
+    }
+}
