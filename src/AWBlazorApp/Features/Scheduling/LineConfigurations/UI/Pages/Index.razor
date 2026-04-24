@@ -1,0 +1,95 @@
+@page "/scheduling/lines"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Scheduling.LineConfigurations.Domain
+@using AWBlazorApp.Features.Scheduling.LineConfigurations.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<CrudPage TDto="LineConfigurationDto"
+          Title="Lines"
+          Caption="Scheduling.LineConfiguration"
+          NewButtonLabel="New line"
+          EditRoles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")"
+          DeleteRoles="@($"{AppRoles.Manager},{AppRoles.Admin}")"
+          LoadData="LoadServerDataAsync"
+          IdOf="row => row.Id"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="line"
+          DeleteConfirmMessage="@(row => $"Delete line for location {row.LocationId}?")">
+    <Filters>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="bool?" @bind-Value="filterActive" Label="Active" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem T="bool?" Value="@null">(any)</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@true">Active</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@false">Inactive</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="LineConfigurationDto" TProperty="int"    Property="x => x.Id" Title="Id" />
+        <PropertyColumn T="LineConfigurationDto" TProperty="short"  Property="x => x.LocationId" Title="Location" />
+        <PropertyColumn T="LineConfigurationDto" TProperty="int"    Property="x => x.TaktSeconds" Title="Takt (s)" />
+        <PropertyColumn T="LineConfigurationDto" TProperty="byte"   Property="x => x.ShiftsPerDay" Title="Shifts/day" />
+        <PropertyColumn T="LineConfigurationDto" TProperty="short"  Property="x => x.MinutesPerShift" Title="Min/shift" />
+        <PropertyColumn T="LineConfigurationDto" TProperty="int"    Property="x => x.FrozenLookaheadHours" Title="Frozen lookahead (h)" />
+        <TemplateColumn T="LineConfigurationDto" Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
+        <PropertyColumn T="LineConfigurationDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+    </Columns>
+</CrudPage>
+
+@code {
+    private bool? filterActive;
+
+    private async Task<GridData<LineConfigurationDto>> LoadServerDataAsync(GridState<LineConfigurationDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.LineConfigurations.AsNoTracking();
+        if (filterActive.HasValue) query = query.Where(x => x.IsActive == filterActive.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(LineConfigurationDto.Id)                  => sort.Descending ? query.OrderByDescending(x => x.Id)                  : query.OrderBy(x => x.Id),
+            nameof(LineConfigurationDto.LocationId)          => sort.Descending ? query.OrderByDescending(x => x.LocationId)          : query.OrderBy(x => x.LocationId),
+            nameof(LineConfigurationDto.TaktSeconds)         => sort.Descending ? query.OrderByDescending(x => x.TaktSeconds)         : query.OrderBy(x => x.TaktSeconds),
+            nameof(LineConfigurationDto.ShiftsPerDay)        => sort.Descending ? query.OrderByDescending(x => x.ShiftsPerDay)        : query.OrderBy(x => x.ShiftsPerDay),
+            nameof(LineConfigurationDto.MinutesPerShift)     => sort.Descending ? query.OrderByDescending(x => x.MinutesPerShift)     : query.OrderBy(x => x.MinutesPerShift),
+            nameof(LineConfigurationDto.FrozenLookaheadHours)=> sort.Descending ? query.OrderByDescending(x => x.FrozenLookaheadHours): query.OrderBy(x => x.FrozenLookaheadHours),
+            nameof(LineConfigurationDto.ModifiedDate)        => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)        : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.LocationId),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
+            .Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<LineConfigurationDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<LineConfigurationDialog>("New line",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Line created.", Severity.Success);
+    }
+
+    private async Task OpenEditAsync(LineConfigurationDto row)
+    {
+        var parameters = new DialogParameters<LineConfigurationDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<LineConfigurationDialog>($"Edit line #{row.Id}", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Line updated.", Severity.Success);
+    }
+
+    private async Task DeleteAsync(LineConfigurationDto row)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.LineConfigurations.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Already gone.", Severity.Warning); return; }
+        db.LineConfigurations.Remove(entity);
+        try { await db.SaveChangesAsync(); Snackbar.Add("Line deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+    }
+}

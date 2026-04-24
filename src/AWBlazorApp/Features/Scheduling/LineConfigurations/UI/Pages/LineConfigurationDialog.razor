@@ -1,0 +1,82 @@
+@using AWBlazorApp.Features.Scheduling.LineConfigurations.Domain
+@using AWBlazorApp.Features.Scheduling.LineConfigurations.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (Model is null)
+            {
+                <MudNumericField T="short" @bind-Value="createReq.LocationId" Label="Location ID" Min="1" Required="true" />
+            }
+            <MudNumericField T="int" @bind-Value="taktSeconds" Label="Takt (seconds)" Min="1" Required="true" />
+            <MudNumericField T="byte" @bind-Value="shiftsPerDay" Label="Shifts/day" Min="1" Max="3" Required="true" />
+            <MudNumericField T="short" @bind-Value="minutesPerShift" Label="Minutes/shift" Min="1" Max="720" Required="true" />
+            <MudNumericField T="int" @bind-Value="frozenLookaheadHours" Label="Frozen lookahead (hours)" Min="0" Required="true" />
+            <MudCheckBox T="bool" @bind-Value="isActive" Label="Active" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance Mud { get; set; } = null!;
+    [Parameter] public LineConfigurationDto? Model { get; set; }
+
+    private CreateLineConfigurationRequest createReq = new();
+    private int taktSeconds = 600;
+    private byte shiftsPerDay = 1;
+    private short minutesPerShift = 480;
+    private int frozenLookaheadHours = 72;
+    private bool isActive = true;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            taktSeconds = Model.TaktSeconds;
+            shiftsPerDay = Model.ShiftsPerDay;
+            minutesPerShift = Model.MinutesPerShift;
+            frozenLookaheadHours = Model.FrozenLookaheadHours;
+            isActive = Model.IsActive;
+        }
+    }
+
+    private void Cancel() => Mud.Cancel();
+
+    private async Task SaveAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        if (Model is null)
+        {
+            var entity = new LineConfiguration
+            {
+                LocationId = createReq.LocationId,
+                TaktSeconds = taktSeconds,
+                ShiftsPerDay = shiftsPerDay,
+                MinutesPerShift = minutesPerShift,
+                FrozenLookaheadHours = frozenLookaheadHours,
+                IsActive = isActive,
+                ModifiedDate = DateTime.UtcNow,
+            };
+            db.LineConfigurations.Add(entity);
+        }
+        else
+        {
+            var entity = await db.LineConfigurations.FirstOrDefaultAsync(t => t.Id == Model.Id);
+            if (entity is null) { Snackbar.Add("Line no longer exists.", Severity.Warning); Mud.Cancel(); return; }
+            entity.TaktSeconds = taktSeconds;
+            entity.ShiftsPerDay = shiftsPerDay;
+            entity.MinutesPerShift = minutesPerShift;
+            entity.FrozenLookaheadHours = frozenLookaheadHours;
+            entity.IsActive = isActive;
+            entity.ModifiedDate = DateTime.UtcNow;
+        }
+        try { await db.SaveChangesAsync(); Mud.Close(DialogResult.Ok(true)); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+    }
+}
