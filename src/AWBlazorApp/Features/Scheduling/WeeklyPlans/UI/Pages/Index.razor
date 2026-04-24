@@ -38,6 +38,14 @@
                     </MudButton>
                 </MudStack>
             </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" @bind-Value="includeShippedOrders"
+                             Label="Include Shipped orders (demo/back-test)"
+                             Color="Color.Primary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Sample databases (AdventureWorks) have every order already Shipped. Leave unchecked for production.
+                </MudText>
+            </MudItem>
         </MudGrid>
     </MudPaper>
 
@@ -72,6 +80,9 @@
     private short locationId = 60;
     private int weekId = 202618;
     private bool _generating;
+    private bool includeShippedOrders;
+
+    private static readonly HashSet<byte> DemoPlannableWithShipped = new() { 1, 2, 5 };
 
     protected override async Task OnInitializedAsync() => await RefreshAsync();
 
@@ -93,8 +104,10 @@
         try
         {
             var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User?.Identity?.Name ?? "planner";
+            var statuses = includeShippedOrders ? DemoPlannableWithShipped : null;
             var preview = await Generator.GenerateAsync(weekId, locationId,
-                new WeeklyPlanGenerationOptions(DryRun: true), user, CancellationToken.None);
+                new WeeklyPlanGenerationOptions(DryRun: true, PlannableSalesOrderStatuses: statuses),
+                user, CancellationToken.None);
 
             var parameters = new DialogParameters<GeneratePreviewDialog>
             {
@@ -109,7 +122,8 @@
             if (result is { Canceled: false, Data: true })
             {
                 var final = await Generator.GenerateAsync(weekId, locationId,
-                    new WeeklyPlanGenerationOptions(), user, CancellationToken.None);
+                    new WeeklyPlanGenerationOptions(PlannableSalesOrderStatuses: statuses),
+                    user, CancellationToken.None);
                 Snackbar.Add($"Plan v{final.Version} generated — {final.ItemCount} items.", Severity.Success);
                 await RefreshAsync();
             }

@@ -18,6 +18,13 @@ public sealed record GenerateWeeklyPlanRequest
     public short LocationId { get; set; }
     public bool DryRun { get; set; } = false;
     public bool StrictCapacity { get; set; } = false;
+    /// <summary>
+    /// Demo/back-testing only. When true, the generator also pulls <c>Status=5 Shipped</c>
+    /// orders into the plan — useful against sample databases (like AdventureWorks) where
+    /// every historical order is already Shipped and the production default of
+    /// <c>{InProcess, Approved}</c> would match zero rows. Leave <c>false</c> in production.
+    /// </summary>
+    public bool IncludeShippedOrders { get; set; } = false;
 }
 
 public static class WeeklyPlanMappings

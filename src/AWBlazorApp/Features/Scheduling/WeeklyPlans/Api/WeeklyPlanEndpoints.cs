@@ -25,9 +25,13 @@ public static class WeeklyPlanEndpoints
             var user = http.User?.Identity?.Name ?? "api";
             try
             {
+                IReadOnlySet<byte>? plannable = req.IncludeShippedOrders
+                    ? new HashSet<byte> { 1, 2, 5 } // InProcess, Approved, Shipped — demo/back-test
+                    : null;                         // null → generator uses its production default
                 var opts = new WeeklyPlanGenerationOptions(
                     StrictCapacity: req.StrictCapacity,
-                    DryRun: req.DryRun);
+                    DryRun: req.DryRun,
+                    PlannableSalesOrderStatuses: plannable);
                 var result = await generator.GenerateAsync(req.WeekId, req.LocationId, opts, user, ct);
                 return Results.Ok(result);
             }
