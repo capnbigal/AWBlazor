@@ -185,6 +185,9 @@ public static class ServiceRegistration
         services.AddSingleton<
             AWBlazorApp.Features.Processes.Timelines.Application.IProcessChainResolver,
             AWBlazorApp.Features.Processes.Timelines.Application.ProcessChainResolver>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IProcessTimelineComposer,
+            AWBlazorApp.Features.Processes.Timelines.Application.ProcessTimelineComposer>();
 
         return services;
     }
