@@ -168,6 +168,24 @@ public static class ServiceRegistration
         services.AddForecastingServices();
         services.AddProcessManagementServices();
         services.AddUserGuideServices();
+
+        // Process timelines — temporary inline registration until Task 16 consolidates into ProcessTimelineServiceRegistration.
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
+            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.ShipmentFromSalesOrderHeader>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
+            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.ShipmentLineFromShipment>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
+            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.GoodsReceiptFromPurchaseOrderHeader>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IChainHopQuery,
+            AWBlazorApp.Features.Processes.Timelines.Application.HopQueries.GoodsReceiptLineFromGoodsReceipt>();
+        services.AddSingleton<
+            AWBlazorApp.Features.Processes.Timelines.Application.IProcessChainResolver,
+            AWBlazorApp.Features.Processes.Timelines.Application.ProcessChainResolver>();
+
         return services;
     }
 
