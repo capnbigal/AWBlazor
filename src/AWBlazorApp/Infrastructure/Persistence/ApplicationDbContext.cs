@@ -11,6 +11,7 @@ using AWBlazorApp.Features.Person.Addresses.Domain; using AWBlazorApp.Features.P
 using AWBlazorApp.Features.Forecasting.Domain;
 using AWBlazorApp.Features.Insights.Domain;
 using AWBlazorApp.Features.ProcessManagement.Domain;
+using AWBlazorApp.Features.Processes.Timelines.Domain;
 using AWBlazorApp.Features.Enterprise.Assets.Domain; using AWBlazorApp.Features.Enterprise.CostCenters.Domain; using AWBlazorApp.Features.Enterprise.OrgUnits.Domain; using AWBlazorApp.Features.Enterprise.Organizations.Domain; using AWBlazorApp.Features.Enterprise.ProductLines.Domain; using AWBlazorApp.Features.Enterprise.Stations.Domain; 
 using AWBlazorApp.Features.Inventory.Adjustments.Domain; using AWBlazorApp.Features.Inventory.Items.Domain; using AWBlazorApp.Features.Inventory.Locations.Domain; using AWBlazorApp.Features.Inventory.Lots.Domain; using AWBlazorApp.Features.Inventory.Outbox.Domain; using AWBlazorApp.Features.Inventory.Queue.Domain; using AWBlazorApp.Features.Inventory.Reports.Domain; using AWBlazorApp.Features.Inventory.Serials.Domain; using AWBlazorApp.Features.Inventory.Transactions.Domain; using AWBlazorApp.Features.Inventory.Types.Domain; 
 using AWBlazorApp.Features.Logistics.Receipts.Domain; using AWBlazorApp.Features.Logistics.Shipments.Domain; using AWBlazorApp.Features.Logistics.Transfers.Domain; 
@@ -271,6 +272,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ScorecardKpi> ScorecardKpis => Set<ScorecardKpi>();
     public DbSet<PerformanceReport> PerformanceReports => Set<PerformanceReport>();
     public DbSet<PerformanceReportRun> PerformanceReportRuns => Set<PerformanceReportRun>();
+
+    public DbSet<ProcessChainDefinition> ProcessChainDefinitions => Set<ProcessChainDefinition>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1361,6 +1364,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasOne<PerformanceReport>().WithMany().HasForeignKey(x => x.PerformanceReportId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // === Processes slice 1 ===
+        builder.Entity<ProcessChainDefinition>(b =>
+        {
+            b.HasIndex(x => x.Code).IsUnique();
+        });
+        // === end Processes ===
 
         // Performance audit logs — dbo.
     }
