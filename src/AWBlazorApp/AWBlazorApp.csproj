@@ -42,7 +42,7 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.*" PrivateAssets="all" />
 
         <!-- UI: MudBlazor -->
-        <PackageReference Include="MudBlazor" Version="9.3.0" />
+        <PackageReference Include="MudBlazor" Version="9.4.0" />
 
         <!-- SignalR client (for real-time notification listener in Blazor components) -->
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.*" />
