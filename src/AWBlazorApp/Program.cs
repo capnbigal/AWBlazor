@@ -29,6 +29,27 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .Enrich.WithClientIp()
         .WriteTo.Console();
 
+    // Export logs to the central Aspire Dashboard (OTLP) when configured. Opt-in: only
+    // active when OTEL_EXPORTER_OTLP_ENDPOINT is set, so local runs are unaffected.
+    var otlpEndpoint = context.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+    if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+    {
+        var otlpKey = context.Configuration["OTLP_API_KEY"];
+        configuration.WriteTo.OpenTelemetry(o =>
+        {
+            o.Endpoint = otlpEndpoint;
+            o.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc;
+            o.ResourceAttributes = new Dictionary<string, object>
+            {
+                ["service.name"] = context.Configuration["OTEL_SERVICE_NAME"] ?? "awblazor"
+            };
+            if (!string.IsNullOrWhiteSpace(otlpKey))
+            {
+                o.Headers = new Dictionary<string, string> { ["x-otlp-api-key"] = otlpKey };
+            }
+        });
+    }
+
     var requestLogsEnabled = context.Configuration.GetValue("RequestLogs:Enabled", defaultValue: true);
     var connStr = context.Configuration.GetConnectionString("DefaultConnection");
     if (requestLogsEnabled && !string.IsNullOrWhiteSpace(connStr))
@@ -80,6 +101,7 @@ services.AddApplicationRateLimiting();
 services.AddApplicationHsts();
 services.AddApplicationCookieHardening();
 services.AddBlazorAndServices();
+services.AddApplicationObservability(configuration);
 
 var app = builder.Build();
 
