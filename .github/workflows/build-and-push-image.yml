@@ -44,7 +44,7 @@ jobs:
 
       - name: Extract image tags + labels
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           # github.repository is "owner/repo" — metadata-action lowercases it
           # automatically so the image lands at ghcr.io/capnbigal/awblazor.
