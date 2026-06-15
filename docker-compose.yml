@@ -48,6 +48,16 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      # Served behind nginx at awblazor.alibalib.com; allow all hosts (nginx controls
+      # which hostnames reach the app). Overrides AllowedHosts in appsettings.Production.json.
+      AllowedHosts: "*"
+      # Observability — opt-in. Empty OTLP_ENDPOINT (default) = no export. Set OTLP_ENDPOINT +
+      # OTLP_API_KEY in .env to ship traces/metrics/logs to the Aspire Dashboard.
+      OTEL_SERVICE_NAME: awblazor
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTLP_ENDPOINT:-}"
+      OTEL_EXPORTER_OTLP_HEADERS: "x-otlp-api-key=${OTLP_API_KEY:-}"
+      OTLP_API_KEY: "${OTLP_API_KEY:-}"
       # Connection string — overrides appsettings.json DefaultConnection.
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=AdventureWorks2022;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True"
       # Feature flags (override as needed).
