@@ -1,5 +1,9 @@
 # Code Review — 2026-04-13 (Second Pass)
 
+> **Historical snapshot.** Point-in-time review of a 67-endpoint, pre-vertical-slice app. Superseded
+> by [../GROUND_UP_APP_REVIEW.md](../GROUND_UP_APP_REVIEW.md) (2026-06-17), which covers the current
+> ~25-domain codebase.
+
 This is the second comprehensive review of the AWBlazor codebase. The first pass led to security hardening, transactional audits, N+1 fixes, rate limiting, audit retention jobs, performance indexes, and additional tests (commits `daa2978` → `28edde4`).
 
 This pass focuses on what REMAINS to be done and what new patterns the codebase needs.

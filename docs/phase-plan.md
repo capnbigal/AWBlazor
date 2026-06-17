@@ -1,5 +1,10 @@
 # AWBlazorApp — Migration phase plan
 
+> **Historical (superseded 2026-06-17).** Kept for history; this plan predates roughly half the
+> current ~25-domain codebase and contains stale checklist items (e.g. "git init"). For the current
+> first-principles assessment and roadmap, see [GROUND_UP_APP_REVIEW.md](./GROUND_UP_APP_REVIEW.md)
+> and [IMPLEMENTATION_PLAN_ENTERPRISE_APP.md](./IMPLEMENTATION_PLAN_ENTERPRISE_APP.md).
+
 ## Status
 
 | Phase | Scope | Status |

@@ -1,6 +1,12 @@
 # Vertical-slice refactor — plan of record
 
-Status: in progress (as of 2026-04-15).
+Status: **completed / historical** (was "in progress" as of 2026-04-15).
+
+> **Historical (superseded 2026-06-17).** The vertical-slice migration this document describes is
+> done — `Features/<Domain>/<Entity>/{Api,Domain,Dtos,Application,UI}` is the live layout. The target
+> tree below also omits several domains that now exist (Quality, Maintenance, MES, Logistics, etc.).
+> For the current architecture and roadmap, see [../GROUND_UP_APP_REVIEW.md](../GROUND_UP_APP_REVIEW.md)
+> and [../IMPLEMENTATION_PLAN_ENTERPRISE_APP.md](../IMPLEMENTATION_PLAN_ENTERPRISE_APP.md).
 
 The solution is being refactored from layered-first organization (one feature
 scattered across `Data/`, `Models/`, `Services/`, `Validators/`, `Endpoints/`,
