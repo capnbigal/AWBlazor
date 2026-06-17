@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AWBlazorApp.Shared.Api;
 
 /// <summary>
-/// Simpler counterpart to <see cref="CrudEndpointBuilder.MapIntIdCrud"/> that relies on
+/// Maps the five standard CRUD-audit handlers and relies on
 /// <see cref="Persistence.AuditLogInterceptor"/> to emit audit rows automatically on
 /// <c>SaveChangesAsync</c>. Callers no longer pass per-entity audit-service delegates
 /// or <c>TAuditLog</c> types.
