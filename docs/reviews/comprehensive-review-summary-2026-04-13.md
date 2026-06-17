@@ -1,5 +1,8 @@
 # Comprehensive Review Summary — 2026-04-13
 
+> **Historical snapshot.** Counts here (67 endpoints, ~145 components, 350 tests) predate the current
+> codebase. Superseded by [../GROUND_UP_APP_REVIEW.md](../GROUND_UP_APP_REVIEW.md) (2026-06-17).
+
 **Branch:** `comprehensive-review` → merged to `main`
 **Reviewer:** Claude Opus 4.6 (1M context)
 

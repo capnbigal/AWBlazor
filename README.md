@@ -1,8 +1,13 @@
 # AWBlazorApp
 
-A Blazor Server application running on .NET 10 with EF Core and MudBlazor, backed by SQL Server
-(AdventureWorks2022). Features interactive analytics dashboards, 90+ CRUD pages with expandable
-row drill-throughs, dark mode, global search, API key authentication, and production hardening.
+A Blazor Web App (mixed Interactive Server + static SSR) running on .NET 10 with EF Core and
+MudBlazor, backed by SQL Server (AdventureWorks2022). Features interactive analytics dashboards,
+~350 routable pages across ~25 feature domains with expandable row drill-throughs, dark mode,
+global search, API key authentication, and production hardening.
+
+> For a current first-principles assessment and roadmap, see
+> [`docs/GROUND_UP_APP_REVIEW.md`](docs/GROUND_UP_APP_REVIEW.md) and
+> [`docs/IMPLEMENTATION_PLAN_ENTERPRISE_APP.md`](docs/IMPLEMENTATION_PLAN_ENTERPRISE_APP.md).
 
 Originally a ServiceStack + Vue template; migrated to a pure open-source .NET stack across seven
 phases. The current state is documented below.
@@ -41,7 +46,7 @@ git clone <this repo>
 cd AWBlazor
 dotnet restore AWBlazorApp.slnx
 dotnet build  AWBlazorApp.slnx
-dotnet test   AWBlazorApp.slnx       # 213 integration + unit tests
+dotnet test   AWBlazorApp.slnx       # full NUnit suite (~340+ cases)
 dotnet run --project src/AWBlazorApp
 ```
 
@@ -50,7 +55,8 @@ Then open `https://localhost:5001/`.
 ## First-run database behavior
 
 The app talks to **ELITE / AdventureWorks2022**. On the first start, `DatabaseInitializer`
-in `src/AWBlazorApp/Infrastructure/Persistence/DatabaseInitializer.cs` runs four steps in order:
+in `src/AWBlazorApp/Infrastructure/Persistence/DatabaseInitializer.cs` runs an 8-stage idempotent
+pipeline on every startup (plus an optional `Demo:ShiftDates` step). The five load-bearing stages are:
 
 1. **`ReconcileMigrationHistoryAsync`** — if your database already contains tables that one of
    our EF migrations would create (e.g. you ran an earlier prerelease and the `AspNetRoles`
@@ -67,6 +73,17 @@ in `src/AWBlazorApp/Infrastructure/Persistence/DatabaseInitializer.cs` runs four
 5. **`SeedAsync`** — creates Identity roles, the four seed users below, and reference data
    (Identity roles and seed users). Forecast definitions are created by users through the UI.
 
+The three additional idempotent stages — `EnsureRequiredColumnsAsync`, `EnsureCompositeIndexesAsync`,
+and `EnsureSpatialLocationSeededAsync` — run between `PatchMissingColumnsAsync` and `SeedAsync`.
+See `DatabaseInitializer.InitializeAsync` for the authoritative order.
+
+> **Security note:** The four well-known demo accounts (below) share the public password `p@55wOrd`
+> and are seeded **only in the Development environment** (or when `Seed:DemoUsers=true` is explicitly
+> set on a throwaway demo host — which logs a loud warning). In any other environment, `SeedUsersAsync`
+> creates **no** demo accounts; bootstrap a real administrator by setting `Seed:AdminEmail` +
+> `Seed:AdminPassword` (env vars / secrets), or create one manually. See `docs/GROUND_UP_APP_REVIEW.md`
+> (Major Gaps #1) for background.
+
 The `dbo.ToolSlotConfigurations` table is **excluded from migrations** (`ExcludeFromMigrations`
 in `ApplicationDbContext.OnModelCreating`). EF reads from and writes to it but never tries to
 create, alter, or drop it. The C# entity uses `[Column(...)]` attributes to map property names
@@ -74,12 +91,17 @@ to the real database column casing (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, etc.
 
 ### Seed users
 
+**Development only** (and `Seed:DemoUsers=true` demo hosts) — never created in production:
+
 | Email | Password | Roles |
 |---|---|---|
 | `test@email.com` | `p@55wOrd` | (none) |
 | `employee@email.com` | `p@55wOrd` | Employee |
 | `manager@email.com` | `p@55wOrd` | Manager, Employee |
 | `admin@email.com` | `p@55wOrd` | Admin, Manager, Employee |
+
+In production, set `Seed:AdminEmail` + `Seed:AdminPassword` (via env vars / secrets) to bootstrap an
+administrator with a password of your choosing — there is no hardcoded production password.
 
 ## Configuration
 
@@ -92,6 +114,10 @@ to the real database column casing (`Id` ↔ `CID`, `MtCode` ↔ `MT_CODE`, etc.
 | `Smtp:Bcc` | null | If set, all outbound mail is BCC'd here |
 | `Features:Hangfire` | `true` | Set to `false` to skip Hangfire registration entirely (used by tests so they don't need a real SQL Server reachable) |
 | `RequestLogs:Enabled` | `true` | Set to `false` to disable the Serilog MSSqlServer sink (used by tests) |
+| `Seed:AdminEmail` / `Seed:AdminPassword` | unset | If both are set, an admin (all roles) is bootstrapped with this email/password in any environment. The **only** way to seed an admin outside Development. Supply via env vars / user secrets — never commit a password. |
+| `Seed:DemoUsers` | `false` | Opt-in to create the well-known demo accounts (`p@55wOrd`) outside Development. **Never enable in production** — they are a known-credentials admin takeover. |
+| `Demo:ShiftDates` | `false` | If `true`, slides all AdventureWorks dates toward today on startup (`AdventureWorksDateShifter`). **Mutates data — never enable in production.** |
+| `Demo:AutofillLogin` | `false` | If `true`, the login page prefills the demo admin credentials. Dev convenience only. |
 
 Use user secrets in development to keep your SMTP credentials out of source control:
 
@@ -300,7 +326,7 @@ EF at **ELITE / AdventureWorks2022_dev**. `Features:Hangfire` and `RequestLogs:E
 to `false` via in-memory configuration overrides. Tests run against the real SQL Server instance
 -- no in-memory substitute is used.
 
-Coverage as of Phase 7 (213 tests):
+Coverage (full NUnit suite, ~340+ cases):
 
 - Page renders: `/Account/Login`, `/Account/Register`, `/Account/ForgotPassword`
 - Anonymous redirects from `/forecasts`, `/tool-slots`, `/admin`, `/admin/users`

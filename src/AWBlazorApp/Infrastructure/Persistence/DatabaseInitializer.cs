@@ -587,8 +587,9 @@ WHERE a.SpatialLocation IS NULL;";
     }
 
     /// <summary>
-    /// Test entry point — assumes the schema is already in place (e.g. via EnsureCreated for
-    /// SQLite-in-memory tests) and only seeds the reference data + identity users.
+    /// Seeds roles, identity users, and reference data after the schema is in place. Invoked at the
+    /// end of <see cref="InitializeAsync"/>. The well-known demo accounts are Development-only — see
+    /// <see cref="SeedUsersAsync"/> for the environment gating.
     /// </summary>
     public static async Task SeedAsync(IServiceProvider services, CancellationToken cancellationToken = default)
     {
@@ -635,46 +636,97 @@ WHERE a.SpatialLocation IS NULL;";
     private static async Task SeedUsersAsync(IServiceProvider sp)
     {
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        var env = sp.GetRequiredService<IHostEnvironment>();
+        var config = sp.GetRequiredService<IConfiguration>();
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseInitializer");
 
-        await EnsureUserAsync(userManager, new ApplicationUser
-        {
-            DisplayName = "Test User",
-            Email = "test@email.com",
-            UserName = "test@email.com",
-            FirstName = "Test",
-            LastName = "User",
-            EmailConfirmed = true,
-        }, "p@55wOrd");
+        // SECURITY: the four demo accounts below all share a well-known password ("p@55wOrd") that the
+        // integration tests authenticate with. They must NEVER be created in a real (non-Development)
+        // environment, where they would be a known-credentials full-admin takeover vector. They are
+        // therefore gated to Development only, with an explicit Seed:DemoUsers opt-in for throwaway
+        // demo hosts (which logs a loud warning). Production gets an admin only from configuration
+        // (Seed:AdminEmail + Seed:AdminPassword) — never a hardcoded password.
+        var demoOptIn = bool.TryParse(config["Seed:DemoUsers"], out var d) && d;
+        var seedDemoUsers = env.IsDevelopment() || demoOptIn;
 
-        await EnsureUserAsync(userManager, new ApplicationUser
+        if (seedDemoUsers)
         {
-            DisplayName = "Test Employee",
-            Email = "employee@email.com",
-            UserName = "employee@email.com",
-            FirstName = "Test",
-            LastName = "Employee",
-            EmailConfirmed = true,
-        }, "p@55wOrd", AppRoles.Employee);
+            if (!env.IsDevelopment())
+            {
+                logger.LogWarning(
+                    "Seed:DemoUsers is enabled in the '{Environment}' environment — creating demo accounts " +
+                    "(test/employee/manager/admin@email.com) with a PUBLIC well-known password. Never enable this in production.",
+                    env.EnvironmentName);
+            }
 
-        await EnsureUserAsync(userManager, new ApplicationUser
-        {
-            DisplayName = "Test Manager",
-            Email = "manager@email.com",
-            UserName = "manager@email.com",
-            FirstName = "Test",
-            LastName = "Manager",
-            EmailConfirmed = true,
-        }, "p@55wOrd", AppRoles.Manager, AppRoles.Employee);
+            await EnsureUserAsync(userManager, new ApplicationUser
+            {
+                DisplayName = "Test User",
+                Email = "test@email.com",
+                UserName = "test@email.com",
+                FirstName = "Test",
+                LastName = "User",
+                EmailConfirmed = true,
+            }, "p@55wOrd");
 
-        await EnsureUserAsync(userManager, new ApplicationUser
+            await EnsureUserAsync(userManager, new ApplicationUser
+            {
+                DisplayName = "Test Employee",
+                Email = "employee@email.com",
+                UserName = "employee@email.com",
+                FirstName = "Test",
+                LastName = "Employee",
+                EmailConfirmed = true,
+            }, "p@55wOrd", AppRoles.Employee);
+
+            await EnsureUserAsync(userManager, new ApplicationUser
+            {
+                DisplayName = "Test Manager",
+                Email = "manager@email.com",
+                UserName = "manager@email.com",
+                FirstName = "Test",
+                LastName = "Manager",
+                EmailConfirmed = true,
+            }, "p@55wOrd", AppRoles.Manager, AppRoles.Employee);
+
+            await EnsureUserAsync(userManager, new ApplicationUser
+            {
+                DisplayName = "Admin User",
+                Email = "admin@email.com",
+                UserName = "admin@email.com",
+                FirstName = "Admin",
+                LastName = "User",
+                EmailConfirmed = true,
+            }, "p@55wOrd", AppRoles.All);
+        }
+
+        // Production bootstrap: create a real administrator ONLY from configuration/secret — never a
+        // hardcoded password. Supply Seed:AdminEmail + Seed:AdminPassword via environment variables or
+        // user secrets (e.g. /opt/awblazor/.env on the droplet, alongside the connection string).
+        // EnsureUserAsync is idempotent and never resets an existing user's password, so this will not
+        // clobber a password you have already rotated.
+        var bootstrapEmail = config["Seed:AdminEmail"];
+        var bootstrapPassword = config["Seed:AdminPassword"];
+        if (!string.IsNullOrWhiteSpace(bootstrapEmail) && !string.IsNullOrWhiteSpace(bootstrapPassword))
         {
-            DisplayName = "Admin User",
-            Email = "admin@email.com",
-            UserName = "admin@email.com",
-            FirstName = "Admin",
-            LastName = "User",
-            EmailConfirmed = true,
-        }, "p@55wOrd", AppRoles.All);
+            await EnsureUserAsync(userManager, new ApplicationUser
+            {
+                DisplayName = "Administrator",
+                Email = bootstrapEmail,
+                UserName = bootstrapEmail,
+                FirstName = "Admin",
+                LastName = "User",
+                EmailConfirmed = true,
+            }, bootstrapPassword, AppRoles.All);
+            logger.LogInformation("Ensured configuration-defined bootstrap admin {Email}.", bootstrapEmail);
+        }
+        else if (!seedDemoUsers)
+        {
+            logger.LogWarning(
+                "No seed users were created in the '{Environment}' environment. Set Seed:AdminEmail and " +
+                "Seed:AdminPassword (via env vars/secrets) to bootstrap an administrator, or create one manually.",
+                env.EnvironmentName);
+        }
     }
 
     private static async Task EnsureUserAsync(

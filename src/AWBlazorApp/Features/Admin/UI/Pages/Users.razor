@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUser> UserManager
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
 
 <PageTitle>Users</PageTitle>
 
@@ -33,6 +34,16 @@
             <PropertyColumn Property="x => x.EmailConfirmed" Title="Confirmed">
                 <HeaderTemplate><GridColumnHeader TEntity="ApplicationUser" PropertyName="@nameof(UserRow.EmailConfirmed)" Title="Confirmed" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudTooltip Text="Reset password">
+                        <MudIconButton Icon="@Icons.Material.Filled.LockReset"
+                                       Size="Size.Small"
+                                       aria-label="@($"Reset password for {context.Item.Email}")"
+                                       OnClick="@(() => OpenResetPasswordAsync(context.Item))" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
         <PagerContent>
             <MudDataGridPager T="UserRow" />
@@ -92,4 +103,16 @@
     }
 
     private async Task ApplyFilter() => await grid.ReloadServerData();
+
+    private async Task OpenResetPasswordAsync(UserRow row)
+    {
+        var parameters = new DialogParameters<ResetUserPasswordDialog>
+        {
+            { x => x.UserId, row.Id },
+            { x => x.Email, row.Email },
+            { x => x.UserName, row.UserName },
+        };
+        await DialogService.ShowAsync<ResetUserPasswordDialog>("Reset password", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, CloseButton = true });
+    }
 }

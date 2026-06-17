@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```pwsh
 dotnet restore AWBlazorApp.slnx
 dotnet build   AWBlazorApp.slnx
-dotnet test    AWBlazorApp.slnx                        # all 213 tests
+dotnet test    AWBlazorApp.slnx                        # full NUnit suite (~340+ cases)
 dotnet test    AWBlazorApp.slnx --filter "FullyQualifiedName~Login_Form_Post"   # single test by name pattern
 dotnet run     --project src/AWBlazorApp                # https://localhost:5001
 ```

@@ -1,5 +1,8 @@
 # Refactor Opportunities
 
+> **Historical snapshot (2026-04-13).** Anchored on "67-fold endpoint duplication" (now ~118 files).
+> Superseded by the Refactor Roadmap in [../GROUND_UP_APP_REVIEW.md](../GROUND_UP_APP_REVIEW.md).
+
 Concrete, actionable refactors identified during the comprehensive review. Each entry has: location, problem, recommendation, effort estimate.
 
 ## H1. Generic CRUD endpoint helper
