@@ -1,0 +1,68 @@
+@using AWBlazorApp.Features.Scheduling.LineProductAssignments.Domain
+@using AWBlazorApp.Features.Scheduling.LineProductAssignments.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (Model is null)
+            {
+                <MudNumericField T="short" @bind-Value="createReq.LocationId" Label="Location ID" Min="1" Required="true" />
+                <MudNumericField T="int" @bind-Value="createReq.ProductModelId" Label="Product Model ID" Min="1" Required="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Location @Model.LocationId — Product Model @Model.ProductModelId</MudText>
+            }
+            <MudCheckBox T="bool" @bind-Value="isActive" Label="Active" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance Mud { get; set; } = null!;
+    [Parameter] public LineProductAssignmentDto? Model { get; set; }
+
+    private CreateLineProductAssignmentRequest createReq = new();
+    private bool isActive = true;
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            isActive = Model.IsActive;
+        }
+    }
+
+    private void Cancel() => Mud.Cancel();
+
+    private async Task SaveAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        if (Model is null)
+        {
+            var entity = new LineProductAssignment
+            {
+                LocationId = createReq.LocationId,
+                ProductModelId = createReq.ProductModelId,
+                IsActive = isActive,
+                ModifiedDate = DateTime.UtcNow,
+            };
+            db.LineProductAssignments.Add(entity);
+        }
+        else
+        {
+            var entity = await db.LineProductAssignments.FirstOrDefaultAsync(t => t.Id == Model.Id);
+            if (entity is null) { Snackbar.Add("Assignment no longer exists.", Severity.Warning); Mud.Cancel(); return; }
+            entity.IsActive = isActive;
+            entity.ModifiedDate = DateTime.UtcNow;
+        }
+        try { await db.SaveChangesAsync(); Mud.Close(DialogResult.Ok(true)); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Save failed: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+    }
+}

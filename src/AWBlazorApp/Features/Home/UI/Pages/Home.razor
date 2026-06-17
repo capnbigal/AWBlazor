@@ -51,6 +51,12 @@
                         <KpiCard Icon="@Icons.Material.Filled.Person" Color="Color.Default"
                                  Value="@userCount.ToString("N0")" Label="App users" />
                     </MudItem>
+                    <MudItem xs="6" sm="4" md="3">
+                        <a href="scheduling/delivery" style="text-decoration:none">
+                            <KpiCard Icon="@Icons.Material.Filled.Schedule" Color="Color.Tertiary"
+                                     Value="@($"{schedulingDrifted}/{schedulingAlerts}")" Label="Drifted / alerts" />
+                        </a>
+                    </MudItem>
                 </MudGrid>
             }
 
@@ -143,6 +149,8 @@
     private int productCount;
     private int employeeCount;
     private int customerCount;
+    private int schedulingDrifted;
+    private int schedulingAlerts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -157,6 +165,8 @@
             productCount = await db.Products.CountAsync();
             employeeCount = await db.Employees.CountAsync();
             customerCount = await db.Customers.CountAsync();
+            schedulingDrifted = await db.CurrentDeliverySchedule.CountAsync(r => r.SequenceDrift != null && r.SequenceDrift != 0);
+            schedulingAlerts = await db.SchedulingAlerts.CountAsync(a => a.AcknowledgedAt == null);
             loaded = true;
         }
         catch

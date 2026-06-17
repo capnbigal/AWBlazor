@@ -1,0 +1,35 @@
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.Dtos
+
+@if (_items is null) { <MudProgressCircular Indeterminate="true" Size="Size.Small" /> }
+else
+{
+    <MudDataGrid T="WeeklyPlanItemDto" Items="_items" Dense="true" RowsPerPage="25">
+        <Columns>
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="int" Property="x => x.PlannedSequence" Title="Seq" />
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="DateTime" Property="x => x.PlannedStart" Title="Start" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="DateTime" Property="x => x.PlannedEnd" Title="End" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="int" Property="x => x.SalesOrderId" Title="SO" />
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="int" Property="x => x.ProductId" Title="Product" />
+            <PropertyColumn T="WeeklyPlanItemDto" TProperty="short" Property="x => x.PlannedQty" Title="Qty" />
+            <TemplateColumn T="WeeklyPlanItemDto" Title="Overcap" Sortable="false">
+                <CellTemplate>@if (context.Item.OverCapacity) { <MudChip T="string" Color="Color.Warning" Size="Size.Small">!</MudChip> }</CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    [Parameter, EditorRequired] public int WeeklyPlanId { get; set; }
+    [Parameter, EditorRequired] public IDbContextFactory<ApplicationDbContext> DbFactory { get; set; } = null!;
+    private List<WeeklyPlanItemDto>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _items = await db.WeeklyPlanItems.AsNoTracking()
+            .Where(i => i.WeeklyPlanId == WeeklyPlanId)
+            .OrderBy(i => i.PlannedSequence)
+            .Select(i => i.ToDto())
+            .ToListAsync();
+    }
+}

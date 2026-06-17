@@ -1,0 +1,143 @@
+@page "/scheduling/delivery"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain
+@using AWBlazorApp.Features.Scheduling.DeliverySchedules.Dtos
+@using AWBlazorApp.Features.Scheduling.DeliverySchedules.UI.Components
+@using AWBlazorApp.Features.Scheduling.Alerts.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Delivery schedule</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Delivery schedule</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Scheduling.vw_CurrentDeliverySchedule</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="3"><MudNumericField T="short" @bind-Value="locationId" Label="Line" Min="1" Variant="Variant.Outlined" /></MudItem>
+            <MudItem xs="12" sm="3"><MudNumericField T="int" @bind-Value="weekId" Label="Week (YYYYWW)" Min="200001" Variant="Variant.Outlined" /></MudItem>
+            <MudItem xs="12" sm="3"><MudButton OnClick="LoadAsync" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh">Load</MudButton></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (_rows is not null)
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="2"><KpiCard Label="Items planned" Value="@_rows.Count.ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Drifted" Value="@_rows.Count(r => (r.SequenceDrift ?? 0) != 0).ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Over capacity" Value="@_rows.Count(r => r.PlannedStart is not null && r.PlannedEnd is not null && (r.PromiseDriftMinutes ?? 0) > 0).ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Open exceptions" Value="@_openExceptions.ToString()" /></MudItem>
+            <MudItem xs="12" sm="2"><KpiCard Label="Open alerts" Value="@_openAlerts.ToString()" /></MudItem>
+        </MudGrid>
+    }
+
+    <MudDataGrid T="CurrentDeliveryRowDto" Items="_rows" Dense="true" Hover="true" Striped="true" RowsPerPage="50" Loading="_loading">
+        <Columns>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Seq" Sortable="false">
+                <CellTemplate><DriftArrow Planned="@context.Item.PlannedSequence" Current="@context.Item.CurrentSequence" /></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Start" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.CurrentStart.HasValue) { @context.Item.CurrentStart.Value.ToString("MM-dd HH:mm") }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn T="CurrentDeliveryRowDto" TProperty="int" Property="x => x.SalesOrderId" Title="SO" />
+            <PropertyColumn T="CurrentDeliveryRowDto" TProperty="int" Property="x => x.ProductId" Title="Product" />
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Qty" Sortable="false">
+                <CellTemplate>@(context.Item.CurrentQty ?? context.Item.PlannedQty ?? 0)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Promise Δ (min)" Sortable="false">
+                <CellTemplate>
+                    @{
+                        var pd = context.Item.PromiseDriftMinutes;
+                        Color c = pd.HasValue ? (pd.Value <= 0 ? Color.Success : pd.Value <= 120 ? Color.Warning : Color.Error) : Color.Default;
+                    }
+                    <MudChip T="string" Color="@c" Size="Size.Small">@(pd?.ToString() ?? "—")</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Exception" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.ExceptionType is byte t)
+                    {
+                        var label = t switch { 1 => "Pin", 2 => "Kit hold", 3 => "Hot", _ => "?" };
+                        var col = t switch { 1 => Color.Primary, 2 => Color.Warning, 3 => Color.Error, _ => Color.Default };
+                        <MudTooltip Text="@context.Item.ExceptionReason"><MudChip T="string" Color="@col" Size="Size.Small">@label</MudChip></MudTooltip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        @if (context.Item.IsCancelled) { <MudChip T="string" Color="Color.Error" Size="Size.Small">Cxl</MudChip> }
+                        @if (context.Item.IsHotOrder) { <MudChip T="string" Color="Color.Warning" Size="Size.Small">Hot</MudChip> }
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn T="CurrentDeliveryRowDto" Title="Actions" Sortable="false">
+                <CellTemplate>
+                    @{ var row = context.Item; }
+                    <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="authCtx">
+                        <MudStack Row="true" Spacing="0">
+                            <MudTooltip Text="Pin sequence"><MudIconButton Icon="@Icons.Material.Filled.PushPin" Size="Size.Small" OnClick="@(() => OpenExceptionDialogAsync(row, 1))" /></MudTooltip>
+                            <MudTooltip Text="Kitting hold"><MudIconButton Icon="@Icons.Material.Filled.Block" Size="Size.Small" OnClick="@(() => OpenExceptionDialogAsync(row, 2))" /></MudTooltip>
+                            <MudTooltip Text="Hot order"><MudIconButton Icon="@Icons.Material.Filled.LocalFireDepartment" Size="Size.Small" OnClick="@(() => OpenExceptionDialogAsync(row, 3))" /></MudTooltip>
+                        </MudStack>
+                    </AuthorizeView>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="CurrentDeliveryRowDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private short locationId = 60;
+    private int weekId = 202618;
+    private List<CurrentDeliveryRowDto>? _rows;
+    private int _openExceptions;
+    private int _openAlerts;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true; StateHasChanged();
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var rows = await db.CurrentDeliverySchedule.AsNoTracking()
+                .Where(r => r.WeekId == weekId && r.LocationId == locationId)
+                .ToListAsync();
+            _rows = rows.OrderBy(r => r.CurrentSequence ?? int.MaxValue).Select(r => r.ToDto()).ToList();
+            _openExceptions = await db.SchedulingExceptions.CountAsync(e => e.WeekId == weekId && e.LocationId == locationId && e.ResolvedAt == null);
+            _openAlerts = await db.SchedulingAlerts.CountAsync(a => a.WeekId == weekId && a.LocationId == locationId && a.AcknowledgedAt == null);
+        }
+        finally { _loading = false; StateHasChanged(); }
+    }
+
+    private async Task OpenExceptionDialogAsync(CurrentDeliveryRowDto row, byte exceptionType)
+    {
+        var parameters = new DialogParameters<ExceptionDialog>
+        {
+            { x => x.WeekId, row.WeekId },
+            { x => x.LocationId, row.LocationId },
+            { x => x.SalesOrderDetailId, row.SalesOrderDetailId },
+            { x => x.SalesOrderId, row.SalesOrderId },
+            { x => x.ExceptionType, exceptionType },
+            { x => x.DefaultPinnedSequence, row.CurrentSequence },
+        };
+        var title = exceptionType switch { 1 => "Pin sequence", 2 => "Kitting hold", 3 => "Hot order bump", _ => "Exception" };
+        var dialog = await DialogService.ShowAsync<ExceptionDialog>(title, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            Snackbar.Add("Exception recorded.", Severity.Success);
+            await LoadAsync();
+        }
+    }
+}

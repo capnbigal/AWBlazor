@@ -19,7 +19,13 @@ using AWBlazorApp.Features.Quality.Capa.Domain; using AWBlazorApp.Features.Quali
 using AWBlazorApp.Features.Engineering.Boms.Domain; using AWBlazorApp.Features.Engineering.Deviations.Domain; using AWBlazorApp.Features.Engineering.Documents.Domain; using AWBlazorApp.Features.Engineering.Ecos.Domain; using AWBlazorApp.Features.Engineering.Routings.Domain; 
 using AWBlazorApp.Features.Maintenance.AssetProfiles.Domain; using AWBlazorApp.Features.Maintenance.Logs.Domain; using AWBlazorApp.Features.Maintenance.MeterReadings.Domain; using AWBlazorApp.Features.Maintenance.PmSchedules.Domain; using AWBlazorApp.Features.Maintenance.SpareParts.Domain; using AWBlazorApp.Features.Maintenance.WorkOrders.Domain; 
 using AWBlazorApp.Features.Performance.Kpis.Domain; using AWBlazorApp.Features.Performance.MaintenanceMetrics.Domain; using AWBlazorApp.Features.Performance.Oee.Domain; using AWBlazorApp.Features.Performance.ProductionMetrics.Domain; using AWBlazorApp.Features.Performance.Reports.Domain; using AWBlazorApp.Features.Performance.Scorecards.Domain; 
-using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain; 
+using AWBlazorApp.Features.Workforce.Announcements.Domain; using AWBlazorApp.Features.Workforce.Attendance.Domain; using AWBlazorApp.Features.Workforce.EmployeeQualifications.Domain; using AWBlazorApp.Features.Workforce.LeaveRequests.Domain; using AWBlazorApp.Features.Workforce.Qualifications.Domain; using AWBlazorApp.Features.Workforce.Alerts.Domain; using AWBlazorApp.Features.Workforce.HandoverNotes.Domain; using AWBlazorApp.Features.Workforce.StationQualifications.Domain; using AWBlazorApp.Features.Workforce.TrainingCourses.Domain; using AWBlazorApp.Features.Workforce.TrainingRecords.Domain;
+using AWBlazorApp.Features.Scheduling.LineConfigurations.Domain;
+using AWBlazorApp.Features.Scheduling.LineProductAssignments.Domain;
+using AWBlazorApp.Features.Scheduling.WeeklyPlans.Domain;
+using AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain;
+using AWBlazorApp.Features.Scheduling.Rules.Domain;
+using AWBlazorApp.Features.Scheduling.Alerts.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Process = AWBlazorApp.Features.ProcessManagement.Domain.Process;
@@ -271,6 +277,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ScorecardKpi> ScorecardKpis => Set<ScorecardKpi>();
     public DbSet<PerformanceReport> PerformanceReports => Set<PerformanceReport>();
     public DbSet<PerformanceReportRun> PerformanceReportRuns => Set<PerformanceReportRun>();
+
+    // Batch 19 — Scheduling (sched.* schema). Line configurations, product assignments, weekly plans,
+    // delivery schedule forecasts, exception overrides, and scheduling rules + alerts.
+    public DbSet<LineConfiguration> LineConfigurations => Set<LineConfiguration>();
+    public DbSet<LineProductAssignment> LineProductAssignments => Set<LineProductAssignment>();
+    public DbSet<WeeklyPlan> WeeklyPlans => Set<WeeklyPlan>();
+    public DbSet<WeeklyPlanItem> WeeklyPlanItems => Set<WeeklyPlanItem>();
+    public DbSet<SchedulingException> SchedulingExceptions => Set<SchedulingException>();
+    public DbSet<SchedulingRule> SchedulingRules => Set<SchedulingRule>();
+    public DbSet<SchedulingAlert> SchedulingAlerts => Set<SchedulingAlert>();
+    public DbSet<CurrentDeliveryScheduleRow> CurrentDeliverySchedule => Set<CurrentDeliveryScheduleRow>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -1361,6 +1378,49 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             b.HasOne<PerformanceReport>().WithMany().HasForeignKey(x => x.PerformanceReportId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // === Scheduling slice 1 ===
+        builder.Entity<LineConfiguration>(b =>
+        {
+            b.HasIndex(x => x.LocationId).IsUnique();
+        });
+
+        builder.Entity<LineProductAssignment>(b =>
+        {
+            b.HasIndex(x => new { x.LocationId, x.ProductModelId }).IsUnique();
+        });
+
+        builder.Entity<WeeklyPlan>(b =>
+        {
+            b.HasIndex(x => new { x.WeekId, x.LocationId, x.Version }).IsUnique();
+            b.HasMany(x => x.Items).WithOne(i => i.WeeklyPlan).HasForeignKey(i => i.WeeklyPlanId);
+        });
+
+        builder.Entity<WeeklyPlanItem>(b =>
+        {
+            b.HasIndex(x => new { x.WeeklyPlanId, x.PlannedSequence });
+            b.HasIndex(x => x.SalesOrderDetailId);
+        });
+
+        builder.Entity<SchedulingException>(b =>
+        {
+            // filtered unique: only active overrides
+            b.HasIndex(x => new { x.WeekId, x.LocationId, x.SalesOrderDetailId })
+                .IsUnique()
+                .HasFilter("[ResolvedAt] IS NULL");
+        });
+
+        builder.Entity<SchedulingAlert>(b =>
+        {
+            b.HasIndex(x => new { x.AcknowledgedAt, x.CreatedAt });
+        });
+
+        builder.Entity<CurrentDeliveryScheduleRow>(b =>
+        {
+            b.HasNoKey();
+            b.ToView("vw_CurrentDeliverySchedule", "Scheduling");
+        });
+        // === end Scheduling ===
 
         // Performance audit logs — dbo.
     }

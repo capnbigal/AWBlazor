@@ -1,0 +1,66 @@
+@using AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2">
+                SO <strong>@SalesOrderId</strong>, detail <strong>@SalesOrderDetailId</strong>,
+                week <strong>@WeekId</strong>, line <strong>@LocationId</strong>.
+            </MudText>
+            @if (ExceptionType == 1)
+            {
+                <MudNumericField T="int" @bind-Value="pinnedSequence" Label="Pin to sequence" Min="1" Required="true" />
+            }
+            <MudTextField T="string" @bind-Value="reason" Label="Reason (required)" Required="true" Variant="Variant.Outlined" Lines="3" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@string.IsNullOrWhiteSpace(reason)">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance Mud { get; set; } = null!;
+    [Parameter, EditorRequired] public int WeekId { get; set; }
+    [Parameter, EditorRequired] public short LocationId { get; set; }
+    [Parameter, EditorRequired] public int SalesOrderDetailId { get; set; }
+    [Parameter] public int SalesOrderId { get; set; }
+    [Parameter, EditorRequired] public byte ExceptionType { get; set; }
+    [Parameter] public int? DefaultPinnedSequence { get; set; }
+
+    private int pinnedSequence;
+    private string reason = "";
+
+    protected override void OnInitialized()
+    {
+        pinnedSequence = DefaultPinnedSequence ?? 1;
+    }
+
+    private void Cancel() => Mud.Cancel();
+
+    private async Task SaveAsync()
+    {
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User?.Identity?.Name ?? "planner";
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.SchedulingExceptions.Add(new SchedulingException
+        {
+            WeekId = WeekId,
+            LocationId = LocationId,
+            SalesOrderDetailId = SalesOrderDetailId,
+            ExceptionType = (AWBlazorApp.Features.Scheduling.DeliverySchedules.Domain.ExceptionType)ExceptionType,
+            PinnedSequence = ExceptionType == 1 ? pinnedSequence : null,
+            Reason = reason,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = user,
+        });
+        try { await db.SaveChangesAsync(); Mud.Close(DialogResult.Ok(true)); }
+        catch (DbUpdateException ex)
+        {
+            Snackbar.Add($"Could not save: {ex.InnerException?.Message ?? ex.Message}", Severity.Error);
+        }
+    }
+}

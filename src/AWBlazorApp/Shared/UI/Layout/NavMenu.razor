@@ -45,6 +45,15 @@
                 <MudNavLink Href="performance/reports" Icon="@Icons.Material.Filled.Description">Reports</MudNavLink>
             </MudNavGroup>
 
+            @* ─── Scheduling (slice 1) ──────────────────────────────────────── *@
+            <MudNavGroup Title="Scheduling" Icon="@Icons.Material.Filled.Schedule" Expanded="@IsActive("scheduling")">
+                <MudNavLink Href="scheduling/delivery" Icon="@Icons.Material.Filled.LocalShipping">Delivery schedule</MudNavLink>
+                <MudNavLink Href="scheduling/weekly-plans" Icon="@Icons.Material.Filled.CalendarMonth">Weekly plans</MudNavLink>
+                <MudNavLink Href="scheduling/lines" Icon="@Icons.Material.Filled.Factory">Lines</MudNavLink>
+                <MudNavLink Href="scheduling/line-products" Icon="@Icons.Material.Filled.Inventory2">Line products</MudNavLink>
+                <MudNavLink Href="scheduling/alerts" Icon="@Icons.Material.Filled.NotificationImportant">Alerts</MudNavLink>
+            </MudNavGroup>
+
             @* ─── My workspace ──────────────────────────────────────────────── *@
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.overline" Class="px-4">My workspace</MudText>

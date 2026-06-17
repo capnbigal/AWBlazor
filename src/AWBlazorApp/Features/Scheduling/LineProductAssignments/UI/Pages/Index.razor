@@ -1,0 +1,94 @@
+@page "/scheduling/line-products"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Scheduling.LineProductAssignments.Domain
+@using AWBlazorApp.Features.Scheduling.LineProductAssignments.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<CrudPage TDto="LineProductAssignmentDto"
+          Title="Line products"
+          Caption="Scheduling.LineProductAssignment"
+          NewButtonLabel="New assignment"
+          EditRoles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")"
+          DeleteRoles="@($"{AppRoles.Manager},{AppRoles.Admin}")"
+          LoadData="LoadServerDataAsync"
+          IdOf="row => row.Id"
+          OnCreate="OpenCreateAsync"
+          OnEdit="OpenEditAsync"
+          OnDelete="DeleteAsync"
+          EntityNameSingular="assignment"
+          DeleteConfirmMessage="@(row => $"Delete assignment #{row.Id} (location {row.LocationId}, model {row.ProductModelId})?")">
+    <Filters>
+        <MudItem xs="12" sm="4">
+            <MudNumericField T="short?" @bind-Value="filterLocationId" Label="Location ID" Variant="Variant.Outlined" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="bool?" @bind-Value="filterActive" Label="Active" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem T="bool?" Value="@null">(any)</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@true">Active</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@false">Inactive</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+    </Filters>
+    <Columns>
+        <PropertyColumn T="LineProductAssignmentDto" TProperty="int"      Property="x => x.Id" Title="Id" />
+        <PropertyColumn T="LineProductAssignmentDto" TProperty="short"    Property="x => x.LocationId" Title="Location" />
+        <PropertyColumn T="LineProductAssignmentDto" TProperty="int"      Property="x => x.ProductModelId" Title="Product Model" />
+        <TemplateColumn T="LineProductAssignmentDto" Title="Active" Sortable="false"><CellTemplate><BoolIndicator Value="context.Item.IsActive" /></CellTemplate></TemplateColumn>
+        <PropertyColumn T="LineProductAssignmentDto" TProperty="DateTime" Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" />
+    </Columns>
+</CrudPage>
+
+@code {
+    private short? filterLocationId;
+    private bool? filterActive;
+
+    private async Task<GridData<LineProductAssignmentDto>> LoadServerDataAsync(GridState<LineProductAssignmentDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.LineProductAssignments.AsNoTracking();
+        if (filterLocationId.HasValue) query = query.Where(x => x.LocationId == filterLocationId.Value);
+        if (filterActive.HasValue) query = query.Where(x => x.IsActive == filterActive.Value);
+
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(LineProductAssignmentDto.Id)             => sort.Descending ? query.OrderByDescending(x => x.Id)             : query.OrderBy(x => x.Id),
+            nameof(LineProductAssignmentDto.LocationId)     => sort.Descending ? query.OrderByDescending(x => x.LocationId)     : query.OrderBy(x => x.LocationId),
+            nameof(LineProductAssignmentDto.ProductModelId) => sort.Descending ? query.OrderByDescending(x => x.ProductModelId) : query.OrderBy(x => x.ProductModelId),
+            nameof(LineProductAssignmentDto.ModifiedDate)   => sort.Descending ? query.OrderByDescending(x => x.ModifiedDate)   : query.OrderBy(x => x.ModifiedDate),
+            _ => query.OrderBy(x => x.LocationId),
+        };
+
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
+            .Select(x => x.ToDto()).ToListAsync(ct);
+        return new GridData<LineProductAssignmentDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        var dialog = await DialogService.ShowAsync<LineProductAssignmentDialog>("New assignment",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Assignment created.", Severity.Success);
+    }
+
+    private async Task OpenEditAsync(LineProductAssignmentDto row)
+    {
+        var parameters = new DialogParameters<LineProductAssignmentDialog> { { x => x.Model, row } };
+        var dialog = await DialogService.ShowAsync<LineProductAssignmentDialog>($"Edit assignment #{row.Id}", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true });
+        if ((await dialog.Result) is { Canceled: false }) Snackbar.Add("Assignment updated.", Severity.Success);
+    }
+
+    private async Task DeleteAsync(LineProductAssignmentDto row)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.LineProductAssignments.FirstOrDefaultAsync(t => t.Id == row.Id);
+        if (entity is null) { Snackbar.Add("Already gone.", Severity.Warning); return; }
+        db.LineProductAssignments.Remove(entity);
+        try { await db.SaveChangesAsync(); Snackbar.Add("Assignment deleted.", Severity.Success); }
+        catch (DbUpdateException ex) { Snackbar.Add($"Cannot delete: {ex.InnerException?.Message ?? ex.Message}", Severity.Error); }
+    }
+}

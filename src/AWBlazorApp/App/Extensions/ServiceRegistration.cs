@@ -13,6 +13,7 @@ using AWBlazorApp.Features.Mes;
 using AWBlazorApp.Features.Performance;
 using AWBlazorApp.Features.ProcessManagement;
 using AWBlazorApp.Features.Quality;
+using AWBlazorApp.Features.Scheduling;
 using AWBlazorApp.Features.UserGuide;
 using AWBlazorApp.Features.Workforce;
 using AWBlazorApp.Infrastructure.Persistence;
@@ -39,6 +40,7 @@ public static class ServiceRegistration
         services.AddHttpContextAccessor();
         services.AddSingleton<AuditingInterceptor>();
         services.AddSingleton<AuditLogInterceptor>();
+        services.AddSingleton<AWBlazorApp.Features.Scheduling.Services.SchedulingDispatchInterceptor>();
 
         services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
         {
@@ -49,7 +51,8 @@ public static class ServiceRegistration
             });
             options.AddInterceptors(
                 sp.GetRequiredService<AuditingInterceptor>(),
-                sp.GetRequiredService<AuditLogInterceptor>());
+                sp.GetRequiredService<AuditLogInterceptor>(),
+                sp.GetRequiredService<AWBlazorApp.Features.Scheduling.Services.SchedulingDispatchInterceptor>());
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
@@ -168,6 +171,9 @@ public static class ServiceRegistration
         services.AddForecastingServices();
         services.AddProcessManagementServices();
         services.AddUserGuideServices();
+
+        services.AddSchedulingServices();
+
         return services;
     }
 

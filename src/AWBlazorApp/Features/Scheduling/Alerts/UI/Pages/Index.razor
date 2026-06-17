@@ -1,0 +1,94 @@
+@page "/scheduling/alerts"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Scheduling.Alerts.Domain
+@using AWBlazorApp.Features.Scheduling.Alerts.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Scheduling alerts</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Scheduling alerts</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Scheduling.SchedulingAlert</MudText>
+        <MudSpacer />
+        <MudCheckBox T="bool" Value="unacknowledgedOnly" ValueChanged="SetUnacknowledgedOnly" Label="Unacknowledged only" Color="Color.Primary" />
+    </MudStack>
+
+    <MudDataGrid T="SchedulingAlertDto" ServerData="LoadAsync" @ref="grid" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="50">
+        <Columns>
+            <PropertyColumn T="SchedulingAlertDto" TProperty="DateTime"  Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn T="SchedulingAlertDto" Title="Severity" Sortable="false">
+                <CellTemplate>
+                    @switch (context.Item.Severity)
+                    {
+                        case 1: <MudChip T="string" Color="Color.Info" Size="Size.Small">Info</MudChip>; break;
+                        case 2: <MudChip T="string" Color="Color.Warning" Size="Size.Small">Warning</MudChip>; break;
+                        case 3: <MudChip T="string" Color="Color.Error" Size="Size.Small">Critical</MudChip>; break;
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn T="SchedulingAlertDto" TProperty="int"       Property="x => x.WeekId" Title="Week" />
+            <PropertyColumn T="SchedulingAlertDto" TProperty="short"     Property="x => x.LocationId" Title="Line" />
+            <PropertyColumn T="SchedulingAlertDto" TProperty="int?"      Property="x => x.SalesOrderId" Title="SO" />
+            <PropertyColumn T="SchedulingAlertDto" TProperty="string"    Property="x => x.Message" Title="Message" />
+            <PropertyColumn T="SchedulingAlertDto" TProperty="DateTime?" Property="x => x.AcknowledgedAt" Title="Acked" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn T="SchedulingAlertDto" Title="Actions" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.AcknowledgedAt is null)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => AckAsync(context.Item))">Acknowledge</MudButton>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent><MudDataGridPager T="SchedulingAlertDto" /></PagerContent>
+    </MudDataGrid>
+</MudStack>
+
+@code {
+    private MudDataGrid<SchedulingAlertDto> grid = null!;
+    private bool _unacknowledgedOnly = true;
+
+    private bool unacknowledgedOnly => _unacknowledgedOnly;
+
+    private void SetUnacknowledgedOnly(bool value)
+    {
+        _unacknowledgedOnly = value;
+        _ = grid.ReloadServerData();
+    }
+
+    private async Task<GridData<SchedulingAlertDto>> LoadAsync(GridState<SchedulingAlertDto> state, CancellationToken ct)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = db.SchedulingAlerts.AsNoTracking();
+        if (_unacknowledgedOnly) query = query.Where(a => a.AcknowledgedAt == null);
+        var total = await query.CountAsync(ct);
+        var sort = state.SortDefinitions.FirstOrDefault();
+        query = sort?.SortBy switch
+        {
+            nameof(SchedulingAlertDto.CreatedAt) => sort.Descending ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt),
+            nameof(SchedulingAlertDto.WeekId)    => sort.Descending ? query.OrderByDescending(a => a.WeekId)    : query.OrderBy(a => a.WeekId),
+            nameof(SchedulingAlertDto.LocationId)=> sort.Descending ? query.OrderByDescending(a => a.LocationId): query.OrderBy(a => a.LocationId),
+            _ => query.OrderByDescending(a => a.CreatedAt),
+        };
+        var rows = await query.Skip(state.Page * state.PageSize).Take(state.PageSize)
+            .Select(a => a.ToDto()).ToListAsync(ct);
+        return new GridData<SchedulingAlertDto> { Items = rows, TotalItems = total };
+    }
+
+    private async Task AckAsync(SchedulingAlertDto row)
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User?.Identity?.Name ?? "?";
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.SchedulingAlerts.FirstOrDefaultAsync(a => a.Id == row.Id);
+        if (entity is null || entity.AcknowledgedAt is not null) return;
+        entity.AcknowledgedAt = DateTime.UtcNow;
+        entity.AcknowledgedBy = user;
+        await db.SaveChangesAsync();
+        Snackbar.Add("Alert acknowledged.", Severity.Success);
+        await grid.ReloadServerData();
+    }
+}

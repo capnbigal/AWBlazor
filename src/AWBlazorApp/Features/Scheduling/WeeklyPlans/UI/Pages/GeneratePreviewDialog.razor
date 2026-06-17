@@ -1,0 +1,53 @@
+@using AWBlazorApp.Features.Scheduling.WeeklyPlans.Application
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.body1">
+                Preview for <strong>Week @WeekId @@ Line @LocationId</strong>:
+            </MudText>
+            <MudDivider />
+            <MudStack Row="true" Spacing="4">
+                <MudStack Spacing="0"><MudText Typo="Typo.caption">Items</MudText><MudText Typo="Typo.h5">@Preview.ItemCount</MudText></MudStack>
+                <MudStack Spacing="0"><MudText Typo="Typo.caption">Over capacity</MudText><MudText Typo="Typo.h5" Color="@(Preview.OverCapacityCount > 0 ? Color.Warning : Color.Default)">@Preview.OverCapacityCount</MudText></MudStack>
+                <MudStack Spacing="0"><MudText Typo="Typo.caption">Utilization</MudText><MudText Typo="Typo.h5">@Preview.UtilizationPercent.ToString("0.0")%</MudText></MudStack>
+            </MudStack>
+            @if (Preview.Warnings.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning">
+                    @foreach (var w in Preview.Warnings) { <div>@w</div> }
+                </MudAlert>
+            }
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Committing will @(WasFutureWeek() ? "hard-delete any existing plan for this future week and insert v1" : "append a new version (history preserved)").
+            </MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Commit">Commit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance Mud { get; set; } = null!;
+    [Parameter, EditorRequired] public int WeekId { get; set; }
+    [Parameter, EditorRequired] public short LocationId { get; set; }
+    [Parameter, EditorRequired] public WeeklyPlanGenerationResult Preview { get; set; } = null!;
+
+    private void Cancel() => Mud.Cancel();
+    private void Commit() => Mud.Close(DialogResult.Ok(true));
+
+    private bool WasFutureWeek()
+    {
+        // best-effort: interpret weekId as year*100+week, convert to Monday, compare to today
+        var year = WeekId / 100;
+        var week = WeekId % 100;
+        try
+        {
+            var monday = System.Globalization.ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
+            return monday > DateTime.UtcNow.Date;
+        }
+        catch { return false; }
+    }
+}
