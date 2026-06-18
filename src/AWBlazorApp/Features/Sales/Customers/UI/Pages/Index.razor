@@ -50,7 +50,9 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4">Customers</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.Customer</MudText>
+        <AuthorizeView Roles="Admin">
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.Customer</MudText>
+        </AuthorizeView>
         <MudSpacer />
         <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/customers/history">
             View history
@@ -73,7 +75,7 @@
     <MudDataGrid T="CustomerDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="CustomerDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
+            <PropertyColumn Property="x => x.Id" Title="Id" HeaderStyle="text-align:right" CellStyle="text-align:right">
                 <HeaderTemplate><GridColumnHeader TEntity="Customer" PropertyName="@nameof(CustomerDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.AccountNumber" Title="Account #">
