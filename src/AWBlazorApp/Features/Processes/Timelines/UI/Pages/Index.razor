@@ -2,8 +2,13 @@
 @attribute [Authorize]
 @using AWBlazorApp.Features.Processes.Timelines.Dtos
 @using AWBlazorApp.Features.Processes.Timelines.UI.Components
-@using System.Net.Http.Json
-@inject HttpClient Http
+@using AWBlazorApp.Features.Processes.Timelines.Application
+@using AWBlazorApp.Features.Processes.Timelines.Domain
+@using AWBlazorApp.Infrastructure.Persistence
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
@@ -133,9 +138,24 @@
     private DateRange browseRange = new(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
     private List<ChainInstanceSummaryDto> summaries = new();
 
+    // This is a Blazor Server (interactive) page, so it calls the timeline services directly rather
+    // than its own HTTP API: a self-HTTP call carries no auth cookie (the /api/processes group is
+    // [ApiOrCookie]-authorized) and would 401. Each operation runs in a fresh DI scope so the scoped
+    // ApplicationDbContext/resolver/composer get request-like lifetimes instead of living for the
+    // whole SignalR circuit (per the IDbContextFactory discipline in CLAUDE.md).
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     protected override async Task OnInitializedAsync()
     {
-        chains = await Http.GetFromJsonAsync<List<ChainDescriptorDto>>("/api/processes/chains") ?? new();
+        using (var scope = ScopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            chains = await db.ProcessChainDefinitions.AsNoTracking()
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
+                .Select(c => new ChainDescriptorDto(c.Code, c.Name, c.Description))
+                .ToListAsync();
+        }
         if (!string.IsNullOrWhiteSpace(ChainFromUrl) && !string.IsNullOrWhiteSpace(RootFromUrl))
         {
             chainCode = ChainFromUrl;
@@ -150,10 +170,38 @@
         _loading = true; payload = null; StateHasChanged();
         try
         {
-            payload = await Http.GetFromJsonAsync<TimelinePayloadDto>(
-                $"/api/processes/chains/{chainCode}/timeline?rootEntityId={Uri.EscapeDataString(rootEntityId)}");
+            using var scope = ScopeFactory.CreateScope();
+            var sp = scope.ServiceProvider;
+            var resolver = sp.GetRequiredService<IProcessChainResolver>();
+            var composer = sp.GetRequiredService<IProcessTimelineComposer>();
+            var labelers = sp.GetRequiredService<IEnumerable<IRootEntityLabeler>>();
+            var db = sp.GetRequiredService<ApplicationDbContext>();
+
+            var instance = await resolver.ResolveAsync(chainCode, rootEntityId, CancellationToken.None);
+            var timeline = await composer.ComposeAsync(instance, CancellationToken.None);
+
+            var steps = JsonSerializer.Deserialize<ChainStep[]>(instance.Definition.StepsJson, JsonOpts) ?? Array.Empty<ChainStep>();
+            var rootStep = steps.FirstOrDefault(s => s.Role == ChainStep.RoleRoot);
+            string? label = null;
+            if (rootStep is not null)
+            {
+                var labeler = labelers.FirstOrDefault(l => l.EntityType == rootStep.Entity);
+                if (labeler is not null)
+                    label = await labeler.GetLabelAsync(db, rootEntityId, CancellationToken.None);
+            }
+
+            payload = new TimelinePayloadDto(
+                Chain: new ChainDescriptorDto(instance.Definition.Code, instance.Definition.Name, instance.Definition.Description),
+                RootEntityId: rootEntityId,
+                RootLabel: label,
+                Truncated: timeline.Truncated,
+                Events: timeline.Events.Select(e => e.ToDto()).ToList());
         }
-        catch (HttpRequestException ex)
+        catch (ChainDefinitionNotFoundException)
+        {
+            Snackbar.Add("Process chain not found.", Severity.Error);
+        }
+        catch (Exception ex)
         {
             Snackbar.Add($"Could not load timeline: {ex.Message}", Severity.Error);
         }
@@ -162,13 +210,52 @@
 
     private async Task LoadBrowseAsync()
     {
-        var qs = new List<string>();
-        if (!string.IsNullOrWhiteSpace(browseChainCode)) qs.Add($"chainCode={Uri.EscapeDataString(browseChainCode)}");
-        if (!string.IsNullOrWhiteSpace(browseOwner)) qs.Add($"owner={Uri.EscapeDataString(browseOwner)}");
-        if (browseRange.Start.HasValue) qs.Add($"since={browseRange.Start:o}");
-        if (browseRange.End.HasValue) qs.Add($"until={browseRange.End:o}");
-        var url = "/api/processes/chains/recent" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
-        summaries = await Http.GetFromJsonAsync<List<ChainInstanceSummaryDto>>(url) ?? new();
+        try
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var sp = scope.ServiceProvider;
+            var resolver = sp.GetRequiredService<IProcessChainResolver>();
+            var labelers = sp.GetRequiredService<IEnumerable<IRootEntityLabeler>>();
+            var db = sp.GetRequiredService<ApplicationDbContext>();
+
+            var query = new ChainQuery(
+                ChainCode: string.IsNullOrWhiteSpace(browseChainCode) ? null : browseChainCode,
+                Owner: string.IsNullOrWhiteSpace(browseOwner) ? null : browseOwner,
+                Since: browseRange.Start,
+                Until: browseRange.End,
+                Limit: 100);
+            var found = await resolver.RecentAsync(query, CancellationToken.None);
+
+            var chainRoots = await db.ProcessChainDefinitions.AsNoTracking()
+                .Where(c => c.IsActive)
+                .Select(c => new { c.Code, c.StepsJson })
+                .ToListAsync();
+            var rootByChain = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var c in chainRoots)
+            {
+                var steps = JsonSerializer.Deserialize<ChainStep[]>(c.StepsJson, JsonOpts) ?? Array.Empty<ChainStep>();
+                var root = steps.FirstOrDefault(s => s.Role == ChainStep.RoleRoot);
+                if (root != null) rootByChain[c.Code] = root.Entity;
+            }
+
+            var list = new List<ChainInstanceSummaryDto>(found.Count);
+            foreach (var s in found)
+            {
+                string? label = null;
+                if (rootByChain.TryGetValue(s.ChainCode, out var rootEntity))
+                {
+                    var labeler = labelers.FirstOrDefault(l => l.EntityType == rootEntity);
+                    if (labeler != null)
+                        label = await labeler.GetLabelAsync(db, s.RootEntityId, CancellationToken.None);
+                }
+                list.Add((s with { RootLabel = label }).ToDto());
+            }
+            summaries = list;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not load recent chains: {ex.Message}", Severity.Error);
+        }
         StateHasChanged();
     }
 
