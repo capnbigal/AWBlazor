@@ -112,6 +112,7 @@
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="View details"><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" aria-label="View details" Size="Size.Small" Href="@($"aw/sales-order-headers/{context.Item.Id}")" /></MudTooltip>
                         <MudTooltip Text="History"><MudIconButton Icon="@Icons.Material.Filled.History" aria-label="View history" Size="Size.Small" OnClick="@(() => OpenHistory(context.Item))" /></MudTooltip>
                         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")" Context="auth">
                             <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit" Size="Size.Small" OnClick="@(() => OpenEditAsync(context.Item))" />
