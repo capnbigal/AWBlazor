@@ -140,6 +140,8 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     private MudDataGrid<SalesOrderHeaderDto> grid = null!;
     private bool _loading = true;
     private int? filterCustomerId;

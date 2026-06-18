@@ -145,8 +145,11 @@
     private List<LookupItem<int>> _subcategories = [];
     private readonly ColumnFilterState columnFilters = new();
 
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(SearchQuery)) filterName = SearchQuery;
         _subcategories = await Lookup.GetProductSubcategoriesAsync();
     }
 

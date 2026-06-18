@@ -92,11 +92,18 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     private MudDataGrid<EmployeeDto> grid = null!;
     private bool _loading = true;
     private string? filterJobTitle;
     private string? filterLoginId;
     private readonly ColumnFilterState columnFilters = new();
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery)) filterLoginId = SearchQuery;
+    }
 
     private async Task<GridData<EmployeeDto>> LoadServerDataAsync(GridState<EmployeeDto> state, CancellationToken ct)
     {

@@ -126,6 +126,8 @@
     private List<LookupItem<int>> _territories = [];
     private readonly ColumnFilterState columnFilters = new();
 
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         _territories = await Lookup.GetSalesTerritoriesAsync();
