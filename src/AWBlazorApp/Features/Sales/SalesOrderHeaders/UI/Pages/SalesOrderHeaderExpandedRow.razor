@@ -48,7 +48,7 @@ else
                 {
                     <tr>
                         <td>@li.DetailId</td>
-                        <td><MudLink Href="aw/products" Color="Color.Primary">@li.ProductName</MudLink></td>
+                        <td><MudLink Href=@($"aw/products/{li.ProductId}") Color="Color.Primary">@li.ProductName</MudLink></td>
                         <td style="text-align:right">@li.OrderQty</td>
                         <td style="text-align:right">@li.UnitPrice.ToString("C2")</td>
                         <td style="text-align:right">@li.UnitPriceDiscount.ToString("C2")</td>
@@ -82,6 +82,7 @@ else
         lineItems = details.Select(d => new LineItemRow
         {
             DetailId = d.SalesOrderDetailId,
+            ProductId = d.ProductId,
             ProductName = products.GetValueOrDefault(d.ProductId, $"Product {d.ProductId}"),
             OrderQty = d.OrderQty,
             UnitPrice = d.UnitPrice,
@@ -96,6 +97,7 @@ else
     private sealed class LineItemRow
     {
         public int DetailId { get; init; }
+        public int ProductId { get; init; }
         public string ProductName { get; init; } = "";
         public short OrderQty { get; init; }
         public decimal UnitPrice { get; init; }

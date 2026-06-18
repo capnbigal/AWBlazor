@@ -80,7 +80,7 @@ else
                 <tbody>
                     @foreach (var o in recentOrders)
                     {
-                        <tr><td><MudLink Href="aw/sales-order-headers" Color="Color.Primary">@o.OrderNumber</MudLink></td><td>@o.OrderDate.ToString("yyyy-MM-dd")</td><td style="text-align:right">@o.TotalDue.ToString("C2")</td><td><MudLink Href="aw/customers" Color="Color.Primary">@o.CustomerId</MudLink></td></tr>
+                        <tr><td><MudLink Href=@($"aw/sales-order-headers/{o.Id}") Color="Color.Primary">@o.OrderNumber</MudLink></td><td>@o.OrderDate.ToString("yyyy-MM-dd")</td><td style="text-align:right">@o.TotalDue.ToString("C2")</td><td><MudLink Href=@($"aw/customers/{o.CustomerId}") Color="Color.Primary">@o.CustomerId</MudLink></td></tr>
                     }
                 </tbody>
             </MudSimpleTable>
@@ -124,6 +124,7 @@ else
 
         recentOrders = orders.Take(10).Select(o => new OrderRow
         {
+            Id = o.Id,
             OrderNumber = o.SalesOrderNumber,
             OrderDate = o.OrderDate,
             TotalDue = o.TotalDue,
@@ -135,6 +136,7 @@ else
 
     private sealed class OrderRow
     {
+        public int Id { get; init; }
         public string OrderNumber { get; init; } = "";
         public DateTime OrderDate { get; init; }
         public decimal TotalDue { get; init; }

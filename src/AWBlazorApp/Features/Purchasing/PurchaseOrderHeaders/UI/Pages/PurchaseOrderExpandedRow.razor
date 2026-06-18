@@ -24,7 +24,7 @@ else
             <tbody>
                 @foreach (var li in lineItems)
                 {
-                    <tr><td>@li.DetailId</td><td><MudLink Href="aw/products" Color="Color.Primary">@li.ProductName</MudLink></td><td>@li.DueDate.ToString("yyyy-MM-dd")</td><td style="text-align:right">@li.OrderQty</td><td style="text-align:right">@li.UnitPrice.ToString("C2")</td><td style="text-align:right"><strong>@li.LineTotal.ToString("C2")</strong></td><td style="text-align:right">@li.ReceivedQty.ToString("N1")</td><td style="text-align:right">@li.RejectedQty.ToString("N1")</td><td style="text-align:right">@li.StockedQty.ToString("N1")</td></tr>
+                    <tr><td>@li.DetailId</td><td><MudLink Href="@($"aw/products/{li.ProductId}")" Color="Color.Primary">@li.ProductName</MudLink></td><td>@li.DueDate.ToString("yyyy-MM-dd")</td><td style="text-align:right">@li.OrderQty</td><td style="text-align:right">@li.UnitPrice.ToString("C2")</td><td style="text-align:right"><strong>@li.LineTotal.ToString("C2")</strong></td><td style="text-align:right">@li.ReceivedQty.ToString("N1")</td><td style="text-align:right">@li.RejectedQty.ToString("N1")</td><td style="text-align:right">@li.StockedQty.ToString("N1")</td></tr>
                 }
             </tbody>
         </MudSimpleTable>
@@ -49,6 +49,7 @@ else
         lineItems = details.Select(d => new LineItemRow
         {
             DetailId = d.PurchaseOrderDetailId,
+            ProductId = d.ProductId,
             ProductName = products.GetValueOrDefault(d.ProductId, $"Product {d.ProductId}"),
             DueDate = d.DueDate,
             OrderQty = d.OrderQty,
@@ -64,6 +65,7 @@ else
     private sealed class LineItemRow
     {
         public int DetailId { get; init; }
+        public int ProductId { get; init; }
         public string ProductName { get; init; } = "";
         public DateTime DueDate { get; init; }
         public short OrderQty { get; init; }

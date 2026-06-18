@@ -53,7 +53,7 @@
                     @foreach (var o in recentOrders)
                     {
                         <tr>
-                            <td><strong>@o.Number</strong></td>
+                            <td><MudLink Href="@($"aw/sales-order-headers/{o.Id}")" Color="Color.Primary"><strong>@o.Number</strong></MudLink></td>
                             <td>@(string.IsNullOrEmpty(o.Account) ? $"#{o.CustomerId}" : o.Account)</td>
                             <td style="text-align:right">@o.Total.ToString("C0")</td>
                             <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@OrderStatusColor(o.Status)">@OrderStatusLabel(o.Status)</MudChip></td>
@@ -71,7 +71,7 @@
     private decimal revenueLast30d;
     private List<RecentOrder> recentOrders = [];
 
-    private record RecentOrder(string Number, string? Account, int CustomerId, decimal Total, byte Status, DateTime OrderDate);
+    private record RecentOrder(int Id, string Number, string? Account, int CustomerId, decimal Total, byte Status, DateTime OrderDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,7 +87,7 @@
         recentOrders = await db.SalesOrderHeaders.AsNoTracking()
             .OrderByDescending(s => s.OrderDate).ThenByDescending(s => s.Id)
             .Take(5)
-            .Select(s => new RecentOrder(s.SalesOrderNumber, s.AccountNumber, s.CustomerId, s.TotalDue, s.Status, s.OrderDate))
+            .Select(s => new RecentOrder(s.Id, s.SalesOrderNumber, s.AccountNumber, s.CustomerId, s.TotalDue, s.Status, s.OrderDate))
             .ToListAsync();
     }
 

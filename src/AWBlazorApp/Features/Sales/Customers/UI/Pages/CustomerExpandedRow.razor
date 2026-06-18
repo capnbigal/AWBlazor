@@ -61,7 +61,7 @@ else
                     @foreach (var o in recentOrders)
                     {
                         <tr>
-                            <td><MudLink Href="aw/sales-order-headers" Color="Color.Primary">@o.SalesOrderNumber</MudLink></td>
+                            <td><MudLink Href="@($"aw/sales-order-headers/{o.Id}")" Color="Color.Primary">@o.SalesOrderNumber</MudLink></td>
                             <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
                             <td>@o.Status</td>
                             <td style="text-align:right">@o.TotalDue.ToString("C2")</td>
@@ -108,6 +108,7 @@ else
 
         recentOrders = orders.Take(10).Select(o => new OrderRow
         {
+            Id = o.Id,
             SalesOrderNumber = o.SalesOrderNumber,
             OrderDate = o.OrderDate,
             Status = o.Status,
@@ -119,6 +120,7 @@ else
 
     private sealed class OrderRow
     {
+        public int Id { get; init; }
         public string SalesOrderNumber { get; init; } = "";
         public DateTime OrderDate { get; init; }
         public byte Status { get; init; }

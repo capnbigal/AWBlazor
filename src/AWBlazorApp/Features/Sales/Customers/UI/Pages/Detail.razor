@@ -59,7 +59,7 @@ else
                         @foreach (var order in orders)
                         {
                             <tr>
-                                <td>@order.SalesOrderNumber</td>
+                                <td><MudLink Href="@($"aw/sales-order-headers/{order.Id}")" Color="Color.Primary">@order.SalesOrderNumber</MudLink></td>
                                 <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
                                 <td style="text-align:right">@(order.TotalDue == 0 ? "—" : order.TotalDue.ToString("C2"))</td>
                             </tr>
