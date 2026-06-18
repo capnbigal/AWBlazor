@@ -11,13 +11,13 @@ namespace AWBlazorApp.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_SecurityAuditLogs_UserId_Timestamp",
-                table: "SecurityAuditLogs");
-
-            migrationBuilder.DropIndex(
-                name: "IX_ForecastDefinitions_Status_DeletedDate",
-                table: "ForecastDefinitions");
+            // These two composite indexes are created at runtime by
+            // DatabaseInitializer.EnsureCompositeIndexesAsync (with custom DESC ordering), not by an
+            // earlier migration — so on a fresh database they do not exist when this migration runs,
+            // and a plain DropIndex throws "index does not exist". Use idempotent DROP ... IF EXISTS
+            // so the migration is safe on both a fresh deploy and an already-seeded database.
+            migrationBuilder.Sql("DROP INDEX IF EXISTS [IX_SecurityAuditLogs_UserId_Timestamp] ON [SecurityAuditLogs];");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS [IX_ForecastDefinitions_Status_DeletedDate] ON [ForecastDefinitions];");
 
             migrationBuilder.EnsureSchema(
                 name: "org");
