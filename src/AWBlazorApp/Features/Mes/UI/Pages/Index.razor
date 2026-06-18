@@ -1,6 +1,7 @@
 @page "/mes"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Production execution</PageTitle>
 
@@ -30,10 +31,50 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="OEE rollup" Subtitle="Live Availability × Performance × Quality by station." Icon="@Icons.Material.Filled.Speed" Href="mes/oee" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW manufacturing work orders, WO routings, transaction history, scrap reasons, product documents." Icon="@Icons.Material.Filled.TableView" Href="mes/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Recent production runs</MudText>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentRuns.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No production runs yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Run #</th>
+                        <th>Kind</th>
+                        <th>Status</th>
+                        <th style="text-align:right">Produced</th>
+                        <th>Updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in recentRuns)
+                    {
+                        <tr>
+                            <td><strong>@r.RunNumber</strong></td>
+                            <td>@r.Kind</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(r.Status)">@r.Status</MudChip></td>
+                            <td style="text-align:right">@r.QuantityProduced.ToString("N2")</td>
+                            <td>@r.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"mes/runs/{r.Id}"))" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int inProgressRuns, pausedRuns, completedToday, openDowntime;
+    private List<RecentRun> recentRuns = [];
+
+    private record RecentRun(int Id, string RunNumber, ProductionRunKind Kind, ProductionRunStatus Status, decimal QuantityProduced, DateTime ModifiedDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,5 +84,21 @@
         pausedRuns = await db.ProductionRuns.CountAsync(r => r.Status == ProductionRunStatus.Paused);
         completedToday = await db.ProductionRuns.CountAsync(r => r.Status == ProductionRunStatus.Completed && r.ActualEndAt >= todayStart);
         openDowntime = await db.DowntimeEvents.CountAsync(d => d.EndAt == null);
+
+        recentRuns = await db.ProductionRuns.AsNoTracking()
+            .OrderByDescending(r => r.ModifiedDate)
+            .Take(5)
+            .Select(r => new RecentRun(r.Id, r.RunNumber, r.Kind, r.Status, r.QuantityProduced, r.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(ProductionRunStatus s) => s switch
+    {
+        ProductionRunStatus.Draft      => Color.Default,
+        ProductionRunStatus.InProgress => Color.Warning,
+        ProductionRunStatus.Paused     => Color.Secondary,
+        ProductionRunStatus.Completed  => Color.Success,
+        ProductionRunStatus.Cancelled  => Color.Error,
+        _                              => Color.Default,
+    };
 }

@@ -1,6 +1,8 @@
-@* Reusable KPI stat card with icon, value, label, and optional trend indicator. *@
+@* Reusable KPI stat card with icon, value, label, and optional trend indicator.
+   When Href is set the whole tile becomes a drill-through link to that route. *@
+@inject NavigationManager Navigation
 
-<MudPaper Class="pa-4 d-flex flex-column align-center kpi-card" Elevation="2" Style="@($"border-top: 4px solid var(--mud-palette-{ColorCss});")">
+<MudPaper Class="@PaperClass" Elevation="2" Style="@($"border-top: 4px solid var(--mud-palette-{ColorCss});")" @onclick="Navigate">
     @if (!string.IsNullOrEmpty(Icon))
     {
         <MudIcon Icon="@Icon" Color="@Color" Size="Size.Large" />
@@ -24,10 +26,20 @@
     [Parameter] public string? ValueTitle { get; set; }
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public Typo ValueTypo { get; set; } = Typo.h3;
+    /// <summary>Optional route — when set, the whole card is a clickable drill-through link.</summary>
+    [Parameter] public string? Href { get; set; }
     /// <summary>Optional trend text, e.g. "+12% vs prior period"</summary>
     [Parameter] public string? Trend { get; set; }
     /// <summary>Positive = up/green, negative = down/red, neutral = default.</summary>
     [Parameter] public TrendDirection TrendDirection { get; set; } = TrendDirection.Neutral;
+
+    private string PaperClass =>
+        "pa-4 d-flex flex-column align-center kpi-card" + (string.IsNullOrEmpty(Href) ? "" : " kpi-card--link");
+
+    private void Navigate()
+    {
+        if (!string.IsNullOrEmpty(Href)) Navigation.NavigateTo(Href);
+    }
 
     private string ColorCss => Color switch
     {

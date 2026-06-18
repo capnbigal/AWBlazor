@@ -2,8 +2,9 @@
 @typeparam TValue
 
 <MudSelect T="TValue" Value="@Value" ValueChanged="@HandleValueChanged"
-           Label="@Label" Variant="Variant.Outlined"
+           Label="@Label" Placeholder="@Placeholder" Variant="Variant.Outlined"
            Required="@Required" Clearable="@Clearable"
+           ToStringFunc="@DisplayFor"
            Dense="true" Margin="Margin.Dense">
     @foreach (var item in Items)
     {
@@ -15,10 +16,20 @@
     [Parameter] public TValue? Value { get; set; }
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? Placeholder { get; set; }
     [Parameter] public bool Required { get; set; }
     [Parameter] public bool Clearable { get; set; }
     [Parameter] public List<LookupItem<TValue>> Items { get; set; } = [];
     [Parameter] public EventCallback OnSelectionChanged { get; set; }
+
+    // Render the selected value as its matching item's display text. When the value doesn't match an
+    // item (e.g. the int default 0 used as an "unset" filter sentinel) return empty so MudSelect
+    // shows the Placeholder instead of the raw "0".
+    private string DisplayFor(TValue value)
+    {
+        var match = Items.FirstOrDefault(i => EqualityComparer<TValue>.Default.Equals(i.Id, value));
+        return match?.DisplayText ?? string.Empty;
+    }
 
     private async Task HandleValueChanged(TValue value)
     {

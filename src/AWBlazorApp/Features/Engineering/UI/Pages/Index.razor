@@ -1,6 +1,7 @@
 @page "/engineering"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Engineering</PageTitle>
 
@@ -29,10 +30,48 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Deviations" Subtitle="Time- and quantity-bounded spec exceptions — temporary, not permanent changes." Icon="@Icons.Material.Filled.RuleFolder" Href="engineering/deviations" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Raw AW BOM catalog, illustrations, cultures, units of measure." Icon="@Icons.Material.Filled.TableView" Href="engineering/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Recent engineering change orders</MudText>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentEcos.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No engineering change orders yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Modified</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var eco in recentEcos)
+                    {
+                        <tr>
+                            <td><strong>@eco.Code</strong></td>
+                            <td>@eco.Title</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(eco.Status)">@eco.Status</MudChip></td>
+                            <td>@eco.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"engineering/ecos/{eco.Id}"))" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int ecosUnderReview, activeBoms, activeRoutings, pendingDeviations;
+    private List<RecentEco> recentEcos = [];
+
+    private record RecentEco(int Id, string Code, string Title, EcoStatus Status, DateTime ModifiedDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,5 +80,21 @@
         activeBoms = await db.BomHeaders.CountAsync(b => b.IsActive);
         activeRoutings = await db.ManufacturingRoutings.CountAsync(r => r.IsActive);
         pendingDeviations = await db.DeviationRequests.CountAsync(d => d.Status == DeviationStatus.Pending);
+
+        recentEcos = await db.EngineeringChangeOrders.AsNoTracking()
+            .OrderByDescending(e => e.ModifiedDate)
+            .Take(5)
+            .Select(e => new RecentEco(e.Id, e.Code, e.Title, e.Status, e.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(EcoStatus s) => s switch
+    {
+        EcoStatus.Draft       => Color.Default,
+        EcoStatus.UnderReview => Color.Warning,
+        EcoStatus.Approved    => Color.Success,
+        EcoStatus.Rejected    => Color.Error,
+        EcoStatus.Cancelled   => Color.Dark,
+        _                     => Color.Default,
+    };
 }

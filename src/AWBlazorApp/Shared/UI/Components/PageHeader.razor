@@ -7,7 +7,9 @@
         <MudIcon Icon="@Icon" Color="@IconColor" Size="@IconSize" />
     }
     <MudStack Spacing="0">
-        <MudText Typo="@TitleTypo">@Title</MudText>
+        @* HtmlTag="h1" makes this a semantic <h1> while Typo keeps the h4 visual size, so
+           Routes.razor's <FocusOnNavigate Selector="h1"> matches and the heading outline is correct. *@
+        <MudText Typo="@TitleTypo" HtmlTag="h1">@Title</MudText>
         @if (!string.IsNullOrEmpty(Subtitle))
         {
             <MudText Typo="Typo.caption" Color="Color.Secondary">@Subtitle</MudText>

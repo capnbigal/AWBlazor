@@ -76,6 +76,7 @@
                          Labels="@scrapLabels"
                          Series="@scrapSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
+                         YAxisFormat="N1"
                          ShowGranularity="false" />
 
         @* ── Manufacturing throughput ─────────────────────────────────────── *@
@@ -84,6 +85,7 @@
                          Labels="@throughputLabels"
                          Series="@throughputSeries"
                          Periods="@(new[] { "12M", "24M", "All" })"
+                         YAxisFormat="N1"
                          ShowGranularity="false" />
 
         @* ── Product lifecycle ────────────────────────────────────────────── *@

@@ -7,10 +7,10 @@
     <MudPaper Class="pa-6" Elevation="2">
         <MudText Typo="Typo.h3" GutterBottom="true">Welcome to AWBlazor</MudText>
         <MudText Typo="Typo.body1">
-            A full-stack Blazor Server application built on .NET 10, EF Core 10, MudBlazor 9,
-            and the AdventureWorks2022 database. Create forecasts with time-series methods,
-            manage tool slot configurations, explore 90+ AdventureWorks reference tables,
-            and analyze business data through interactive analytics dashboards.
+            Your workspace for exploring data and following business processes end to end — sales
+            orders to shipments, work orders to quality, purchasing to receipts. Start from the
+            dashboards and module cards below, or use the search bar above to jump straight to a
+            customer, product, or order.
         </MudText>
     </MudPaper>
 
@@ -21,31 +21,31 @@
                 <MudGrid>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary"
-                                 Value="@salesOrderCount.ToString("N0")" Label="Sales orders" />
+                                 Value="@salesOrderCount.ToString("N0")" Label="Sales orders" Href="aw/sales-order-headers" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success"
-                                 Value="@activeForecasts.ToString("N0")" Label="Active forecasts" />
+                                 Value="@activeForecasts.ToString("N0")" Label="Active forecasts" Href="forecasts" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Construction" Color="Color.Warning"
-                                 Value="@openWorkOrders.ToString("N0")" Label="Open work orders" />
+                                 Value="@openWorkOrders.ToString("N0")" Label="Open work orders" Href="aw/work-orders" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.AccountTree" Color="Color.Secondary"
-                                 Value="@activeProcesses.ToString("N0")" Label="Active processes" />
+                                 Value="@activeProcesses.ToString("N0")" Label="Active processes" Href="processes" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary"
-                                 Value="@productCount.ToString("N0")" Label="Products" />
+                                 Value="@productCount.ToString("N0")" Label="Products" Href="aw/products" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Groups" Color="Color.Info"
-                                 Value="@employeeCount.ToString("N0")" Label="Employees" />
+                                 Value="@employeeCount.ToString("N0")" Label="Employees" Href="aw/employees" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.PeopleAlt" Color="Color.Success"
-                                 Value="@customerCount.ToString("N0")" Label="Customers" />
+                                 Value="@customerCount.ToString("N0")" Label="Customers" Href="aw/customers" />
                     </MudItem>
                     <MudItem xs="6" sm="4" md="3">
                         <KpiCard Icon="@Icons.Material.Filled.Person" Color="Color.Default"

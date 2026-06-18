@@ -56,7 +56,7 @@
 @code {
     [Parameter] public string Title { get; set; } = "Chart";
     [Parameter] public ChartType ChartType { get; set; } = ChartType.Line;
-    [Parameter] public string Height { get; set; } = "320px";
+    [Parameter] public string Height { get; set; } = "380px";
     [Parameter] public bool Loading { get; set; }
     [Parameter] public bool ShowGranularity { get; set; } = true;
 
@@ -117,8 +117,12 @@
             var palette = AWBlazorApp.Shared.Theming.ChartPalettes.BlueScale;
             return ChartType switch
             {
-                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
-                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
+                // Line: do NOT force the y-axis through zero, so trends that vary in a narrow band
+                // above 0 (scrap %, avg duration) use the full chart height instead of hugging the
+                // bottom. Markers + a heavier stroke make individual points legible; cap y ticks.
+                ChartType.Line       => new LineChartOptions       { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation, YAxisRequireZeroPoint = false, MaxNumYAxisTicks = 6, LineStrokeWidth = 3, ShowDataMarkers = true },
+                // Bar: keep a zero baseline (bars are read from 0) but cap the y-tick count.
+                ChartType.Bar        => new BarChartOptions        { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation, MaxNumYAxisTicks = 6 },
                 ChartType.StackedBar => new StackedBarChartOptions { YAxisFormat = YAxisFormat, YAxisToStringFunc = YAxisToStringFunc, ChartPalette = palette, XAxisLabelRotation = XAxisLabelRotation },
                 _                    => new ChartOptions            { ChartPalette = palette },
             };

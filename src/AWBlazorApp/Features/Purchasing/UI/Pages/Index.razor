@@ -25,10 +25,53 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Purchasing analytics" Subtitle="Spend trends, top vendors, PO volume over time." Icon="@Icons.Material.Filled.Analytics" Href="analytics/purchasing" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Vendors, product-vendor links, purchase orders, PO details, ship methods." Icon="@Icons.Material.Filled.TableView" Href="purchasing/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+        <MudText Typo="Typo.h5">Recent purchase orders</MudText>
+        <MudSpacer />
+        <MudLink Href="aw/purchase-order-headers">View all</MudLink>
+    </MudStack>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentPos.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No purchase orders yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>PO #</th>
+                        <th>Vendor</th>
+                        <th style="text-align:right">Total</th>
+                        <th>Status</th>
+                        <th>Ordered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in recentPos)
+                    {
+                        var (label, color) = StatusHelper.PurchaseOrderStatus(p.Status);
+                        <tr>
+                            <td><strong>@p.Id</strong></td>
+                            <td>#@p.VendorId</td>
+                            <td style="text-align:right">@p.Total.ToString("C0")</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@color">@label</MudChip></td>
+                            <td>@p.OrderDate.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int activeVendors, preferredVendors, totalPos, posLast30d;
+    private List<RecentPo> recentPos = [];
+
+    private record RecentPo(int Id, int VendorId, decimal Total, byte Status, DateTime OrderDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -38,5 +81,11 @@
         totalPos = await db.PurchaseOrderHeaders.CountAsync();
         var since30 = DateTime.UtcNow.AddDays(-30);
         posLast30d = await db.PurchaseOrderHeaders.CountAsync(p => p.OrderDate >= since30);
+
+        recentPos = await db.PurchaseOrderHeaders.AsNoTracking()
+            .OrderByDescending(p => p.ModifiedDate).ThenByDescending(p => p.Id)
+            .Take(5)
+            .Select(p => new RecentPo(p.Id, p.VendorId, p.TotalDue, p.Status, p.OrderDate))
+            .ToListAsync();
     }
 }

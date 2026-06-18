@@ -29,13 +29,39 @@ public static class ChartPalettes
         "#0F172A", // off-black
     ];
 
-    /// <summary>Prebuilt <see cref="ChartOptions"/> for pie/donut charts — just drop it onto
-    /// any <c>MudChart</c> via <c>ChartOptions="@ChartPalettes.BlueOptions"</c>. Safe to share
-    /// the same instance across the whole app; MudBlazor only reads from it.</summary>
-    public static readonly ChartOptions BlueOptions = new()
+    /// <summary>
+    /// Distinct-hue palette for CATEGORICAL charts (pie / donut), where each slice is an unrelated
+    /// category — territories, channels, departments — and the eye needs to tell adjacent slices
+    /// apart. The all-blue <see cref="BlueScale"/> made a 10-territory donut read as one blob;
+    /// these hues stay tasteful (brand blue leads) while being individually legible in light + dark.
+    /// </summary>
+    public static readonly string[] Categorical =
+    [
+        "#1F6FEB", // brand blue
+        "#14B8A6", // teal
+        "#F59E0B", // amber
+        "#8B5CF6", // violet
+        "#10B981", // emerald
+        "#EF4444", // red
+        "#0EA5E9", // sky
+        "#EC4899", // pink
+        "#F97316", // orange
+        "#64748B", // slate
+    ];
+
+    /// <summary>Prebuilt <see cref="ChartOptions"/> for pie/donut charts — drop onto any
+    /// <c>MudChart</c> via <c>ChartOptions="@ChartPalettes.CategoricalOptions"</c>. Uses the
+    /// distinct-hue <see cref="Categorical"/> palette so slices are distinguishable.</summary>
+    public static readonly ChartOptions CategoricalOptions = new()
     {
-        ChartPalette = BlueScale,
+        ChartPalette = Categorical,
     };
+
+    /// <summary>Back-compat alias for the pie/donut options. Existing charts reference
+    /// <c>BlueOptions</c>; it now points at <see cref="CategoricalOptions"/> so multi-slice charts
+    /// are legible (the old monochrome blue scale made adjacent slices indistinguishable). New
+    /// charts should use <see cref="CategoricalOptions"/>.</summary>
+    public static readonly ChartOptions BlueOptions = CategoricalOptions;
 
     /// <summary>
     /// Prebuilt <see cref="BarChartOptions"/> for inline bar charts that need rotated x-axis
