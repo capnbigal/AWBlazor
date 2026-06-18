@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace AWBlazorApp.App.Middleware;
@@ -38,7 +39,10 @@ public sealed class ApiProblemDetailsMiddleware(RequestDelegate next, ILogger<Ap
             {
                 DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                     "The record was modified by another user. Reload and try again."),
-                DbUpdateException => (StatusCodes.Status409Conflict,
+                // Only a genuine constraint violation (unique/PK/FK) is a 409. A DbUpdateException can
+                // also wrap a transient fault (deadlock, timeout, dropped connection) — those are
+                // server errors and must fall through to 500, not be mislabelled as conflicts.
+                DbUpdateException due when IsConstraintViolation(due) => (StatusCodes.Status409Conflict,
                     "The operation conflicts with existing data (a duplicate value, or a referenced record)."),
                 FluentValidation.ValidationException => (StatusCodes.Status400BadRequest,
                     "One or more validation errors occurred."),
@@ -56,16 +60,28 @@ public sealed class ApiProblemDetailsMiddleware(RequestDelegate next, ILogger<Ap
             context.Response.Clear();
             context.Response.StatusCode = status;
 
-            await problemDetails.WriteAsync(new ProblemDetailsContext
+            var problem = new ProblemDetails
+            {
+                Status = status,
+                Title = title,
+                Type = $"https://httpstatuses.io/{status}",
+            };
+
+            // TryWriteAsync returns false when the client's Accept header is incompatible with the
+            // problem-details writer; in that case still return a JSON body rather than a bare status.
+            var wrote = await problemDetails.TryWriteAsync(new ProblemDetailsContext
             {
                 HttpContext = context,
-                ProblemDetails = new ProblemDetails
-                {
-                    Status = status,
-                    Title = title,
-                    Type = $"https://httpstatuses.io/{status}",
-                },
+                ProblemDetails = problem,
             });
+            if (!wrote)
+            {
+                await context.Response.WriteAsJsonAsync(problem, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json");
+            }
         }
     }
+
+    // 2627 = unique constraint, 2601 = duplicate key in a unique index, 547 = FK/check constraint.
+    private static bool IsConstraintViolation(DbUpdateException ex) =>
+        ex.GetBaseException() is SqlException { Number: 2627 or 2601 or 547 };
 }
