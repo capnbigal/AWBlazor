@@ -11,7 +11,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-@inject IConfiguration Configuration
+@inject ISecurityAuditService SecurityAudit
 
 <PageTitle>Log in</PageTitle>
 
@@ -111,17 +111,7 @@
     private string? ReturnUrl { get; set; }
 
     // The static-SSR form binder can null out Input on GET; defensively re-initialize.
-    // Demo convenience: when Demo:AutofillLogin is true, prefill seed admin creds on GET.
-    protected override void OnInitialized()
-    {
-        Input ??= new();
-        var autofill = Configuration.GetValue("Demo:AutofillLogin", defaultValue: false);
-        if (autofill && HttpContext is not null && HttpMethods.IsGet(HttpContext.Request.Method))
-        {
-            Input.Email = "admin@email.com";
-            Input.Password = "p@55wOrd";
-        }
-    }
+    protected override void OnInitialized() => Input ??= new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,19 +126,28 @@
 
     public async Task LoginUser()
     {
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // lockoutOnFailure: true so repeated failures increment the access-failed counter and trip
+        // the configured lockout (5 attempts / 15 min). Every outcome is written to the security
+        // audit log — "LoginFailed" rows feed the FailedLoginsLast24h notification metric.
+        var ip = HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+        var user = await SignInManager.UserManager.FindByEmailAsync(Input.Email);
+
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
+            await SecurityAudit.LogAsync(SecurityEventTypes.LoginSucceeded, user?.Id, Input.Email, null, ip);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)
         {
             Logger.LogWarning("User account locked out.");
+            await SecurityAudit.LogAsync(SecurityEventTypes.LockedOut, user?.Id, Input.Email, "Account locked out after repeated failed attempts.", ip);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
+            await SecurityAudit.LogAsync(SecurityEventTypes.LoginFailed, user?.Id, Input.Email, "Invalid login attempt.", ip);
             errorMessage = "Error: Invalid login attempt.";
         }
     }

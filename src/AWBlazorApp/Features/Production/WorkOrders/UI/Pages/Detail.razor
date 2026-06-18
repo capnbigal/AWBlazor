@@ -43,7 +43,7 @@ else
                     </MudField>
                 </MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Product id" Variant="Variant.Text">@workOrder.ProductId</MudField></MudItem>
-                <MudItem xs="6" md="3"><MudField Label="Scrap reason" Variant="Variant.Text">@(workOrder.ScrapReasonId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Scrap reason" Variant="Variant.Text">@(scrapReasonName ?? "—")</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Order qty" Variant="Variant.Text">@workOrder.OrderQty.ToString("N0")</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Stocked qty" Variant="Variant.Text">@workOrder.StockedQty.ToString("N0")</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Scrapped qty" Variant="Variant.Text">@workOrder.ScrappedQty.ToString("N0")</MudField></MudItem>
@@ -102,6 +102,10 @@ else
                 </MudSimpleTable>
             }
         </MudPaper>
+
+        <RecordActivityTimeline Events="@activityEvents" Title="Activity" />
+
+        <RelatedLinksCard Title="Related records" Links="@relatedLinks" />
     </MudStack>
 }
 
@@ -111,7 +115,10 @@ else
     private bool loading = true;
     private WorkOrder? workOrder;
     private string productName = "";
+    private string? scrapReasonName;
     private List<RoutingStepRow> routingSteps = [];
+    private IReadOnlyList<ActivityEvent> activityEvents = [];
+    private List<RelatedLink> relatedLinks = [];
 
     private string StateLabel => workOrder?.EndDate is null ? "In progress" : "Completed";
     private Color StateColor => workOrder?.EndDate is null ? Color.Info : Color.Success;
@@ -138,6 +145,21 @@ else
 
         var product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == workOrder.ProductId);
         productName = product?.Name ?? $"Product {workOrder.ProductId}";
+
+        if (workOrder.ScrapReasonId.HasValue)
+        {
+            scrapReasonName = await db.ScrapReasons.AsNoTracking()
+                .Where(s => s.Id == workOrder.ScrapReasonId)
+                .Select(s => s.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        activityEvents = RecordActivity.ForWorkOrder(workOrder.StartDate, workOrder.DueDate, workOrder.EndDate);
+
+        relatedLinks =
+        [
+            new RelatedLink("Product: " + productName, $"aw/products/{workOrder.ProductId}", Icons.Material.Filled.Inventory2),
+        ];
 
         var locations = await db.Locations.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.Name);
         var routings = await db.WorkOrderRoutings.AsNoTracking()

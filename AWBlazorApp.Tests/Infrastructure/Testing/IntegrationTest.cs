@@ -27,6 +27,10 @@ namespace AWBlazorApp.Tests.Infrastructure.Testing;
 /// doesn't spin up background workers or spam the dev <c>RequestLogs</c> table — everything else,
 /// including EF, uses the production wiring against the real SQL Server instance.
 /// </summary>
+// Mutates the shared dev database (seeds + cleans up audit/log/tool-slot rows). Marked
+// NonParallelizable so it can never run concurrently with another DB-mutating fixture if the
+// assembly is ever opted into NUnit parallel execution.
+[NonParallelizable]
 public class IntegrationTest
 {
     private string tempContentRoot = null!;

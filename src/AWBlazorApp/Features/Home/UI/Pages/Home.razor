@@ -98,32 +98,31 @@
         <NotAuthorized>
             <MudGrid>
                 <MudItem xs="12" md="6">
-                    <MudCard>
+                    <MudCard Elevation="2" Class="mud-height-full">
                         <MudCardContent>
-                            <MudText Typo="Typo.h6">Stack</MudText>
-                            <MudList T="string" Dense="true">
-                                <MudListItem Icon="@Icons.Material.Filled.Check">.NET 10</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">Blazor Server (Interactive)</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">MudBlazor 9</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">EF Core 10 + SQL Server</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">ASP.NET Core Identity</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">Hangfire background jobs</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Check">Serilog structured logging</MudListItem>
-                            </MudList>
+                            <MudText Typo="Typo.h6" GutterBottom="true">Sign in to get started</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                                AWBlazor is an internal platform for exploring AdventureWorks data and
+                                following business processes from order to fulfillment. Sign in to reach
+                                your dashboards, records, and analytics.
+                            </MudText>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Href="Account/Login" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login">Sign in</MudButton>
+                                <MudButton Href="Account/Register" Color="Color.Primary" Variant="Variant.Outlined">Register</MudButton>
+                            </MudStack>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudCard>
+                    <MudCard Elevation="2" Class="mud-height-full">
                         <MudCardContent>
-                            <MudText Typo="Typo.h6">Features</MudText>
+                            <MudText Typo="Typo.h6" GutterBottom="true">What you can do</MudText>
                             <MudList T="string" Dense="true">
-                                <MudListItem Icon="@Icons.Material.Filled.BarChart">Sales, Production, HR & Purchasing analytics</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.TrendingUp">Forecasting with 4 methods</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Build">Tool Slot Configurations</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.Storage">90+ AdventureWorks reference tables</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.VpnKey">API key authentication</MudListItem>
-                                <MudListItem Icon="@Icons.Material.Filled.MenuBook">User guide with read tracking</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Search">Search records and pages from the top bar</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.BarChart">Sales, production, HR & purchasing analytics</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.AccountTree">Follow processes end to end with timelines</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.TableChart">Browse 90+ AdventureWorks tables with per-record detail pages</MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.TrendingUp">Build and evaluate demand forecasts</MudListItem>
                             </MudList>
                         </MudCardContent>
                     </MudCard>

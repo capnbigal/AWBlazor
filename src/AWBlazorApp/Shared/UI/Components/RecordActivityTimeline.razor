@@ -1,0 +1,33 @@
+@* Renders a synthesized record-activity timeline (see RecordActivity) as a MudTimeline. Pass the
+   ActivityEvent list a detail page computes from its loaded entity's temporal columns. Renders
+   nothing when there are no events. *@
+
+@if (Events.Count > 0)
+{
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudText Typo="Typo.h6" GutterBottom="true">@Title</MudText>
+        <MudTimeline TimelinePosition="TimelinePosition.Start" TimelineOrientation="TimelineOrientation.Vertical">
+            @foreach (var e in Events)
+            {
+                <MudTimelineItem Color="@e.Color" Size="Size.Small">
+                    <ItemContent>
+                        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@e.Icon" Color="@e.Color" Size="Size.Small" />
+                            <MudText Typo="Typo.body2"><strong>@e.Label</strong></MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(e.At?.ToString("yyyy-MM-dd") ?? "—")</MudText>
+                            @if (!string.IsNullOrEmpty(e.Detail))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">· @e.Detail</MudText>
+                            }
+                        </MudStack>
+                    </ItemContent>
+                </MudTimelineItem>
+            }
+        </MudTimeline>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "Activity";
+    [Parameter] public IReadOnlyList<ActivityEvent> Events { get; set; } = [];
+}

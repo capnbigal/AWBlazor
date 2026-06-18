@@ -12,6 +12,7 @@ using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared.Api;
 using AWBlazorApp.Shared.Services;
 using Hangfire;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -25,6 +26,20 @@ public static class MiddlewarePipeline
 {
     public static WebApplication UseApplicationMiddleware(this WebApplication app)
     {
+        // Honor X-Forwarded-For/Proto from the trusted reverse proxy FIRST, so RemoteIpAddress and the
+        // request scheme reflect the real client for everything downstream — the per-IP rate-limit
+        // partitioning and the Serilog RemoteIp enrichment are otherwise stamped with the proxy hop's
+        // address. Kestrel is only reachable through the proxy (it binds internally), so the immediate
+        // hop is trusted and we clear the default loopback-only allow-list. In local dev / tests no
+        // forwarded header is sent, so this is a no-op there.
+        var forwardedHeaders = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        };
+        forwardedHeaders.KnownNetworks.Clear();
+        forwardedHeaders.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeaders);
+
         if (app.Environment.IsDevelopment())
         {
             app.UseMigrationsEndPoint();
@@ -65,6 +80,11 @@ public static class MiddlewarePipeline
         app.UseAntiforgery();
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Turn unhandled /api/* exceptions into RFC-7807 problem+json. Sits just outside the
+        // area-permission + endpoint middleware so it wraps their execution; non-/api requests are
+        // re-thrown and fall through to the Blazor /Error page (prod) or dev exception page.
+        app.UseMiddleware<ApiProblemDetailsMiddleware>();
         app.UseMiddleware<AreaPermissionMiddleware>();
 
         // Swagger — Admin-gated in non-Development environments.

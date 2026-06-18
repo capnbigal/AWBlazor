@@ -16,6 +16,7 @@ using AWBlazorApp.Features.Processes.Timelines;
 using AWBlazorApp.Features.Quality;
 using AWBlazorApp.Features.UserGuide;
 using AWBlazorApp.Features.Workforce;
+using AWBlazorApp.Infrastructure.Authentication;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.Shared;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -26,6 +27,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.OpenApi;
 using MudBlazor.Services;
+using System.Threading.RateLimiting;
 
 namespace AWBlazorApp.App.Extensions;
 
@@ -151,6 +153,11 @@ public static class ServiceRegistration
     {
         services.AddSharedServices();
 
+        // Security-event auditing (login success/failure, lockout, password change, API-key/role
+        // changes). Stateless + DbContextFactory-backed, so a singleton is safe. Writing "LoginFailed"
+        // rows here lights up the previously-dead FailedLoginsLast24h notification metric.
+        services.AddSingleton<ISecurityAuditService, SecurityAuditService>();
+
         services.AddAdminServices();
         services.AddDashboardServices();
         services.AddInventoryServices();
@@ -179,17 +186,48 @@ public static class ServiceRegistration
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // Global limiter: throttle every /api/* caller to 100 req/min, partitioned by API key
+            // (falling back to client IP). This runs before authentication, so the authenticated
+            // user name isn't available yet — API key + IP is the right granularity here. Non-/api
+            // traffic (the Blazor circuit, static assets, SignalR) is deliberately not limited.
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                if (!context.Request.Path.StartsWithSegments("/api"))
+                    return RateLimitPartition.GetNoLimiter("non-api");
+
+                var key = context.Request.Headers["X-Api-Key"].FirstOrDefault()
+                          ?? context.Connection.RemoteIpAddress?.ToString()
+                          ?? "anonymous";
+
+                return RateLimitPartition.GetFixedWindowLimiter("api:" + key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                });
+            });
+
+            // Retained named policy for any endpoint that wants to opt in explicitly.
             options.AddFixedWindowLimiter("api", limiter =>
             {
                 limiter.PermitLimit = 100;
                 limiter.Window = TimeSpan.FromMinutes(1);
                 limiter.QueueLimit = 0;
             });
-            options.AddFixedWindowLimiter("auth", limiter =>
+
+            // "auth" (login / 2fa / external-login) is now partitioned by client IP so a single
+            // source IP gets its own 5/min budget — previously it was one global bucket shared by
+            // every user, which both under-protected brute force and could starve legitimate logins.
+            options.AddPolicy("auth", context =>
             {
-                limiter.PermitLimit = 5;
-                limiter.Window = TimeSpan.FromMinutes(1);
-                limiter.QueueLimit = 0;
+                var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter("auth:" + ip, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                });
             });
         });
         return services;
@@ -232,6 +270,10 @@ public static class ServiceRegistration
 
         services.AddMudServices();
         services.AddMemoryCache();
+
+        // RFC-7807 problem+json infrastructure. Consumed by ApiProblemDetailsMiddleware to turn
+        // unhandled /api/* exceptions into structured error responses (DbUpdateException -> 409, etc.).
+        services.AddProblemDetails();
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>

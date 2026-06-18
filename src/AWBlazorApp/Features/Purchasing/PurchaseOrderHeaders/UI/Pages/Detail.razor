@@ -45,8 +45,8 @@ else
                         <MudLink Href="@($"aw/vendors/{header.VendorId}")" Color="Color.Primary">@vendorName</MudLink>
                     </MudField>
                 </MudItem>
-                <MudItem xs="6" md="3"><MudField Label="Employee id" Variant="Variant.Text">@header.EmployeeId</MudField></MudItem>
-                <MudItem xs="6" md="3"><MudField Label="Ship method id" Variant="Variant.Text">@header.ShipMethodId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Employee id" Variant="Variant.Text">@("#" + header.EmployeeId + " — " + (employeeName ?? "?"))</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Ship method id" Variant="Variant.Text">@(shipMethodName ?? header.ShipMethodId.ToString())</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Order date" Variant="Variant.Text">@header.OrderDate.ToString("yyyy-MM-dd")</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Ship date" Variant="Variant.Text">@(header.ShipDate?.ToString("yyyy-MM-dd") ?? "—")</MudField></MudItem>
                 <MudItem xs="6" md="3"><MudField Label="Revision" Variant="Variant.Text">@header.RevisionNumber</MudField></MudItem>
@@ -106,6 +106,10 @@ else
                 </MudSimpleTable>
             }
         </MudPaper>
+
+        <RecordActivityTimeline Events="@activityEvents" Title="Activity" />
+
+        <RelatedLinksCard Title="Related records" Links="@relatedLinks" />
     </MudStack>
 }
 
@@ -115,7 +119,11 @@ else
     private bool loading = true;
     private PurchaseOrderHeader? header;
     private string vendorName = "";
+    private string? employeeName;
+    private string? shipMethodName;
     private List<LineItemRow> lines = [];
+    private IReadOnlyList<ActivityEvent> activityEvents = [];
+    private List<RelatedLink> relatedLinks = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -153,6 +161,24 @@ else
             RejectedQty = d.RejectedQty,
             StockedQty = d.StockedQty,
         }).ToList();
+
+        employeeName = await db.Employees.AsNoTracking()
+            .Where(e => e.Id == header.EmployeeId)
+            .Select(e => e.LoginID)
+            .FirstOrDefaultAsync();
+
+        shipMethodName = await db.ShipMethods.AsNoTracking()
+            .Where(s => s.Id == header.ShipMethodId)
+            .Select(s => s.Name)
+            .FirstOrDefaultAsync();
+
+        activityEvents = RecordActivity.ForPurchaseOrder(header.OrderDate, header.ShipDate, header.Status);
+
+        relatedLinks =
+        [
+            new RelatedLink(vendorName, $"aw/vendors/{header.VendorId}", Icons.Material.Filled.Business),
+            new RelatedLink(employeeName ?? $"Employee #{header.EmployeeId}", $"aw/employees/{header.EmployeeId}", Icons.Material.Filled.Badge),
+        ];
 
         loading = false;
     }
