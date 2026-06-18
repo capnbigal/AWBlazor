@@ -15,6 +15,7 @@ public static class SharedServiceRegistration
     {
         services.AddSingleton<AnalyticsCacheService>();
         services.AddSingleton<LookupService>();
+        services.AddSingleton<SearchService>();
         services.AddScoped<IDistinctValuesProvider, DistinctValuesProvider>();
 
         services.AddValidatorsFromAssemblyContaining<Program>();

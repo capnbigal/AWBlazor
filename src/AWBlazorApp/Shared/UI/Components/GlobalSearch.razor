@@ -1,12 +1,14 @@
 @inject NavigationManager Navigation
+@inject AWBlazorApp.Shared.Services.SearchService Search
 
 <MudAutocomplete T="SearchItem" Value="selectedItem" ValueChanged="OnItemSelected"
                  SearchFunc="SearchAsync"
-                 Placeholder="Search pages... (Ctrl+K)" Variant="Variant.Outlined" Dense="true"
+                 Placeholder="Search records and pages" Variant="Variant.Outlined" Dense="true"
                  Margin="Margin.Dense" Clearable="true" Immediate="true"
+                 DebounceInterval="250" MaxItems="15"
                  ToStringFunc="@(item => item?.Name ?? "")"
                  AdornmentIcon="@Icons.Material.Filled.Search"
-                 Style="max-width: 300px; border-radius: 4px;"
+                 Style="max-width: 320px; border-radius: 4px;"
                  Class="mr-3 global-search-input">
     <ItemTemplate>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -96,17 +98,24 @@
         new("Permissions", "admin/permissions", "Admin", Icons.Material.Filled.Security),
     ];
 
-    private Task<IEnumerable<SearchItem>> SearchAsync(string? value, CancellationToken ct)
+    private async Task<IEnumerable<SearchItem>> SearchAsync(string? value, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Task.FromResult(allItems.Take(10));
+            return allItems.Take(10);
 
-        var results = allItems
+        // Matching pages (the static nav inventory).
+        var pages = allItems
             .Where(i => i.Name.Contains(value, StringComparison.OrdinalIgnoreCase)
                      || i.Category.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .Take(15);
+            .Take(6)
+            .ToList();
 
-        return Task.FromResult(results);
+        // Actual data records (Products, Customers, Sales orders, Vendors, Employees, Persons).
+        var records = await Search.SearchRecordsAsync(value);
+        var recordItems = records.Select(r => new SearchItem(r.Label, r.Url, r.Category, r.Icon));
+
+        // Records first (most specific to what the user typed), then matching pages.
+        return recordItems.Concat(pages);
     }
 
     private void OnItemSelected(SearchItem? item)
