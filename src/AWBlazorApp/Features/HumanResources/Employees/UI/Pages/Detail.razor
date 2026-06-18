@@ -1,0 +1,136 @@
+@page "/aw/employees/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Employee @Id</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (employee is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/employees"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Employee #@Id</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+            Employee #@Id was not found.
+            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Navigation.NavigateTo("aw/employees"))">Back to employees</MudButton>
+        </MudAlert>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/employees"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@title</MudText>
+            <MudChip T="string" Color="@(employee.CurrentFlag ? Color.Success : Color.Default)" Variant="Variant.Filled">@(employee.CurrentFlag ? "Current" : "Inactive")</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/employees/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Login id" Variant="Variant.Text">@Display(employee.LoginID)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Job title" Variant="Variant.Text">@Display(employee.JobTitle)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="National id" Variant="Variant.Text">@Display(employee.NationalIDNumber)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Hire date" Variant="Variant.Text">@employee.HireDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Birth date" Variant="Variant.Text">@employee.BirthDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Marital status" Variant="Variant.Text">@MaritalStatusText(employee.MaritalStatus)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Gender" Variant="Variant.Text">@GenderText(employee.Gender)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Salaried" Variant="Variant.Text">@(employee.SalariedFlag ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Vacation hours" Variant="Variant.Text">@employee.VacationHours</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Sick leave hours" Variant="Variant.Text">@employee.SickLeaveHours</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Current" Variant="Variant.Text">@(employee.CurrentFlag ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Modified" Variant="Variant.Text">@employee.ModifiedDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Pay history (@payHistory.Count)</MudText>
+            @if (payHistory.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No pay history for this employee.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr>
+                            <th>Rate change date</th>
+                            <th style="text-align:right">Rate</th>
+                            <th>Pay frequency</th>
+                            <th>Modified</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pay in payHistory)
+                        {
+                            <tr>
+                                <td>@pay.RateChangeDate.ToString("yyyy-MM-dd")</td>
+                                <td style="text-align:right">@(pay.Rate == 0 ? "—" : pay.Rate.ToString("C2"))</td>
+                                <td>@PayFrequencyText(pay.PayFrequency)</td>
+                                <td>@pay.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private EmployeeDto? employee;
+    private List<EmployeePayHistory> payHistory = [];
+
+    private string title => $"Employee #{Id} — {(string.IsNullOrWhiteSpace(employee?.LoginID) ? "(no login)" : employee!.LoginID)}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == Id);
+        employee = entity?.ToDto();
+
+        if (employee is not null)
+        {
+            payHistory = await db.EmployeePayHistories.AsNoTracking()
+                .Where(p => p.BusinessEntityId == Id)
+                .OrderByDescending(p => p.RateChangeDate)
+                .Take(10)
+                .ToListAsync();
+        }
+
+        loading = false;
+    }
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+    private static string MaritalStatusText(string? code) => code switch
+    {
+        "S" => "Single",
+        "M" => "Married",
+        _ => Display(code),
+    };
+
+    private static string GenderText(string? code) => code switch
+    {
+        "F" => "Female",
+        "M" => "Male",
+        _ => Display(code),
+    };
+
+    private static string PayFrequencyText(byte frequency) => frequency switch
+    {
+        1 => "Monthly",
+        2 => "Biweekly",
+        _ => frequency.ToString(),
+    };
+}

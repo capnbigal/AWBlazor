@@ -1,0 +1,131 @@
+@page "/aw/products/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Product @(product?.Name ?? Id.ToString())</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (product is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/products"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Product not found</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning">
+            No product exists with id @Id.
+            <MudButton Color="Color.Primary" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("aw/products"))">Back to products</MudButton>
+        </MudAlert>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/products"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@product.Name</MudText>
+            <MudChip T="string" Color="@StatusColor" Variant="Variant.Filled">@StatusLabel</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/products/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Product number" Variant="Variant.Text">@product.ProductNumber</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Color" Variant="Variant.Text">@(product.Color ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Size" Variant="Variant.Text">@(product.Size ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Standard cost" Variant="Variant.Text">@Money(product.StandardCost)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="List price" Variant="Variant.Text">@Money(product.ListPrice)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Product line" Variant="Variant.Text">@(product.ProductLine ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Class" Variant="Variant.Text">@(product.Class ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Style" Variant="Variant.Text">@(product.Style ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Subcategory id" Variant="Variant.Text">@(product.ProductSubcategoryId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Model id" Variant="Variant.Text">@(product.ProductModelId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Make flag" Variant="Variant.Text">@(product.MakeFlag ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Finished goods" Variant="Variant.Text">@(product.FinishedGoodsFlag ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Days to manufacture" Variant="Variant.Text">@product.DaysToManufacture</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Sell start date" Variant="Variant.Text">@product.SellStartDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Sell end date" Variant="Variant.Text">@(product.SellEndDate?.ToString("yyyy-MM-dd") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Discontinued date" Variant="Variant.Text">@(product.DiscontinuedDate?.ToString("yyyy-MM-dd") ?? "—")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Recent work orders (@workOrders.Count)</MudText>
+                <MudSpacer />
+                <MudLink Href="aw/work-orders">All work orders</MudLink>
+            </MudStack>
+            @if (workOrders.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No work orders for this product.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr>
+                            <th>Work order</th>
+                            <th style="text-align:right">Order qty</th>
+                            <th style="text-align:right">Stocked</th>
+                            <th style="text-align:right">Scrapped</th>
+                            <th>Start date</th>
+                            <th>Due date</th>
+                            <th>End date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var wo in workOrders)
+                        {
+                            <tr>
+                                <td>@wo.Id</td>
+                                <td style="text-align:right">@wo.OrderQty</td>
+                                <td style="text-align:right">@wo.StockedQty</td>
+                                <td style="text-align:right">@wo.ScrappedQty</td>
+                                <td>@wo.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td>@wo.DueDate.ToString("yyyy-MM-dd")</td>
+                                <td>@(wo.EndDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private Product? product;
+    private List<WorkOrder> workOrders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Id);
+        if (product is not null)
+        {
+            workOrders = await db.WorkOrders.AsNoTracking()
+                .Where(w => w.ProductId == Id)
+                .OrderByDescending(w => w.StartDate)
+                .Take(10)
+                .ToListAsync();
+        }
+        loading = false;
+    }
+
+    private bool IsDiscontinued => product?.DiscontinuedDate is not null
+        || (product?.SellEndDate is { } end && end < DateTime.Today);
+
+    private Color StatusColor => IsDiscontinued ? Color.Error : Color.Success;
+
+    private string StatusLabel => IsDiscontinued ? "Discontinued" : "Active";
+
+    private static string Money(decimal value) => value == 0 ? "—" : value.ToString("C2");
+}

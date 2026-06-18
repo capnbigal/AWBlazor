@@ -1,0 +1,105 @@
+@page "/aw/customers/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(customer is null ? "Customer" : $"Customer #{customer.Id}")</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (customer is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/customers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Customer not found</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning">
+            No customer with id @Id exists.
+            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Navigation.NavigateTo("aw/customers"))">Back to customers</MudButton>
+        </MudAlert>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/customers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@title</MudText>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/customers/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Customer id" Variant="Variant.Text">@customer.Id</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Account number" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(customer.AccountNumber) ? "—" : customer.AccountNumber)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Person id" Variant="Variant.Text">@(customer.PersonId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Store id" Variant="Variant.Text">@(customer.StoreId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Territory id" Variant="Variant.Text">@(customer.TerritoryId?.ToString() ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Modified date" Variant="Variant.Text">@customer.ModifiedDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Recent sales orders (@orders.Count)</MudText>
+            @if (orders.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No sales orders for this customer.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr><th>Order #</th><th>Order date</th><th style="text-align:right">Total due</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in orders)
+                        {
+                            <tr>
+                                <td>@order.SalesOrderNumber</td>
+                                <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
+                                <td style="text-align:right">@(order.TotalDue == 0 ? "—" : order.TotalDue.ToString("C2"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Customer? customer;
+    private List<SalesOrderHeader> orders = [];
+    private bool loading = true;
+    private string title = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+            if (customer is null) return;
+
+            title = $"Customer #{customer.Id} — {customer.AccountNumber}";
+            orders = await db.SalesOrderHeaders.AsNoTracking()
+                .Where(o => o.CustomerId == Id)
+                .OrderByDescending(o => o.OrderDate)
+                .Take(10)
+                .ToListAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
