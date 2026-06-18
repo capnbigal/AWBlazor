@@ -19,7 +19,7 @@ public sealed record RecordHit(string Category, string Label, string Icon, strin
 public sealed class SearchService(LookupService lookup)
 {
     /// <summary>
-    /// Searches Products, Customers, Sales orders, Vendors, Employees, and Persons for the query and
+    /// Searches Products, Customers, Sales orders, Vendors, Employees, Persons, Work orders, and Purchase orders for the query and
     /// returns up to <paramref name="perCategory"/> hits per category. Each hit deep-links to that
     /// record's detail page (aw/&lt;entity&gt;/{id}). Returns empty for queries shorter than 2 characters.
     /// </summary>
@@ -34,7 +34,9 @@ public sealed class SearchService(LookupService lookup)
         var vendors   = lookup.SearchVendorsAsync(query);
         var employees = lookup.SearchEmployeesAsync(query);
         var persons   = lookup.SearchPersonsAsync(query);
-        await Task.WhenAll(products, customers, orders, vendors, employees, persons);
+        var workOrders     = lookup.SearchWorkOrdersAsync(query);
+        var purchaseOrders = lookup.SearchPurchaseOrdersAsync(query);
+        await Task.WhenAll(products, customers, orders, vendors, employees, persons, workOrders, purchaseOrders);
 
         var hits = new List<RecordHit>();
 
@@ -51,6 +53,8 @@ public sealed class SearchService(LookupService lookup)
         Add(vendors,   "Vendor",      Icons.Material.Filled.Business,   "aw/vendors");
         Add(employees, "Employee",    Icons.Material.Filled.Badge,      "aw/employees");
         Add(persons,   "Person",      Icons.Material.Filled.Person,     "aw/persons");
+        Add(workOrders,     "Work order",     Icons.Material.Filled.Construction, "aw/work-orders");
+        Add(purchaseOrders, "Purchase order", Icons.Material.Filled.Receipt,      "aw/purchase-order-headers");
 
         return hits;
     }

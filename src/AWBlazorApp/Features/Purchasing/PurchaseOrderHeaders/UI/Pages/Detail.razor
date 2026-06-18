@@ -1,0 +1,175 @@
+@page "/aw/purchase-order-headers/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>PO #@Id</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (header is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/purchase-order-headers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Purchase order not found</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning">
+            No purchase order was found with id @Id.
+        </MudAlert>
+        <div>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowBack" Href="aw/purchase-order-headers">Back to list</MudButton>
+        </div>
+    </MudStack>
+}
+else
+{
+    var (statusLabel, statusColor) = StatusHelper.PurchaseOrderStatus(header.Status);
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/purchase-order-headers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">PO #@header.Id</MudText>
+            <MudChip T="string" Color="@statusColor" Variant="Variant.Filled">@statusLabel</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Timeline" Href="@($"/processes/timeline?chain=purchase-to-receive&root={Id}")">Process timeline</MudButton>
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/purchase-order-headers/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Status" Variant="Variant.Text">@statusLabel</MudField></MudItem>
+                <MudItem xs="6" md="3">
+                    <MudField Label="Vendor" Variant="Variant.Text">
+                        <MudLink Href="@($"aw/vendors/{header.VendorId}")" Color="Color.Primary">@vendorName</MudLink>
+                    </MudField>
+                </MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Employee id" Variant="Variant.Text">@header.EmployeeId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Ship method id" Variant="Variant.Text">@header.ShipMethodId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Order date" Variant="Variant.Text">@header.OrderDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Ship date" Variant="Variant.Text">@(header.ShipDate?.ToString("yyyy-MM-dd") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Revision" Variant="Variant.Text">@header.RevisionNumber</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Modified" Variant="Variant.Text">@header.ModifiedDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Subtotal" Variant="Variant.Text">@Money(header.SubTotal)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Tax" Variant="Variant.Text">@Money(header.TaxAmt)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Freight" Variant="Variant.Text">@Money(header.Freight)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Total due" Variant="Variant.Text">@Money(header.TotalDue)</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Line items (@lines.Count)</MudText>
+            @if (lines.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No line items for this purchase order.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="mt-2">
+                    <thead>
+                        <tr>
+                            <th>Detail #</th>
+                            <th>Product</th>
+                            <th>Due date</th>
+                            <th style="text-align:right">Qty</th>
+                            <th style="text-align:right">Unit price</th>
+                            <th style="text-align:right">Line total</th>
+                            <th style="text-align:right">Received</th>
+                            <th style="text-align:right">Rejected</th>
+                            <th style="text-align:right">Stocked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var li in lines)
+                        {
+                            <tr>
+                                <td>@li.DetailId</td>
+                                <td><MudLink Href="@($"aw/products/{li.ProductId}")" Color="Color.Primary">@li.ProductName</MudLink></td>
+                                <td>@li.DueDate.ToString("yyyy-MM-dd")</td>
+                                <td style="text-align:right">@li.OrderQty</td>
+                                <td style="text-align:right">@li.UnitPrice.ToString("C2")</td>
+                                <td style="text-align:right"><strong>@li.LineTotal.ToString("C2")</strong></td>
+                                <td style="text-align:right">@li.ReceivedQty.ToString("N1")</td>
+                                <td style="text-align:right">@li.RejectedQty.ToString("N1")</td>
+                                <td style="text-align:right">@li.StockedQty.ToString("N1")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" style="text-align:right"><strong>Total:</strong></td>
+                            <td style="text-align:right"><strong>@lines.Sum(x => x.LineTotal).ToString("C2")</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private PurchaseOrderHeader? header;
+    private string vendorName = "";
+    private List<LineItemRow> lines = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        header = await db.PurchaseOrderHeaders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        if (header is null)
+        {
+            loading = false;
+            return;
+        }
+
+        vendorName = await db.Vendors.AsNoTracking()
+            .Where(v => v.Id == header.VendorId)
+            .Select(v => v.Name)
+            .FirstOrDefaultAsync() ?? $"Vendor {header.VendorId}";
+
+        var products = await db.Products.AsNoTracking()
+            .Select(p => new { p.Id, p.Name })
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+        var details = await db.PurchaseOrderDetails.AsNoTracking()
+            .Where(d => d.PurchaseOrderId == Id)
+            .OrderBy(d => d.PurchaseOrderDetailId)
+            .ToListAsync();
+
+        lines = details.Select(d => new LineItemRow
+        {
+            DetailId = d.PurchaseOrderDetailId,
+            ProductId = d.ProductId,
+            ProductName = products.GetValueOrDefault(d.ProductId, $"Product {d.ProductId}"),
+            DueDate = d.DueDate,
+            OrderQty = d.OrderQty,
+            UnitPrice = d.UnitPrice,
+            LineTotal = d.LineTotal,
+            ReceivedQty = d.ReceivedQty,
+            RejectedQty = d.RejectedQty,
+            StockedQty = d.StockedQty,
+        }).ToList();
+
+        loading = false;
+    }
+
+    private static string Money(decimal value) => value == 0 ? "—" : value.ToString("C2");
+
+    private sealed class LineItemRow
+    {
+        public int DetailId { get; init; }
+        public int ProductId { get; init; }
+        public string ProductName { get; init; } = "";
+        public DateTime DueDate { get; init; }
+        public short OrderQty { get; init; }
+        public decimal UnitPrice { get; init; }
+        public decimal LineTotal { get; init; }
+        public decimal ReceivedQty { get; init; }
+        public decimal RejectedQty { get; init; }
+        public decimal StockedQty { get; init; }
+    }
+}

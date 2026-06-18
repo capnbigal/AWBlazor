@@ -45,7 +45,7 @@ else
                 <tbody>
                     @foreach (var po in recentPos)
                     {
-                        <tr><td><MudLink Href="aw/purchase-order-headers" Color="Color.Primary">@po.Id</MudLink></td><td>@po.OrderDate.ToString("yyyy-MM-dd")</td><td>@po.Status</td><td style="text-align:right">@po.SubTotal.ToString("C2")</td><td style="text-align:right">@po.TotalDue.ToString("C2")</td></tr>
+                        <tr><td><MudLink Href="@($"aw/purchase-order-headers/{po.Id}")" Color="Color.Primary">@po.Id</MudLink></td><td>@po.OrderDate.ToString("yyyy-MM-dd")</td><td>@po.Status</td><td style="text-align:right">@po.SubTotal.ToString("C2")</td><td style="text-align:right">@po.TotalDue.ToString("C2")</td></tr>
                     }
                 </tbody>
             </MudSimpleTable>
