@@ -25,11 +25,53 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Sales analytics" Subtitle="Revenue trends, territories, top customers, order volume over time." Icon="@Icons.Material.Filled.Analytics" Href="analytics/sales" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="Orders, customers, sales persons, stores, territories, currencies, tax rates, offers, carts, credit cards." Icon="@Icons.Material.Filled.TableView" Href="sales/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+        <MudText Typo="Typo.h5">Recent sales orders</MudText>
+        <MudSpacer />
+        <MudLink Href="aw/sales-order-headers">View all</MudLink>
+    </MudStack>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentOrders.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No sales orders yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th style="text-align:right">Total</th>
+                        <th>Status</th>
+                        <th>Ordered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in recentOrders)
+                    {
+                        <tr>
+                            <td><strong>@o.Number</strong></td>
+                            <td>@(string.IsNullOrEmpty(o.Account) ? $"#{o.CustomerId}" : o.Account)</td>
+                            <td style="text-align:right">@o.Total.ToString("C0")</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@OrderStatusColor(o.Status)">@OrderStatusLabel(o.Status)</MudChip></td>
+                            <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int totalOrders, ordersLast30d, customers;
     private decimal revenueLast30d;
+    private List<RecentOrder> recentOrders = [];
+
+    private record RecentOrder(string Number, string? Account, int CustomerId, decimal Total, byte Status, DateTime OrderDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,7 +83,27 @@
         revenueLast30d = await db.SalesOrderHeaders
             .Where(s => s.OrderDate >= since30)
             .SumAsync(s => (decimal?)s.TotalDue) ?? 0m;
+
+        recentOrders = await db.SalesOrderHeaders.AsNoTracking()
+            .OrderByDescending(s => s.OrderDate).ThenByDescending(s => s.Id)
+            .Take(5)
+            .Select(s => new RecentOrder(s.SalesOrderNumber, s.AccountNumber, s.CustomerId, s.TotalDue, s.Status, s.OrderDate))
+            .ToListAsync();
     }
+
+    private static string OrderStatusLabel(byte s) => s switch
+    {
+        1 => "In process", 2 => "Approved", 3 => "Backordered",
+        4 => "Rejected",   5 => "Shipped",  6 => "Cancelled",
+        _ => $"Status {s}",
+    };
+
+    private static Color OrderStatusColor(byte s) => s switch
+    {
+        1 => Color.Info,  2 => Color.Primary, 3 => Color.Warning,
+        4 => Color.Error, 5 => Color.Success, 6 => Color.Default,
+        _ => Color.Default,
+    };
 
     private static string FormatMoney(decimal v) => v switch
     {

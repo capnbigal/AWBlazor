@@ -1,6 +1,7 @@
 @page "/quality"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Quality</PageTitle>
 
@@ -27,10 +28,52 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Non-conformances" Subtitle="Disposition: Scrap / Quarantine auto-post to inv ledger." Icon="@Icons.Material.Filled.Warning" Href="quality/ncrs" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="CAPA cases" Subtitle="Investigation → CorrectiveAction → Verification → Closed." Icon="@Icons.Material.Filled.Engineering" Href="quality/capa" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Recent NCRs</MudText>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentNcrs.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No non-conformances yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>NCR #</th>
+                        <th>Item</th>
+                        <th style="text-align:right">Quantity</th>
+                        <th>Disposition</th>
+                        <th>Status</th>
+                        <th>Modified</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in recentNcrs)
+                    {
+                        <tr>
+                            <td><strong>@n.Number</strong></td>
+                            <td>#@n.ItemId</td>
+                            <td style="text-align:right">@n.Quantity.ToString("N4")</td>
+                            <td>@(n.Disposition?.ToString() ?? "—")</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(n.Status)">@n.Status</MudChip></td>
+                            <td>@n.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"quality/ncrs/{n.Id}"))" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int pendingInspections, inProgressInspections, openNcrs, activeCapas;
+    private List<RecentNcr> recentNcrs = [];
+
+    private record RecentNcr(int Id, string Number, int ItemId, decimal Quantity, NonConformanceDisposition? Disposition, NonConformanceStatus Status, DateTime ModifiedDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,5 +82,20 @@
         inProgressInspections = await db.Inspections.CountAsync(i => i.Status == InspectionStatus.InProgress);
         openNcrs = await db.NonConformances.CountAsync(n => n.Status != NonConformanceStatus.Closed);
         activeCapas = await db.CapaCases.CountAsync(c => c.Status != CapaStatus.Closed);
+
+        recentNcrs = await db.NonConformances.AsNoTracking()
+            .OrderByDescending(n => n.ModifiedDate).ThenByDescending(n => n.Id)
+            .Take(5)
+            .Select(n => new RecentNcr(n.Id, n.NcrNumber, n.InventoryItemId, n.Quantity, n.Disposition, n.Status, n.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(NonConformanceStatus s) => s switch
+    {
+        NonConformanceStatus.Open          => Color.Error,
+        NonConformanceStatus.Investigating => Color.Warning,
+        NonConformanceStatus.Dispositioned => Color.Info,
+        NonConformanceStatus.Closed        => Color.Success,
+        _                                  => Color.Default,
+    };
 }

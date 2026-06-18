@@ -1,6 +1,7 @@
 @page "/logistics"
 @attribute [Authorize]
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Logistics</PageTitle>
 
@@ -26,6 +27,43 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Shipments" Subtitle="Outbound to customers — pick, pack, ship." Icon="@Icons.Material.Filled.Outbox" Href="logistics/shipments" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Stock transfers" Subtitle="Inter-location, inter-org — two-phase with in-transit state." Icon="@Icons.Material.Filled.SyncAlt" Href="logistics/transfers" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudText Typo="Typo.h5" Class="mt-3">Recent shipments</MudText>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentShipments.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No shipments yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Shipment #</th>
+                        <th>SO</th>
+                        <th>Tracking</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in recentShipments)
+                    {
+                        <tr>
+                            <td><strong>@s.Number</strong></td>
+                            <td>@(s.SalesOrderId is null ? "—" : $"#{s.SalesOrderId}")</td>
+                            <td>@(string.IsNullOrEmpty(s.TrackingNumber) ? "—" : s.TrackingNumber)</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(s.Status)">@s.Status</MudChip></td>
+                            <td>@s.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo($"logistics/shipments/{s.Id}"))" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
@@ -33,6 +71,9 @@
     private int shipmentInProgress, shipmentShipped30;
     private int transferInTransit, transferCompleted30;
     private int postedLast30;
+    private List<RecentShipment> recentShipments = [];
+
+    private record RecentShipment(int Id, string Number, int? SalesOrderId, string? TrackingNumber, ShipmentStatus Status, DateTime ModifiedDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -49,5 +90,22 @@
         transferCompleted30 = await db.StockTransfers.CountAsync(t => t.Status == StockTransferStatus.Completed && t.CompletedAt >= since30);
 
         postedLast30 = receiptPosted30Count + shipmentShipped30 + transferCompleted30;
+
+        recentShipments = await db.Shipments.AsNoTracking()
+            .OrderByDescending(s => s.ModifiedDate).ThenByDescending(s => s.Id)
+            .Take(5)
+            .Select(s => new RecentShipment(s.Id, s.ShipmentNumber, s.SalesOrderId, s.TrackingNumber, s.Status, s.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(ShipmentStatus s) => s switch
+    {
+        ShipmentStatus.Draft     => Color.Default,
+        ShipmentStatus.Picked    => Color.Info,
+        ShipmentStatus.Packed    => Color.Primary,
+        ShipmentStatus.Shipped   => Color.Warning,
+        ShipmentStatus.Delivered => Color.Success,
+        ShipmentStatus.Cancelled => Color.Error,
+        _                        => Color.Default,
+    };
 }

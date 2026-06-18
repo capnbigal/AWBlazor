@@ -35,10 +35,54 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Announcements" Subtitle="Broadcast messages across org / org unit." Icon="@Icons.Material.Filled.Campaign" Href="workforce/announcements" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW employees, pay history, job candidates, departments, shifts." Icon="@Icons.Material.Filled.TableView" Href="workforce/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+        <MudText Typo="Typo.h5">Recent qualification alerts</MudText>
+        <MudSpacer />
+        <MudLink Href="workforce/qualification-alerts">View all</MudLink>
+    </MudStack>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentAlerts.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No qualification alerts yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Employee</th>
+                        <th>Station</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Raised</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in recentAlerts)
+                    {
+                        <tr>
+                            <td><strong>@a.Id</strong></td>
+                            <td>@a.BusinessEntityId</td>
+                            <td>@a.StationId</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ReasonColor(a.Reason)">@a.Reason</MudChip></td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(a.Status)">@a.Status</MudChip></td>
+                            <td>@a.RaisedAt.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int openAlerts, expiringQuals, pendingLeaves, unackHandovers;
+    private List<RecentAlert> recentAlerts = [];
+
+    private record RecentAlert(long Id, int BusinessEntityId, int StationId, QualificationAlertReason Reason, QualificationAlertStatus Status, DateTime RaisedAt);
 
     protected override async Task OnInitializedAsync()
     {
@@ -48,5 +92,27 @@
         expiringQuals = await db.EmployeeQualifications.CountAsync(q => q.ExpiresOn != null && q.ExpiresOn <= cutoff);
         pendingLeaves = await db.LeaveRequests.CountAsync(l => l.Status == LeaveStatus.Pending);
         unackHandovers = await db.ShiftHandoverNotes.CountAsync(h => h.RequiresAcknowledgment && h.AcknowledgedAt == null);
+
+        recentAlerts = await db.QualificationAlerts.AsNoTracking()
+            .OrderByDescending(a => a.RaisedAt)
+            .Take(5)
+            .Select(a => new RecentAlert(a.Id, a.BusinessEntityId, a.StationId, a.Reason, a.Status, a.RaisedAt))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(QualificationAlertStatus s) => s switch
+    {
+        QualificationAlertStatus.Open         => Color.Error,
+        QualificationAlertStatus.Acknowledged => Color.Warning,
+        QualificationAlertStatus.Resolved     => Color.Success,
+        QualificationAlertStatus.Dismissed    => Color.Default,
+        _                                     => Color.Default,
+    };
+
+    private static Color ReasonColor(QualificationAlertReason r) => r switch
+    {
+        QualificationAlertReason.Missing => Color.Error,
+        QualificationAlertReason.Expired => Color.Warning,
+        _                                => Color.Default,
+    };
 }

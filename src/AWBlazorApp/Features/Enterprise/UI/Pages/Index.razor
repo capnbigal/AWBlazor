@@ -1,5 +1,6 @@
 @page "/enterprise"
 @attribute [Authorize]
+@using AWBlazorApp.Features.Enterprise.Assets.Domain
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
 
 <PageTitle>Enterprise</PageTitle>
@@ -31,10 +32,50 @@
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Product lines" Subtitle="org.ProductLine — management-level grouping above categories." Icon="@Icons.Material.Filled.Category" Href="enterprise/product-lines" /></MudItem>
         <MudItem xs="12" sm="6" md="4"><ModuleCard Title="Reference data" Subtitle="AW business entities, persons, emails, phones, addresses, country/state codes." Icon="@Icons.Material.Filled.TableView" Href="enterprise/reference" /></MudItem>
     </MudGrid>
+
+    @* ── Recent activity ───────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-3">
+        <MudText Typo="Typo.h5">Recent assets</MudText>
+        <MudSpacer />
+        <MudLink Href="enterprise/assets">View all</MudLink>
+    </MudStack>
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (recentAssets.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No assets yet.</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Tag</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in recentAssets)
+                    {
+                        <tr>
+                            <td><strong>@a.Tag</strong></td>
+                            <td>@a.Name</td>
+                            <td><MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(a.Status)">@a.Status</MudChip></td>
+                            <td>@a.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
 </MudStack>
 
 @code {
     private int organizations, orgUnits, stations, assets;
+    private List<RecentAsset> recentAssets = [];
+
+    private record RecentAsset(string Tag, string Name, AssetStatus Status, DateTime ModifiedDate);
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,5 +84,20 @@
         orgUnits = await db.OrgUnits.CountAsync();
         stations = await db.Stations.CountAsync();
         assets = await db.Assets.CountAsync();
+
+        recentAssets = await db.Assets.AsNoTracking()
+            .OrderByDescending(a => a.ModifiedDate).ThenByDescending(a => a.Id)
+            .Take(5)
+            .Select(a => new RecentAsset(a.AssetTag, a.Name, a.Status, a.ModifiedDate))
+            .ToListAsync();
     }
+
+    private static Color StatusColor(AssetStatus s) => s switch
+    {
+        AssetStatus.Active      => Color.Success,
+        AssetStatus.Standby     => Color.Info,
+        AssetStatus.Maintenance => Color.Warning,
+        AssetStatus.Retired     => Color.Default,
+        _                       => Color.Default,
+    };
 }
