@@ -297,3 +297,33 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
     box-shadow: var(--mud-elevation-8);
     transform: translateY(-2px);
 }
+
+/* Clickable KPI tiles (KpiCard with Href) — same lift affordance as module cards. */
+.kpi-card--link {
+    cursor: pointer;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+.kpi-card--link:hover {
+    box-shadow: var(--mud-elevation-8);
+    transform: translateY(-2px);
+}
+
+/* ── Data-grid polish (applies to every MudDataGrid/MudTable) ───────────────────
+   Selectors verified against the rendered DOM: table=.mud-table-root, rows=.mud-table-row,
+   per-column filter funnels live in th .column-options .mud-icon-button. Tokens only. */
+.mud-table-striped tbody .mud-table-row:nth-of-type(even) {
+    background-color: color-mix(in srgb, var(--mud-palette-text-primary) 6%, transparent);
+}
+.mud-table-hover tbody .mud-table-row:hover {
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 10%, transparent);
+}
+/* Quiet the per-column filter funnels until you hover/focus the header cell, so 8-9 columns
+   of outlined funnels stop competing for attention. Active filters (colored) still read at .4. */
+.mud-table-cell .column-options .mud-icon-button {
+    opacity: .4;
+    transition: opacity .12s ease;
+}
+.mud-table-cell:hover .column-options .mud-icon-button,
+.mud-table-cell:focus-within .column-options .mud-icon-button {
+    opacity: 1;
+}
