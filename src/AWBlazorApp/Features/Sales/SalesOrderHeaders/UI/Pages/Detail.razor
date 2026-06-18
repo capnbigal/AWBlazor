@@ -83,6 +83,10 @@ else
                 </MudSimpleTable>
             }
         </MudPaper>
+
+        <RecordActivityTimeline Events="@activityEvents" Title="Activity" />
+
+        <RelatedLinksCard Title="Related records" Links="@relatedLinks" />
     </MudStack>
 }
 
@@ -92,6 +96,8 @@ else
     private bool loading = true;
     private SalesOrderHeader? header;
     private List<SalesOrderDetail> lines = [];
+    private IReadOnlyList<ActivityEvent> activityEvents = [];
+    private List<RelatedLink> relatedLinks = [];
 
     private string title => header is null ? string.Empty
         : (string.IsNullOrWhiteSpace(header.SalesOrderNumber) ? $"Sales order #{header.Id}" : header.SalesOrderNumber);
@@ -107,6 +113,16 @@ else
                 .OrderBy(d => d.SalesOrderDetailId)
                 .Take(10)
                 .ToListAsync();
+
+            activityEvents = RecordActivity.ForSalesOrder(header.OrderDate, header.DueDate, header.ShipDate, header.Status);
+
+            relatedLinks =
+            [
+                new RelatedLink(
+                    "Customer #" + header.CustomerId,
+                    $"aw/customers/{header.CustomerId}",
+                    Icons.Material.Filled.PeopleAlt),
+            ];
         }
         loading = false;
     }

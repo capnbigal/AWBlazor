@@ -81,6 +81,8 @@ else
                 </MudSimpleTable>
             }
         </MudPaper>
+
+        <RelatedLinksCard Title="Related records" Links="@relatedLinks" />
     </MudStack>
 }
 
@@ -90,6 +92,7 @@ else
     private bool loading = true;
     private EmployeeDto? employee;
     private List<EmployeePayHistory> payHistory = [];
+    private List<RelatedLink> relatedLinks = [];
 
     private string title => $"Employee #{Id} — {(string.IsNullOrWhiteSpace(employee?.LoginID) ? "(no login)" : employee!.LoginID)}";
 
@@ -106,6 +109,11 @@ else
                 .OrderByDescending(p => p.RateChangeDate)
                 .Take(10)
                 .ToListAsync();
+
+            relatedLinks =
+            [
+                new RelatedLink("Person record", $"aw/persons/{Id}", Icons.Material.Filled.Person),
+            ];
         }
 
         loading = false;

@@ -1,0 +1,33 @@
+@* "Related records" rail for detail pages. Each detail page passes the contextual records a user
+   would navigate to next (the FK parents/children + cross-entity jumps). Renders nothing when the
+   link set is empty, so a page can pass an unconditional list and rows that didn't resolve are
+   simply omitted by the caller. *@
+
+@if (Links.Count > 0)
+{
+    <MudPaper Class="pa-3" Elevation="1">
+        <MudText Typo="Typo.h6" GutterBottom="true">@Title</MudText>
+        <MudList T="string" Dense="true">
+            @foreach (var link in Links)
+            {
+                <MudListItem T="string" Href="@link.Href" Icon="@link.Icon">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <span>@link.Label</span>
+                        @if (!string.IsNullOrEmpty(link.Detail))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@link.Detail</MudText>
+                        }
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    /// <summary>Header shown above the list (e.g. "Related records").</summary>
+    [Parameter] public string Title { get; set; } = "Related records";
+
+    /// <summary>The links to show. An empty list renders nothing.</summary>
+    [Parameter] public IReadOnlyList<RelatedLink> Links { get; set; } = [];
+}

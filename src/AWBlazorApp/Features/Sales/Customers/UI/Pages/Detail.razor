@@ -68,6 +68,8 @@ else
                 </MudSimpleTable>
             }
         </MudPaper>
+
+        <RelatedLinksCard Title="Related records" Links="@relatedLinks" />
     </MudStack>
 }
 
@@ -78,6 +80,7 @@ else
     private List<SalesOrderHeader> orders = [];
     private bool loading = true;
     private string title = string.Empty;
+    private List<RelatedLink> relatedLinks = [];
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -96,6 +99,15 @@ else
                 .OrderByDescending(o => o.OrderDate)
                 .Take(10)
                 .ToListAsync();
+
+            relatedLinks = [];
+            if (customer.PersonId is int personId)
+            {
+                relatedLinks.Add(new RelatedLink(
+                    "Person record",
+                    $"aw/persons/{personId}",
+                    Icons.Material.Filled.Person));
+            }
         }
         finally
         {
