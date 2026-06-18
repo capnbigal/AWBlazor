@@ -4,7 +4,7 @@
 
 @inject NavigationManager Navigation
 
-<MudPaper Class="pa-4" Elevation="2" Style="height: 100%; cursor: pointer" @onclick="OnClick">
+<MudPaper Class="pa-4 module-card" Elevation="2" Style="height: 100%; cursor: pointer" @onclick="OnClick">
     <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3">
         <MudIcon Icon="@Icon" Color="Color.Primary" Size="Size.Large" />
         <MudStack Spacing="0" Style="flex: 1; min-width: 0">
@@ -14,7 +14,7 @@
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
             }
         </MudStack>
-        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Default" />
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Primary" />
     </MudStack>
 </MudPaper>
 

@@ -286,3 +286,14 @@ html:not([data-mud-theme="dark"]) .global-search-input input::placeholder {
 .home-quick-card .mud-card-content {
     flex: 1 1 auto;
 }
+
+/* Module landing tiles — lift + deeper shadow on hover so the whole-tile click target
+   reads as interactive (the tiles otherwise look static). Theme-aware via MudBlazor's
+   elevation token; no hardcoded values. */
+.module-card {
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+.module-card:hover {
+    box-shadow: var(--mud-elevation-8);
+    transform: translateY(-2px);
+}

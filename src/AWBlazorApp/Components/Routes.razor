@@ -1,3 +1,5 @@
+@using MudBlazor
+
 <Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(AWBlazorApp.Shared.UI.Layout.MainLayout)">
@@ -7,4 +9,21 @@
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(AWBlazorApp.Shared.UI.Layout.MainLayout)">
+            <PageTitle>Page not found</PageTitle>
+            <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+                <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="2">
+                    <MudIcon Icon="@Icons.Material.Filled.TravelExplore" Color="Color.Secondary" Size="Size.Large" Class="mb-3" />
+                    <MudText Typo="Typo.h5" GutterBottom="true">Page not found</MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Class="mb-4">
+                        The page you're looking for doesn't exist or may have moved.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Home" Href="/">
+                        Return to home
+                    </MudButton>
+                </MudPaper>
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
 </Router>
