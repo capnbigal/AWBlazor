@@ -65,6 +65,11 @@ public static class MiddlewarePipeline
         app.UseAntiforgery();
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Turn unhandled /api/* exceptions into RFC-7807 problem+json. Sits just outside the
+        // area-permission + endpoint middleware so it wraps their execution; non-/api requests are
+        // re-thrown and fall through to the Blazor /Error page (prod) or dev exception page.
+        app.UseMiddleware<ApiProblemDetailsMiddleware>();
         app.UseMiddleware<AreaPermissionMiddleware>();
 
         // Swagger — Admin-gated in non-Development environments.
