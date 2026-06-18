@@ -31,10 +31,98 @@ jobs:
       - name: Build
         run: dotnet build AWBlazorApp.slnx --no-restore --configuration Release
 
-      # Tests require SQL Server; in CI we only build (integration tests run against ELITE locally).
-      # If a CI SQL Server instance becomes available, add:
-      #   --collect:"XPlat Code Coverage" --logger:"trx;LogFileName=test-results.trx" --blame-hang-timeout=10min
-      # plus an upload-artifact step for the .trx and coverage.cobertura.xml files.
+  # Integration + unit tests. The integration suite runs the real host (EF, Identity, the
+  # minimal-API endpoints) against SQL Server and queries real AdventureWorks data, so CI
+  # provisions a SQL Server 2022 container and restores the AdventureWorks2022 sample backup as
+  # AdventureWorks2022_dev (the app's DatabaseInitializer then layers its own tables on top, exactly
+  # like the local dev setup). Tests are pointed at the container via the
+  # ConnectionStrings__DefaultConnection env var (honored by the test fixtures).
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Ephemeral CI-only SQL Server SA password (the container is created and destroyed per run).
+      MSSQL_SA_PASSWORD: 'Aw_CI_Str0ng!Pass'
+      DOTNET_NOLOGO: 'true'
+      DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+      # sqlcmd ships at this path in mcr.microsoft.com/mssql/server:2022-latest (mssql-tools18).
+      SQLCMD: /opt/mssql-tools18/bin/sqlcmd
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Run SQL Server via `docker run` (not a service container) so we can docker cp the backup in
+      # and restore it via docker exec — a service container's filesystem isn't reachable for RESTORE.
+      - name: Start SQL Server 2022
+        run: |
+          docker run -d --name sql \
+            -e 'ACCEPT_EULA=Y' \
+            -e "MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}" \
+            -e 'MSSQL_PID=Developer' \
+            -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
+
+      - name: Wait for SQL Server to accept connections
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec sql "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -l 5 -Q 'SELECT 1' >/dev/null 2>&1; then
+              echo "SQL Server is up."; exit 0
+            fi
+            echo "waiting for SQL Server ($i/60)..."; sleep 5
+          done
+          echo "::error::SQL Server did not become ready in time"; docker logs sql; exit 1
+
+      - name: Download AdventureWorks2022 backup
+        run: |
+          curl -fL --retry 3 -o AdventureWorks2022.bak \
+            https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorks2022.bak
+
+      - name: Restore AdventureWorks2022 as AdventureWorks2022_dev
+        run: |
+          docker exec sql mkdir -p /var/opt/mssql/backup
+          docker cp AdventureWorks2022.bak sql:/var/opt/mssql/backup/AdventureWorks2022.bak
+          # Diagnostic: list the logical file names the RESTORE relies on.
+          docker exec sql "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C \
+            -Q "RESTORE FILELISTONLY FROM DISK='/var/opt/mssql/backup/AdventureWorks2022.bak'"
+          docker exec sql "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C \
+            -Q "RESTORE DATABASE [AdventureWorks2022_dev] FROM DISK='/var/opt/mssql/backup/AdventureWorks2022.bak' WITH MOVE 'AdventureWorks2022' TO '/var/opt/mssql/data/AdventureWorks2022_dev.mdf', MOVE 'AdventureWorks2022_log' TO '/var/opt/mssql/data/AdventureWorks2022_dev_log.ldf', REPLACE"
+
+      - name: Restore
+        run: dotnet restore AWBlazorApp.slnx
+
+      - name: Build
+        run: dotnet build AWBlazorApp.slnx --no-restore --configuration Release
+
+      - name: Test
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__DefaultConnection: 'Server=localhost,1433;Database=AdventureWorks2022_dev;User Id=sa;Password=Aw_CI_Str0ng!Pass;TrustServerCertificate=True;Encrypt=False'
+        run: |
+          dotnet test AWBlazorApp.slnx --no-build --configuration Release \
+            --logger 'trx;LogFileName=test-results.trx' \
+            --collect 'XPlat Code Coverage' \
+            --results-directory ./TestResults \
+            --blame-hang-timeout 10min
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults/**/*
+          if-no-files-found: warn
 
   vulnerability-scan:
     runs-on: ubuntu-latest
