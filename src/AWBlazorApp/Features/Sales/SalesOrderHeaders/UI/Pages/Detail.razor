@@ -1,0 +1,137 @@
+@page "/aw/sales-order-headers/{Id:int}"
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Sales order @(header?.SalesOrderNumber ?? Id.ToString())</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (header is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/sales-order-headers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Sales order not found</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning">
+            No sales order header was found with id @Id.
+        </MudAlert>
+        <div>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowBack" Href="aw/sales-order-headers">Back to list</MudButton>
+        </div>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/sales-order-headers"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@title</MudText>
+            <MudChip T="string" Color="@StatusColor(header.Status)" Variant="Variant.Filled">@StatusLabel(header.Status)</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/sales-order-headers/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Order number" Variant="Variant.Text">@header.SalesOrderNumber</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Order date" Variant="Variant.Text">@header.OrderDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Due date" Variant="Variant.Text">@header.DueDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Ship date" Variant="Variant.Text">@(header.ShipDate?.ToString("yyyy-MM-dd") ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Customer id" Variant="Variant.Text">@header.CustomerId</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Account number" Variant="Variant.Text">@(header.AccountNumber ?? "—")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Subtotal" Variant="Variant.Text">@Money(header.SubTotal)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Tax" Variant="Variant.Text">@Money(header.TaxAmt)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Freight" Variant="Variant.Text">@Money(header.Freight)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Total due" Variant="Variant.Text">@Money(header.TotalDue)</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Line items (@lines.Count)</MudText>
+            @if (lines.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No line items for this order.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Product id</th>
+                            <th style="text-align:right">Qty</th>
+                            <th style="text-align:right">Unit price</th>
+                            <th style="text-align:right">Line total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in lines)
+                        {
+                            <tr>
+                                <td>@line.SalesOrderDetailId</td>
+                                <td>@line.ProductId</td>
+                                <td style="text-align:right">@line.OrderQty</td>
+                                <td style="text-align:right">@Money(line.UnitPrice)</td>
+                                <td style="text-align:right">@Money(line.LineTotal)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private SalesOrderHeader? header;
+    private List<SalesOrderDetail> lines = [];
+
+    private string title => header is null ? string.Empty
+        : (string.IsNullOrWhiteSpace(header.SalesOrderNumber) ? $"Sales order #{header.Id}" : header.SalesOrderNumber);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        header = await db.SalesOrderHeaders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        if (header is not null)
+        {
+            lines = await db.SalesOrderDetails.AsNoTracking()
+                .Where(d => d.SalesOrderId == Id)
+                .OrderBy(d => d.SalesOrderDetailId)
+                .Take(10)
+                .ToListAsync();
+        }
+        loading = false;
+    }
+
+    private static string Money(decimal value) => value == 0 ? "—" : value.ToString("C2");
+
+    private static string StatusLabel(byte status) => status switch
+    {
+        1 => "In process",
+        2 => "Approved",
+        3 => "Backordered",
+        4 => "Rejected",
+        5 => "Shipped",
+        6 => "Cancelled",
+        _ => $"Status {status}",
+    };
+
+    private static Color StatusColor(byte status) => status switch
+    {
+        1 => Color.Info,
+        2 => Color.Primary,
+        3 => Color.Warning,
+        4 => Color.Error,
+        5 => Color.Success,
+        6 => Color.Default,
+        _ => Color.Default,
+    };
+}

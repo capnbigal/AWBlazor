@@ -61,7 +61,9 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4">Work orders</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.WorkOrder</MudText>
+        <AuthorizeView Roles="Admin">
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.WorkOrder</MudText>
+        </AuthorizeView>
         <MudSpacer />
         <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/work-orders/history">View history</MudButton>
         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
@@ -76,7 +78,7 @@
     <MudDataGrid T="WorkOrderDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="WorkOrderDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
+            <PropertyColumn Property="x => x.Id" Title="Id" HeaderStyle="text-align:right" CellStyle="text-align:right">
                 <HeaderTemplate><GridColumnHeader TEntity="WorkOrder" PropertyName="@nameof(WorkOrderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductId" Title="Product id">

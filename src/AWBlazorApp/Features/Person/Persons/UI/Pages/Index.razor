@@ -112,6 +112,15 @@
     private string? filterPersonType;
     private readonly ColumnFilterState columnFilters = new();
 
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? SearchQuery { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+            filterLastName = SearchQuery;
+    }
+
     private async Task<GridData<PersonDto>> LoadServerDataAsync(GridState<PersonDto> state, CancellationToken ct)
     {
         _loading = true;

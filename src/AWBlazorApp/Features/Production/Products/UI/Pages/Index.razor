@@ -61,7 +61,9 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4">Products</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Product</MudText>
+        <AuthorizeView Roles="Admin">
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Production.Product</MudText>
+        </AuthorizeView>
         <MudSpacer />
         <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/products/history">View history</MudButton>
         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
@@ -79,7 +81,7 @@
     <MudDataGrid T="ProductDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="ProductDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
+            <PropertyColumn Property="x => x.Id" Title="Id" HeaderStyle="text-align:right" CellStyle="text-align:right">
                 <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Id" PropertyName="@nameof(ProductDto.Id)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.Name" Title="Name">
@@ -94,10 +96,12 @@
             <PropertyColumn Property="x => x.Size" Title="Size">
                 <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Size" PropertyName="@nameof(ProductDto.Size)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2">
+            <PropertyColumn Property="x => x.StandardCost" Title="Cost" Format="C2" HeaderStyle="text-align:right" CellStyle="text-align:right">
+                <CellTemplate>@(context.Item.StandardCost == 0 ? "" : context.Item.StandardCost.ToString("C2"))</CellTemplate>
                 <HeaderTemplate><GridColumnHeader TEntity="Product" Title="Cost" PropertyName="@nameof(ProductDto.StandardCost)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2">
+            <PropertyColumn Property="x => x.ListPrice" Title="List price" Format="C2" HeaderStyle="text-align:right" CellStyle="text-align:right">
+                <CellTemplate>@(context.Item.ListPrice == 0 ? "" : context.Item.ListPrice.ToString("C2"))</CellTemplate>
                 <HeaderTemplate><GridColumnHeader TEntity="Product" Title="List price" PropertyName="@nameof(ProductDto.ListPrice)" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ProductLine" Title="Line">
@@ -141,8 +145,11 @@
     private List<LookupItem<int>> _subcategories = [];
     private readonly ColumnFilterState columnFilters = new();
 
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(SearchQuery)) filterName = SearchQuery;
         _subcategories = await Lookup.GetProductSubcategoriesAsync();
     }
 

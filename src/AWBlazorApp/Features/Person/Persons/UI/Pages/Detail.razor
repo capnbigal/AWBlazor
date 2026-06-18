@@ -1,0 +1,156 @@
+@page "/aw/persons/{Id:int}"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Person.EmailAddresses.Domain
+@using AWBlazorApp.Features.Person.PersonPhones.Domain
+@using PersonEntity = AWBlazorApp.Features.Person.Persons.Domain.Person
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(person is null ? "Person" : title)</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (person is null)
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("aw/persons"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">Person not found</MudText>
+        </MudStack>
+        <MudAlert Severity="Severity.Warning">
+            No person exists with id @Id.
+            <MudLink Href="aw/persons" Class="ml-1">Back to persons</MudLink>
+        </MudAlert>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("aw/persons"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@title</MudText>
+            <MudChip T="string" Color="Color.Info" Variant="Variant.Filled">@PersonTypeLabel(person.PersonType)</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/persons/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Business entity id" Variant="Variant.Text">@person.Id</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Person type" Variant="Variant.Text">@PersonTypeLabel(person.PersonType)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Title" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(person.Title) ? "—" : person.Title)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="First name" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(person.FirstName) ? "—" : person.FirstName)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Middle name" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(person.MiddleName) ? "—" : person.MiddleName)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Last name" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(person.LastName) ? "—" : person.LastName)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Suffix" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(person.Suffix) ? "—" : person.Suffix)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Email promotion" Variant="Variant.Text">@EmailPromotionLabel(person.EmailPromotion)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Modified" Variant="Variant.Text">@person.ModifiedDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Email addresses (@emails.Count)</MudText>
+            @if (emails.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No email addresses on record.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr><th>#</th><th>Email address</th><th>Modified</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var email in emails)
+                        {
+                            <tr>
+                                <td>@email.EmailAddressId</td>
+                                <td>@(string.IsNullOrWhiteSpace(email.EmailAddressValue) ? "—" : email.EmailAddressValue)</td>
+                                <td>@email.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Phone numbers (@phones.Count)</MudText>
+            @if (phones.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No phone numbers on record.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr><th>Phone number</th><th>Type id</th><th>Modified</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var phone in phones)
+                        {
+                            <tr>
+                                <td>@phone.PhoneNumber</td>
+                                <td>@phone.PhoneNumberTypeId</td>
+                                <td>@phone.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private PersonEntity? person;
+    private List<EmailAddress> emails = [];
+    private List<PersonPhone> phones = [];
+
+    private string title => person is null ? string.Empty : $"{person.LastName}, {person.FirstName}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        person = await db.Persons.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        if (person is not null)
+        {
+            emails = await db.EmailAddresses.AsNoTracking()
+                .Where(e => e.BusinessEntityId == Id)
+                .OrderBy(e => e.EmailAddressId)
+                .Take(10)
+                .ToListAsync();
+            phones = await db.PersonPhones.AsNoTracking()
+                .Where(p => p.BusinessEntityId == Id)
+                .OrderBy(p => p.PhoneNumberTypeId)
+                .Take(10)
+                .ToListAsync();
+        }
+        loading = false;
+    }
+
+    private static string PersonTypeLabel(string? code) => code switch
+    {
+        "SC" => "Store contact (SC)",
+        "IN" => "Individual customer (IN)",
+        "SP" => "Sales person (SP)",
+        "EM" => "Employee (EM)",
+        "VC" => "Vendor contact (VC)",
+        "GC" => "General contact (GC)",
+        null or "" => "—",
+        _ => code,
+    };
+
+    private static string EmailPromotionLabel(int value) => value switch
+    {
+        0 => "No contact (0)",
+        1 => "AdventureWorks only (1)",
+        2 => "AdventureWorks and partners (2)",
+        _ => value.ToString(),
+    };
+}

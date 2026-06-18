@@ -1,0 +1,104 @@
+@page "/aw/vendors/{Id:int}"
+@attribute [Authorize]
+@using AWBlazorApp.Features.Purchasing.PurchaseOrderHeaders.Domain
+@using AWBlazorApp.Features.Purchasing.Vendors.Domain
+@using AWBlazorApp.Features.Purchasing.Vendors.Dtos
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(vendor is null ? "Vendor" : vendor.Name)</PageTitle>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (vendor is null)
+{
+    <MudStack Spacing="3">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">Vendor #@Id was not found.</MudAlert>
+        <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("aw/vendors"))">Back to vendors</MudButton>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back" OnClick="@(() => Navigation.NavigateTo("aw/vendors"))" />
+            <MudText Typo="Typo.h5" HtmlTag="h1">@title</MudText>
+            <MudChip T="string" Color="@(vendor.ActiveFlag ? Color.Success : Color.Default)" Variant="Variant.Filled">@(vendor.ActiveFlag ? "Active" : "Inactive")</MudChip>
+            <MudSpacer />
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="@($"aw/vendors/history/{Id}")">View history</MudButton>
+        </MudStack>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudGrid Spacing="2">
+                <MudItem xs="6" md="3"><MudField Label="Name" Variant="Variant.Text">@vendor.Name</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Account number" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(vendor.AccountNumber) ? "—" : vendor.AccountNumber)</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Credit rating" Variant="Variant.Text">@(vendor.CreditRating == 0 ? "—" : vendor.CreditRating.ToString())</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Preferred vendor" Variant="Variant.Text">@(vendor.PreferredVendorStatus ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Active" Variant="Variant.Text">@(vendor.ActiveFlag ? "Yes" : "No")</MudField></MudItem>
+                <MudItem xs="6" md="3"><MudField Label="Modified date" Variant="Variant.Text">@vendor.ModifiedDate.ToString("yyyy-MM-dd")</MudField></MudItem>
+                <MudItem xs="12" md="6"><MudField Label="Purchasing web service URL" Variant="Variant.Text">@(string.IsNullOrWhiteSpace(vendor.PurchasingWebServiceUrl) ? "—" : vendor.PurchasingWebServiceUrl)</MudField></MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.h6">Recent purchase orders (@orders.Count)</MudText>
+            @if (orders.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">No purchase orders for this vendor.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                    <thead>
+                        <tr><th>PO id</th><th>Order date</th><th style="text-align:right">Total due</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var po in orders)
+                        {
+                            <tr>
+                                <td>@po.Id</td>
+                                <td>@po.OrderDate.ToString("yyyy-MM-dd")</td>
+                                <td style="text-align:right">@(po.TotalDue == 0 ? "—" : po.TotalDue.ToString("C2"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private VendorDto? vendor;
+    private List<PurchaseOrderRow> orders = [];
+
+    private string title => vendor is null
+        ? string.Empty
+        : string.IsNullOrWhiteSpace(vendor.AccountNumber) ? vendor.Name : $"{vendor.Name} ({vendor.AccountNumber})";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entity = await db.Vendors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        vendor = entity?.ToDto();
+
+        if (vendor is not null)
+        {
+            orders = await db.PurchaseOrderHeaders.AsNoTracking()
+                .Where(p => p.VendorId == Id)
+                .OrderByDescending(p => p.OrderDate)
+                .Take(10)
+                .Select(p => new PurchaseOrderRow(p.Id, p.OrderDate, p.TotalDue))
+                .ToListAsync();
+        }
+
+        loading = false;
+    }
+
+    private sealed record PurchaseOrderRow(int Id, DateTime OrderDate, decimal TotalDue);
+}

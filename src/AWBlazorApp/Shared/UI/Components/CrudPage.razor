@@ -37,7 +37,11 @@
         <MudText Typo="Typo.h4">@Title</MudText>
         @if (!string.IsNullOrWhiteSpace(Caption))
         {
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">@Caption</MudText>
+            @* The caption is the raw schema/table name (e.g. "org.CostCenter") — useful to devs,
+               jargon to everyone else. Show it only to admins. *@
+            <AuthorizeView Roles="Admin">
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">@Caption</MudText>
+            </AuthorizeView>
         }
         <MudSpacer />
         @if (!string.IsNullOrWhiteSpace(HistoryRoute))

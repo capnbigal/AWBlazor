@@ -50,7 +50,9 @@
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4">Sales order headers</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesOrderHeader</MudText>
+        <AuthorizeView Roles="Admin">
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Sales.SalesOrderHeader</MudText>
+        </AuthorizeView>
         <MudSpacer />
         <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="aw/sales-order-headers/history">View history</MudButton>
         <AuthorizeView Roles="@($"{AppRoles.Employee},{AppRoles.Manager},{AppRoles.Admin}")">
@@ -78,7 +80,7 @@
     <MudDataGrid T="SalesOrderHeaderDto" ServerData="LoadServerDataAsync" @ref="grid" Loading="@_loading" LoadingProgressColor="Color.Primary" Dense="true" Hover="true" Striped="true" Virtualize="true" SortMode="SortMode.Single" RowsPerPage="25">
         <Columns>
             <HierarchyColumn T="SalesOrderHeaderDto" />
-            <PropertyColumn Property="x => x.Id" Title="Id">
+            <PropertyColumn Property="x => x.Id" Title="Id" HeaderStyle="text-align:right" CellStyle="text-align:right">
                 <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.Id)" Title="Id" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.SalesOrderNumber" Title="Order #">
@@ -96,10 +98,12 @@
             <PropertyColumn Property="x => x.CustomerId" Title="Customer">
                 <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.CustomerId)" Title="Customer" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2">
+            <PropertyColumn Property="x => x.SubTotal" Title="Subtotal" Format="C2" HeaderStyle="text-align:right" CellStyle="text-align:right">
+                <CellTemplate>@(context.Item.SubTotal == 0 ? "" : context.Item.SubTotal.ToString("C2"))</CellTemplate>
                 <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.SubTotal)" Title="Subtotal" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2">
+            <PropertyColumn Property="x => x.TotalDue" Title="Total due" Format="C2" HeaderStyle="text-align:right" CellStyle="text-align:right">
+                <CellTemplate>@(context.Item.TotalDue == 0 ? "" : context.Item.TotalDue.ToString("C2"))</CellTemplate>
                 <HeaderTemplate><GridColumnHeader TEntity="SalesOrderHeader" PropertyName="@nameof(SalesOrderHeaderDto.TotalDue)" Title="Total due" State="columnFilters" OnChanged="ApplyFilter" /></HeaderTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.ModifiedDate" Title="Modified" Format="yyyy-MM-dd HH:mm" HeaderClass="d-none d-md-table-cell" CellClass="d-none d-md-table-cell">
@@ -136,6 +140,8 @@
 </MudStack>
 
 @code {
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
     private MudDataGrid<SalesOrderHeaderDto> grid = null!;
     private bool _loading = true;
     private int? filterCustomerId;
