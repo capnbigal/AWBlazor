@@ -9,6 +9,8 @@ using NUnit.Framework;
 
 namespace AWBlazorApp.Tests.Features.Processes.Timelines;
 
+// Seeds + deletes audit rows in the shared dev database; keep it off any parallel lane.
+[NonParallelizable]
 public class EndToEndSmokeTests : IntegrationTestFixtureBase
 {
     private const string SentinelRoot = "__ProcessTimelineTestRoot";

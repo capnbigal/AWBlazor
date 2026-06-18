@@ -21,6 +21,8 @@ namespace AWBlazorApp.Tests.Features.Identity;
 /// Each mutating test creates a throwaway user so it can freely change passwords / delete
 /// the account without mutating the seeded admin and poisoning sibling tests.
 /// </summary>
+// Creates + deletes throwaway users in the shared dev database; keep it off any parallel lane.
+[NonParallelizable]
 public class IdentityManageFormPostTests : IntegrationTestFixtureBase
 {
     private const string TestPassword = "Test@1234!Xyz";
