@@ -69,7 +69,7 @@ else
                     {
                         <tr>
                             <td>@p.Id</td>
-                            <td><MudLink Href="aw/products" Color="Color.Primary">@p.Name</MudLink></td>
+                            <td><MudLink Href="@($"aw/products/{p.Id}")" Color="Color.Primary">@p.Name</MudLink></td>
                             <td>@p.ProductNumber</td>
                             <td style="text-align:right">@p.ListPrice.ToString("C2")</td>
                         </tr>

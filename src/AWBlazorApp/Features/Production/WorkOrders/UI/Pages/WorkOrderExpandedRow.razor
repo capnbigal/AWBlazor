@@ -36,7 +36,7 @@ else
             <MudItem xs="12" md="4">
                 <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Product</MudText>
                 <MudStack Spacing="1" Class="mt-1">
-                    <MudText Typo="Typo.body2">Name: <MudLink Href="aw/products" Color="Color.Primary">@productName</MudLink></MudText>
+                    <MudText Typo="Typo.body2">Name: <MudLink Href="@($"aw/products/{workOrder?.ProductId}")" Color="Color.Primary">@productName</MudLink></MudText>
                     <MudText Typo="Typo.body2">Product ID: <strong>@(workOrder?.ProductId)</strong></MudText>
                 </MudStack>
             </MudItem>

@@ -73,7 +73,7 @@ else
                         {
                             <tr>
                                 <td>@line.SalesOrderDetailId</td>
-                                <td>@line.ProductId</td>
+                                <td><MudLink Href="@($"aw/products/{line.ProductId}")" Color="Color.Primary">@line.ProductId</MudLink></td>
                                 <td style="text-align:right">@line.OrderQty</td>
                                 <td style="text-align:right">@Money(line.UnitPrice)</td>
                                 <td style="text-align:right">@Money(line.LineTotal)</td>
