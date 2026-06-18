@@ -55,7 +55,20 @@
 
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-6">
-            @Body
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent>
+                    <MudPaper Class="pa-6 ma-4 d-flex flex-column align-center" Elevation="2">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.h6" GutterBottom="true">This section failed to load</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                            Try reloading the page. If it keeps happening, contact support.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Refresh" OnClick="Reload">Reload</MudButton>
+                    </MudPaper>
+                </ErrorContent>
+            </ErrorBoundary>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
@@ -63,6 +76,7 @@
 @code {
     private bool _isDarkMode;
     private bool _drawerOpen = true;
+    private ErrorBoundary? _errorBoundary;
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
@@ -80,6 +94,10 @@
     //      environments where prerendering is disabled.
     protected override void OnInitialized()
     {
+        // Reset the error boundary on navigation so a failed page doesn't keep showing its
+        // error after the user moves to a different (working) page.
+        Navigation.LocationChanged += OnLocationChanged;
+
         _persistingSubscription = AppState.RegisterOnPersisting(PersistThemeState);
 
         if (AppState.TryTakeFromJson<bool>(StateKey, out var persisted))
@@ -122,7 +140,15 @@
         }
     }
 
-    public void Dispose() => _persistingSubscription?.Dispose();
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        _persistingSubscription?.Dispose();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _errorBoundary?.Recover();
+
+    private void Reload() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
