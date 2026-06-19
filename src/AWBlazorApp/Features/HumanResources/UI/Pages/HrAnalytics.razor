@@ -325,8 +325,13 @@
             .OrderByDescending(x => x.Count)
             .ToListAsync();
 
-        result.DeptLabels = byDept.Select(x => departments.GetValueOrDefault(x.DepartmentId, $"Dept {x.DepartmentId}")).ToArray();
-        result.DeptSeries = [new ChartSeries<double> { Name = "Employees", Data = byDept.Select(x => x.Count).ToArray() }];
+        // Keep the 8 largest departments individually and roll the long tail into "Other" so the
+        // chart isn't one giant bar followed by a row of unreadable, label-crowded slivers.
+        var deptLabelsAll = byDept.Select(x => departments.GetValueOrDefault(x.DepartmentId, $"Dept {x.DepartmentId}")).ToArray();
+        var deptValuesAll = byDept.Select(x => x.Count).ToArray();
+        var (deptLabels, deptValues) = AWBlazorApp.Shared.Theming.ChartData.TopN(deptLabelsAll, deptValuesAll, topN: 8);
+        result.DeptLabels = deptLabels;
+        result.DeptSeries = [new ChartSeries<double> { Name = "Employees", Data = deptValues }];
 
         // ── Department growth (new assignments per month, SQL GroupBy) ───────
         var assignByMonth = await db.EmployeeDepartmentHistories.AsNoTracking()
