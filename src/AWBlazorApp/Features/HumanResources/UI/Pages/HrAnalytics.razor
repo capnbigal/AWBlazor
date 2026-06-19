@@ -106,11 +106,9 @@
             <MudText Typo="Typo.h6" Class="mb-3">Current headcount by department</MudText>
             @if (deptLabels.Length > 0)
             {
-                <MudChart T="double" ChartType="ChartType.Bar"
-                          ChartSeries="@deptSeries"
-                          ChartLabels="@deptLabels"
-                          ChartOptions="@AWBlazorApp.Shared.Theming.ChartPalettes.RotatedAxisOptions"
-                          Width="100%" Height="320px" />
+                @* Horizontal bars: one labeled row per department so the long tail stays readable and
+                   comparable instead of being crushed under the dominant department in a vertical chart. *@
+                <HorizontalBarList Labels="@deptLabels" Values="@deptValues" Color="Color.Primary" />
             }
             else
             {
@@ -181,7 +179,7 @@
 
     // Department headcount
     private string[] deptLabels = [];
-    private List<ChartSeries<double>> deptSeries = [];
+    private double[] deptValues = [];
 
     // Department growth
     private string[] deptGrowthLabels = [];
@@ -211,7 +209,7 @@
         payLabels = data.PayLabels;
         paySeries = data.PaySeries;
         deptLabels = data.DeptLabels;
-        deptSeries = data.DeptSeries;
+        deptValues = data.DeptValues;
         deptGrowthLabels = data.DeptGrowthLabels;
         deptGrowthSeries = data.DeptGrowthSeries;
         salaryTypeLabels = data.SalaryTypeLabels;
@@ -331,7 +329,7 @@
         var deptValuesAll = byDept.Select(x => x.Count).ToArray();
         var (deptLabels, deptValues) = AWBlazorApp.Shared.Theming.ChartData.TopN(deptLabelsAll, deptValuesAll, topN: 8);
         result.DeptLabels = deptLabels;
-        result.DeptSeries = [new ChartSeries<double> { Name = "Employees", Data = deptValues }];
+        result.DeptValues = deptValues;
 
         // ── Department growth (new assignments per month, SQL GroupBy) ───────
         var assignByMonth = await db.EmployeeDepartmentHistories.AsNoTracking()
@@ -361,7 +359,7 @@
         public string[] PayLabels { get; set; } = [];
         public List<ChartSeries<double>> PaySeries { get; set; } = [];
         public string[] DeptLabels { get; set; } = [];
-        public List<ChartSeries<double>> DeptSeries { get; set; } = [];
+        public double[] DeptValues { get; set; } = [];
         public string[] DeptGrowthLabels { get; set; } = [];
         public List<ChartSeries<double>> DeptGrowthSeries { get; set; } = [];
         public string[] SalaryTypeLabels { get; set; } = [];

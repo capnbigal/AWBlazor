@@ -1,0 +1,57 @@
+@* Horizontal bar "chart" rendered as labeled rows: each category is its own row — label · bar · value.
+   Bars are scaled to the largest value. Better than a vertical MudChart bar when labels are long or
+   one category dominates: every category keeps a readable label and its exact value, so the small
+   ones stay legible and comparable instead of being crushed into label-crowded slivers. *@
+
+@if (Labels.Length > 0)
+{
+    <MudStack Spacing="2">
+        @for (var i = 0; i < Labels.Length; i++)
+        {
+            var label = Labels[i];
+            var value = i < Values.Length ? Values[i] : 0d;
+            var pct = _max > 0 ? value / _max * 100 : 0;
+            var isOther = string.Equals(label, OtherLabel, StringComparison.Ordinal);
+            <div class="d-flex align-center gap-3">
+                <div class="text-truncate" style="@($"flex:0 0 {LabelWidth}")" title="@label">
+                    <MudText Typo="Typo.body2" Color="@(isOther ? Color.Secondary : Color.Inherit)">@label</MudText>
+                </div>
+                <div style="flex:1 1 auto">
+                    <MudProgressLinear Value="@pct" Color="@(isOther ? Color.Default : Color)" Rounded="true" Size="Size.Medium" />
+                </div>
+                <div style="flex:0 0 64px; text-align:right">
+                    <MudText Typo="Typo.body2"><strong>@value.ToString(ValueFormat)</strong></MudText>
+                </div>
+            </div>
+        }
+    </MudStack>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    /// <summary>Category labels, top to bottom (usually already sorted by value).</summary>
+    [Parameter, EditorRequired] public string[] Labels { get; set; } = [];
+
+    /// <summary>Per-category values; bars are scaled to the largest. Must align with <see cref="Labels"/>.</summary>
+    [Parameter, EditorRequired] public double[] Values { get; set; } = [];
+
+    /// <summary>Bar color (the aggregated "Other" row, if present, is muted regardless).</summary>
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+
+    /// <summary>.NET format string for the trailing value label. Default "N0".</summary>
+    [Parameter] public string ValueFormat { get; set; } = "N0";
+
+    /// <summary>CSS width of the label column. Default "140px".</summary>
+    [Parameter] public string LabelWidth { get; set; } = "140px";
+
+    /// <summary>Label treated as the muted aggregate row. Default "Other".</summary>
+    [Parameter] public string OtherLabel { get; set; } = "Other";
+
+    /// <summary>Rendered when there is no data (e.g. an EmptyChartState).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private double _max => Values.Length > 0 ? Values.Max() : 0;
+}
