@@ -47,7 +47,7 @@
         <MudChart T="double"
                   ChartType="@ChartType"
                   ChartSeries="@FilteredSeries"
-                  ChartLabels="@FilteredLabels"
+                  ChartLabels="@DisplayLabels"
                   Width="100%" Height="@Height"
                   ChartOptions="@Options" />
     }
@@ -154,6 +154,28 @@
 
     private string[] FilteredLabels => GetFilteredRange().labels;
     private List<ChartSeries<double>> FilteredSeries => GetFilteredRange().series;
+
+    /// <summary>
+    /// X-axis labels for display: when there are more than ~14 points the time labels are thinned
+    /// (intermediate ones blanked, keeping ~12 evenly spaced plus the last) so they don't overlap
+    /// into an unreadable smear. The data points themselves are unchanged — only the axis labels are
+    /// reduced. CSV export still uses the full <see cref="FilteredLabels"/>. TimeSeriesChart is only
+    /// used for sequential time series, so thinning never hides a distinct category name.
+    /// </summary>
+    private string[] DisplayLabels
+    {
+        get
+        {
+            var labels = FilteredLabels;
+            const int maxLabels = 14;
+            if (labels.Length <= maxLabels)
+                return labels;
+
+            var step = (int)Math.Ceiling(labels.Length / 12.0);
+            var last = labels.Length - 1;
+            return labels.Select((label, i) => (i % step == 0 || i == last) ? label : string.Empty).ToArray();
+        }
+    }
 
     private (string[] labels, List<ChartSeries<double>> series) GetFilteredRange()
     {
