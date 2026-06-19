@@ -55,7 +55,7 @@ public class IntegrationTest
                 // spin up worker threads or spam the dev RequestLogs table.
                 builder.ConfigureAppConfiguration((_, config) =>
                 {
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    var overrides = new Dictionary<string, string?>
                     {
                         ["Features:Hangfire"] = "false",
                         ["RequestLogs:Enabled"] = "false",
@@ -63,7 +63,13 @@ public class IntegrationTest
                         // (5 req/min) would otherwise leak between unrelated tests. The rate
                         // limiting test creates its own factory with this flag flipped on.
                         ["Features:RateLimiting"] = "false",
-                    });
+                    };
+                    // In CI (no ELITE), the workflow sets ConnectionStrings__DefaultConnection to the
+                    // CI SQL Server container; unset locally, so the dev connection string is used.
+                    var ciConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+                    if (!string.IsNullOrWhiteSpace(ciConnection))
+                        overrides["ConnectionStrings:DefaultConnection"] = ciConnection;
+                    config.AddInMemoryCollection(overrides);
                 });
 
                 builder.ConfigureTestServices(services =>

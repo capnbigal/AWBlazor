@@ -34,12 +34,20 @@ public abstract class IntegrationTestFixtureBase
                         builder.UseEnvironment("Development");
                         builder.ConfigureAppConfiguration((_, config) =>
                         {
-                            config.AddInMemoryCollection(new Dictionary<string, string?>
+                            var overrides = new Dictionary<string, string?>
                             {
                                 ["Features:Hangfire"] = "false",
                                 ["RequestLogs:Enabled"] = "false",
                                 ["Features:RateLimiting"] = "false",
-                            });
+                            };
+                            // In CI there is no ELITE instance; the workflow sets
+                            // ConnectionStrings__DefaultConnection to point the tests at the CI SQL
+                            // Server container. Locally this env var is unset, so the tests use
+                            // appsettings.Development.json (ELITE / AdventureWorks2022_dev) unchanged.
+                            var ciConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+                            if (!string.IsNullOrWhiteSpace(ciConnection))
+                                overrides["ConnectionStrings:DefaultConnection"] = ciConnection;
+                            config.AddInMemoryCollection(overrides);
                         });
                         // Production runs on HTTPS, so AddApplicationCookieHardening pins the
                         // Identity application cookie to CookieSecurePolicy.Always. The

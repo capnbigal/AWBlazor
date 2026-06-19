@@ -97,10 +97,11 @@ public class PerformanceReportRunnerTests : IntegrationTestFixtureBase
 
         Assert.That(result.Kind, Is.EqualTo(PerformanceReportKind.MaintenanceScorecard));
         Assert.That(result.Columns.Count, Is.EqualTo(11), "Maintenance scorecard emits 11 columns.");
-        // The seeder writes 3 months of MaintenanceMonthlyMetrics for the first asset, so the
-        // LastMonth preset should return at most 1 row (last full prior month). It can also be
-        // 0 if the test runs early enough that the prior month has no rows yet — accept both.
-        Assert.That(result.Rows.Count, Is.LessThanOrEqualTo(1));
+        // The LastMonth preset returns one row PER asset that has prior-month metrics, so the exact
+        // count is data-dependent (1 on the original single-asset dev DB, but higher on a full demo
+        // seed). Assert a loose sanity ceiling that still catches a runaway/cartesian-join regression
+        // rather than pinning to a specific data volume; Kind + column-count above validate the shape.
+        Assert.That(result.Rows.Count, Is.GreaterThanOrEqualTo(0).And.LessThanOrEqualTo(100));
     }
 
     [Test]

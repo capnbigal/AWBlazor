@@ -308,7 +308,10 @@ public sealed class DemoDataSeeder
                 {
                     BusinessEntityId = empId,
                     ShiftDate = date,
-                    ClockInAt = status == AttendanceStatus.Absent ? null : date.ToDateTime(new TimeOnly(8, rnd.Next(-5, 15)), DateTimeKind.Utc),
+                    // ~08:00 give or take a few minutes. Use TimeOnly.Add so a negative offset
+                    // (clocking in early, e.g. 07:55) wraps correctly — new TimeOnly(8, -5) would
+                    // throw ArgumentOutOfRangeException because the minute component can't be negative.
+                    ClockInAt = status == AttendanceStatus.Absent ? null : date.ToDateTime(new TimeOnly(8, 0).Add(TimeSpan.FromMinutes(rnd.Next(-5, 15))), DateTimeKind.Utc),
                     ClockOutAt = status == AttendanceStatus.Absent ? null : date.ToDateTime(new TimeOnly(16, rnd.Next(55, 70) % 60), DateTimeKind.Utc),
                     Status = status,
                     ModifiedDate = now,
