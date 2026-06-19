@@ -1,0 +1,32 @@
+@* Quick-switch tab bar for the analytics dashboards. Drop <AnalyticsNav /> at the top of each
+   /analytics/* page; it highlights the current dashboard from the URL — no per-page parameter. *@
+@inject NavigationManager Navigation
+
+<MudPaper Class="pa-1 mb-1 d-flex flex-wrap gap-1 align-center" Elevation="0" Style="background:transparent">
+    @foreach (var tab in Tabs)
+    {
+        var active = Navigation.Uri.Contains(tab.Href, StringComparison.OrdinalIgnoreCase);
+        <MudButton Href="@tab.Href"
+                   Variant="@(active ? Variant.Filled : Variant.Text)"
+                   Color="@(active ? Color.Primary : Color.Default)"
+                   StartIcon="@tab.Icon"
+                   Size="Size.Small">
+            @tab.Label
+        </MudButton>
+    }
+</MudPaper>
+
+@code {
+    private sealed record Tab(string Label, string Href, string Icon);
+
+    private static readonly Tab[] Tabs =
+    [
+        new("Sales",       "analytics/sales",       Icons.Material.Filled.AttachMoney),
+        new("Production",  "analytics/production",  Icons.Material.Filled.Factory),
+        new("HR",          "analytics/hr",          Icons.Material.Filled.Groups),
+        new("Purchasing",  "analytics/purchasing",  Icons.Material.Filled.ShoppingBag),
+        new("Forecasts",   "analytics/forecasts",   Icons.Material.Filled.Analytics),
+        new("Processes",   "analytics/processes",   Icons.Material.Filled.Assessment),
+        new("Geographic",  "analytics/geo",         Icons.Material.Filled.Map),
+    ];
+}
