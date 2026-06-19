@@ -39,8 +39,8 @@ Legend: ✅ done · 🟡 partial · ⛔ deferred (reason in the row).
 
 | Item | Plan ref | Why deferred / how to do it safely |
 |---|---|---|
-| ⛔ CI runs the test suite | Testing #1 | Needs a CI `mssql` service container + a `ConnectionStrings__DefaultConnection` env override wired into the test fixtures. Add a GitHub Actions workflow with a health-gated `mcr.microsoft.com/mssql/server` service and `dotnet test --logger trx --collect "XPlat Code Coverage"`. **This is the gating prerequisite for everything else — do it first.** |
-| ⛔ OpenTelemetry + OTLP/Prometheus export | Sprint 4 #20 | Needs a collector/endpoint to export to. Wire `AddOpenTelemetry().WithTracing/WithMetrics` behind a config flag with a no-op default so local runs aren't affected; turn on the exporter only where a collector exists. |
+| ✅ CI runs the test suite | Testing #1 | **Shipped (#146).** GitHub Actions `test` job provisions SQL Server 2022, restores AdventureWorks2022 as `AdventureWorks2022_dev`, and runs the full suite + `XPlat Code Coverage`. CI now gates merges (and immediately caught 3 fresh-DB bugs). |
+| 🟡 OpenTelemetry traces + metrics | Sprint 4 #20 | **Wiring shipped behind `Features:OpenTelemetry` (no-op default).** Traces (ASP.NET Core / HttpClient / SqlClient) + metrics (request / http-client / .NET runtime) export via OTLP. Remaining (deployment-side): stand up a collector and set `Observability:OtlpEndpoint` (or `OTEL_EXPORTER_OTLP_ENDPOINT`); an optional Prometheus exporter could be added later. |
 | ⛔ Docker `HEALTHCHECK` + Serilog file fallback + prod TLS | Sprint 1 #5 / Security #7 | Validated only against the DigitalOcean droplet. Add `HEALTHCHECK` hitting `/healthz`, a Serilog rolling-file sink fallback, and `Encrypt=True` with a trusted cert (drop `TrustServerCertificate`) as a deployment-side change. |
 
 ## Deferred — too breaking for one PR (needs a coordinated change)

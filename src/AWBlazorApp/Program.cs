@@ -1,6 +1,7 @@
 using System.Globalization;
 using AWBlazorApp.Features.Identity.Domain; using AWBlazorApp.Features.Admin.Permissions.Domain;
 using AWBlazorApp.Infrastructure;
+using AWBlazorApp.Infrastructure.Observability;
 using AWBlazorApp.Infrastructure.Persistence;
 using AWBlazorApp.App.Extensions;
 using AWBlazorApp.App.Middleware;
@@ -80,6 +81,8 @@ services.AddApplicationRateLimiting();
 services.AddApplicationHsts();
 services.AddApplicationCookieHardening();
 services.AddBlazorAndServices();
+// OpenTelemetry traces + metrics — no-op unless Features:OpenTelemetry is true.
+services.AddApplicationObservability(configuration);
 
 var app = builder.Build();
 
